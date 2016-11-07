@@ -88,18 +88,18 @@ class Kernel
     {
         $module = strtolower($request['module']);
         $controller = ucfirst($request['controller']);
-        $action = ucfirst($request['action']) . _ACTION;
+        $action = ucfirst($request['action']) . Config::_ACTION;
 
         //加载控制器公共类，有可能不存在
-        $this->_load("application/{$module}/controllers/Controller.php");
+        $this->_load(Config::_DIRECTORY . "/{$module}/controllers/Controller.php");
 
-        $file = "application/{$module}/controllers/{$controller}.php";
+        $file = Config::_DIRECTORY . "/{$module}/controllers/{$controller}.php";
         //路由需要请求的控制器
         if (!$this->_load($file)) {
             exit("控制器文件[{$file}]不存在");
         }
 
-        $controller .= _CONTROL;
+        $controller .= Config::_CONTROL;
         $control = new $controller($this, $request);
         if (!$control instanceof Controller) {
             exit("{$controller} 须继承自 wbf\\core\\Controller");

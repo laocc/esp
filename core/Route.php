@@ -95,7 +95,7 @@ class Route
             foreach (['module', 'controller', 'action'] as $key) {
                 ${$key} = isset($route[$key]) ? $route[$key] : null;
                 if (is_numeric(${$key})) {
-                    if (!isset($matches[${$key}])) error("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。");
+                    if (!isset($matches[${$key}])) exit("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。");
                     ${$key} = $matches[${$key}];
                 }
             }

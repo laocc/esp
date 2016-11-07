@@ -4,6 +4,15 @@ namespace wbf\core;
 
 class Config
 {
+    const _DIRECTORY = 'application';   //网站主程序所在路径，不含模块名
+    const _CONTROL = 'Controller';      //控制器名后缀，注意：文件名不含这部分
+    const _ACTION = 'Action';           //动作名后缀
+    const _VIEW_EXT = 'phtml';          //视图文件后缀
+    const _DEFAULT_MODULE = 'www';      //默认模块
+    const _DEFAULT_CONTROL = 'index';   //默认控制器
+    const _DEFAULT_ACTION = 'index';    //默认动作
+    const _LAYOUT = 'layout.phtml';     //框架视图文件名
+
     static private $_conf = [];
 
 

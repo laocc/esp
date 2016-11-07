@@ -59,27 +59,22 @@ class Controller
      * @param null $file
      * @return bool|View
      */
-    final public function layout($file = null)
+    final public function layout($layout_file = null)
     {
-        if ($file === false) {
-            return $this->_use_layout = $file;
+        if ($layout_file === false) {
+            return $this->_use_layout = false;
         }
 
         static $obj;
         if (!is_null($obj)) return $obj;
 
         $dir = rtrim($this->_request['directory'], '/') . '/' . $this->_request['module'] . '/views/';
-        $file = $file ?: $this->_request['controller'] . '/layout.' . ltrim(_VIEW_EXT, '.');
-        if (stripos($file, $dir) !== 0) $file = $dir . ltrim($file, '/');
-
-        if (!is_file($file)) {
-            $file = $dir . 'layout.' . ltrim(_VIEW_EXT, '.');
-        }
-
-        if (!is_file($file)) exit('框架视图文件不存在');
+        $layout_file = $layout_file ?: $this->_request['controller'] . '/' . Config::_LAYOUT;
+        if (stripos($layout_file, $dir) !== 0) $layout_file = $dir . ltrim($layout_file, '/');
+        if (!is_file($layout_file)) $layout_file = $dir . Config::_LAYOUT;
+        if (!is_file($layout_file)) exit('框架视图文件不存在');
         $this->_use_layout = true;
-
-        return $obj = new View($dir, $file);
+        return $obj = new View($dir, $layout_file);
     }
 
 
@@ -129,7 +124,7 @@ class Controller
     final public function display()
     {
         $view = $this->view();
-        $file = $this->_request['controller'] . '/' . $this->_request['action'] . '.' . ltrim(_VIEW_EXT, '.');
+        $file = $this->_request['controller'] . '/' . $this->_request['action'] . '.' . ltrim(Config::_VIEW_EXT, '.');
 
         //送入框架对象
         if ($this->_use_layout) $view->layout($this->layout());

@@ -5,7 +5,7 @@ class IndexController extends Controller
     public function indexAction()
     {
 
-        $this->layout('layout_sim.phtml');
+//        $this->layout('layout_sim.phtml');
 //        $this->layout(false);
 
         $this->assign('time', 'from controller');
