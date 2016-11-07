@@ -1,7 +1,7 @@
 <?php
 namespace wbf\core;
 
-class Mistake
+final class Mistake
 {
     public static function init()
     {

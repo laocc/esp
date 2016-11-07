@@ -2,7 +2,7 @@
 
 namespace wbf\core;
 
-class Route
+final class Route
 {
 
     /**
@@ -12,7 +12,7 @@ class Route
     {
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $method = $_SERVER['REQUEST_METHOD'];
-        $directory = root(Config::_DIRECTORY);
+        $directory = root(Config::get('wbf.directory'));
 
         $default = [
             'match' => '/\/(?:[\w\-]+\/?)*/',
@@ -27,7 +27,7 @@ class Route
             ) {
 
                 if (isset($route['method']) and !self::method_check($route['method'], $method))
-                    exit('禁止的请求方法');
+                    error(Config::get('error.method'));
 
                 if (!isset($matches) or $key === '_default') {
                     $matches = explode('/', $uri);
@@ -98,16 +98,16 @@ class Route
             foreach (['module', 'controller', 'action'] as $key) {
                 ${$key} = isset($route[$key]) ? $route[$key] : null;
                 if (is_numeric(${$key})) {
-                    if (!isset($matches[${$key}])) exit("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。");
+                    if (!isset($matches[${$key}])) error("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。");
                     ${$key} = $matches[${$key}];
                 }
             }
         }
         auto:
         return [
-            $module ?: Config::_DEFAULT_MODULE,
-            $controller ?: Config::_DEFAULT_CONTROL,
-            $action ?: Config::_DEFAULT_ACTION,
+            $module ?: Config::get('wbf.defaultModule'),
+            $controller ?: Config::get('wbf.defaultControl'),
+            $action ?: Config::get('wbf.defaultAction'),
         ];
     }
 

@@ -2,13 +2,16 @@
 namespace wbf\core;
 
 
-class Controller
+abstract class Controller
 {
     private $_kernel;
     private $_request;
     private $_view_val = [];
-    private $_use_layout = true;
-    private $_use_adapter = true;
+    private $_use_layout;
+    private $_use_adapter;
+    private $_content;
+
+
     private $_layout_val = [
         '_js_foot' => [],
         '_js_head' => [],
@@ -25,6 +28,33 @@ class Controller
         $this->_kernel = $kernel;
         $this->_request = $request;
     }
+
+    final public function json(array $value)
+    {
+        $this->_content = [
+            'type' => 'json',
+            'value' => $value,
+        ];
+    }
+
+    final public function text($value)
+    {
+        $this->_content = [
+            'type' => 'text',
+            'value' => $value,
+        ];
+    }
+
+    final public function xml($root, array $value = null)
+    {
+        if (is_array($root)) list($root, $value) = ['xml', $root];
+        $this->_content = [
+            'type' => 'xml',
+            'root' => $root,
+            'value' => $value,
+        ];
+    }
+
 
     /**
      * 设置视图文件，或获取对象
@@ -52,14 +82,11 @@ class Controller
         $dir = rtrim($this->_request['directory'], '/') . '/' . $this->_request['module'] . '/views/';
         $this->_use_adapter = true;
 
-        if ($conf['driver'] === 'smarty') {
-            $_adapter = new \Smarty();
-            $_adapter->{'template_dir'} = $dir;//视图主目录
-            $_adapter->{'compile_dir'} = root($conf['compile_dir']);//解析器缓存目录
-            $_adapter->{'cache_dir'} = root($conf['cache_dir']);//缓存目录
-        } else {
-            exit('当前只实现了smarty解析器');
-        }
+        $conf['driver'] = '\\' . ucfirst($conf['driver']);
+        $_adapter = new $conf['driver']();
+        $_adapter->{'template_dir'} = $dir;//视图主目录
+        $_adapter->{'compile_dir'} = $conf['compile_dir'];//解析器缓存目录
+        $_adapter->{'cache_dir'} = $conf['cache_dir'];//缓存目录
 
         return $_adapter;
     }
@@ -77,16 +104,29 @@ class Controller
 
         static $obj;
         if (!is_null($obj)) return $obj;
-
+        $layout = Config::get('layout.filename');
         $dir = rtrim($this->_request['directory'], '/') . '/' . $this->_request['module'] . '/views/';
-        $layout_file = $layout_file ?: $this->_request['controller'] . '/' . Config::_LAYOUT;
+        $layout_file = $layout_file ?: $this->_request['controller'] . '/' . $layout;
         if (stripos($layout_file, $dir) !== 0) $layout_file = $dir . ltrim($layout_file, '/');
-        if (!is_file($layout_file)) $layout_file = $dir . Config::_LAYOUT;
-        if (!is_file($layout_file)) exit('框架视图文件不存在');
+        if (!is_file($layout_file)) $layout_file = $dir . $layout;
+        if (!is_file($layout_file)) error('框架视图文件不存在');
         $this->_use_layout = true;
         return $obj = new View($dir, $layout_file);
     }
 
+
+    /**
+     * 检查来路是否本站相同域名
+     * 本站_HOST，总是被列入查询，另外自定义更多的host，
+     * 若允许本站或空来路，则用：$this->check_host('');
+     *
+     * @param array ...$host
+     */
+    final public function check_host(...$host)
+    {
+        if (isset($host[0]) and is_array($host[0])) $host = $host[0];
+        if (!in_array(host(_REFERER), array_merge([_HOST], $host))) error(Config::get('error.host'));
+    }
 
     /**
      * @param $request
@@ -189,11 +229,38 @@ class Controller
     /**
      * 最后显示内容
      */
-    final public function display()
+    final public function display_response()
     {
+        if (!is_null($this->_content)) {
+            $mime = Config::mime($this->_content['type']);
+            header('Content-type:' . $mime, true);
+
+            switch (strtolower($this->_content['type'])) {
+                case 'json':
+                    $value = json_encode($this->_content['value'], 256);
+                    if (isset($_GET['callback']) and preg_match('/^(\w+)$/', $_GET['callback'], $match)) {
+                        $value = "{$match[1]}({$value});";
+                    }
+                    echo $value;
+                    break;
+                case 'text':
+                    print_r($this->_content['value']);
+                    break;
+                case 'xml':
+                    echo (new \wbf\library\Xml($this->_content['value'], $this->_content['root']))->render();
+                    break;
+                default:
+                    error("未知页面显示方式：{$this->_content['type']}");
+            }
+            return;
+        }
+
         $view = $this->view();
-        $file = $this->_request['controller'] . '/' . $this->_request['action'] . '.' . ltrim(Config::_VIEW_EXT, '.');
+        $file = $this->_request['controller'] . '/' . $this->_request['action'] . '.' . ltrim(Config::get('wbf.viewExt'), '.');
         $this->cleared_resource();
+
+        if (is_null($this->_use_layout)) $this->_use_layout = Config::get('layout.autoRun');
+        if (is_null($this->_use_adapter)) $this->_use_adapter = Config::get('adapter.autoRun');
 
         //送入框架对象
         if ($this->_use_layout) {
@@ -205,11 +272,11 @@ class Controller
             $this->assign($this->_layout_val);
             $this->_layout_val = null;
         }
+
         if ($this->_use_adapter) $view->adapter($this->adapter());
 
         $view->display($file, $this->_view_val);
     }
-
 
     /**
      * 整理layout中的变量

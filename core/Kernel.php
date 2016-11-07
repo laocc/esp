@@ -2,10 +2,9 @@
 namespace wbf\core;
 
 
-class Kernel
+final class Kernel
 {
     public $request;
-    public $response;
     private $_Plugin;
 
     public function __construct()
@@ -83,7 +82,7 @@ class Kernel
         $control instanceof Controller && 1;
 
         //控制器显示
-        $control->display();
+        $control->display_response();
     }
 
 
@@ -97,18 +96,19 @@ class Kernel
     {
         $module = strtolower($request['module']);
         $controller = ucfirst($request['controller']);
-        $action = ucfirst($request['action']) . Config::_ACTION;
+        $action = ucfirst($request['action']) . Config::get('wbf.actionExt');
 
         //加载控制器公共类，有可能不存在
-        $this->_load(Config::_DIRECTORY . "/{$module}/controllers/Controller.php");
+        $this->_load(Config::get('wbf.directory') . "/{$module}/controllers/Controller.php");
 
-        $file = Config::_DIRECTORY . "/{$module}/controllers/{$controller}.php";
+        $file = Config::get('wbf.directory') . "/{$module}/controllers/{$controller}.php";
+
         //路由需要请求的控制器
         if (!$this->_load($file)) {
             exit("控制器文件[{$file}]不存在");
         }
 
-        $controller .= Config::_CONTROL;
+        $controller .= Config::get('wbf.controlExt');
         $control = new $controller($this, $request);
         if (!$control instanceof Controller) {
             exit("{$controller} 须继承自 wbf\\core\\Controller");

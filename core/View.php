@@ -2,7 +2,7 @@
 namespace wbf\core;
 
 
-class View
+final class View
 {
     private $_path = [
         'dir' => null,
