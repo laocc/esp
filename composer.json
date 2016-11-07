@@ -3,7 +3,6 @@
       "title": "Wide of Ballet FrameWork",
       "require": {
             "php": ">7.0",
-            "illuminate/database": "*",
             "smarty/smarty": "~3.1"
       },
       "require-dev": {

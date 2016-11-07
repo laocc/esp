@@ -8,8 +8,15 @@ class Kernel
     public $response;
     private $_Plugin;
 
+    public function __construct()
+    {
+        if (!defined('_MODULE')) exit('网站入口处须定义_MODULE项');
+        if (!defined('_ROOT')) exit('网站入口处须定义_ROOT项');
+    }
+
     public function bootstrap($bootstrap = null)
     {
+        Mistake::init();
         Config::load();
 
         if (!class_exists('Bootstrap')) {
@@ -59,11 +66,13 @@ class Kernel
     }
 
 
-    public function run()
+    public function run($module = null)
     {
         Config::load();
 
-        $routes = $this->_load('config/routes.php');
+        $module = $module ?: _MODULE;
+        $routes = $this->_load("config/routes_{$module}.php");
+        if (!$routes) exit("未定义当前模块路由：/config/routes_{$module}.php");
 
         //开始路由
         $route = new Route();
@@ -113,7 +122,9 @@ class Kernel
     private function _load($file)
     {
         if (!$file) return false;
-        return @include root($file);
+        $file = root($file);
+        if (!is_file($file)) return false;
+        return include $file;
     }
 
 }

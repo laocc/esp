@@ -12,7 +12,7 @@ class Route
     {
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $method = $_SERVER['REQUEST_METHOD'];
-        $directory = root('application');
+        $directory = root(Config::_DIRECTORY);
 
         $default = [
             'match' => '/\/(?:[\w\-]+\/?)*/',
@@ -21,7 +21,10 @@ class Route
         ];
 
         foreach (array_merge($routes, ['_default' => $default]) as $key => &$route) {
-            if ($route['match'] == $uri or @preg_match($route['match'], $uri, $matches)) {
+            if ($route['match'] == $uri or
+                //先判断一下是不是正则的格式
+                (preg_match('/^\/.+\/[ims]*$/', $route['match']) and preg_match($route['match'], $uri, $matches))
+            ) {
 
                 if (isset($route['method']) and !self::method_check($route['method'], $method))
                     exit('禁止的请求方法');
@@ -101,7 +104,11 @@ class Route
             }
         }
         auto:
-        return [$module ?: 'index', $controller ?: 'index', $action ?: 'index'];
+        return [
+            $module ?: Config::_DEFAULT_MODULE,
+            $controller ?: Config::_DEFAULT_CONTROL,
+            $action ?: Config::_DEFAULT_ACTION,
+        ];
     }
 
     /**

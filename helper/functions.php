@@ -128,6 +128,64 @@ function is_wechat()
     return is_wap() === 2;
 }
 
+
+/**
+ *
+ * 产生一个错误信息，具体处理，由\plugins\Mistake处理
+ * @param $str
+ * @param int $level 错误级别，012，
+ *
+ * 0：系统停止执行，严重级别
+ * 1：提示错误，继续运行
+ * 2：警告级别，在生产环境中不提示，仅发给管理员
+ *
+ * error("{$filePath} 不是有效文件。");
+ */
+function error($str, $level = 0, array $errFile = null)
+{
+    if (is_int($str)) goto state;
+    if (is_array($level)) list($level, $errFile) = [0, $level];
+
+    $err = $errFile ?: debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+    \wbf\core\Mistake::try_error($str, $level, $err);
+    return;
+
+    state:  //模拟成某个错误状态
+
+//    $err = $errFile ?: debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+//    pre($err);
+
+    $state = \wbf\core\Config::states($str);
+    $server = isset($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : null;
+    $html = "<html>\n<head><title>{$str} {$state}</title></head>\n<body bgcolor=\"white\">\n<center><h1>{$str} {$state}</h1></center>\n<hr><center>{$server}</center>\n</body>\n</html>";
+    header_state($str, $state);
+    header('Content-type:text/html', true);
+    exit($html);
+}
+
+
+/**
+ * 设置HTTP响应头
+ * @param int $code
+ * @param null $text
+ * @throws Exception
+ */
+function header_state($code = 200, $text = null)
+{
+    if (empty($code) OR !is_numeric($code)) {
+        error('状态码必须为数字');
+    }
+    if (empty($text)) {
+        $text = \wbf\core\Config::states($code);
+    }
+    if (!stripos(PHP_SAPI, 'cgi')) {
+        header('Status: ' . $code . ' ' . $text, true);
+    } else {
+        $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.1';
+        header("{$protocol} {$code} {$text}", true, $code);
+    }
+}
+
 /**
  * 分析客户端信息
  * @param null $agent
@@ -339,7 +397,7 @@ function root(...$path)
  * @param $value
  * @return array
  */
-function numbers(int $value)
+function numbers($value)
 {
     if ($value % 2 != 0) return [];
     $val = [];

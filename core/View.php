@@ -16,8 +16,6 @@ class View
     {
         $this->_path['dir'] = $dir;
         $this->_path['file'] = $file;
-
-
         $this->_adapter instanceof View and 1;
     }
 
@@ -50,9 +48,15 @@ class View
      * @param $name
      * @param $value
      */
-    public function assign($name, $value)
+    public function assign($name, $value = null)
     {
-        $this->_view_val[$name] = $value;
+        if (is_array($name)) {
+            foreach ($name as $k => $v) {
+                $this->_view_val[$k] = $v;
+            }
+        } else {
+            $this->_view_val[$name] = $value;
+        }
     }
 
     final public function __set($name, $value)
@@ -65,9 +69,9 @@ class View
         return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
     }
 
-    final public function set($name, $value)
+    final public function set($name, $value = null)
     {
-        $this->_view_val[$name] = $value;
+        $this->assign($name, $value);
     }
 
     final public function get($name)

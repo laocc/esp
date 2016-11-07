@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <?php
+    /**
+     * @var $title ;
+     * @var $meta ;
+     * @var $css ;
+     * @var $js_head ;
+     * @var $js_body ;
+     * @var $js_foot ;
+     * @var $js_defer ;
+     * @var $_body_html ;
+     */
+    ?>
+    <title><?= $title ?></title>
+    <?= $meta; ?>
+    <?= $css; ?>
+    <?= $js_head; ?>
+    <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css">
+    <script src="http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js"></script>
+    <script src="http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+    <style>
+        body{
+            width: 100%;
+            height: 100%;
+        }
+        div {
+            width: 100%;
+            height: 100%;
+            line-height: 100%;
+            font-size: 100px;
+            clear: both;
+            text-align: center;
+            margin-top: 300px;
+            color: #567;
+        }
+    </style>
+</head>
+<body>
+<?= $js_body ?>
+<?= $_body_html ?>
+</body>
+<?= $js_foot ?>
+<?= $js_defer ?>
+</html>
