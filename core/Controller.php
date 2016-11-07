@@ -10,14 +10,14 @@ class Controller
     private $_use_layout = true;
     private $_use_adapter = true;
     private $_layout_val = [
-        'js_foot' => [],
-        'js_head' => [],
-        'js_body' => [],
-        'js_defer' => [],
-        'css' => [],
-        'meta' => [],
-        'title' => null,
-        'title_default' => true,
+        '_js_foot' => [],
+        '_js_head' => [],
+        '_js_body' => [],
+        '_js_defer' => [],
+        '_css' => [],
+        '_meta' => ['keywords' => null, 'description' => null],
+        '_title' => null,
+        '_title_default' => true,
     ];
 
     final public function __construct(Kernel $kernel, $request)
@@ -138,9 +138,9 @@ class Controller
     {
         $pos = in_array($pos, ['foot', 'head', 'body', 'defer']) ? $pos : 'foot';
         if (is_array($file)) {
-            array_push($this->_layout_val["js_{$pos}"], ...$file);
+            array_push($this->_layout_val["_js_{$pos}"], ...$file);
         } else {
-            $this->_layout_val["js_{$pos}"][] = $file;
+            $this->_layout_val["_js_{$pos}"][] = $file;
         }
         return $this;
     }
@@ -149,9 +149,9 @@ class Controller
     final public function css($file)
     {
         if (is_array($file)) {
-            array_push($this->_layout_val['css'], ...$file);
+            array_push($this->_layout_val['_css'], ...$file);
         } else {
-            $this->_layout_val['css'][] = $file;
+            $this->_layout_val['_css'][] = $file;
         }
         return $this;
     }
@@ -159,29 +159,29 @@ class Controller
 
     final public function meta($name, $value)
     {
-        $this->_layout_val['meta'][$name] = $value;
+        $this->_layout_val['_meta'][$name] = $value;
         return $this;
     }
 
 
     final public function title($title, $default = true)
     {
-        $this->_layout_val['title'] = $title;
-        if (!$default) $this->_layout_val['title_default'] = false;
+        $this->_layout_val['_title'] = $title;
+        if (!$default) $this->_layout_val['_title_default'] = false;
         return $this;
     }
 
 
     final public function keywords($value)
     {
-        $this->_layout_val['meta']['keywords'] = $value;
+        $this->_layout_val['_meta']['keywords'] = $value;
         return $this;
     }
 
 
     final public function description($value)
     {
-        $this->_layout_val['meta']['description'] = $value;
+        $this->_layout_val['_meta']['description'] = $value;
         return $this;
     }
 
@@ -228,48 +228,72 @@ class Controller
 
         if ($resource['concat']) {
             foreach (['foot', 'head', 'body', 'defer'] as $pos) {
-                if (!empty($this->_layout_val["js_{$pos}"])) {
+                if (!empty($this->_layout_val["_js_{$pos}"])) {
                     $defer = ($pos === 'defer') ? ' defer="defer"' : null;
-                    foreach ($this->_layout_val["js_{$pos}"] as &$js) {
+                    $concat = [];
+                    $http = [];
+                    foreach ($this->_layout_val["_js_{$pos}"] as &$js) {
                         if ($js === 'jquery') $js = $resource['jquery'];
+                        if (substr($js, 0, 4) === 'http') {
+                            $http[] = "<script type=\"text/javascript\" src=\"{$js}\" charset=\"utf-8\" {$defer} ></script>";
+                        } else {
+                            $concat[] = $js;
+                        }
                     }
-                    $js = $dom . '??' . implode(',', $this->_layout_val["js_{$pos}"]) . $rand;
-                    $this->_layout_val["js_{$pos}"] = "<script type=\"text/javascript\" src=\"{$js}\" charset=\"utf-8\" {$defer} ></script>\n";
+                    $concat = empty($concat) ? null : ($dom . '??' . implode(',', $concat) . $rand);
+                    $this->_layout_val["_js_{$pos}"] = '';
+                    if ($concat) $this->_layout_val["_js_{$pos}"] .= "<script type=\"text/javascript\" src=\"{$concat}\" charset=\"utf-8\" {$defer} ></script>\n";
+                    if (!empty($http)) $this->_layout_val["_js_{$pos}"] .= implode("\n", $http) . "\n";
                 } else {
-                    $this->_layout_val["js_{$pos}"] = null;
+                    $this->_layout_val["_js_{$pos}"] = null;
                 }
             }
-            if (!empty($this->_layout_val['css'])) {
-                $css = $dom . '??' . implode(',', $this->_layout_val['css']) . $rand;
-                $this->_layout_val['css'] = "<link rel=\"stylesheet\" href=\"{$css}\" charset=\"utf-8\" />\n";
+            if (!empty($this->_layout_val['_css'])) {
+                $concat = [];
+                $http = [];
+                foreach ($this->_layout_val['_css'] as &$css) {
+                    if (substr($css, 0, 4) === 'http') {
+                        $http[] = "<link rel=\"stylesheet\" href=\"{$css}\" charset=\"utf-8\" />";
+                    } else {
+                        $concat[] = $css;
+                    }
+                }
+                $concat = empty($concat) ? null : ($dom . '??' . implode(',', $this->_layout_val['_css']) . $rand);
+                $this->_layout_val['_css'] = '';
+                if ($concat) $this->_layout_val['_css'] .= "<link rel=\"stylesheet\" href=\"{$concat}\" charset=\"utf-8\" />\n";
+                if (!empty($http)) $this->_layout_val['_css'] .= implode("\n", $http) . "\n";
+
             } else {
-                $this->_layout_val['css'] = null;
+                $this->_layout_val['_css'] = null;
             }
         } else {
             foreach (['foot', 'head', 'body', 'defer'] as $pos) {
                 $defer = ($pos === 'defer') ? ' defer="defer"' : null;
-                foreach ($this->_layout_val["js_{$pos}"] as $i => &$js) {
+                foreach ($this->_layout_val["_js_{$pos}"] as $i => &$js) {
                     $js = "<script type=\"text/javascript\" src=\"{$domain($js)}\" charset=\"utf-8\" {$defer} ></script>";
                 }
-                $this->_layout_val["js_{$pos}"] = implode("\n", $this->_layout_val["js_{$pos}"]) . "\n";
+                $this->_layout_val["_js_{$pos}"] = implode("\n", $this->_layout_val["_js_{$pos}"]) . "\n";
             }
-            foreach ($this->_layout_val['css'] as $i => &$css) {
+            foreach ($this->_layout_val['_css'] as $i => &$css) {
                 $css = "<link rel=\"stylesheet\" href=\"{$domain($css)}\" charset=\"utf-8\" />";
             }
-            $this->_layout_val['css'] = implode("\n", $this->_layout_val['css']) . "\n";
+            $this->_layout_val['_css'] = implode("\n", $this->_layout_val['_css']) . "\n";
         }
 
-        foreach ($this->_layout_val['meta'] as $i => &$meta) {
-            $this->_layout_val['meta'][$i] = "<meta name=\"{$i}\" content=\"{$meta}\" />";
-        }
-        $this->_layout_val['meta'] = implode("\n", $this->_layout_val['meta']) . "\n";
+        $this->_layout_val['_meta']['keywords'] = $this->_layout_val['_meta']['keywords'] ?: $resource['keywords'];
+        $this->_layout_val['_meta']['description'] = $this->_layout_val['_meta']['description'] ?: $resource['description'];
 
-        if (is_null($this->_layout_val['title'])) {
-            $this->_layout_val['title'] = $resource['title'];
-        } elseif ($this->_layout_val['title_default']) {
-            $this->_layout_val['title'] .= ' - ' . $resource['title'];
+        foreach ($this->_layout_val['_meta'] as $i => &$meta) {
+            $this->_layout_val['_meta'][$i] = "<meta name=\"{$i}\" content=\"{$meta}\" />";
         }
-        unset($this->_layout_val['title_default']);
+        $this->_layout_val['_meta'] = implode("\n", $this->_layout_val['_meta']) . "\n";
+
+        if (is_null($this->_layout_val['_title'])) {
+            $this->_layout_val['_title'] = $resource['title'];
+        } elseif ($this->_layout_val['_title_default']) {
+            $this->_layout_val['_title'] .= ' - ' . $resource['title'];
+        }
+        unset($this->_layout_val['_title_default']);
     }
 
 

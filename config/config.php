@@ -14,13 +14,13 @@ return [
 
     'resource' => [
         'rand' => true,
-        'concat' => false,
+        'concat' => true,
         'domain' => 'http://' . _DOMAIN,
         'jquery' => 'js/jquery-2.1.4.min.js',
         'favicon' => 'data:image/bmp;base64,AAAQEP',
-        'title' => 'WBF',
-        'keywords' => 'WBF',
-        'description' => 'WBF',
+        'title' => 'Wide of Ballet FrameWork',
+        'keywords' => 'Wide of Ballet FrameWork',
+        'description' => 'Wide of Ballet FrameWork',
     ],
 
     'adapter' => [

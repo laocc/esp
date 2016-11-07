@@ -4,28 +4,26 @@
     <meta charset="UTF-8">
     <?php
     /**
-     * @var $title ;
-     * @var $meta ;
-     * @var $css ;
-     * @var $js_head ;
-     * @var $js_body ;
-     * @var $js_foot ;
-     * @var $js_defer ;
+     * @var $_title ;
+     * @var $_meta ;
+     * @var $_css ;
+     * @var $_js_head ;
+     * @var $_js_body ;
+     * @var $_js_foot ;
+     * @var $_js_defer ;
      * @var $_body_html ;
      */
     ?>
-    <title><?= $title ?></title>
-    <?= $meta; ?>
-    <?= $css; ?>
-    <?= $js_head; ?>
-    <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css">
-    <script src="http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js"></script>
-    <script src="http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+    <title><?= $_title ?></title>
+    <?= $_meta; ?>
+    <?= $_css; ?>
+    <?= $_js_head; ?>
     <style>
-        body{
+        body {
             width: 100%;
             height: 100%;
         }
+
         div {
             width: 100%;
             height: 100%;
@@ -39,9 +37,9 @@
     </style>
 </head>
 <body>
-<?= $js_body ?>
+<?= $_js_body ?>
 <?= $_body_html ?>
 </body>
-<?= $js_foot ?>
-<?= $js_defer ?>
+<?= $_js_foot ?>
+<?= $_js_defer ?>
 </html>
