@@ -12,7 +12,7 @@ final class Route
     {
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $method = $_SERVER['REQUEST_METHOD'];
-        $directory = root(Config::get('wbf.directory'));
+        $_directory = root(Config::get('wbf.directory'));
 
         $default = [
             'match' => '/\/(?:[\w\-]+\/?)*/',
@@ -35,7 +35,7 @@ final class Route
                 }
 
                 //MVC位置，不含模块
-                $directory = isset($route['directory']) ? root($route['directory']) : $directory;
+                $directory = isset($route['directory']) ? root($route['directory']) : $_directory;
                 $directory = rtrim($directory, '/') . '/';
 
                 $mca = (isset($route['route']) and is_array($route['route'])) ? $route['route'] : [];
