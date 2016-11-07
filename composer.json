@@ -1,0 +1,33 @@
+{
+      "name": "laocc/wbf",
+      "title": "Wide of Ballet FrameWork",
+      "require": {
+            "php": ">7.0",
+            "illuminate/database": "*",
+            "smarty/smarty": "~3.1"
+      },
+      "require-dev": {
+            "php": ">7.0",
+            "smarty/smarty": "~3.1"
+      },
+      "autoload": {
+            "files": [
+                  "helper/functions.php",
+                  "helper/define.php",
+                  "helper/shutdown.php",
+                  "helper/bootstrap.php"
+            ],
+            "classmap": [
+                  "library"
+            ],
+            "psr-4": {
+                  "wbf\\core\\": "core/"
+            }
+      },
+      "repositories": {
+            "packagist": {
+                  "type": "composer",
+                  "url": "https://packagist.phpcomposer.com"
+            }
+      }
+}
