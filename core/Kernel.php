@@ -1,5 +1,5 @@
 <?php
-namespace wbf\core;
+namespace esp\core;
 
 
 final class Kernel
@@ -60,7 +60,7 @@ final class Kernel
     public function setPlugin($name, $class)
     {
         if (!is_subclass_of($class, Plugin::class)) {
-            exit('插件' . get_class($class) . '须直接继承自\\wbf\\core\\Plugin');
+            exit('插件' . get_class($class) . '须直接继承自\\esp\\core\\Plugin');
         }
         if (isset($this->_Plugin[$name])) exit("插件名{$name}已被注册过");
         $this->_Plugin[$name] = &$class;
@@ -122,24 +122,24 @@ final class Kernel
     {
         $module = strtolower($request->module);
         $controller = ucfirst($request->controller);
-        $action = ucfirst($request->action) . Config::get('wbf.actionExt');
+        $action = ucfirst($request->action) . Config::get('esp.actionExt');
 
         if ($controller === 'Base') error('控制器名不可以为base，这是系统保留公共控制器名。');
 
         //加载控制器公共类，有可能不存在
-        $this->_load(Config::get('wbf.directory') . "/{$module}/controllers/Base.php");
+        $this->_load(Config::get('esp.directory') . "/{$module}/controllers/Base.php");
 
-        $file = Config::get('wbf.directory') . "/{$module}/controllers/{$controller}.php";
+        $file = Config::get('esp.directory') . "/{$module}/controllers/{$controller}.php";
 
         //路由需要请求的控制器
         if (!$this->_load($file)) {
             exit("控制器文件[{$file}]不存在");
         }
 
-        $controller .= Config::get('wbf.controlExt');
+        $controller .= Config::get('esp.controlExt');
         $control = new $controller($this->_Plugin, $request, $this->response);
         if (!$control instanceof Controller) {
-            exit("{$controller} 须继承自 wbf\\core\\Controller");
+            exit("{$controller} 须继承自 esp\\core\\Controller");
         }
         if (!method_exists($control, $action) or !is_callable([$control, $action])) return false;
         return call_user_func_array([$control, $action], $request->params);

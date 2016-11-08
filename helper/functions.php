@@ -147,7 +147,7 @@ function error($str, $level = 0, array $errFile = null)
     if (is_array($level)) list($level, $errFile) = [0, $level];
 
     $err = $errFile ?: debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-    \wbf\core\Mistake::try_error($str, $level, $err);
+    \esp\core\Mistake::try_error($str, $level, $err);
     return;
 
     state:  //模拟成某个错误状态
@@ -155,7 +155,7 @@ function error($str, $level = 0, array $errFile = null)
 //    $err = $errFile ?: debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 //    pre($err);
 
-    $state = \wbf\core\Config::states($str);
+    $state = \esp\core\Config::states($str);
     $server = isset($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : null;
     $html = "<html>\n<head><title>{$str} {$state}</title></head>\n<body bgcolor=\"white\">\n<center><h1>{$str} {$state}</h1></center>\n<hr><center>{$server}</center>\n</body>\n</html>";
     header_state($str, $state);
@@ -176,7 +176,7 @@ function header_state($code = 200, $text = null)
         error('状态码必须为数字');
     }
     if (empty($text)) {
-        $text = \wbf\core\Config::states($code);
+        $text = \esp\core\Config::states($code);
     }
     if (!stripos(PHP_SAPI, 'cgi')) {
         header('Status: ' . $code . ' ' . $text, true);

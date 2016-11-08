@@ -1,6 +1,6 @@
 {
-      "name": "laocc/wbf",
-      "title": "Wide of Ballet FrameWork",
+      "name": "laocc/esp",
+      "title": "Efficient Simple PHP",
       "require": {
             "php": ">7.0"
       },
@@ -15,12 +15,10 @@
                   "helper/shutdown.php",
                   "helper/bootstrap.php"
             ],
-            "classmap": [
-                  "library",
-                  "plugins"
-            ],
             "psr-4": {
-                  "wbf\\core\\": "core/"
+                  "esp\\core\\": "core/",
+                  "esp\\library\\": "library/",
+                  "esp\\plugins\\": "plugins/"
             }
       },
       "repositories": {

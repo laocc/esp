@@ -1,9 +1,9 @@
 <?php
-namespace wbf\plugins;
+namespace esp\plugins;
 
-use wbf\core\Plugin;
-use wbf\core\Kernel;
-use wbf\core\Request;
+use esp\core\Plugin;
+use esp\core\Kernel;
+use esp\core\Request;
 
 class Temp extends Plugin
 {

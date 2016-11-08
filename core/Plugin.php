@@ -1,5 +1,5 @@
 <?php
-namespace wbf\core;
+namespace esp\core;
 
 
 abstract class Plugin

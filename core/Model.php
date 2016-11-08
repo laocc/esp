@@ -1,9 +1,9 @@
 <?php
-namespace wbf\core;
+namespace esp\core;
 
 /**
  * Class Model
- * @package wbf\core
+ * @package esp\core
  *
  * func_get_args()
  */

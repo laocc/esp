@@ -1,6 +1,6 @@
 <?php
 
-namespace wbf\core;
+namespace esp\core;
 
 final class Route
 {
@@ -100,9 +100,9 @@ final class Route
         }
         auto:
         return [
-            $module ?: Config::get('wbf.defaultModule'),
-            $controller ?: Config::get('wbf.defaultControl'),
-            $action ?: Config::get('wbf.defaultAction'),
+            $module ?: Config::get('esp.defaultModule'),
+            $controller ?: Config::get('esp.defaultControl'),
+            $action ?: Config::get('esp.defaultAction'),
         ];
     }
 

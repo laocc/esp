@@ -1,5 +1,5 @@
 <?php
-use wbf\core\Route;
+use esp\core\Route;
 
 class IndexController extends BaseController
 {

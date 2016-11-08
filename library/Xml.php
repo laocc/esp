@@ -1,5 +1,5 @@
 <?php
-namespace wbf\library;
+namespace esp\library;
 
 /*
 
@@ -133,11 +133,11 @@ class Xml
                     if (is_array($row)) {
                         $this->xml_notes($xml, $key, $row);
                     } else {
-                        $xml->startElement($key);//加：<name><![CDATA[wbf]]></name>中的标签名name
+                        $xml->startElement($key);//加：<name><![CDATA[非数字值]]></name>中的标签名name
                         if (is_numeric($row)) {
                             $xml->text($row);//加：<age>35</age>
                         } else {
-                            $xml->writeCdata($row);//加：<name><![CDATA[老船长]]></name>中的<![CDATA[老船长]]>部分
+                            $xml->writeCdata($row);//加：<name><![CDATA[老船长]]></name>中的CDATA部分
                         }
 //                        $xml->writeComment('notes');//加<!--notes-->备注
                         $xml->endElement();

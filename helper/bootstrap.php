@@ -1,6 +1,6 @@
 <?php
-use \wbf\core\Kernel;
-use \wbf\plugins;
+use \esp\core\Kernel;
+use \esp\plugins;
 
 final class Bootstrap
 {

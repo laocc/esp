@@ -1,7 +1,7 @@
 <?php
 
 
-abstract class baseController extends wbf\core\Controller
+abstract class baseController extends esp\core\Controller
 {
 
 }

@@ -1,12 +1,12 @@
 <?php
-namespace wbf\core;
+namespace esp\core;
 
 /**
  *
  * 此处读取/config/config.php中的设置
  *
  * Class Config
- * @package wbf\core
+ * @package esp\core
  */
 final class Config
 {

@@ -1,5 +1,5 @@
 <?php
-namespace wbf\core;
+namespace esp\core;
 
 
 class Response
@@ -104,7 +104,7 @@ class Response
 
             case 'xml':
                 header('Content-type:text/xml', true);
-                echo (new \wbf\library\Xml($this->_display_value[1], $this->_display_value[0]))->render();
+                echo (new \esp\library\Xml($this->_display_value[1], $this->_display_value[0]))->render();
                 break;
 
             default:

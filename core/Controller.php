@@ -1,5 +1,5 @@
 <?php
-namespace wbf\core;
+namespace esp\core;
 
 
 abstract class Controller
@@ -37,7 +37,7 @@ abstract class Controller
         $from = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $dir = dirname(dirname($from['file'])) . '/models/';
         $model = ucfirst(strtolower($paras[0]));
-        $class = $model . Config::get('wbf.modelExt');
+        $class = $model . Config::get('esp.modelExt');
         $file = "{$dir}{$model}.php";
 
         if (!is_readable($file)) error("Model File {$file} is not exists");
@@ -46,7 +46,7 @@ abstract class Controller
 
         $this->_models[$model] = new $class(...array_slice($paras, 1));
         if (!$this->_models[$model] instanceof Model) {
-            exit("{$class} 须继承自 wbf\\core\\Model");
+            exit("{$class} 须继承自 esp\\core\\Model");
         }
         return $this->_models[$model];
     }

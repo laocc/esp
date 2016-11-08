@@ -1,6 +1,6 @@
 <?php
 
-class ArticleModel extends \wbf\core\Model
+class ArticleModel extends \esp\core\Model
 {
 
     public function first()

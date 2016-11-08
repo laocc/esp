@@ -1,10 +1,10 @@
 <?php
-namespace wbf\plugins;
+namespace esp\plugins;
 
-use wbf\core\Config;
-use wbf\core\Plugin;
-use wbf\core\Request;
-use wbf\core\Response;
+use esp\core\Config;
+use esp\core\Plugin;
+use esp\core\Request;
+use esp\core\Response;
 
 
 class Smarty extends Plugin

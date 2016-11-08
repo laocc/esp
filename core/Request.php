@@ -1,5 +1,5 @@
 <?php
-namespace wbf\core;
+namespace esp\core;
 
 final class Request
 {
@@ -8,7 +8,7 @@ final class Request
     public function __construct()
     {
         $this->method = server('REQUEST_METHOD');
-        $this->directory = root(Config::get('wbf.directory'), true);
+        $this->directory = root(Config::get('esp.directory'), true);
         $this->referer = _CLI ? null : server("HTTP_REFERER");
         $this->url = _CLI ? null : ((_HTTPS ? 'https://' : 'http://') . _DOMAIN . server("REQUEST_URI"));
         $this->uri = _CLI ?
