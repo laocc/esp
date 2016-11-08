@@ -8,6 +8,8 @@ class Response
     private $_display_value = [];
     private $_control;
     private $_request;
+    private $_shutdown = true;
+
 
     private $_view_val = [];
     private $_layout_val = [
@@ -235,6 +237,16 @@ class Response
     public function getType()
     {
         return $this->_display_type;
+    }
+
+    /**
+     * @param null $run
+     * @return bool
+     */
+    public function shutdown($run = null)
+    {
+        if (is_bool($run)) return $this->_shutdown = $run;
+        return $this->_shutdown;
     }
 
     /**

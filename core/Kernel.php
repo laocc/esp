@@ -7,6 +7,7 @@ final class Kernel
     private $request;
     private $response;
     private $_Plugin;
+    private $_shutdown;
 
     public function __construct()
     {
@@ -20,15 +21,10 @@ final class Kernel
         $this->response = new Response($this->request);
     }
 
-    public function bootstrap($bootstrap = null)
+    public function bootstrap()
     {
         if (!class_exists('Bootstrap')) {
-            if (!load($bootstrap)) {
-                exit("无法读取Bootstrap:{$bootstrap}");
-            }
-            if (!class_exists('Bootstrap')) {
-                exit("Bootstrap不存在");
-            }
+            exit("Bootstrap类不存在，请检查/helper/ootstrap.php文件");
         }
         $boot = new \Bootstrap();
         foreach (get_class_methods($boot) as $method) {
@@ -42,10 +38,14 @@ final class Kernel
     /**
      * 注册关门方法，exit后也会被执行
      * 在网站入口处明确调用才会注册
-     * @return $this
+     * @return bool|Kernel
      */
     public function shutdown()
     {
+        if (!is_null($this->_shutdown)) {
+            return $this->response->shutdown();
+        }
+        $this->_shutdown = true;
         register_shutdown_function(function () {
             shutdown($this);
         });

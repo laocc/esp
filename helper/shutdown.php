@@ -7,5 +7,7 @@ use \esp\core\Kernel;
  */
 function shutdown(Kernel $kernel)
 {
+    if (!$kernel->shutdown()) return;
+
 
 }
