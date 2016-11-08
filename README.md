@@ -1,7 +1,7 @@
 
 # ESP (Efficient Simple PHP)
 - PHP >5.6
-- 这是一个比较高效且简洁的PHP框架。本框架的部分结构思路参考YAF框架（http://yaf.laruence.com/）。
+- 这是一个高效简洁的PHP框架。本框架的部分结构思路参考YAF框架（http://yaf.laruence.com/）。
 
 # 一、安装
 - 目前处于测试版阶段，下载()解压即可使用。
@@ -120,10 +120,19 @@ bootstrap()和shutdown()，都需要在`run()`之前调用，但不是必须要�
 
 注意：如果在控制器中调用过上面`3.4 网页展示内容方式`中除默认之外的四种方式，都不会产生视图，在这种情况下，如果还需要视图，则需要在控制器动作最后的位置执行`$this->html();`*不带参数*即可清除之前四种方式设置的内容，也就是以最后执行的为准。
 
+若`config::view=>autoRun`=`false`，而在控制器中没有调用过`view()`，则不会创建视图对象，此时如果不是json等方式，网页什么都不会显示。
+
+控制器中可以用`$this->view(FILE PATH);`指定视图文件，但这不会改变查找layout的路径方式。
 
 ### 3.5.1 框架视图：
-每个控制器可以有一个默认框架`layout.php`，如果控制器目录没有框架文件`layout.php`，则调用模块级的`layout.php`，若也不存在模块级的layout，则会出错。
+每个控制器可以有一个默认框架`layout.php`，该控制下所有`动作`>`视图`都使用此框架视图，如果控制器目录没有框架文件`layout.php`，则调用模块级的`layout.php`，若也不存在模块级的layout，则会出错。
 当然可以在动作中关闭`$this->layout(false)`，或直接指定layout文件。
+
+若`config::layout=>autoRun`=`false`，而在控制器中没有调用过`layout()`，则也不会创建layout，自然也不会去查找`layout.php`。
+
+控制器中可以用`$this->layout(FILE PATH);`指定框架文件。
+
+
 
 框架视图里有8个固定变量：
 ```
@@ -158,9 +167,9 @@ public function dispatchAfter(Request $request, Response $response)
 在控制器中向视图传送变量的几种方式：
 ```
 $this->assign($name, $value);               #送至子视图
-$this->view()->assign($name, $value);       #送至子视图，但优先级没有上面的高，比如同时送了相同的$name，则以上面的方式为准
-$this->adapter()->assign($name, $value);    #送至标签解析器，只会在标签解析器内存在，即便之后关闭了解析器，这些值也不会跑到子视图中
-$this->layout()->assign($name, $value);     #送至框架视图，与上面8个变量不同，即便后面关闭了框架，这些变量也不会送到子视图
+$this->view()->assign($name, $value);       #送至子视图，优先级没有上面高，同时送了相同的$name，以上面的为准
+$this->adapter()->assign($name, $value);    #送至标签解析器，即便之后关闭了解析器，这些值也不会跑到子视图中
+$this->layout()->assign($name, $value);     #送至框架视图，与上面8个变量不同，即便关闭了框架，也不会送到子视图
 ```
 前三种方式在传送相同$name的情况下，优先级为：`$this` > `view()` > `adapter()`，与先后顺序无关。
 

@@ -145,7 +145,7 @@ abstract class Controller
 
         return [
             $this->_use_view ? $this->view() : null,
-            $this->_use_layout ? $this->layout() : null,
+            ($this->_use_view and $this->_use_layout) ? $this->layout() : null,
         ];
     }
 
