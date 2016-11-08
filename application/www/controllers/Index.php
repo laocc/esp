@@ -1,6 +1,6 @@
 <?php
 
-class IndexController extends Controller
+class IndexController extends BaseController
 {
     public function indexAction()
     {
@@ -31,6 +31,10 @@ class IndexController extends Controller
 
 
         $this->assign('wbf', 'Wide of Ballet FrameWork');
+
+        $this->xml([1, 2, 3]);
+        $this->text('<b>WBF</b>');
+//        $this->html();
 
 
     }

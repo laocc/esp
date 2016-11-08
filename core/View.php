@@ -1,14 +1,7 @@
 <?php
 namespace wbf\core;
 
-interface view_interface
-{
-    public function assign($name, $value = null);
-
-    public function render($file, $value);
-}
-
-final class View implements view_interface
+final class View
 {
     private $_path = [
         'dir' => null,
@@ -23,7 +16,6 @@ final class View implements view_interface
     {
         $this->_path['dir'] = $dir;
         $this->_path['file'] = $file;
-        $this->_adapter instanceof View and 1;
     }
 
     /**

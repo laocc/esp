@@ -3,5 +3,4 @@
 vendor
 smarty
 xdebug
-cache
 composer.lock

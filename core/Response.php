@@ -4,10 +4,9 @@ namespace wbf\core;
 
 class Response
 {
-    private $_display_type = 'html';
+    private $_display_type;
     private $_display_value = [];
     private $_control;
-    private $_object = [];
     private $_request;
 
     private $_view_val = [];
@@ -28,25 +27,9 @@ class Response
         $this->_request = $request;
     }
 
-    public function __set($name, $value)
+    public function set_value($name, $value)
     {
         switch ($name) {
-            case 'control':
-                $this->_control = $value;
-                break;
-
-            case 'layout':
-                $this->_object['layout'] = $value;
-                break;
-
-            case 'view':
-                $this->_object['view'] = $value;
-                break;
-
-            case 'adapter':
-                $this->_object['adapter'] = $value;
-                break;
-
             case 'json':
                 $this->_display_type = 'json';
                 $this->_display_value = $value;
@@ -62,17 +45,29 @@ class Response
                 $this->_display_value = $value;
                 break;
 
-            default:
+            case 'html':
+                if (is_null($value)) {
+                    $this->_display_type = null;
+                    $this->_display_value = null;
+                } else {
+                    $this->_display_type = 'html';
+                    $this->_display_value = $value;
+                }
+                break;
 
+            default:
+                error("不接受{$name}类型的值");
         }
     }
 
     /**
-     * @return Controller
+     * @return Controller|bool
      */
-    public function control()
+    public function control($obj = null)
     {
-        return $this->_control;
+        if (is_null($obj)) return $this->_control;
+        $this->_control = $obj;
+        return true;
     }
 
     /**
@@ -80,6 +75,13 @@ class Response
      */
     public function display()
     {
+        if (_DEBUG) {
+            $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+            $trace = pathinfo($trace['file']);
+            if (!($trace['dirname'] === __DIR__ and $trace['filename'] === 'Kernel'))
+                error('Response::display()方法不可直接调用');
+        }
+
         switch (strtolower($this->_display_type)) {
             case 'json':
                 header('Content-type:application/json', true);
@@ -89,14 +91,22 @@ class Response
                 }
                 echo $value;
                 break;
+
+            case 'html':
+                header('Content-type:text/html', true);
+                print_r($this->_display_value);
+                break;
+
             case 'text':
                 header('Content-type:text/plain', true);
                 print_r($this->_display_value);
                 break;
+
             case 'xml':
                 header('Content-type:text/xml', true);
                 echo (new \wbf\library\Xml($this->_display_value[1], $this->_display_value[0]))->render();
                 break;
+
             default:
                 echo $this->display_response();
         }
@@ -220,6 +230,11 @@ class Response
     public function getAdapter()
     {
         return $this->control()->view()->adapter();
+    }
+
+    public function getType()
+    {
+        return $this->_display_type;
     }
 
     /**

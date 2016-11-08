@@ -55,23 +55,15 @@ final class Kernel
     /**
      * 接受注册插件
      * 或，返回已注册的插件
-     * @param resource $class
+     * @param object $class
      */
-    public function setPlugin($name, $class = null)
+    public function setPlugin($name, $class)
     {
-        if (!is_null($class)) {
-            if (!is_subclass_of($class, Plugin::class)) {
-                exit('插件' . get_class($class) . '须直接继承自\\wbf\\core\\Plugin');
-            }
-            $this->_Plugin[$name] = &$class;
-            return true;
-        } else {
-            if (isset($this->_Plugin[$name])) {
-                return $this->_Plugin[$name];
-            } else {
-                exit("系统没有注册插件[{$name}]");
-            }
+        if (!is_subclass_of($class, Plugin::class)) {
+            exit('插件' . get_class($class) . '须直接继承自\\wbf\\core\\Plugin');
         }
+        if (isset($this->_Plugin[$name])) exit("插件名{$name}已被注册过");
+        $this->_Plugin[$name] = &$class;
     }
 
     /**
@@ -132,8 +124,10 @@ final class Kernel
         $controller = ucfirst($request->controller);
         $action = ucfirst($request->action) . Config::get('wbf.actionExt');
 
+        if ($controller === 'Base') error('控制器名不可以为base，这是系统保留公共控制器名。');
+
         //加载控制器公共类，有可能不存在
-        $this->_load(Config::get('wbf.directory') . "/{$module}/controllers/Controller.php");
+        $this->_load(Config::get('wbf.directory') . "/{$module}/controllers/Base.php");
 
         $file = Config::get('wbf.directory') . "/{$module}/controllers/{$controller}.php";
 

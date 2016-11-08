@@ -18,7 +18,7 @@ abstract class Controller
         $this->_request = $request;
         $this->_response = $response;
         $this->_plugs = $plugs;
-        $response->control = $this;
+        $response->control($this);
     }
 
     /**
@@ -179,20 +179,25 @@ abstract class Controller
         return $this->_response->get($name);
     }
 
+    final protected function html($value = null)
+    {
+        $this->_response->set_value('html', $value);
+    }
+
     final protected function json(array $value)
     {
-        $this->_response->json = $value;
+        $this->_response->set_value('json', $value);
     }
 
     final protected function text($value)
     {
-        $this->_response->text = $value;
+        $this->_response->set_value('text', $value);
     }
 
     final protected function xml($root, array $value = null)
     {
         if (is_array($root)) list($root, $value) = ['xml', $root];
-        $this->_response->xml = [$root, $value];
+        $this->_response->set_value('xml', [$root, $value]);
     }
 
 
