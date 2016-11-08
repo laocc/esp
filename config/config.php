@@ -66,14 +66,4 @@ return [
         'filename' => 'layout.php',
     ],
 
-    /**
-     * 标签解析器，除了[autoRun,driver]外，其他项目可以根据该解析器要求进行自定义
-     */
-    'adapter' => [
-        'autoRun' => false,
-        'driver' => 'smarty',
-        'compile_dir' => root('smarty/compile'),
-        'cache_dir' => root('smarty/cache'),
-    ],
-
 ];

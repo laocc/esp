@@ -94,31 +94,28 @@ final class Kernel
     private function plugsHook($time)
     {
         if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchAfter', 'shutdown'])) return;
-
         foreach ($this->_Plugin as &$plug) {
             if (method_exists($plug, $time)) {
-                call_user_func_array([$plug, $time], [$this->request]);
+                call_user_func_array([$plug, $time], [$this->request, $this->response]);
             }
         }
     }
 
-    public function run($module = null)
+    /**
+     * 系统运行调度中心
+     * @param null $module
+     */
+    public function run()
     {
-        Config::load();
-
-        $module = $module ?: _MODULE;
+        $module = _MODULE;
         $routes = $this->_load("config/routes_{$module}.php");
         if (!$routes) exit("未定义当前模块路由：/config/routes_{$module}.php");
-
         $this->plugsHook('routeBefore');
-        $route = new Route();        //开始路由
-        $route->matching($routes, $this->request);
+        (new Route())->matching($routes, $this->request);
         $this->plugsHook('routeAfter');
-
-        //开始分发到控制器
-        $this->dispatch();
+        $this->dispatch($this->request);    //开始分发到控制器
         $this->plugsHook('dispatchAfter');
-        $this->response->display();
+        $this->response->display();         //结果显示
         $this->plugsHook('shutdown');
     }
 
@@ -129,11 +126,11 @@ final class Kernel
      * @param $control
      * @return bool|mixed
      */
-    private function dispatch()
+    private function dispatch(Request &$request)
     {
-        $module = strtolower($this->request->module);
-        $controller = ucfirst($this->request->controller);
-        $action = ucfirst($this->request->action) . Config::get('wbf.actionExt');
+        $module = strtolower($request->module);
+        $controller = ucfirst($request->controller);
+        $action = ucfirst($request->action) . Config::get('wbf.actionExt');
 
         //加载控制器公共类，有可能不存在
         $this->_load(Config::get('wbf.directory') . "/{$module}/controllers/Controller.php");
@@ -146,12 +143,12 @@ final class Kernel
         }
 
         $controller .= Config::get('wbf.controlExt');
-        $control = new $controller($this->_Plugin, $this->request, $this->response);
+        $control = new $controller($this->_Plugin, $request, $this->response);
         if (!$control instanceof Controller) {
             exit("{$controller} 须继承自 wbf\\core\\Controller");
         }
         if (!method_exists($control, $action) or !is_callable([$control, $action])) return false;
-        return call_user_func_array([$control, $action], $this->request->params);
+        return call_user_func_array([$control, $action], $request->params);
     }
 
 

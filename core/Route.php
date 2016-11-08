@@ -22,7 +22,7 @@ final class Route
                 (preg_match('/^\/.+\/[ims]*$/', $route['match']) and preg_match($route['match'], $request->uri, $matches))
             ) {
 
-                if (isset($route['method']) and !self::method_check($route['method'], $request->method))
+                if (isset($route['method']) and !$this->method_check($route['method'], $request->method))
                     error(Config::get('error.method'));
 
                 if (!isset($matches) or $key === '_default') {
@@ -39,7 +39,7 @@ final class Route
                 $mca = (isset($route['route']) and is_array($route['route'])) ? $route['route'] : [];
 
                 //分别获取模块、控制器、动作的实际值
-                list($module, $controller, $action) = self::fill_route($request->directory, $matches, $mca);
+                list($module, $controller, $action) = $this->fill_route($request->directory, $matches, $mca);
                 if (!$controller and !$action) continue;
 
                 //分别获取各个指定参数
@@ -70,7 +70,7 @@ final class Route
      * @return array
      * @throws \Exception
      */
-    private static function fill_route($directory, $matches, $route)
+    private function fill_route($directory, $matches, $route)
     {
         $module = $controller = $action = null;
 
@@ -118,7 +118,7 @@ final class Route
      * HTTP/AJAX两项后可以跟具体的method类型，如：HTTP,GET,POST
      * CLI  =   只能单独出现
      */
-    private static function method_check($mode, $method)
+    private function method_check($mode, $method)
     {
         if (!$mode) return true;
         list($mode, $method) = [strtoupper($mode), strtoupper($method)];

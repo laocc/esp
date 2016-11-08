@@ -27,6 +27,8 @@ class IndexController extends Controller
         $mod = $this->model('article', 1, 3, 54, 6);
 //        echo $mod->first();
 
+//        var_dump($this->adapter());
+
 
         $this->assign('wbf', 'Wide of Ballet FrameWork');
 

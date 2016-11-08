@@ -10,11 +10,10 @@ abstract class Controller
 
     private $_use_view;
     private $_use_layout;
-    private $_use_adapter;
 
     private $_models = [];
 
-    final public function __construct(&$plugs, Request &$request, Response &$response)
+    final public function __construct(array &$plugs, Request &$request, Response &$response)
     {
         $this->_request = $request;
         $this->_response = $response;
@@ -57,7 +56,7 @@ abstract class Controller
      * 设置视图文件，或获取对象
      * @return View|bool
      */
-    final protected function view($file = null)
+    final public function view($file = null)
     {
         if ($file === false) {
             return $this->_use_view = $file;
@@ -72,29 +71,11 @@ abstract class Controller
     /**
      * 标签解析器
      * @param null $bool
-     * @return bool|null
+     * @return bool|View
      */
     final protected function adapter($bool = null)
     {
-        if ($bool === false) {
-            return $this->_use_adapter = $bool;
-        }
-
-        static $_adapter;
-        if (!is_null($_adapter)) return $_adapter;
-
-        $conf = Config::get('adapter');
-        if (!$conf) return null;
-        $dir = $this->_request->directory . $this->_request->module . '/views/';
-        $this->_use_adapter = true;
-
-        $conf['driver'] = '\\' . ucfirst($conf['driver']);
-        $_adapter = new $conf['driver']();
-        $_adapter->{'template_dir'} = $dir;//视图主目录
-        $_adapter->{'compile_dir'} = $conf['compile_dir'];//解析器缓存目录
-        $_adapter->{'cache_dir'} = $conf['cache_dir'];//缓存目录
-
-        return $_adapter;
+        return $this->view()->adapter($bool);
     }
 
     /**
@@ -161,12 +142,10 @@ abstract class Controller
     {
         if (is_null($this->_use_view)) $this->_use_view = Config::get('view.autoRun');
         if (is_null($this->_use_layout)) $this->_use_layout = Config::get('layout.autoRun');
-        if (is_null($this->_use_adapter)) $this->_use_adapter = Config::get('adapter.autoRun');
 
         return [
             $this->_use_view ? $this->view() : null,
             $this->_use_layout ? $this->layout() : null,
-            $this->_use_adapter ? $this->adapter() : null,
         ];
     }
 

@@ -75,6 +75,9 @@ class Response
         return $this->_control;
     }
 
+    /**
+     * 应该只有 Kernel::run();调用
+     */
     public function display()
     {
         switch (strtolower($this->_display_type)) {
@@ -106,36 +109,27 @@ class Response
      */
     private function display_response()
     {
-        list($view, $layout, $adapter) = $this->control()->check_object();
-
+        list($view, $layout) = $this->control()->check_object();
         if (!$view) return null;
         $view instanceof View and true;
+        $this->cleared_layout_val();
 
-        $file = $this->_request->controller . '/' . $this->_request->action . '.' . ltrim(Config::get('view.ext'), '.');
-        $this->cleared_resource();
-
-        //送入框架对象
         if ($layout) {
             $layout instanceof View and true;
-            $layout->assign($this->_layout_val);
-            $this->_layout_val = null;
-            $view->layout($layout);
+            $layout->assign($this->_layout_val);//送入layout变量
+            $view->layout($layout);//为视图注册layout
         } else {
-            $this->assign($this->_layout_val);
-            $this->_layout_val = null;
+            $view->assign($this->_layout_val);//无layout，将这些变量送入子视图
         }
-
-        if ($adapter) {
-            $view->adapter($adapter);
-        }
-
+        $file = $this->_request->controller . '/' . $this->_request->action . '.' . ltrim(Config::get('view.ext'), '.');
+        $this->_layout_val = null;
         return $view->render($file, $this->_view_val);
     }
 
     /**
      * 整理layout中的变量
      */
-    private function cleared_resource()
+    private function cleared_layout_val()
     {
         $resource = Config::get('resource');
         $dom = rtrim($resource['domain'], '/');
@@ -217,6 +211,16 @@ class Response
         unset($this->_layout_val['_title_default']);
     }
 
+
+    public function registerAdapter(&$adapter)
+    {
+        $this->control()->view()->registerAdapter($adapter);
+    }
+
+    public function getAdapter()
+    {
+        return $this->control()->view()->adapter();
+    }
 
     /**
      * 向视图送变量

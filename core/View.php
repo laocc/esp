@@ -1,8 +1,14 @@
 <?php
 namespace wbf\core;
 
+interface view_interface
+{
+    public function assign($name, $value = null);
 
-final class View
+    public function render($file, $value);
+}
+
+final class View implements view_interface
 {
     private $_path = [
         'dir' => null,
@@ -11,6 +17,7 @@ final class View
     private $_view_val = [];
     private $_layout;//框架对象
     private $_adapter;//标签解析器对象
+    private $_adapter_use;
 
     public function __construct($dir, $file)
     {
@@ -93,11 +100,29 @@ final class View
      * @param null $object
      * @return $this|\Smarty
      */
-    public function adapter($object = null)
+    public function adapter($use = null)
     {
-        if (is_null($object)) return $this->_adapter;
+        if ($use === false) {
+            $this->_adapter_use = false;
+            return $this;
+        } elseif ($use === true) {
+            if (is_null($this->_adapter)) {
+                error('标签解析器没有注册');
+            }
+            $this->_adapter_use = true;
+            return $this;
+        }
+        return $this->_adapter;
+    }
 
+    /**
+     * @param $object
+     * @return $this
+     */
+    public function registerAdapter(&$object)
+    {
         $this->_adapter = $object;
+        $this->_adapter_use = true;
         return $this;
     }
 
@@ -134,7 +159,7 @@ final class View
 
     private function fetch($file, $value)
     {
-        if (!is_null($this->_adapter)) {
+        if ($this->_adapter_use and !is_null($this->_adapter)) {
             $adp = $this->adapter();
             $adp->assign($value);
             return $adp->fetch($file, []);

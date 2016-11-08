@@ -1,1 +1,1 @@
-<div><?= $wbf ?></div>
+<div>{$wbf}</div>

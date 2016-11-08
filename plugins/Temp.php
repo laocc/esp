@@ -19,4 +19,16 @@ class Temp extends Plugin
     }
 
 
+    public function dispatchAfter(Request $request)
+    {
+//        pre($request);
+    }
+
+
+    public function shutdown(Request $request)
+    {
+//        pre($request);
+    }
+
+
 }
