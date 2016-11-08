@@ -1,14 +1,9 @@
 <?php
 
-/**
- * Created by PhpStorm.
- * User: cne
- * Date: 2016/11/6
- * Time: 12:33
- */
-class Article
+class ArticleModel extends \wbf\core\Model
 {
-    public static function first()
+
+    public function first()
     {
         return __FILE__;
     }

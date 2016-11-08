@@ -1,11 +1,12 @@
 <?php
 use \wbf\core\Kernel;
+use \wbf\plugins;
 
-class Bootstrap
+final class Bootstrap
 {
     public function _initTemp(Kernel $kernel)
     {
-        $kernel->setPlugin('test', new Temp());
+        $kernel->setPlugin('test', new plugins\Temp());
     }
 
 

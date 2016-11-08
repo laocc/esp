@@ -111,7 +111,7 @@ final class View
         $file = $this->file() ?: $file;
 
         if (stripos($file, $dir) !== 0) $file = rtrim($dir, '/') . '/' . ltrim($file, '/');
-        if (!is_file($file)) exit("视图文件{$file}不存在");
+        if (!is_readable($file)) exit("视图文件{$file}不存在");
 
         if ($this->_layout instanceof View) {
 

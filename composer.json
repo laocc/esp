@@ -15,7 +15,8 @@
                   "helper/bootstrap.php"
             ],
             "classmap": [
-                  "library"
+                  "library",
+                  "plugins"
             ],
             "psr-4": {
                   "wbf\\core\\": "core/"

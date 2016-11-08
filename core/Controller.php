@@ -4,71 +4,77 @@ namespace wbf\core;
 
 abstract class Controller
 {
-    private $_kernel;
     private $_request;
-    private $_view_val = [];
+    private $_response;
+    private $_plugs;
+
+    private $_use_view;
     private $_use_layout;
     private $_use_adapter;
-    private $_content;
 
+    private $_models = [];
 
-    private $_layout_val = [
-        '_js_foot' => [],
-        '_js_head' => [],
-        '_js_body' => [],
-        '_js_defer' => [],
-        '_css' => [],
-        '_meta' => ['keywords' => null, 'description' => null],
-        '_title' => null,
-        '_title_default' => true,
-    ];
-
-    final public function __construct(Kernel $kernel, $request)
+    final public function __construct(&$plugs, Request &$request, Response &$response)
     {
-        $this->_kernel = $kernel;
         $this->_request = $request;
+        $this->_response = $response;
+        $this->_plugs = $plugs;
+        $response->control = $this;
     }
 
-    final public function json(array $value)
+    /**
+     * 加载模型
+     * 关于参数：在实际模型类中，建议用func_get_args()获取参数列表，也可以直接指定参数
+     * @param $model
+     * @param null $params
+     * @return mixed
+     *
+     */
+    final protected function &model(...$paras)
     {
-        $this->_content = [
-            'type' => 'json',
-            'value' => $value,
-        ];
-    }
+        if (empty($paras)) return null;
+        if (isset($this->_models[$paras[0]])) return $this->_models[$paras[0]];
 
-    final public function text($value)
-    {
-        $this->_content = [
-            'type' => 'text',
-            'value' => $value,
-        ];
-    }
+        $from = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $dir = dirname(dirname($from['file'])) . '/models/';
+        $model = ucfirst(strtolower($paras[0]));
+        $class = $model . Config::get('wbf.modelExt');
+        $file = "{$dir}{$model}.php";
 
-    final public function xml($root, array $value = null)
-    {
-        if (is_array($root)) list($root, $value) = ['xml', $root];
-        $this->_content = [
-            'type' => 'xml',
-            'root' => $root,
-            'value' => $value,
-        ];
+        if (!is_readable($file)) error("Model File {$file} is not exists");
+        include $file;
+        if (!class_exists($class)) error("Model class {$class} is not found");
+
+        $this->_models[$model] = new $class(...array_slice($paras, 1));
+        if (!$this->_models[$model] instanceof Model) {
+            exit("{$class} 须继承自 wbf\\core\\Model");
+        }
+        return $this->_models[$model];
     }
 
 
     /**
      * 设置视图文件，或获取对象
-     * @return View
+     * @return View|bool
      */
-    final public function view($file = null)
+    final protected function view($file = null)
     {
+        if ($file === false) {
+            return $this->_use_view = $file;
+        }
         static $obj;
         if (!is_null($obj)) return $obj;
-        $dir = rtrim($this->_request['directory'], '/') . '/' . $this->_request['module'] . '/views/';
+        $dir = $this->_request->directory . $this->_request->module . '/views/';
+        $this->_use_view = true;
         return $obj = new View($dir, $file);
     }
 
-    final public function adapter($bool = null)
+    /**
+     * 标签解析器
+     * @param null $bool
+     * @return bool|null
+     */
+    final protected function adapter($bool = null)
     {
         if ($bool === false) {
             return $this->_use_adapter = $bool;
@@ -79,7 +85,7 @@ abstract class Controller
 
         $conf = Config::get('adapter');
         if (!$conf) return null;
-        $dir = rtrim($this->_request['directory'], '/') . '/' . $this->_request['module'] . '/views/';
+        $dir = $this->_request->directory . $this->_request->module . '/views/';
         $this->_use_adapter = true;
 
         $conf['driver'] = '\\' . ucfirst($conf['driver']);
@@ -96,20 +102,19 @@ abstract class Controller
      * @param null $file
      * @return bool|View
      */
-    final public function layout($layout_file = null)
+    final protected function layout($layout_file = null)
     {
         if ($layout_file === false) {
             return $this->_use_layout = false;
         }
-
         static $obj;
         if (!is_null($obj)) return $obj;
         $layout = Config::get('layout.filename');
-        $dir = rtrim($this->_request['directory'], '/') . '/' . $this->_request['module'] . '/views/';
-        $layout_file = $layout_file ?: $this->_request['controller'] . '/' . $layout;
+        $dir = $this->_request->directory . $this->_request->module . '/views/';
+        $layout_file = $layout_file ?: $this->_request->controller . '/' . $layout;
         if (stripos($layout_file, $dir) !== 0) $layout_file = $dir . ltrim($layout_file, '/');
-        if (!is_file($layout_file)) $layout_file = $dir . $layout;
-        if (!is_file($layout_file)) error('框架视图文件不存在');
+        if (!is_readable($layout_file)) $layout_file = $dir . $layout;
+        if (!is_readable($layout_file)) error('框架视图文件不存在');
         $this->_use_layout = true;
         return $obj = new View($dir, $layout_file);
     }
@@ -122,245 +127,135 @@ abstract class Controller
      *
      * @param array ...$host
      */
-    final public function check_host(...$host)
+    final protected function check_host(...$host)
     {
         if (isset($host[0]) and is_array($host[0])) $host = $host[0];
-        if (!in_array(host(_REFERER), array_merge([_HOST], $host))) error(Config::get('error.host'));
+        if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) error(Config::get('error.host'));
     }
 
     /**
-     * @param $request
+     * @return Request
      */
-    final public function setRequest($request)
+    final protected function &getRequest()
     {
-        $this->_request = $request;
+        return $this->_request;
     }
 
+    final protected function &getResponse()
+    {
+        return $this->_response;
+    }
+
+    /**
+     * @param $name
+     */
+    final protected function &getPlugin($name)
+    {
+        return isset($this->_plugs[$name]) ? $this->_plugs[$name] : null;
+    }
+
+    /**
+     * @return array
+     */
+    final public function check_object()
+    {
+        if (is_null($this->_use_view)) $this->_use_view = Config::get('view.autoRun');
+        if (is_null($this->_use_layout)) $this->_use_layout = Config::get('layout.autoRun');
+        if (is_null($this->_use_adapter)) $this->_use_adapter = Config::get('adapter.autoRun');
+
+        return [
+            $this->_use_view ? $this->view() : null,
+            $this->_use_layout ? $this->layout() : null,
+            $this->_use_adapter ? $this->adapter() : null,
+        ];
+    }
 
     /**
      * 向视图送变量
      * @param $name
      * @param $value
      */
-    final public function assign($name, $value = null)
+    final protected function assign($name, $value = null)
     {
-        if (is_array($name)) {
-            foreach ($name as $k => $v) {
-                $this->_view_val[$k] = $v;
-            }
-        } else {
-            $this->_view_val[$name] = $value;
-        }
+        $this->_response->assign($name, $value);
     }
 
     final public function __set($name, $value)
     {
-        $this->_view_val[$name] = $value;
+        $this->_response->assign($name, $value);
     }
 
     final public function __get($name)
     {
-        return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
+        return $this->_response->get($name);
     }
 
-    final public function set($name, $value)
+    final protected function set($name, $value = null)
     {
-        $this->_view_val[$name] = $value;
+        $this->_response->assign($name, $value);
     }
 
-    final public function get($name)
+    final protected function get($name)
     {
-        return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
+        return $this->_response->get($name);
+    }
+
+    final protected function json(array $value)
+    {
+        $this->_response->json = $value;
+    }
+
+    final protected function text($value)
+    {
+        $this->_response->text = $value;
+    }
+
+    final protected function xml($root, array $value = null)
+    {
+        if (is_array($root)) list($root, $value) = ['xml', $root];
+        $this->_response->xml = [$root, $value];
     }
 
 
-    final public function js($file, $pos = 'foot')
+    final protected function js($file, $pos = 'foot')
     {
-        $pos = in_array($pos, ['foot', 'head', 'body', 'defer']) ? $pos : 'foot';
-        if (is_array($file)) {
-            array_push($this->_layout_val["_js_{$pos}"], ...$file);
-        } else {
-            $this->_layout_val["_js_{$pos}"][] = $file;
-        }
+        $this->_response->js($file, $pos);
         return $this;
     }
 
 
-    final public function css($file)
+    final protected function css($file)
     {
-        if (is_array($file)) {
-            array_push($this->_layout_val['_css'], ...$file);
-        } else {
-            $this->_layout_val['_css'][] = $file;
-        }
+        $this->_response->css($file);
         return $this;
     }
 
 
-    final public function meta($name, $value)
+    final protected function meta($name, $value)
     {
-        $this->_layout_val['_meta'][$name] = $value;
+        $this->_response->meta($name, $value);
         return $this;
     }
 
 
-    final public function title($title, $default = true)
+    final protected function title($title, $default = true)
     {
-        $this->_layout_val['_title'] = $title;
-        if (!$default) $this->_layout_val['_title_default'] = false;
+        $this->_response->title($title, $default);
         return $this;
     }
 
 
-    final public function keywords($value)
+    final protected function keywords($value)
     {
-        $this->_layout_val['_meta']['keywords'] = $value;
+        $this->_response->keywords($value);
         return $this;
     }
 
 
-    final public function description($value)
+    final protected function description($value)
     {
-        $this->_layout_val['_meta']['description'] = $value;
+        $this->_response->description($value);
         return $this;
-    }
-
-
-    /**
-     * 最后显示内容
-     */
-    final public function display_response()
-    {
-        if (!is_null($this->_content)) {
-            $mime = Config::mime($this->_content['type']);
-            header('Content-type:' . $mime, true);
-
-            switch (strtolower($this->_content['type'])) {
-                case 'json':
-                    $value = json_encode($this->_content['value'], 256);
-                    if (isset($_GET['callback']) and preg_match('/^(\w+)$/', $_GET['callback'], $match)) {
-                        $value = "{$match[1]}({$value});";
-                    }
-                    echo $value;
-                    break;
-                case 'text':
-                    print_r($this->_content['value']);
-                    break;
-                case 'xml':
-                    echo (new \wbf\library\Xml($this->_content['value'], $this->_content['root']))->render();
-                    break;
-                default:
-                    error("未知页面显示方式：{$this->_content['type']}");
-            }
-            return;
-        }
-
-        $view = $this->view();
-        $file = $this->_request['controller'] . '/' . $this->_request['action'] . '.' . ltrim(Config::get('wbf.viewExt'), '.');
-        $this->cleared_resource();
-
-        if (is_null($this->_use_layout)) $this->_use_layout = Config::get('layout.autoRun');
-        if (is_null($this->_use_adapter)) $this->_use_adapter = Config::get('adapter.autoRun');
-
-        //送入框架对象
-        if ($this->_use_layout) {
-            $layout = $this->layout();
-            $layout->assign($this->_layout_val);
-            $this->_layout_val = null;
-            $view->layout($layout);
-        } else {
-            $this->assign($this->_layout_val);
-            $this->_layout_val = null;
-        }
-
-        if ($this->_use_adapter) $view->adapter($this->adapter());
-
-        $view->display($file, $this->_view_val);
-    }
-
-    /**
-     * 整理layout中的变量
-     */
-    final private function cleared_resource()
-    {
-        $resource = Config::get('resource');
-        $dom = rtrim($resource['domain'], '/');
-        $rand = $resource['rand'] ? ('?' . time()) : null;
-
-        $domain = function ($item) use ($dom, $resource, $rand) {
-            if (substr($item, 0, 4) === 'http') return $item;
-            if ($item === 'jquery') $item = $resource['jquery'];
-            return $dom . '/' . ltrim($item, '/') . $rand;
-        };
-
-        if ($resource['concat']) {
-            foreach (['foot', 'head', 'body', 'defer'] as $pos) {
-                if (!empty($this->_layout_val["_js_{$pos}"])) {
-                    $defer = ($pos === 'defer') ? ' defer="defer"' : null;
-                    $concat = [];
-                    $http = [];
-                    foreach ($this->_layout_val["_js_{$pos}"] as &$js) {
-                        if ($js === 'jquery') $js = $resource['jquery'];
-                        if (substr($js, 0, 4) === 'http') {
-                            $http[] = "<script type=\"text/javascript\" src=\"{$js}\" charset=\"utf-8\" {$defer} ></script>";
-                        } else {
-                            $concat[] = $js;
-                        }
-                    }
-                    $concat = empty($concat) ? null : ($dom . '??' . implode(',', $concat) . $rand);
-                    $this->_layout_val["_js_{$pos}"] = '';
-                    if ($concat) $this->_layout_val["_js_{$pos}"] .= "<script type=\"text/javascript\" src=\"{$concat}\" charset=\"utf-8\" {$defer} ></script>\n";
-                    if (!empty($http)) $this->_layout_val["_js_{$pos}"] .= implode("\n", $http) . "\n";
-                } else {
-                    $this->_layout_val["_js_{$pos}"] = null;
-                }
-            }
-            if (!empty($this->_layout_val['_css'])) {
-                $concat = [];
-                $http = [];
-                foreach ($this->_layout_val['_css'] as &$css) {
-                    if (substr($css, 0, 4) === 'http') {
-                        $http[] = "<link rel=\"stylesheet\" href=\"{$css}\" charset=\"utf-8\" />";
-                    } else {
-                        $concat[] = $css;
-                    }
-                }
-                $concat = empty($concat) ? null : ($dom . '??' . implode(',', $this->_layout_val['_css']) . $rand);
-                $this->_layout_val['_css'] = '';
-                if ($concat) $this->_layout_val['_css'] .= "<link rel=\"stylesheet\" href=\"{$concat}\" charset=\"utf-8\" />\n";
-                if (!empty($http)) $this->_layout_val['_css'] .= implode("\n", $http) . "\n";
-
-            } else {
-                $this->_layout_val['_css'] = null;
-            }
-        } else {
-            foreach (['foot', 'head', 'body', 'defer'] as $pos) {
-                $defer = ($pos === 'defer') ? ' defer="defer"' : null;
-                foreach ($this->_layout_val["_js_{$pos}"] as $i => &$js) {
-                    $js = "<script type=\"text/javascript\" src=\"{$domain($js)}\" charset=\"utf-8\" {$defer} ></script>";
-                }
-                $this->_layout_val["_js_{$pos}"] = implode("\n", $this->_layout_val["_js_{$pos}"]) . "\n";
-            }
-            foreach ($this->_layout_val['_css'] as $i => &$css) {
-                $css = "<link rel=\"stylesheet\" href=\"{$domain($css)}\" charset=\"utf-8\" />";
-            }
-            $this->_layout_val['_css'] = implode("\n", $this->_layout_val['_css']) . "\n";
-        }
-
-        $this->_layout_val['_meta']['keywords'] = $this->_layout_val['_meta']['keywords'] ?: $resource['keywords'];
-        $this->_layout_val['_meta']['description'] = $this->_layout_val['_meta']['description'] ?: $resource['description'];
-
-        foreach ($this->_layout_val['_meta'] as $i => &$meta) {
-            $this->_layout_val['_meta'][$i] = "<meta name=\"{$i}\" content=\"{$meta}\" />";
-        }
-        $this->_layout_val['_meta'] = implode("\n", $this->_layout_val['_meta']) . "\n";
-
-        if (is_null($this->_layout_val['_title'])) {
-            $this->_layout_val['_title'] = $resource['title'];
-        } elseif ($this->_layout_val['_title_default']) {
-            $this->_layout_val['_title'] .= ' - ' . $resource['title'];
-        }
-        unset($this->_layout_val['_title_default']);
     }
 
 

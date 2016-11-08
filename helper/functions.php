@@ -385,8 +385,15 @@ function load($file)
  */
 function root(...$path)
 {
+    $len = count($path);
+    $folder = false;
+    if (is_bool($path[$len - 1])) {
+        $folder = $path[$len - 1];
+        unset($path[$len - 1]);
+    }
     foreach ($path as $i => &$p) {
         if (stripos($p, _ROOT) !== 0) $p = _ROOT . ltrim($p, '/');
+        if ($folder) $p = rtrim($p, '/') . '/';
     }
     return count($path) === 1 ? $path[0] : $path;
 }
@@ -620,7 +627,7 @@ function format($str)
  */
 function img_code($file, $split = false)
 {
-    if (!is_file($file)) return null;
+    if (!is_readable($file)) return null;
     $ext = image_type_to_extension(exif_imagetype($file), false);
     if (!$ext) return null;
     $file_content = base64_encode(file_get_contents($file));

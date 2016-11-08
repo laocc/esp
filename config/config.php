@@ -12,11 +12,11 @@ return [
     'wbf' => [
         'directory' => 'application',   //网站主程序所在路径，不含模块名
         'controlExt' => 'Controller',   //控制器名后缀，注意：文件名不需要含这部分
+        'modelExt' => 'Model',          //模型名后缀，注意：文件名不需要含这部分
         'actionExt' => 'Action',        //动作名后缀
         'defaultModule' => 'www',       //默认模块
         'defaultControl' => 'index',    //默认控制器
         'defaultAction' => 'index',     //默认动作
-        'viewExt' => 'php',             //视图文件名后缀
     ],
 
     'database' => [
@@ -56,12 +56,15 @@ return [
         'description' => 'Wide of Ballet FrameWork',//默认描述
     ],
 
+    'view' => [
+        'autoRun' => true,
+        'ext' => 'php',
+    ],
 
     'layout' => [
         'autoRun' => true,
         'filename' => 'layout.php',
     ],
-
 
     /**
      * 标签解析器，除了[autoRun,driver]外，其他项目可以根据该解析器要求进行自定义

@@ -8,12 +8,8 @@ final class Route
     /**
      * 路由中心
      */
-    public function matching($routes, &$request)
+    public function matching($routes, Request &$request)
     {
-        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $method = $_SERVER['REQUEST_METHOD'];
-        $_directory = root(Config::get('wbf.directory'));
-
         $default = [
             'match' => '/\/(?:[\w\-]+\/?)*/',
             'method' => 'all',
@@ -21,27 +17,29 @@ final class Route
         ];
 
         foreach (array_merge($routes, ['_default' => $default]) as $key => &$route) {
-            if ($route['match'] == $uri or
+            if ($route['match'] == $request->uri or
                 //先判断一下是不是正则的格式
-                (preg_match('/^\/.+\/[ims]*$/', $route['match']) and preg_match($route['match'], $uri, $matches))
+                (preg_match('/^\/.+\/[ims]*$/', $route['match']) and preg_match($route['match'], $request->uri, $matches))
             ) {
 
-                if (isset($route['method']) and !self::method_check($route['method'], $method))
+                if (isset($route['method']) and !self::method_check($route['method'], $request->method))
                     error(Config::get('error.method'));
 
                 if (!isset($matches) or $key === '_default') {
-                    $matches = explode('/', $uri);
-                    $matches[0] = $uri;
+                    $matches = explode('/', $request->uri);
+                    $matches[0] = $request->uri;
                 }
 
                 //MVC位置，不含模块
-                $directory = isset($route['directory']) ? root($route['directory']) : $_directory;
-                $directory = rtrim($directory, '/') . '/';
+                if (isset($route['directory'])) {
+                    $request->directory = root($route['directory'], true);
+                }
 
+                //路由表中对MCA有指定
                 $mca = (isset($route['route']) and is_array($route['route'])) ? $route['route'] : [];
 
                 //分别获取模块、控制器、动作的实际值
-                list($module, $controller, $action) = self::fill_route($directory, $matches, $mca);
+                list($module, $controller, $action) = self::fill_route($request->directory, $matches, $mca);
                 if (!$controller and !$action) continue;
 
                 //分别获取各个指定参数
@@ -51,16 +49,13 @@ final class Route
 //                        unset($matches[$mk]);
                     }
                 }
-                $request = [
-                    'route' => $key,
-                    'uri' => $uri,
-                    'method' => $method,
-                    'directory' => $directory,
-                    'module' => $module,
-                    'controller' => $controller,
-                    'action' => $action,
-                    'params' => $matches,
-                ];
+
+                $request->route = $key;
+                $request->module = $module;
+                $request->controller = $controller;
+                $request->action = $action;
+                $request->params = $matches;
+
                 return;
             }
         }
