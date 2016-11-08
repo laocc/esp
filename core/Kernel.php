@@ -85,7 +85,7 @@ final class Kernel
      */
     private function plugsHook($time)
     {
-        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchAfter', 'shutdown'])) return;
+        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchAfter', 'kernelEnd'])) return;
         foreach ($this->_Plugin as &$plug) {
             if (method_exists($plug, $time)) {
                 call_user_func_array([$plug, $time], [$this->request, $this->response]);
@@ -108,7 +108,7 @@ final class Kernel
         $this->dispatch($this->request);    //开始分发到控制器
         $this->plugsHook('dispatchAfter');
         $this->response->display();         //结果显示
-        $this->plugsHook('shutdown');
+        $this->plugsHook('kernelEnd');
     }
 
 
