@@ -30,8 +30,8 @@ class Smarty extends Plugin
         if ($response->getType()) return;
 
         $_adapter = new \Smarty();
-        $_adapter->setCompileDir(root('smarty/cache'));
-//        $_adapter->setCacheDir(root('smarty/cache'));
+        $_adapter->setCompileDir(root('cache/smarty'));
+//        $_adapter->setCacheDir(root('cache/smarty'));
 //        $_adapter->caching = true;
 //        $_adapter->cache_lifetime = 120;
         $response->registerAdapter($_adapter);

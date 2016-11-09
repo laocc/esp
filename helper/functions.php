@@ -380,7 +380,7 @@ function load($file)
 
 /**
  * 修正为_ROOT开头
- * @param $path
+ * @param string $path 若最后一个参数是true，则在返回结果后加/
  * @return string|array
  */
 function root(...$path)

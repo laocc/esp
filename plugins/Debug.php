@@ -67,7 +67,7 @@ class Debug extends Plugin
     private $save;
     private $_value;
     private $_print_format = '% 9.3f';
-    private $_log_path = 'xdebug/run/';
+    private $_log_path = 'cache/debug';
 
     private $_node = [];
     private $_node_len = 0;
@@ -282,10 +282,8 @@ class Debug extends Plugin
 
     private function filename()
     {
-        $log_dir = root(rtrim($this->_log_path, '/') . '/' .
-            date('Y-m-d') . '/' .
-            _MODULE . '/' .
-            (date('H.i.s') . '_' . microtime(true)) . '.php');
+        $log_dir = root($this->_log_path, true) . date('Y-m-d') . '/' . _MODULE . '/' .
+            (date('H.i.s') . '_' . microtime(true)) . '.php';
 
         mk_dir($log_dir);
         return $log_dir;
