@@ -17,9 +17,9 @@ final class Config
     {
         if (!empty(self::$_conf)) return;
 
-        $file = ['config.php'];
+        $file = ['config', 'database'];
         foreach ($file as $fil) {
-            $_conf = self::load_file(root("config/{$fil}"));
+            $_conf = self::load_file(root("config/{$fil}.php"));
             if (is_array($_conf) && !empty($_conf)) {
                 self::$_conf = array_merge(self::$_conf, $_conf);
             }

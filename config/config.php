@@ -19,15 +19,13 @@ return [
         'defaultAction' => 'index',     //默认动作
     ],
 
-    'database' => [
-        'driver' => 'mysql',
-        'host' => 'localhost',
-        'database' => 'mffc',
-        'username' => 'root',
-        'password' => 'password',
-        'charset' => 'utf8',
-        'collation' => 'utf8_general_ci',
-        'prefix' => ''
+
+    'cache' => [
+        'autoRun' => true,
+        'expires' => 10,
+        'param' => [],
+        'driver' => 'redis',
+        'redis' => [],
     ],
 
     //定义一些网站错误提示内容，可以是文本内容，也可以设为400/404等错误代码方式
