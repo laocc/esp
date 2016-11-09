@@ -285,7 +285,7 @@ final class Config
             case 'avi':
                 return 'video/x-msvideo';
             default:
-                return null;
+                return 'text/html';
         }
     }
 

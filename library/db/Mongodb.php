@@ -1,9 +1,7 @@
 <?php
-namespace db;
+namespace esp\library\db;
 
-use \Yaf\Config\Ini;
-use \Yaf\Registry;
-
+use esp\core\Config;
 use \MongoDB\Driver\Manager;
 use \MongoDB\Driver\BulkWrite;
 use \MongoDB\Driver\WriteConcern;
@@ -44,15 +42,13 @@ class Mongodb
     ];
 
 
-    public function __construct($conf = null, string $db = null)
+    public function __construct($conf = null, $db = null)
     {
         if (is_string($conf)) {
             list($conf, $db) = [null, $conf];
         }
 
-        if (!($conf instanceof Ini)) {
-            $conf = Registry::get('db')->mongodb;
-        }
+        if (!is_array($conf)) $conf=Config::get('mongodb');
 
         $this->_conn = new Manager("mongodb://{$conf->host}:{$conf->port}");
         $this->_db = (string)($db ?: ($conf->db ?: 'tmp'));

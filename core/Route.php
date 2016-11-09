@@ -56,6 +56,20 @@ final class Route
                 $request->action = $action;
                 $request->params = $matches;
 
+
+                if (isset($route['static'])) {
+                    $request->set('_disable_static', !$route['static']);
+                }
+
+                //缓存设置，结果可能为：true/false，或array(参与cache的$_GET参数)
+                //将结果放入request，供cache类读取
+                if (isset($route['cache'])) {
+                    $_cache_set = is_array($route['cache']) ? $route['cache'] : !!$route['cache'];
+                } else {
+                    $_cache_set = Config::get('cache.autoRun');
+                }
+                $request->set('_cache_set', $_cache_set);
+
                 return;
             }
         }

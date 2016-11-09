@@ -1,8 +1,7 @@
 <?php
-namespace db;
+namespace esp\library\db;
+use esp\core\Config;
 
-use \Yaf\Config\Ini;
-use \Yaf\Registry;
 
 /**
  * Class Redis
@@ -15,7 +14,7 @@ final class Redis implements ext\Nosql
     private $table = null;//哈希表
     private $ttl = 0;
 
-    public function __construct($conf = null, int $db = 1)
+    public function __construct($conf = null, $db = 1)
     {
         if (!class_exists('\redis')) {
             error('无法创建Redis类');
@@ -24,28 +23,26 @@ final class Redis implements ext\Nosql
             list($conf, $db) = [null, $conf];
         }
 
-        if (!($conf instanceof Ini)) {
-            $conf = Registry::get('db')->redis;
-        }
+        if (!is_array($conf))$conf=Config::get('redis');
 
-        $db = $db ?: intval($conf->db ?: 1);
+        $db = $db ?: intval($conf['db'] ?: 1);
         if (!($db > 0 and $db < 16)) {
             error('Redis库ID选择错误');
         }
 
         $this->redis = new \Redis();
-        if (!$this->redis->connect($conf->host, $conf->port)) {
-            error("Redis服务器【{$conf->host}:{$conf->port}】无法连接。");
+        if (!$this->redis->connect($conf['host'], $conf['port'])) {
+            error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
         }
         //用密码登录
-        if (0 and !!$conf->password and !$this->redis->auth($conf->password)) {
+        if (0 and !!$conf['password'] and !$this->redis->auth($conf['password'])) {
             error("Redis密码错误，无法连接服务器。");
         }
         if (!$this->redis->select((int)$db)) {
             error("Redis选择库【{$db}】失败。");
         }
-        if (isset($conf->ttl)) {
-            $this->ttl = (int)$conf->ttl;
+        if (isset($conf['ttl'])) {
+            $this->ttl = (int)$conf['ttl'];
         }
         $this->table = null;
     }

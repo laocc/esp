@@ -1,5 +1,5 @@
 <?php
-namespace db\ext;
+namespace esp\library\db\ext;
 
 final class Result
 {

@@ -10,7 +10,6 @@ class Response
     private $_request;
     private $_shutdown = true;
 
-
     private $_view_val = [];
     private $_layout_val = [
         '_js_foot' => [],
@@ -22,7 +21,6 @@ class Response
         '_title' => null,
         '_title_default' => true,
     ];
-
 
     public function __construct(Request &$request)
     {
@@ -63,6 +61,7 @@ class Response
     }
 
     /**
+     * 返回控制器实例
      * @return Controller|bool
      */
     public function control($obj = null)
@@ -74,6 +73,7 @@ class Response
 
     /**
      * 应该只有 Kernel::run();调用
+     * 渲染视图并返回
      */
     public function display()
     {
@@ -83,35 +83,52 @@ class Response
             if (!($trace['dirname'] === __DIR__ and $trace['filename'] === 'Kernel'))
                 error('Response::display()方法不可直接调用');
         }
+        header('Content-type:' . Config::mime($this->_display_type), true);
+        echo $this->render();
+    }
+
+    public function type()
+    {
+        return $this->_display_type;
+    }
+
+    /**
+     * 渲染视图并返回
+     */
+    public function render()
+    {
+        static $html;
+        if (!is_null($html)) return $html;
 
         switch (strtolower($this->_display_type)) {
             case 'json':
                 header('Content-type:application/json', true);
-                $value = json_encode($this->_display_value, 256);
+                $html = json_encode($this->_display_value, 256);
                 if (isset($_GET['callback']) and preg_match('/^(\w+)$/', $_GET['callback'], $match)) {
-                    $value = "{$match[1]}({$value});";
+                    $html = "{$match[1]}({$html});";
                 }
-                echo $value;
                 break;
 
             case 'html':
                 header('Content-type:text/html', true);
-                print_r($this->_display_value);
+                $html = print_r($this->_display_value, true);
                 break;
 
             case 'text':
                 header('Content-type:text/plain', true);
-                print_r($this->_display_value);
+                $html = print_r($this->_display_value, true);
                 break;
 
             case 'xml':
                 header('Content-type:text/xml', true);
-                echo (new \esp\library\Xml($this->_display_value[1], $this->_display_value[0]))->render();
+                $html = (new \esp\library\Xml($this->_display_value[1], $this->_display_value[0]))->render();
                 break;
 
             default:
-                echo $this->display_response();
+                $this->_display_type = 'html';
+                $html = $this->display_response();
         }
+        return $html;
     }
 
 

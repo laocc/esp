@@ -1,8 +1,7 @@
 <?php
-namespace db;
+namespace esp\library\db;
 
-use \Yaf\Config\Ini;
-use \Yaf\Registry;
+use esp\core\Config;
 
 class Mysql
 {
@@ -20,9 +19,8 @@ class Mysql
 
     public function __construct($conf = null)
     {
-        if (!($conf instanceof Ini)) {
-            $conf = Registry::get('db')->mysql;
-        }
+        if (!is_array($conf)) $conf=Config::get('mysql');
+
         $this->_CONF = $conf;
         $this->_sql_logs = &$sql;
         $this->_debug = !!$conf->debug;
@@ -30,7 +28,7 @@ class Mysql
 
     /**
      * @param $tabName
-     * @return \db\ext\Builder
+     * @return ext\Builder
      * @throws \Exception
      */
     public function table($tabName)
@@ -38,16 +36,16 @@ class Mysql
         if (!is_string($tabName) || empty($tabName)) {
             error('PDO_Error :  数据表名错误');
         }
-        return (new \db\ext\Builder($this, $this->_CONF->table))->table($tabName);
+        return (new ext\Builder($this, $this->_CONF->table))->table($tabName);
     }
 
     /**
      * 创建一个事务
      * @param int $trans_id
-     * @return bool|\db\ext\Builder
+     * @return bool|ext\Builder
      * @throws \Exception
      */
-    public function trans(int $trans_id = 1)
+    public function trans($trans_id = 1)
     {
         if (is_array($trans_id)) {
             return $this->trans_batch($trans_id);
@@ -61,7 +59,7 @@ class Mysql
         }
         $CONN->beginTransaction();
         $this->_trans_state[$trans_id] = true;
-        return new \db\ext\Builder($this, $this->_CONF->table, $trans_id);
+        return new ext\Builder($this, $this->_CONF->table, $trans_id);
     }
 
     /**
@@ -69,7 +67,7 @@ class Mysql
      * @param \PDO $CONN
      * @throws \Exception
      */
-    public function trans_commit(\PDO &$CONN, int $trans_id)
+    public function trans_commit(\PDO &$CONN, $trans_id)
     {
         if (isset($this->_trans_state[$trans_id]) and $this->_trans_state[$trans_id] === false) return false;
 
@@ -84,7 +82,7 @@ class Mysql
      * 回滚事务
      * @return bool
      */
-    public function trans_back(\PDO &$CONN, int $trans_id = 0, &$error = null)
+    public function trans_back(\PDO &$CONN, $trans_id = 0, &$error = null)
     {
         $this->_trans_state[$trans_id] = false;
         if (!$CONN->inTransaction()) {
@@ -108,7 +106,7 @@ class Mysql
      * @param $trans_id
      * @return bool
      */
-    public function trans_in(\PDO &$CONN, int $trans_id)
+    public function trans_in(\PDO &$CONN, $trans_id)
     {
         return $CONN->inTransaction();
     }
@@ -117,7 +115,7 @@ class Mysql
      * @param $queryType
      * @return \PDO
      */
-    private function connect(bool $upData, int $trans_id = 0)
+    private function connect($upData, $trans_id = 0)
     {
         $c = $this->_CONF;
         $real = $upData ? 'master' : 'slave';
@@ -173,7 +171,7 @@ class Mysql
      * @return null
      * @throws \Exception
      */
-    public function query(string $sql, &$data = [])
+    public function query($sql, &$data = [])
     {
         $action = $this->sqlAction($sql);
         if (!$action) {
@@ -198,7 +196,7 @@ class Mysql
      * @param string $sql
      * @return string|null
      */
-    private function sqlAction(string $sql)
+    private function sqlAction($sql)
     {
         if (preg_match('/^(select|insert|replace|update|delete)\s+.+/is', trim($sql), $matches)) {
             return $matches[1];
@@ -213,7 +211,7 @@ class Mysql
      * @return bool
      * @throws \Exception
      */
-    public function trans_batch(array $SQLs):bool
+    public function trans_batch(array $SQLs)
     {
         $trans_id = $this->trans_id();
         $CONN = $this->connect(1, $trans_id);//连接数据库，自动选择主从库
@@ -249,7 +247,7 @@ class Mysql
      * 查找当前空闲的事务ID
      * @return int
      */
-    private function trans_id():int
+    private function trans_id()
     {
         $c = count($this->_trans_state);
         for ($i = 1; $i <= $c; $i++) {
@@ -262,10 +260,10 @@ class Mysql
      * @param string $sql
      * @param array $option
      * @param \PDO|null $CONN
-     * @return null|bool|\db\ext\Result
+     * @return null|bool|ext\Result
      * @throws \Exception
      */
-    public function query_exec(string $sql, array $option, \PDO &$CONN = null)
+    public function query_exec($sql, array $option, \PDO &$CONN = null)
     {
         if (empty($sql)) {
             error("PDO_Error :  SQL语句不能为空");
@@ -317,7 +315,7 @@ class Mysql
      * @return int|null 受影响的行数
      * @throws \Exception
      */
-    private function update(\PDO &$CONN, string &$sql, array &$option, &$error)
+    private function update(\PDO &$CONN, &$sql, array &$option, &$error)
     {
         if (!empty($option['param']) or $option['prepare']) {
             try {
@@ -384,7 +382,7 @@ class Mysql
      * @return int|null 被删除的行数
      * @throws \Exception
      */
-    private function delete(\PDO &$CONN, string &$sql, array &$option, &$error)
+    private function delete(\PDO &$CONN, &$sql, array &$option, &$error)
     {
         if (!empty($option['param']) or $option['prepare']) {
             try {
@@ -450,7 +448,7 @@ class Mysql
      * @param $error
      * @return array|int|null
      */
-    private function replace(\PDO &$CONN, string &$sql, array &$option, &$error)
+    private function replace(\PDO &$CONN, &$sql, array &$option, &$error)
     {
         return $this->insert($CONN, $sql, $option, $error);
     }
@@ -463,7 +461,7 @@ class Mysql
      * @return array|int|null 最后插入的ID，若批量插入则返回值是数组
      * @throws \Exception
      */
-    private function insert(\PDO &$CONN, string &$sql, array &$option, &$error)
+    private function insert(\PDO &$CONN, &$sql, array &$option, &$error)
     {
         if (!empty($option['param']) or $option['prepare']) {
             $result = [];
@@ -555,10 +553,10 @@ class Mysql
      * @param string $sql
      * @param array $option
      * @param $error
-     * @return \db\ext\Result|null
+     * @return ext\Result|null
      * @throws \Exception
      */
-    private function select(\PDO &$CONN, string &$sql, array &$option, &$error)
+    private function select(\PDO &$CONN, &$sql, array &$option, &$error)
     {
         $fetch = [\PDO::FETCH_NUM, \PDO::FETCH_ASSOC, \PDO::FETCH_BOTH];
         if (!in_array($option['fetch'], [0, 1, 2])) $option['fetch'] = 2;
@@ -622,7 +620,7 @@ class Mysql
         }
         //查询总数
         $count = $option['count'] ? $CONN->query('SELECT FOUND_ROWS()', \PDO::FETCH_NUM)->fetch()[0] : null;
-        return new \db\ext\Result($stmt, $count);
+        return new ext\Result($stmt, $count);
     }
 
 
@@ -630,7 +628,7 @@ class Mysql
      * 将日志写入Redis队列，由后台读取写入库
      * @param $sql
      */
-    public function saveLog(string $sql, string $title = null)
+    public function saveLog($sql, $title = null)
     {
         if ($title === false or $title === null) return;
         $agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
@@ -644,7 +642,6 @@ class Mysql
         $text['userID'] = 0;//userID
         $text['time'] = time();
         $text['date'] = date('Y-m-d H:i:s');
-        $text['url'] = _URL;
         $text['ip'] = _IP_C;
         $text['agent'] = htmlentities($agent);
         $text['sql'] = htmlentities($sql);//htmlentities
@@ -659,7 +656,7 @@ class Mysql
     }
 
 
-    public function log(string $title)
+    public function log($title)
     {
         $this->_logTitle = $title;
     }

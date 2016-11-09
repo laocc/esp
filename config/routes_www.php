@@ -2,7 +2,7 @@
 return [
 
     'class' => [
-        'match' => '/class',
+        'match' => '/\/tmp.+/',
         'method' => 'get,post',
         'route' => [
             'module' => 'www',

@@ -1,12 +1,8 @@
 <?php
-namespace db;
+namespace esp\library\db;
 
-use \Yaf\Config\Ini;
-use \Yaf\Registry;
+use esp\core\Config;
 
-/*
- * finish
- */
 
 class Memcache implements ext\Nosql
 {
@@ -21,9 +17,7 @@ class Memcache implements ext\Nosql
             list($conf, $table) = [null, $conf];
         }
 
-        if (!($conf instanceof Ini)) {
-            $conf = Registry::get('db')->memcache;
-        }
+        if (!is_array($conf)) $conf = Config::get('memcache');
 
         $this->conn = new \Memcache();
         $this->host = "localhost:{$conf->port}";

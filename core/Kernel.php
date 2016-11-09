@@ -105,10 +105,20 @@ final class Kernel
         $this->plugsHook('routeBefore');
         (new Route())->matching($routes, $this->request);
         $this->plugsHook('routeAfter');
+        $this->cache('display');
         $this->dispatch($this->request);    //开始分发到控制器
         $this->plugsHook('dispatchAfter');
         $this->response->display();         //结果显示
+        $this->cache('save');
         $this->plugsHook('kernelEnd');
+    }
+
+    private function cache($action)
+    {
+        static $cache;
+        if (is_null($cache)) $cache = new Cache($this->request, $this->response);
+        $action = 'cache' . ucfirst($action);
+        $cache->{$action}();
     }
 
 

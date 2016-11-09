@@ -32,8 +32,8 @@ class IndexController extends BaseController
 
         $this->assign('wbf', 'Wide of Ballet FrameWork');
 
-        $this->xml([1, 2, 3]);
-        $this->text('<b>WBF</b>');
+//        $this->xml([1, 2, 3]);
+//        $this->text('<b>WBF</b>');
 //        $this->html();
 
 
