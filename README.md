@@ -1,7 +1,7 @@
 
 # ESP (Efficient Simple PHP)
 - PHP >5.6
-- 这是一个高效简洁的PHP框架。本框架的部分结构思路参考[YAF框架 yaf.laruence.com](http://yaf.laruence.com/)。
+- 这是一个高效简洁的PHP框架。本框架的部分结构思路参考YAF框架`官网：http://yaf.laruence.com`。
 
 # 一、安装
 - 目前处于测试版阶段，下载()解压即可使用。
