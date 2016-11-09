@@ -9,9 +9,9 @@
 
 # 一、安装
 - 目前处于测试版阶段，下载()解压即可使用。
-- 网站核心文件加载机制为利用composer的autoload，另外程序所需要的一些插件也依赖于composer，所以关于composer部分，请参看[`composer.md`](./blob/master/composer.md)文件。
+- 网站核心文件加载机制为利用composer的autoload，另外程序所需要的一些插件也依赖于composer，所以关于composer部分，请参看[`composer.md`](./composer.md)文件。
 - 下载本系统源码，且也安装好composer后，在根目录中运行`composer install`。
-- Nginx（配置文件见nginx.conf），Apache，IIS下均可正常运行，PHP要求5.6以上，建议7.0以上。
+- Nginx（配置文件见[nginx.conf](./nginx.conf)），Apache，IIS下均可正常运行，PHP要求5.6以上，建议7.0以上。
 
 ```
 composer install
