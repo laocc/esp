@@ -29,19 +29,11 @@ class IndexController extends BaseController
 
 //        var_dump($this->adapter());
 
-
-        $this->assign('wbf', 'Wide of Ballet FrameWork');
-
-//        $this->xml([1, 2, 3]);
-//        $this->text('<b>WBF</b>');
-//        $this->html();
+        $this->set('esp', 'Efficient Simple PHP');
+//
+//        if ($this->reload(['action' => 'abc'])) return;
 
 
-    }
-
-    public function cleared_resource()
-    {
-        echo time();
     }
 
 

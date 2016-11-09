@@ -4,6 +4,7 @@ namespace esp\core;
 final class Request
 {
     private $_var = [];
+    public $loop = false;//控制器间跳转循环标识
     public $route = null;
     public $params = [];
 

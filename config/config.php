@@ -17,6 +17,7 @@ return [
         'defaultModule' => 'www',       //默认模块
         'defaultControl' => 'index',    //默认控制器
         'defaultAction' => 'index',     //默认动作
+        'maxLoop' => 3,                 //控制器间最多跳转次数，无论跳转是否成功
     ],
 
     'cache' => [
@@ -61,7 +62,7 @@ return [
      */
     'resource' => [
         'rand' => true,         //是否给js/css后加随机数，以便不被缓存
-        'concat' => true,       //是否使用nginx concat插件
+        'concat' => false,       //是否使用nginx concat插件
         'domain' => 'http://' . _DOMAIN,        //加载js/css的域名
         'jquery' => 'js/jquery-2.1.4.min.js',   //jquery所用的文件名
 

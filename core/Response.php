@@ -83,7 +83,9 @@ class Response
             if (!($trace['dirname'] === __DIR__ and $trace['filename'] === 'Kernel'))
                 error('Response::display()方法不可直接调用');
         }
-        header('Content-type:' . Config::mime($this->_display_type), true);
+        if (!headers_sent($filename, $line)) {
+            header('Content-type:' . Config::mime($this->_display_type), true);
+        }
         echo $this->render();
     }
 

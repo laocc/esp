@@ -5,7 +5,6 @@ use esp\core\Kernel;
 use esp\core\Plugin;
 use esp\core\Request;
 use esp\core\Response;
-use esp\library\Xdebug;
 
 /**
  *
@@ -102,11 +101,12 @@ class Debug extends Plugin
         //将最后保存数据部分注册为关门动作
         register_shutdown_function(function () {
             $this->save_logs();
+            $this->show_debug();
         });
 
         $xDebug = isset($_GET['xdebug']) ? $_GET['xdebug'] : (isset($_GET['XDEBUG']) ? $_GET['XDEBUG'] : null);
         if (!$xDebug) return;
-        new Xdebug($xDebug, __FILE__);
+        new ext\Xdebug($xDebug, __FILE__);
         $this->disable();
         exit;
     }
@@ -125,7 +125,7 @@ class Debug extends Plugin
      */
     public function dispatchBefore(Request $request, Response $response)
     {
-        $this->relay('3.dispatchLoopStartup');
+        $this->relay('3.dispatchBefore');
 
         //把自己放入一下临时变量，供后面控制器读取，只能放在这个方法里，不可以提前。
         $request->setParam('_plugin_debug', $this);
@@ -157,26 +157,26 @@ class Debug extends Plugin
 
     }
 
+
+    //显示xdebug
+    private function show_debug()
+    {
+        if (!function_exists('xdebug_get_tracefile_name')) return;
+        if (!$debug = xdebug_get_tracefile_name()) return;
+
+        if (_CLI) {
+            echo "xDebug File:\t{$debug}\n\n";
+        } else {
+            echo "<a href='?xdebug={$debug}' style='position: fixed;left:0;top:0;background: red;color:#fff;padding:0.2em 1em;' target='_blank'>xDebug</a>";
+        }
+    }
+
     /**
      * 保存记录到的数据
      */
     private function save_logs()
     {
         if (_CLI) echo "\n\n";
-
-        //显示xdebug
-        if (function_exists('xdebug_get_tracefile_name')) {
-            $debug = xdebug_get_tracefile_name();
-            if ($debug) {
-                if (_CLI) {
-                    echo "xDebug File:\t{$debug}\n\n";
-                } else {
-                    echo "<a href='?xdebug={$debug}' style='position: fixed;left:0;top:0;background: red;color:#fff;padding:0.2em 1em;' target='_blank'>xDebug</a>";
-                }
-            }
-        }
-
-//        var_dump($this->save);
 
         if (!defined('_DEBUG') or !_DEBUG or empty($this->_node) or $this->save === null) return;
         $this->relay('END:save_logs');

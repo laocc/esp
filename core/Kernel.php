@@ -21,7 +21,6 @@ final class Kernel
 
         $this->request = new Request();
         $this->response = new Response($this->request);
-
     }
 
     public function bootstrap()
@@ -90,6 +89,7 @@ final class Kernel
      */
     private function plugsHook($time)
     {
+        if (empty($this->_Plugin)) return;
         if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'kernelEnd'])) return;
         foreach ($this->_Plugin as &$plug) {
             if (method_exists($plug, $time)) {
@@ -105,18 +105,24 @@ final class Kernel
     public function run()
     {
         $module = _MODULE;
-        $routes = $this->_load("config/routes_{$module}.php");
+        $routes = load("config/routes_{$module}.php");
         if (!$routes) exit("未定义当前模块路由：/config/routes_{$module}.php");
+        $loop = Config::get('esp.maxLoop');
 
         $this->plugsHook('routeBefore');
         (new Route())->matching($routes, $this->request);
         $this->plugsHook('routeAfter');
-
         $this->cache('display');
+        $this->plugsHook('loopBefore');
 
+        loop:
         $this->plugsHook('dispatchBefore');
-        $this->dispatch($this->request);    //开始分发到控制器
+        $this->dispatch($this->request);
         $this->plugsHook('dispatchAfter');
+        if ($this->request->loop === true) {
+            if (--$loop > 0) goto loop;
+        }
+        $this->plugsHook('loopAfter');
 
         $this->response->display();         //结果显示
 
@@ -146,39 +152,26 @@ final class Kernel
         $controller = ucfirst($request->controller);
         $action = ucfirst($request->action) . Config::get('esp.actionExt');
 
-        if ($controller === 'Base') error('控制器名不可以为base，这是系统保留公共控制器名。');
+        if ($controller === 'Base') error('控制器名不可以为base，这是系统保留公共控制器名');
 
         //加载控制器公共类，有可能不存在
-        $this->_load(Config::get('esp.directory') . "/{$module}/controllers/Base.php");
-
-        $file = Config::get('esp.directory') . "/{$module}/controllers/{$controller}.php";
+        load($request->directory . "{$module}/controllers/Base.php");
+        $file = $request->directory . "{$module}/controllers/{$controller}.php";
 
         //路由需要请求的控制器
-        if (!$this->_load($file)) {
-            exit("控制器文件[{$file}]不存在");
-        }
+        if (!load($file)) error("控制器文件[{$file}]不存在");
 
         $controller .= Config::get('esp.controlExt');
         $control = new $controller($this->_Plugin, $request, $this->response);
         if (!$control instanceof Controller) {
-            exit("{$controller} 须继承自 esp\\core\\Controller");
+            error("{$controller} 须继承自 esp\\core\\Controller");
         }
-        if (!method_exists($control, $action) or !is_callable([$control, $action])) return false;
+        if (!method_exists($control, $action) or !is_callable([$control, $action])) {
+            error("控制器[{$controller}]动作[{$action}]方法不存在或不可运行");
+        }
+        $request->loop = false;
         return call_user_func_array([$control, $action], $request->params);
     }
 
-
-    /**
-     * 加载文件
-     * @param $file
-     * @return bool|mixed
-     */
-    private function _load($file)
-    {
-        if (!$file) return false;
-        $file = root($file);
-        if (!is_readable($file)) return false;
-        return include $file;
-    }
 
 }

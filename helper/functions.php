@@ -17,9 +17,7 @@ function pre(...$str)
     $prev = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
     if (_CLI) {
         if (isset($prev['file'])) echo "{$prev['file']}[{$prev['line']}]\n";
-        foreach ($str as $i => &$v) {
-            print_r($v);
-        }
+        foreach ($str as $i => &$v) print_r($v);
     } else {
         if (isset($prev['file'])) {
             $file = "<i style='color:blue;'>{$prev['file']}</i><i style='color:red;'>[{$prev['line']}]</i>\n";
@@ -27,9 +25,7 @@ function pre(...$str)
             $file = null;
         }
         echo "<pre style='background:#fff;display:block;'>", $file;
-        foreach ($str as $i => &$v) {
-            print_r($v);
-        }
+        foreach ($str as $i => &$v) print_r($v);
         echo "</pre>";
     }
 }
@@ -375,7 +371,12 @@ function server($key, $auto = null)
 function load($file)
 {
     if (!$file) return false;
-    return @include_once root($file);
+    static $recode = [];
+    $file = root($file);
+    $md5 = md5($file);
+    if (isset($recode[$md5])) return true;
+    $recode[$md5] = time();
+    return include $file;
 }
 
 /**

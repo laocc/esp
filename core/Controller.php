@@ -13,7 +13,7 @@ abstract class Controller
 
     private $_models = [];
 
-    final public function __construct(array &$plugs, Request &$request, Response &$response)
+    final public function __construct(&$plugs, Request &$request, Response &$response)
     {
         $this->_request = $request;
         $this->_response = $response;
@@ -38,10 +38,8 @@ abstract class Controller
         $dir = dirname(dirname($from['file'])) . '/models/';
         $model = ucfirst(strtolower($paras[0]));
         $class = $model . Config::get('esp.modelExt');
-        $file = "{$dir}{$model}.php";
 
-        if (!is_readable($file)) error("Model File {$file} is not exists");
-        include $file;
+        load("{$dir}{$model}.php");
         if (!class_exists($class)) error("Model class {$class} is not found");
 
         $this->_models[$model] = new $class(...array_slice($paras, 1));
@@ -133,6 +131,37 @@ abstract class Controller
     final protected function &getPlugin($name)
     {
         return isset($this->_plugs[$name]) ? $this->_plugs[$name] : null;
+    }
+
+    final protected function redirect($url)
+    {
+        header('Location:' . $url, true, 301);
+        exit;
+    }
+
+    final protected function jump($route)
+    {
+        return $this->reload($route);
+    }
+
+    /**
+     * 路径，模块，控制器，动作 间跳转
+     * 若这四项都没变动，则返回false
+     * @param array $mvc
+     */
+    final protected function reload($route)
+    {
+        if (!is_array($route) or empty($route)) return false;
+        $directory = $module = $controller = $action = $params = null;
+        foreach ($route as $item => &$value) ${$item} = $value;
+        $reCount = 0;
+        if ($directory) ($this->_request->directory = $directory) && $reCount++;
+        if ($module) ($this->_request->module = $module) && $reCount++;
+        if ($controller) ($this->_request->controller = $controller) && $reCount++;
+        if ($action) ($this->_request->action = $action) && $reCount++;
+        if ($params) $this->_request->params = $params;
+        if ($reCount < 1) return false;
+        return $this->_request->loop = true;
     }
 
     /**
