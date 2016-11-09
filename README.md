@@ -4,12 +4,12 @@
 - 这是一个高效简洁的PHP框架。本框架的部分结构思路参考YAF框架`官网：http://yaf.laruence.com`。
 如果要追求极至性能，推荐使用yaf框架，ESP是在参考yaf的基础上，增加了很多yaf并未实现的方法。
 也打包了一些实际开发中常用的功能。
-实际上本人在以往的开发中基本上用的也是这套框架结构，只不过没有现在这么整洁规范，现在融入了yaf的结构思想，特别是Bootstrap及插件hook方法，让程序更加健壮了。
-另外利用composer的autoload方法也是最新调整的，一方面是其加载方法比`spl_autoload_register()`可能更高效一点，至少简洁很多，不用操心。更主要是为了让以后引用其他第三方插件更方便。
+实际上本人在以往的开发中基本上用的也是这套框架结构，只不过没有现在这么整洁规范，现在融入了yaf的结构思想，特别是Bootstrap及插件hook方法，让程序更可塑。
+另外利用composer的autoload方法也是最新调整的，一方面是其加载方法比`spl_autoload_register()`可能更高效一点，至少简洁很多，不用操心，更主要是为了让以后引用其他第三方插件更方便。
 
 # 一、安装
 - 目前处于测试版阶段，下载()解压即可使用。
-- 网站核心文件加载机制为利用composer的autoload，另外程序所需要的一些插件也依赖于composer，所以关于composer部分，请参看`composer.md`文件。
+- 网站核心文件加载机制为利用composer的autoload，另外程序所需要的一些插件也依赖于composer，所以关于composer部分，请参看[`composer.md`](./blob/master/composer.md)文件。
 - 下载本系统源码，且也安装好composer后，在根目录中运行`composer install`。
 - Nginx（配置文件见nginx.conf），Apache，IIS下均可正常运行，PHP要求5.6以上，建议7.0以上。
 
