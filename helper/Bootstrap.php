@@ -4,9 +4,11 @@ use \esp\plugins;
 
 final class Bootstrap
 {
-    public function _initTemp(Kernel $kernel)
+    public function _initDebug(Kernel $kernel)
     {
-        $kernel->setPlugin('test', new plugins\Temp());
+        $debug = new plugins\Debug($kernel);
+        $kernel->setPlugin('debug', $debug);
+        $debug->star();
     }
 
 

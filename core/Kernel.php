@@ -17,8 +17,11 @@ final class Kernel
         chdir(_ROOT);
         Mistake::init();
         Config::load();
+        Session::init();
+
         $this->request = new Request();
         $this->response = new Response($this->request);
+
     }
 
     public function bootstrap()
@@ -46,7 +49,9 @@ final class Kernel
             return $this->response->shutdown();
         }
         $this->_shutdown = true;
+        Session::set('timeA', microtime(true));
         register_shutdown_function(function () {
+            Session::set('timeB', microtime(true));
             shutdown($this);
         });
         return $this;
@@ -85,7 +90,7 @@ final class Kernel
      */
     private function plugsHook($time)
     {
-        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchAfter', 'kernelEnd'])) return;
+        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'kernelEnd'])) return;
         foreach ($this->_Plugin as &$plug) {
             if (method_exists($plug, $time)) {
                 call_user_func_array([$plug, $time], [$this->request, $this->response]);
@@ -102,14 +107,21 @@ final class Kernel
         $module = _MODULE;
         $routes = $this->_load("config/routes_{$module}.php");
         if (!$routes) exit("未定义当前模块路由：/config/routes_{$module}.php");
+
         $this->plugsHook('routeBefore');
         (new Route())->matching($routes, $this->request);
         $this->plugsHook('routeAfter');
+
         $this->cache('display');
+
+        $this->plugsHook('dispatchBefore');
         $this->dispatch($this->request);    //开始分发到控制器
         $this->plugsHook('dispatchAfter');
+
         $this->response->display();         //结果显示
+
         $this->cache('save');
+
         $this->plugsHook('kernelEnd');
     }
 

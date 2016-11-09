@@ -57,4 +57,9 @@ final class Request
         $this->params[$name] = $value;
     }
 
+    public function getMethod()
+    {
+        return $this->method;
+    }
+
 }

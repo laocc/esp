@@ -1,8 +1,8 @@
 <?php
 namespace esp\core;
 
-use \esp\library\db\Memcache;
 use \esp\library\db\Redis;
+use \esp\library\db\Memcache;
 
 /**
  * 页面HTML缓存
@@ -127,7 +127,7 @@ final class Cache
     {
         static $ttl;
         if (!is_null($ttl)) return $ttl;
-        return $ttl = intval(Config::get('cache.expires'));
+        return $ttl = intval(Config::get('cache.expire'));
     }
 
     /**
@@ -136,12 +136,15 @@ final class Cache
      */
     private function cache_medium()
     {
-        $driver = Config::get('cache.driver');
-        if ($driver === 'redis') {
-            return new Redis(Config::get($driver));
-        } else {
-            return new Memcache(Config::get($driver));
-        }
+        static $medium;
+        if (!is_null($medium)) return $medium;
+
+        $conf = Config::get('cache');
+        $driver = strtolower($conf['driver']);
+        if (!in_array($driver, ['redis', 'memcache'])) $driver = 'redis';
+        $db = $conf[$driver] + Config::get($driver);
+        $driver = '\esp\library\db\\' . ucfirst($driver);
+        return $medium = new $driver($db);
     }
 
 

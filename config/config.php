@@ -21,10 +21,12 @@ return [
 
     'cache' => [
         'autoRun' => true,
-        'expires' => 10,
+        'expire' => 10,
         'param' => [],
         'driver' => 'redis',
-        'redis' => [],
+        'redis' => [
+            'db' => 2
+        ],
 
         //只要URI符合下列规则，就进行静态化，而不缓存
         //注意：如果想实现/article/123456.do，而这实际是一个HTML格式文件，
@@ -36,6 +38,15 @@ return [
         'static' => [
             '/^\/\w+\/.+\.(html)([\?\#].*)?$/i',
             '/^\/tmp.+$/i',
+        ],
+    ],
+
+    'session' => [
+        'autoRun' => true,
+        'driver' => 'redis',
+        'expire' => 20 * 60,//秒
+        'redis' => [
+            'db' => 2
         ],
     ],
 

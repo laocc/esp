@@ -6,6 +6,7 @@ use \Yaf\Registry;
 
 final class Session
 {
+
     static private $keys = [];
 
     public static function set($key, $value, $ttl = 0)

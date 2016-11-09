@@ -10,13 +10,11 @@ namespace esp\core;
  */
 final class Config
 {
-
     static private $_conf = [];
 
     public static function load()
     {
         if (!empty(self::$_conf)) return;
-
         $file = ['config', 'database'];
         foreach ($file as $fil) {
             $_conf = self::load_file(root("config/{$fil}.php"));

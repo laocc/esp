@@ -1,5 +1,5 @@
 <?php
-namespace esp\core;
+namespace esp\library;
 
 /**
  * 仅仅是对Xdebug的结果进行可读重排版，不是用来控制Xdebug的
