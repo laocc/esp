@@ -21,7 +21,7 @@ return [
     ],
 
     'cache' => [
-        'autoRun' => true,
+        'autoRun' => false,
         'expire' => 10,
         'param' => [],
         'driver' => 'redis',

@@ -1,13 +1,20 @@
 
 # ESP (Efficient Simple PHP)
 - PHP >5.6
-- 这是一个高效简洁的PHP框架。本框架的部分结构思路参考YAF框架（http://yaf.laruence.com/）。
+- 这是一个高效简洁的PHP框架。本框架的部分结构思路参考[YAF框架 yaf.laruence.com](http://yaf.laruence.com/)。
 
 # 一、安装
 - 目前处于测试版阶段，下载()解压即可使用。
 - 网站核心文件加载机制为利用composer的autoload，另外程序所需要的一些插件也依赖于composer，所以关于composer部分，请参看`composer.md`文件。
 - 下载本系统源码，且也安装好composer后，在根目录中运行`composer install`。
 - Nginx（配置文件见nginx.conf），Apache，IIS下均可正常运行，PHP要求5.6以上，建议7.0以上。
+
+```
+composer install
+composer update
+composer dump-autoload
+composer dump-autoload --optimize
+```
 
 # 二、文件结构：
 ```
@@ -56,7 +63,7 @@ if (!@include __DIR__ . "/../../vendor/autoload.php") exit('请先运行[compose
 
 ## 3.1 bootstrap
 bootstrap用于在程序正式执行之前所运行的程序。
-该程序文件位于`/helper/Bootstrap.php`，文件中只有ootstrap类，其中可以添加任意多个执行函数，所有以`_init`开头的函数都会被顺序执行。
+该程序文件位于`/helper/Bootstrap.php`，文件中只有Bootstrap类，其中可以添加任意多个执行函数，所有以`_init`开头的函数都会被顺序执行。
 
 在bootstrap中可以执行一些系统准备工作，也可以注册一些系统插件。每个函数都有默认参数`Kernel`对象。
 ```
@@ -68,7 +75,7 @@ final class Bootstrap
 {
     public function _initAdapter(Kernel $kernel)
     {
-        $kernel->setPlugin('adapter', new Adapter());
+        $kernel->setPlugin(new Adapter());
     }
 }
 ```
@@ -108,7 +115,7 @@ bootstrap()和shutdown()，都需要在`run()`之前调用，但不是必须要�
 1. `默认`：网页默认为HTML方式展示，也就是按正常方式显示视图中的内容
 2. `html`：与默认有所不同的是，这种方式下显示的内容为`$this->html(...)`中的内容，而不是视图内容
 3. `json`：json/jsonp格式显示`$this->json(ARRAY)`的内容，`Content-type:application/json`
-4. `xml`：xml格式显示`$this->xml(ARRAY)`的内容，`Content-type:text/xml`
+4. `xml`：xml格式显示`$this->xml('root',ARRAY)`的内容，注意：这儿的参数是数组，不是转换过的xml代码，root是根节点名称，`Content-type:text/xml`
 5. `text`：纯文本格式显示`$this->text(STRING)`的内容，`Content-type:text/plain`。用`print_r()`显示，也就是说如果传入的是数组，则会显示为数组形式（不是json格式）。
 
 上述5种方式中，只有在`默认`方式时，才会产生`view`对象，但在控制中调用`view()`方法时则会提前自动创建，包括`layout()`对象。
@@ -173,9 +180,66 @@ $this->layout()->assign($name, $value);     #送至框架视图，与上面8个�
 ```
 前三种方式在传送相同$name的情况下，优先级为：`$this` > `view()` > `adapter()`，与先后顺序无关。
 
+## 四、系统插件
+- 系统插件须在`bootstrap`内注册，注册方法请参看`3.1`节例程。插件类都须继承自`\esp\core\Plugin`。
+- 插件类里可以实现6个系统HOOK，分别在系统不同时机被自动调用。
+- 插件本身可以完成自己相应的工作，同时在控制器里可以通过下面的方法实现调用插件方法：
+
+Bootstrap.php
+```
+<?php
+use \esp\core\Kernel;
+use \esp\plugins\Debug;
+
+final class Bootstrap
+{
+    public function _initRegisterPlugs(Kernel $kernel)
+    {
+        $kernel->setPlugin(new Debug());
+        # 这儿的Debug，是后面调用时所用的名字
+    }
+}
+
+```
+
+模块级公共控制器继承类 Base.php
+```
+<?php
+use \esp\core\Controller;
+use \esp\plugins\Debug;
+
+abstract class baseController extends Controller
+{
+    protected function debug($msg)
+    {
+        $prev = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+
+        $class = $this->getPlugin('Debug');
+        if (!is_object($class) or (!$class instanceof Debug))
+            error('这不是一个已注册的插件，或不是Debug的实例');
+
+        $class->relay($msg, $prev);
+    }
+}
+```
+
+实际控制器 Index.php
+```
+<?php
+class IndexController extends BaseController
+{
+    public function indexAction()
+    {
+        $this->debug('控制器动作开始');
+        /*   业务程序部分    */
+        $this->debug('控制器动作结束');
+    }
+}
+```
 
 
-## 四、函数表 
+
+## 五、函数表 
 
 下表中函数的参数，`[$filename]`表示可有缺省值，调用时可以不用指定，没加方括号的都不可省略，
 
@@ -185,7 +249,7 @@ $this->layout()->assign($name, $value);     #送至框架视图，与上面8个�
 |`Kernel->bootstrap()`|启动bootstrap，对应`/helper/Bootstrap.php`文件
 |`Kernel->shutdown()`|第一次运行注册shutdown，第二次及以后返回是否需要继续执行shutdown
 |`Kernel->run()`|系统起动，只能在网站入口处调用，前两个同样
-|`Kernel->setPlugin(string $name,object $obj)`|注册插件，一般运行在bootstrap中
+|`Kernel->setPlugin(object $obj)`|注册插件，一般运行在bootstrap中
 |`Kernel->getRequest()`|返回request实例
 |`Kernel->getResponse()`|返回response实例
 ||

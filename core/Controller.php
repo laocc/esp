@@ -15,9 +15,9 @@ abstract class Controller
 
     final public function __construct(&$plugs, Request &$request, Response &$response)
     {
+        $this->_plugs = $plugs;
         $this->_request = $request;
         $this->_response = $response;
-        $this->_plugs = $plugs;
         $response->control($this);
     }
 
@@ -48,7 +48,6 @@ abstract class Controller
         }
         return $this->_models[$model];
     }
-
 
     /**
      * 设置视图文件，或获取对象
@@ -115,12 +114,12 @@ abstract class Controller
     /**
      * @return Request
      */
-    final protected function &getRequest()
+    final protected function getRequest()
     {
         return $this->_request;
     }
 
-    final protected function &getResponse()
+    final protected function getResponse()
     {
         return $this->_response;
     }
@@ -128,8 +127,9 @@ abstract class Controller
     /**
      * @param $name
      */
-    final protected function &getPlugin($name)
+    final protected function getPlugin($name)
     {
+        $name = ucfirst($name);
         return isset($this->_plugs[$name]) ? $this->_plugs[$name] : null;
     }
 
@@ -223,9 +223,11 @@ abstract class Controller
         $this->_response->set_value('text', $value);
     }
 
-    final protected function xml($root, array $value = null)
+    final protected function xml($root, $value = null)
     {
-        if (is_array($root)) list($root, $value) = ['xml', $root];
+        if (is_array($root)) list($root, $value) = [$value ?: 'xml', $root];
+        if (is_null($value)) list($root, $value) = ['xml', $root];
+        if (!preg_grep('/^\w+$/', $root)) error('XML根节点只可以是字母与数字的组合');
         $this->_response->set_value('xml', [$root, $value]);
     }
 

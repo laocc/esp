@@ -86,7 +86,6 @@ class Debug extends Plugin
         $now = sprintf($this->_print_format, ($this->memory) / 1024);
         $this->_node[0] = ['t' => $time, 'm' => $memo, 'n' => $now, 'g' => 'bootstrap合计'];
         $this->prevTime = microtime(true);
-
         $this->relay('0.start');
     }
 
@@ -178,7 +177,7 @@ class Debug extends Plugin
     {
         if (_CLI) echo "\n\n";
 
-        if (!defined('_DEBUG') or !_DEBUG or empty($this->_node) or $this->save === null) return;
+        if (empty($this->_node) or $this->save === null) return;
         $this->relay('END:save_logs');
 
         $request = $this->kernel->getRequest();
@@ -186,8 +185,7 @@ class Debug extends Plugin
         $data = [];
         $data[] = "<?php \n\n";
         $data[] = "# " . $request->getMethod() . "\t" . (_CLI ? '[CLI]' : $request->url) . "\n";
-        $data[] = "# IP_S\t" . (_IP_S) . "\n";
-        $data[] = "# IP_C\t" . (_IP_C) . "\n";
+        $data[] = "# IP\t" . (_IP) . "\n";
         $data[] = "# AGENT\t" . server('HTTP_USER_AGENT', '') . "\n\n";
         $data[] = "# Router\t/{$request->module}/{$request->controller}/{$request->action}\t[{$request->route}]\n";
 
@@ -259,10 +257,14 @@ class Debug extends Plugin
     /**
      * 创建一个debug点
      * @param $msg
+     * @param null $prev 调用的位置，若是通过中间件调用，请在调用此函数时提供下面的内容：
+     *
+     * $pre=debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+     *
      */
     public function relay($msg, $prev = null)
     {
-        if ((defined('_DEBUG') and !_DEBUG) or $this->save === false) return;
+        if ($this->save === false) return;
         $prev = $prev ?: debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (isset($prev['file'])) {
             $file = substr($prev['file'], strlen(_ROOT) - 1) . " [{$prev['line']}]";

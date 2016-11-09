@@ -22,7 +22,7 @@ final class Route
                 (preg_match('/^\/.+\/[ims]*$/', $route['match']) and preg_match($route['match'], $request->uri, $matches))
             ) {
 
-                if (isset($route['method']) and !$this->method_check($route['method'], $request->method))
+                if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->ajax))
                     error(Config::get('error.method'));
 
                 if (!isset($matches) or $key === '_default') {
@@ -132,7 +132,7 @@ final class Route
      * HTTP/AJAX两项后可以跟具体的method类型，如：HTTP,GET,POST
      * CLI  =   只能单独出现
      */
-    private function method_check($mode, $method)
+    private function method_check($mode, $method, $ajax)
     {
         if (!$mode) return true;
         list($mode, $method) = [strtoupper($mode), strtoupper($method)];
@@ -145,11 +145,11 @@ final class Route
 
         } elseif ($modes[0] === 'HTTP') {//限HTTP时，不是_AJAX
             if (count($modes) === 1) $modes = ['GET', 'POST'];
-            $check = !_AJAX and in_array($method, $modes);
+            $check = !$ajax and in_array($method, $modes);
 
         } elseif ($modes[0] === 'AJAX') {//限AJAX状态
             if (count($modes) === 1) $modes = ['GET', 'POST'];
-            $check = _AJAX and in_array($method, $modes);
+            $check = $ajax and in_array($method, $modes);
 
         } elseif ($modes[0] === 'CLI') {//限CLI
             $check = _CLI;

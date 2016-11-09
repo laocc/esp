@@ -6,13 +6,22 @@ final class Kernel
 {
     private $request;
     private $response;
-    private $_Plugin;
+    private $_Plugin = [];
+    private $_Plugin_CallBack = [];
+
     private $_shutdown;
+    private $_autoDisplay = true;
 
     public function __construct()
     {
         if (!defined('_MODULE')) exit('网站入口处须定义_MODULE项');
         if (!defined('_ROOT')) exit('网站入口处须定义_ROOT项');
+
+        define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
+        define('_IP', _CLI ? '127.0.0.1' : ip());//客户端IP
+        define('_HTTPS', strtolower(server('HTTPS')) === 'on');
+        define('_DOMAIN', _CLI ? null : explode(':', server('HTTP_HOST') . ':')[0]);
+        define('_HOST', _CLI ? null : host(_DOMAIN));//域名的根域
 
         chdir(_ROOT);
         Mistake::init();
@@ -26,7 +35,7 @@ final class Kernel
     public function bootstrap()
     {
         if (!class_exists('Bootstrap')) {
-            exit("Bootstrap类不存在，请检查/helper/ootstrap.php文件");
+            exit("Bootstrap类不存在，请检查/helper/bootstrap.php文件");
         }
         $boot = new \Bootstrap();
         foreach (get_class_methods($boot) as $method) {
@@ -61,26 +70,15 @@ final class Kernel
      * 或，返回已注册的插件
      * @param object $class
      */
-    public function setPlugin($name, $class)
+    public function setPlugin($class)
     {
+        $name = get_class($class);
         if (!is_subclass_of($class, Plugin::class)) {
-            exit('插件' . get_class($class) . '须直接继承自\\esp\\core\\Plugin');
+            exit('插件' . $name . '须直接继承自\\esp\\core\\Plugin');
         }
+        $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
         if (isset($this->_Plugin[$name])) exit("插件名{$name}已被注册过");
         $this->_Plugin[$name] = &$class;
-    }
-
-    /**
-     * @return Request
-     */
-    public function getRequest()
-    {
-        return $this->request;
-    }
-
-    public function getResponse()
-    {
-        return $this->response;
     }
 
     /**
@@ -96,6 +94,31 @@ final class Kernel
                 call_user_func_array([$plug, $time], [$this->request, $this->response]);
             }
         }
+    }
+
+
+    /**
+     * @return Request
+     */
+    public function getRequest()
+    {
+        return $this->request;
+    }
+
+    public function getResponse()
+    {
+        return $this->response;
+    }
+
+    /**
+     * 是否自动渲染
+     * @param null $run
+     * @return bool
+     */
+    public function autoDisplay($run = null)
+    {
+        if (is_null($run)) return $this->_autoDisplay;
+        return $this->_autoDisplay = !!$run;
     }
 
     /**
@@ -124,7 +147,7 @@ final class Kernel
         }
         $this->plugsHook('loopAfter');
 
-        $this->response->display();         //结果显示
+        if ($this->_autoDisplay) $this->response->display();
 
         $this->cache('save');
 
@@ -138,7 +161,6 @@ final class Kernel
         $action = 'cache' . ucfirst($action);
         $cache->{$action}();
     }
-
 
     /**
      * 路由结果分发至控制器动作
@@ -162,6 +184,7 @@ final class Kernel
         if (!load($file)) error("控制器文件[{$file}]不存在");
 
         $controller .= Config::get('esp.controlExt');
+
         $control = new $controller($this->_Plugin, $request, $this->response);
         if (!$control instanceof Controller) {
             error("{$controller} 须继承自 esp\\core\\Controller");

@@ -128,7 +128,7 @@ class Mysql
         $host = $c->{$real};
 
         //不是更新操作时，选择从库，需选择一个点
-        if (!$upData) $host = $host[ip2long(_IP_C) % count($host)];
+        if (!$upData) $host = $host[ip2long(_IP) % count($host)];
 
         try {
             $opts = array(
@@ -631,7 +631,6 @@ class Mysql
     public function saveLog($sql, $title = null)
     {
         if ($title === false or $title === null) return;
-        $agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
         if ($sql) {
             $sql = str_replace('`', '', $sql);
             $sql = preg_replace('/([\x{4e00}-\x{9fa5}]){50,}/iu', '...', $sql);
@@ -642,8 +641,8 @@ class Mysql
         $text['userID'] = 0;//userID
         $text['time'] = time();
         $text['date'] = date('Y-m-d H:i:s');
-        $text['ip'] = _IP_C;
-        $text['agent'] = htmlentities($agent);
+        $text['ip'] = _IP;
+        $text['agent'] = htmlentities(server('HTTP_USER_AGENT'));
         $text['sql'] = htmlentities($sql);//htmlentities
 
         $val = [

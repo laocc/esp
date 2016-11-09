@@ -4,6 +4,7 @@ namespace esp\core;
 
 class Response
 {
+    public $https;
     private $_display_type;
     private $_display_value = [];
     private $_control;
@@ -25,6 +26,8 @@ class Response
     public function __construct(Request &$request)
     {
         $this->_request = $request;
+        $this->https = strtolower(server('HTTPS')) === 'on';
+
     }
 
     public function set_value($name, $value)
@@ -72,26 +75,23 @@ class Response
     }
 
     /**
-     * 应该只有 Kernel::run();调用
+     * 应该由Kernel::run();调用
      * 渲染视图并返回
      */
     public function display()
     {
-        if (_DEBUG) {
-            $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-            $trace = pathinfo($trace['file']);
-            if (!($trace['dirname'] === __DIR__ and $trace['filename'] === 'Kernel'))
-                error('Response::display()方法不可直接调用');
-        }
-        if (!headers_sent($filename, $line)) {
-            header('Content-type:' . Config::mime($this->_display_type), true);
-        }
+        header_remove("Content-type");
+        header('Content-type:' . Config::mime($this->_display_type), true, 200);
         echo $this->render();
     }
 
+    /**
+     * 返回当前页面格式
+     * @return mixed
+     */
     public function type()
     {
-        return $this->_display_type;
+        return $this->_display_type ?: 'html';
     }
 
     /**
@@ -101,10 +101,8 @@ class Response
     {
         static $html;
         if (!is_null($html)) return $html;
-
         switch (strtolower($this->_display_type)) {
             case 'json':
-                header('Content-type:application/json', true);
                 $html = json_encode($this->_display_value, 256);
                 if (isset($_GET['callback']) and preg_match('/^(\w+)$/', $_GET['callback'], $match)) {
                     $html = "{$match[1]}({$html});";
@@ -112,22 +110,22 @@ class Response
                 break;
 
             case 'html':
-                header('Content-type:text/html', true);
                 $html = print_r($this->_display_value, true);
                 break;
 
             case 'text':
-                header('Content-type:text/plain', true);
                 $html = print_r($this->_display_value, true);
                 break;
 
             case 'xml':
-                header('Content-type:text/xml', true);
-                $html = (new \esp\library\Xml($this->_display_value[1], $this->_display_value[0]))->render();
+                if (is_array($this->_display_value[1])) {
+                    $html = (new \esp\library\Xml($this->_display_value[1], $this->_display_value[0]))->render();
+                } else {
+                    $html = $this->_display_value[1];
+                }
                 break;
 
             default:
-                $this->_display_type = 'html';
                 $html = $this->display_response();
         }
         return $html;

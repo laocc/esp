@@ -2,9 +2,6 @@
 /*
  * 公用函数
  * 本文件所有函数基本可以用在任何其他程序中
- * 但里面有几个用到了本系统定义的常量，如：_CLI,_IP_C
- *
- *
  */
 /*
 
@@ -45,17 +42,6 @@ function str_rand($min = 10, $len = null)
     return implode($arr);
 }
 
-
-function uid()
-{
-    $ip = ip2long(_IP_C) % 10000;
-    $time = (microtime(true) * 10000) % 100000000;
-    $rand = mt_rand(1000, 9999);
-    $arr = str_split($ip . $time . $rand, 2);
-    $str = '';
-    foreach ([6, 3, 5, 1, 4, 2, 0, 7] as $i) $str .= $arr[$i];
-    return $str;
-}
 
 /**
  * 生成唯一GUID，基于当前时间微秒数的唯一ID

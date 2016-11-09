@@ -4,7 +4,10 @@ class IndexController extends BaseController
 {
     public function indexAction()
     {
+        $this->layout(false);
         $this->title('WBF');
+
+        $this->debug('debug');
 
 //        $this->view(false);
 
