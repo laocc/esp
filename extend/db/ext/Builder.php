@@ -1,5 +1,7 @@
 <?php
 namespace esp\extend\db\ext;
+use esp\extend\db\Mysql;
+
 /**
  *
  * https://sjolzy.cn/PDO-query-results-achieved-in-many-ways.html
@@ -40,7 +42,7 @@ final class Builder
 
     private $bindKV = [];
 
-    public function __construct(\db\Mysql &$callback, $table, $trans_id = 0)
+    public function __construct(Mysql &$callback, $table, $trans_id = 0)
     {
         $this->clean_builder();
         $this->_MySQL = $callback;
@@ -63,7 +65,7 @@ final class Builder
     /**
      * 清除所有现有的Query_builder设置内容
      */
-    private function clean_builder(bool $clean_all = true)
+    private function clean_builder($clean_all = true)
     {
         $this->_table = $this->_where = $this->_limit = $this->_group = $this->_having = $this->_order_by = '';
         $this->_select = $this->_join = [];
@@ -127,7 +129,7 @@ final class Builder
      * @param $value ，为bool表达式结果，一般如：!!$ID，或：$val>0
      * @return bool，返回$value相反的值，即：返回true表示被回滚了，false表示正常
      */
-    public function back(bool $value)
+    public function back($value)
     {
         if ($value) return false;
         return $this->_MySQL->trans_back($this->_MySQL->master[$this->_Trans_ID], $this->_Trans_ID);
@@ -148,7 +150,7 @@ final class Builder
      * @param bool|true $bool
      * @return $this
      */
-    public function prepare(bool $bool = true)
+    public function prepare($bool = true)
     {
         $this->_prepare = $bool;
         return $this;
@@ -160,7 +162,7 @@ final class Builder
      * @param bool|true $bool
      * @return $this
      */
-    public function param(bool $bool = true)
+    public function param($bool = true)
     {
         $this->_param = $bool;
         if ($bool and !$this->_prepare) {
@@ -185,7 +187,7 @@ final class Builder
      * @param bool|true $bool
      * @return $this
      */
-    public function count(bool $bool = true)
+    public function count($bool = true)
     {
         $this->_count = $bool;
         return $this;
@@ -195,7 +197,7 @@ final class Builder
     /**
      * 消除重复行
      */
-    public function distinct(bool $bool = true)
+    public function distinct($bool = true)
     {
         $this->_distinct = $bool;
         return $this;
@@ -206,7 +208,7 @@ final class Builder
      * @param null $type
      * @return $this
      */
-    public function fetch(int $type = 1)
+    public function fetch($type = 1)
     {
         $this->_fetch_type = $type;
         return $this;
@@ -216,7 +218,7 @@ final class Builder
      * 传回mysql的选项
      * @return array
      */
-    private function option(string $action)
+    private function option($action)
     {
         return [
             'param' => $this->_param_data,
@@ -627,7 +629,7 @@ final class Builder
      * @param int $offset 偏移
      * @return $this
      */
-    public function limit(int $count, int $offset = 0)
+    public function limit($count, $offset = 0)
     {
         $offset = $offset ?: $this->_skip;
         if ($offset === 0) {
@@ -742,7 +744,7 @@ final class Builder
      * @param string $filter
      * @return $this
      */
-    public function having(string $filter)
+    public function having($filter)
     {
         $this->_having = $filter;
         return $this;
@@ -776,7 +778,7 @@ final class Builder
      * @return Result
      * @throws \Exception
      */
-    public function get(int $row = 0)
+    public function get($row = 0)
     {
         if ($row > 0) $this->limit($row);
         $sql = $this->_build_get();

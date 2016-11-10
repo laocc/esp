@@ -1,5 +1,6 @@
 <?php
 namespace esp\extend\db;
+
 use esp\core\Config;
 
 
@@ -16,17 +17,12 @@ final class Redis implements ext\Nosql
 
     public function __construct($conf = null, $db = 1)
     {
-        if (!class_exists('\redis')) {
-            error('无法创建Redis类');
-        }
-        if (is_int($conf)) {
-            list($conf, $db) = [null, $conf];
-        }
-
-        if (!is_array($conf))$conf=Config::get('redis');
-
-        $db = $db ?: intval($conf['db'] ?: 1);
-        if (!($db > 0 and $db < 16)) {
+        if (!class_exists('\redis')) error('无法创建Redis');
+        if (is_int($conf)) list($conf, $db) = [null, $conf];
+        if (!is_array($conf)) $conf = [];
+        $conf += Config::get('redis');
+        $db = $db ? intval($db) : intval($conf['db'] ?: 1);
+        if (!($db > 0 and $db <= $conf['maxDb'])) {
             error('Redis库ID选择错误');
         }
 

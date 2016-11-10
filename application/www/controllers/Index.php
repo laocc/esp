@@ -37,13 +37,6 @@ class IndexController extends BaseController
 //        if ($this->reload(['action' => 'abc'])) return;
 
 
-        list($a, $b) = \esp\core\Input::get(['a' => 0, 'b' => 0]);
-        pre([$a, $b]);
-
-        var_dump(\esp\core\Input::get('a'));
-
-        var_dump(is_numeric(".20"));
-
 
     }
 

@@ -10,21 +10,20 @@ use esp\core\Config;
  * http://pecl.php.net/package/memcache
  * 函数表在PHP手册中可找到
  */
-class Memcache implements ext\Nosql
+class Memcached implements ext\Nosql
 {
     private $conn;
     private $tab = 'Temp';
     private $host = '';
-    const _TRY = 5;//出错时，尝试次数
 
     public function __construct($conf = null, $table = null)
     {
-        if (!class_exists('\memcache')) error('无法创建Memcache');
+        if (!class_exists('\memcached')) error('无法创建Memcached');
         if (is_string($conf)) list($conf, $table) = [null, $conf];
         if (!is_array($conf)) $conf = [];
         $conf += Config::get('memcache');
 
-        $this->conn = new \Memcache();
+        $this->conn = new \Memcached();
         $this->host = "{$conf['host']}:{$conf['port']}";
         $conn = (isset($conf['pConnect']) and $conf['pConnect']) ? 'pconnect' : 'connect';
         if (!$this->conn->{$conn}($conf['host'], $conf['port'], $conf['timeout'])) {
