@@ -130,7 +130,6 @@ final class Kernel
         $routes = load("config/routes_{$module}.php");
         if (!$routes) exit("未定义当前模块路由：/config/routes_{$module}.php");
         $loop = Config::get('esp.maxLoop');
-
         $this->plugsHook('routeBefore');
         (new Route())->matching($routes, $this->request);
         $this->plugsHook('routeAfter');
@@ -139,14 +138,16 @@ final class Kernel
 
         loop:
         $this->plugsHook('dispatchBefore');
-        $this->dispatch($this->request);
+        $this->dispatch();
         $this->plugsHook('dispatchAfter');
         if ($this->request->loop === true) {
-            //控制器跳转
-            if (--$loop > 0) goto loop;
+            //控制器跳转，并初始化Response
+            if (--$loop > 0) {
+                $this->response = new Response($this->request);
+                goto loop;
+            }
         }
         $this->plugsHook('loopAfter');
-
         if ($this->_autoDisplay) $this->response->display();
 
         $this->cache('save');
@@ -166,34 +167,34 @@ final class Kernel
      * 路由结果分发至控制器动作
      * @param $request
      * @param $control
-     * @return bool|mixed
      */
-    private function dispatch(Request &$request)
+    private function dispatch()
     {
-        $module = strtolower($request->module);
-        $controller = ucfirst($request->controller);
-        $action = ucfirst($request->action) . Config::get('esp.actionExt');
+        $module = strtolower($this->request->module);
+        $controller = ucfirst($this->request->controller);
+        $action = strtolower($this->request->action) . Config::get('esp.actionExt');
 
         if ($controller === 'Base') error('控制器名不可以为base，这是系统保留公共控制器名');
 
         //加载控制器公共类，有可能不存在
-        load($request->directory . "{$module}/controllers/Base.php");
-        $file = $request->directory . "{$module}/controllers/{$controller}.php";
+        load($this->request->directory . "{$module}/controllers/Base.php");
+        $file = $this->request->directory . "{$module}/controllers/{$controller}.php";
 
         //路由需要请求的控制器
         if (!load($file)) error("控制器文件[{$file}]不存在");
 
-        $controller .= Config::get('esp.controlExt');
+        $controller = $module . '\\' . $controller . Config::get('esp.controlExt');
 
-        $control = new $controller($this->_Plugin, $request, $this->response);
+        $control = new $controller($this->_Plugin, $this->request, $this->response);
         if (!$control instanceof Controller) {
             error("{$controller} 须继承自 esp\\core\\Controller");
         }
         if (!method_exists($control, $action) or !is_callable([$control, $action])) {
             error("控制器[{$controller}]动作[{$action}]方法不存在或不可运行");
         }
-        $request->loop = false;
-        return call_user_func_array([$control, $action], $request->params);
+        $this->request->loop = false;
+        call_user_func_array([$control, $action], $this->request->params);
+        unset($control);
     }
 
 

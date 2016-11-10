@@ -92,19 +92,22 @@ final class View
      * @param null $object
      * @return $this|\Smarty
      */
-    public function adapter($use = null)
+    public function getAdapter()
+    {
+        return $this->_adapter;
+    }
+
+    public function setAdapter($use)
     {
         if ($use === false) {
             $this->_adapter_use = false;
-            return $this;
         } elseif ($use === true) {
             if (is_null($this->_adapter)) {
-                error('标签解析器没有注册');
+                error('标签解析器没有注册，请在已注册过的插中注册标签解析器');
             }
             $this->_adapter_use = true;
-            return $this;
         }
-        return $this->_adapter;
+        return $this;
     }
 
     /**
@@ -124,19 +127,22 @@ final class View
      */
     public function render($file, $value)
     {
-        $dir = $this->dir();
+        $dir = root($this->dir(), true);
         $file = $this->file() ?: $file;
 
         if (stripos($file, $dir) !== 0) $file = rtrim($dir, '/') . '/' . ltrim($file, '/');
         if (!is_readable($file)) error("视图文件{$file}不存在");
 
         if ($this->_layout instanceof View) {
-
+            //先解析子视图
             $html = $this->fetch($file, $value + $this->_view_val);
 
-            return $this->_layout->render($file, ['_view_html' => &$html]);
+            $layout = Config::get('layout.filename');
+            $layout_file = $dir . $layout;
+            if (!is_readable($layout_file)) $layout_file = dirname($dir) . '/' . $layout;
+            if (!is_readable($layout_file)) error('框架视图文件不存在');
+            return $this->_layout->render($layout_file, ['_view_html' => &$html]);
         }
-
         return $this->fetch($file, $value + $this->_view_val);
     }
 

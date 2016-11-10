@@ -1,15 +1,12 @@
 <?php
+namespace www;
 
-/**
- * Created by PhpStorm.
- * User: cne
- * Date: 2016/11/6
- * Time: 12:33
- */
-class Article
+use esp\core\Model;
+
+class Article extends Model
 {
     public static function first()
     {
-        return __FILE__;
+        return __FILE__ ;
     }
 }

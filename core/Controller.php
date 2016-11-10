@@ -8,93 +8,11 @@ abstract class Controller
     private $_response;
     private $_plugs;
 
-    private $_use_view;
-    private $_use_layout;
-
-    private $_models = [];
-
     final public function __construct(&$plugs, Request &$request, Response &$response)
     {
         $this->_plugs = $plugs;
         $this->_request = $request;
         $this->_response = $response;
-        $response->control($this);
-    }
-
-    /**
-     * 加载模型
-     * 关于参数：在实际模型类中，建议用func_get_args()获取参数列表，也可以直接指定参数
-     * @param $model
-     * @param null $params
-     * @return mixed
-     *
-     */
-    final protected function &model(...$paras)
-    {
-        if (empty($paras)) return null;
-        if (isset($this->_models[$paras[0]])) return $this->_models[$paras[0]];
-
-        $from = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $dir = dirname(dirname($from['file'])) . '/models/';
-        $model = ucfirst(strtolower($paras[0]));
-        $class = $model . Config::get('esp.modelExt');
-
-        load("{$dir}{$model}.php");
-        if (!class_exists($class)) error("Model class {$class} is not found");
-
-        $this->_models[$model] = new $class(...array_slice($paras, 1));
-        if (!$this->_models[$model] instanceof Model) {
-            exit("{$class} 须继承自 esp\\core\\Model");
-        }
-        return $this->_models[$model];
-    }
-
-    /**
-     * 设置视图文件，或获取对象
-     * @return View|bool
-     */
-    final public function view($file = null)
-    {
-        if ($file === false) {
-            return $this->_use_view = $file;
-        }
-        static $obj;
-        if (!is_null($obj)) return $obj;
-        $dir = $this->_request->directory . $this->_request->module . '/views/';
-        $this->_use_view = true;
-        return $obj = new View($dir, $file);
-    }
-
-    /**
-     * 标签解析器
-     * @param null $bool
-     * @return bool|View
-     */
-    final protected function adapter($bool = null)
-    {
-        return $this->view()->adapter($bool);
-    }
-
-    /**
-     * 关闭，或获取layout对象，可同时指定框架文件
-     * @param null $file
-     * @return bool|View
-     */
-    final protected function layout($layout_file = null)
-    {
-        if ($layout_file === false) {
-            return $this->_use_layout = false;
-        }
-        static $obj;
-        if (!is_null($obj)) return $obj;
-        $layout = Config::get('layout.filename');
-        $dir = $this->_request->directory . $this->_request->module . '/views/';
-        $layout_file = $layout_file ?: $this->_request->controller . '/' . $layout;
-        if (stripos($layout_file, $dir) !== 0) $layout_file = $dir . ltrim($layout_file, '/');
-        if (!is_readable($layout_file)) $layout_file = $dir . $layout;
-        if (!is_readable($layout_file)) error('框架视图文件不存在');
-        $this->_use_layout = true;
-        return $obj = new View($dir, $layout_file);
     }
 
 
@@ -112,6 +30,50 @@ abstract class Controller
     }
 
     /**
+     * 设置视图文件，或获取对象
+     * @return View|bool
+     */
+    final public function getView()
+    {
+        return $this->getResponse()->getView();
+    }
+
+    final public function setView($value)
+    {
+        $this->getResponse()->setView($value);
+    }
+
+    /**
+     * 标签解析器
+     * @param null $bool
+     * @return bool|View
+     */
+    final protected function getAdapter()
+    {
+        return $this->getResponse()->getView()->getAdapter();
+    }
+
+    final protected function setAdapter($bool)
+    {
+        return $this->getResponse()->getView()->setAdapter($bool);
+    }
+
+    /**
+     * 关闭，或获取layout对象，可同时指定框架文件
+     * @param null $file
+     * @return bool|View
+     */
+    final protected function getLayout()
+    {
+        return $this->getResponse()->getLayout();
+    }
+
+    final protected function setLayout($value)
+    {
+        $this->getResponse()->setLayout($value);
+    }
+
+    /**
      * @return Request
      */
     final protected function getRequest()
@@ -124,9 +86,6 @@ abstract class Controller
         return $this->_response;
     }
 
-    /**
-     * @param $name
-     */
     final protected function getPlugin($name)
     {
         $name = ucfirst($name);
@@ -145,37 +104,51 @@ abstract class Controller
     }
 
     /**
-     * 路径，模块，控制器，动作 间跳转
+     * 路径，模块，控制器，动作 间跳转，重新分发
+     * TODO 此操作会重新分发，当前Response对象将重新初始化，Controller也会按目标重新加载
      * 若这四项都没变动，则返回false
      * @param array $mvc
      */
-    final protected function reload($route)
+    final protected function reload(...$param)
     {
-        if (!is_array($route) or empty($route)) return false;
-        $directory = $module = $controller = $action = $params = null;
-        foreach ($route as $item => &$value) ${$item} = $value;
-        $reCount = 0;
-        if ($directory) ($this->_request->directory = $directory) && $reCount++;
-        if ($module) ($this->_request->module = $module) && $reCount++;
-        if ($controller) ($this->_request->controller = $controller) && $reCount++;
-        if ($action) ($this->_request->action = $action) && $reCount++;
+        if (empty($param)) return false;
+        $directory = $this->_request->directory;
+        $module = $this->_request->module;
+        $controller = $action = $params = null;
+
+        if (is_dir($param[0])) {
+            $directory = root($param[0], true);
+            array_shift($param);
+        }
+        if (is_dir($directory . $param[0])) {
+            $module = $param[0];
+            array_shift($param);
+        }
+        if (count($param) === 1) {
+            list($action) = $param;
+        } elseif (count($param) === 2) {
+            list($controller, $action) = $param;
+        } elseif (count($param) > 2) {
+            list($controller, $action) = $param;
+            $params = array_slice($param, 2);
+        }
+        if (!is_string($controller)) $controller = $this->_request->controller;
+        if (!is_string($action)) $action = $this->_request->action;
+
+        //路径，模块，控制器，动作，这四项都没变动，返回false，也就是闹着玩的，不真跳
+        if ($directory == $this->_request->directory
+            and $module == $this->_request->module
+            and $controller == $this->_request->controller
+            and $action == $this->_request->action
+        ) return false;
+
+        $this->_request->directory = $directory;
+        $this->_request->module = $module;
+
+        if ($controller) ($this->_request->controller = $controller);
+        if ($action) ($this->_request->action = $action);
         if ($params) $this->_request->params = $params;
-        if ($reCount < 1) return false;
         return $this->_request->loop = true;
-    }
-
-    /**
-     * @return array
-     */
-    final public function check_object()
-    {
-        if (is_null($this->_use_view)) $this->_use_view = Config::get('view.autoRun');
-        if (is_null($this->_use_layout)) $this->_use_layout = Config::get('layout.autoRun');
-
-        return [
-            $this->_use_view ? $this->view() : null,
-            ($this->_use_view and $this->_use_layout) ? $this->layout() : null,
-        ];
     }
 
     /**
@@ -225,9 +198,10 @@ abstract class Controller
 
     final protected function xml($root, $value = null)
     {
+        $from = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (is_array($root)) list($root, $value) = [$value ?: 'xml', $root];
         if (is_null($value)) list($root, $value) = ['xml', $root];
-        if (!preg_grep('/^\w+$/', $root)) error('XML根节点只可以是字母与数字的组合');
+        if (!preg_grep('/^\w+$/', $root)) error('XML根节点只可以是字母与数字的组合', $from);
         $this->_response->set_value('xml', [$root, $value]);
     }
 

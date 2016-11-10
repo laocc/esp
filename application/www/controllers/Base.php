@@ -1,8 +1,10 @@
 <?php
+namespace www;
+
 use esp\core\Controller;
 use esp\plugins\Debug;
 
-abstract class baseController extends Controller
+abstract class BaseController extends Controller
 {
     protected function debug($msg)
     {

@@ -1,6 +1,9 @@
 <?php
+namespace www;
 
-class ArticleModel extends \esp\core\Model
+use esp\core\Model;
+
+class ArticleModel extends Model
 {
 
     public function first()

@@ -1,4 +1,7 @@
 <?php
+namespace www;
+
+use \esp\core\Model;
 
 class IndexController extends BaseController
 {
@@ -27,19 +30,23 @@ class IndexController extends BaseController
 
 //        include 'application/www/models/Article.php';
 
-        $mod = $this->model('article', 1, 3, 54, 6);
-//        echo $mod->first();
+        $mod = Model::create(root('application/www/models/Article.php'));
+        echo $mod->first();
 
 //        var_dump($this->adapter());
 
         $this->set('esp', 'Efficient Simple PHP');
+
 //
-//        if ($this->reload(['action' => 'abc'])) return;
+//        if ($this->reload('admin')) return;
 
 
-        $mem=new \Memcached();
-        pre($mem);
+//        pre($this->getRequest());
 
+        /*
+                $mem=new \Memcached();
+                pre($mem);
+        */
 
 
     }

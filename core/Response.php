@@ -21,16 +21,24 @@ class Response
         '_title' => null,
         '_title_default' => true,
     ];
-    private $_layout_var_name = [
 
+    private $_view_set = [
+        'view_use' => null,
+        'view_file' => null,
+        'layout_use' => null,
+        'layout_file' => null,
     ];
 
     public function __construct(Request &$request)
     {
         $this->_request = $request;
-
     }
 
+    /**
+     * 接受控制器设置页面特殊显示内容
+     * @param $name
+     * @param $value
+     */
     public function set_value($name, $value)
     {
         switch ($name) {
@@ -64,15 +72,71 @@ class Response
         }
     }
 
+
     /**
-     * 返回控制器实例
-     * @return Controller|bool
+     * 返回标签解析器
+     * @return View
      */
-    public function control($obj = null)
+    public function getAdapter()
     {
-        if (is_null($obj)) return $this->_control;
-        $this->_control = $obj;
-        return true;
+        return $this->getView()->getAdapter();
+    }
+
+    /**
+     * 视图注册标签解析器
+     * @param $adapter
+     */
+    public function registerAdapter(&$adapter)
+    {
+        $this->getView()->registerAdapter($adapter);
+    }
+
+    /**
+     * 设置是否启用视图
+     * 设置视图文件名
+     * 获取视图对象
+     * @param $file
+     * @return bool|View
+     */
+    public function getView()
+    {
+        static $obj;
+        if (!is_null($obj)) return $obj;
+        $dir = $this->_request->directory . $this->_request->module . '/views/';
+        $this->_view_set['view_use'] = true;
+        return $obj = new View($dir, $this->_view_set['view_file']);
+    }
+
+
+    public function getLayout()
+    {
+        static $obj;
+        if (!is_null($obj)) return $obj;
+        $dir = $this->_request->directory . $this->_request->module . '/views/';
+        $this->_view_set['layout_use'] = true;
+        return $obj = new View($dir, $this->_view_set['layout_file']);
+    }
+
+
+    public function setView($value)
+    {
+        if (is_bool($value)) {
+            $this->_view_set['view_use'] = $value;
+        } elseif (is_string($value)) {
+            $this->_view_set['view_use'] = true;
+            $this->_view_set['view_file'] = $value;
+        }
+    }
+
+
+    public function setLayout($value)
+    {
+        if (is_bool($value)) {
+            $this->_view_set['layout_use'] = $value;
+        } elseif (is_string($value)) {
+            $this->_view_set['layout_use'] = true;
+            $this->_view_set['layout_file'] = $value;
+        }
     }
 
     /**
@@ -82,7 +146,7 @@ class Response
     public function display()
     {
 //        header_remove("Content-type");
-        if(!headers_sent()) {
+        if (!headers_sent()) {
             header('Content-type:' . Config::mime($this->_display_type), true, 200);
         }
         echo $this->render();
@@ -141,13 +205,18 @@ class Response
      */
     private function display_response()
     {
-        list($view, $layout) = $this->control()->check_object();
-        if (!$view) return null;
-        $view instanceof View and true;
+        if (is_null($this->_view_set['view_use']))
+            $this->_view_set['view_use'] = Config::get('view.autoRun');
+        if ($this->_view_set['view_use'] === false) return null;
+
+        if (is_null($this->_view_set['layout_use']))
+            $this->_view_set['layout_use'] = Config::get('layout.autoRun');
+
+        $view = $this->getView();
         $this->cleared_layout_val();
 
-        if ($layout) {
-            $layout instanceof View and true;
+        if ($this->_view_set['layout_use']) {
+            $layout = $this->getLayout();
             $layout->assign($this->_layout_val);//送入layout变量
             $view->layout($layout);//为视图注册layout
         } else {
@@ -243,23 +312,13 @@ class Response
         unset($this->_layout_val['_title_default']);
     }
 
-
-    public function registerAdapter(&$adapter)
-    {
-        $this->control()->view()->registerAdapter($adapter);
-    }
-
-    public function getAdapter()
-    {
-        return $this->control()->view()->adapter();
-    }
-
     public function getType()
     {
         return $this->_display_type;
     }
 
     /**
+     * 设置是否还继续执行shutdown，或返回其现值
      * @param null $run
      * @return bool
      */
