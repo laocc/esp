@@ -64,6 +64,9 @@ interface Nosql
     public function close();
 
 
+    /**
+     * @return bool
+     */
     public function ping();
 
 }

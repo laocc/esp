@@ -37,6 +37,10 @@ class IndexController extends BaseController
 //        if ($this->reload(['action' => 'abc'])) return;
 
 
+        $mem=new \Memcached();
+        pre($mem);
+
+
 
     }
 

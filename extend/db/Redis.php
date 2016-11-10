@@ -34,7 +34,7 @@ final class Redis implements ext\Nosql
         if (0 and !!$conf['password'] and !$this->redis->auth($conf['password'])) {
             error("Redis密码错误，无法连接服务器。");
         }
-        if (!$this->redis->select((int)$db)) {
+        if (!$this->redis->select($db)) {
             error("Redis选择库【{$db}】失败。");
         }
         if (isset($conf['ttl'])) {
