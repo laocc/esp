@@ -66,15 +66,12 @@ return [
         'domain' => 'http://' . _DOMAIN,        //加载js/css的域名
         'jquery' => 'js/jquery-2.1.4.min.js',   //jquery所用的文件名
 
-        //网站icon图片的文件流，或在网站根目录加favicon.ico，则这儿不必设置
-        'favicon' => 'data:image/bmp;base64,AAAQEP',
-
         //网站默认标题，$this->title('about')添加的内容被加在此处设置值之前，或$this->title('about',false)则不会带上这儿设置的内容
-        'title' => 'Wide of Ballet FrameWork',
+        'title' => 'Efficient Simple PHP',
 
         //$this->keywords('about');$this->description('about');会覆盖此处设置
-        'keywords' => 'Wide of Ballet FrameWork',   //默认关键词
-        'description' => 'Wide of Ballet FrameWork',//默认描述
+        'keywords' => 'Efficient Simple PHP',   //默认关键词
+        'description' => 'Efficient Simple PHP',//默认描述
     ],
 
     'view' => [

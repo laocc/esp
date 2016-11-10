@@ -1,8 +1,8 @@
 <?php
 namespace esp\core;
 
-use \esp\library\db\Redis;
-use \esp\library\db\Memcache;
+use \esp\extend\db\Redis;
+use \esp\extend\db\Memcache;
 
 /**
  * 页面HTML缓存
@@ -143,7 +143,7 @@ final class Cache
         $driver = strtolower($conf['driver']);
         if (!in_array($driver, ['redis', 'memcache'])) $driver = 'redis';
         $db = $conf[$driver] + Config::get($driver);
-        $driver = '\esp\library\db\\' . ucfirst($driver);
+        $driver = '\esp\extend\db\\' . ucfirst($driver);
         return $medium = new $driver($db);
     }
 

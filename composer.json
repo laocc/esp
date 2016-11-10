@@ -11,13 +11,12 @@
       "autoload": {
             "files": [
                   "helper/functions.php",
-                  "config/define.php",
                   "helper/shutdown.php",
                   "helper/bootstrap.php"
             ],
             "psr-4": {
                   "esp\\core\\": "core/",
-                  "esp\\library\\": "library/",
+                  "esp\\extend\\": "extend/",
                   "esp\\plugins\\": "plugins/"
             }
       },

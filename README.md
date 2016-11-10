@@ -30,10 +30,10 @@ composer dump-autoload --optimize
 │   └── www         www模块
 ├── config          系统定义
 ├── core            *系统核心程序
-├── extend          网站自定义增加的扩展程序          
+├── extend          *系统自带扩展程序          
 ├── helper          辅助程序
-├── library         *系统自带扩展程序
-├── plugins         系统插件
+├── library         网站自定义增加的扩展程序
+├── plugins         网站自定义插件
 ├── public      
 │   ├── admin       admin子站入口
 │   └── www         www子站入口
@@ -143,21 +143,39 @@ bootstrap()和shutdown()，都需要在`run()`之前调用，但不是必须要�
 
 控制器中可以用`$this->layout(FILE PATH);`指定框架文件。
 
+框架视图里有8个固定变量，这些变量在layout中可读，但是如果当前设置没有layout，则会被释放到子视图中。
 
-
-框架视图里有8个固定变量：
+layout.php
 ```
- * @var $_title ;   网页标题
- * @var $_meta ;    网页META，包括keywords、description以及其他注册的meta标签
- * @var $_css ;     网页CSS
- * @var $_js_head ; 网页JS，用在head中显示
- * @var $_js_body ; 网页JS，用在body中开始的位置显示
- * @var $_js_foot ; 网页JS，用在网页body之后显示
- * @var $_js_defer ;网页JS，显示位置同foot，但是加了defer属性，也就是延迟加载
- * @var $_body_html;子视图内容，也就是与控制器动作对应的视图文件解析结果
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <?php
+    /**
+     * @var $_title ;   网页标题
+     * @var $_meta ;    网页META，包括keywords、description以及其他注册的meta标签
+     * @var $_css ;     网页CSS
+     * @var $_js_head ; 网页JS，用在head中显示
+     * @var $_js_body ; 网页JS，用在body中开始的位置显示
+     * @var $_js_foot ; 网页JS，用在网页body之后显示（默认）
+     * @var $_js_defer ;网页JS，显示位置同foot，但是加了defer属性，也就是延迟加载
+     * @var $_view_html;子视图内容，也就是与控制器动作对应的视图文件解析结果
+     */
+    ?>
+    <?= $_meta; ?>
+    <?= $_css; ?>
+    <?= $_js_head; ?>
+    <title><?= $_title ?></title>
+</head>
+<body>
+<?= $_js_body ?>
+<?= $_view_html ?>
+</body>
+<?= $_js_foot ?>
+<?= $_js_defer ?>
+</html>
 ```
-这些变量在layout中可读，但是如果当前设置没有layout，则会被释放到子视图中。
-
 
 ### 3.5.2 标签解析器
 至于用什么格式的标签，可任意，现以smarty为例，实现标签解析器注册：

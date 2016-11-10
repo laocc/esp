@@ -4,7 +4,6 @@ namespace esp\core;
 
 class Response
 {
-    public $https;
     private $_display_type;
     private $_display_value = [];
     private $_control;
@@ -22,11 +21,13 @@ class Response
         '_title' => null,
         '_title_default' => true,
     ];
+    private $_layout_var_name = [
+
+    ];
 
     public function __construct(Request &$request)
     {
         $this->_request = $request;
-        $this->https = strtolower(server('HTTPS')) === 'on';
 
     }
 
@@ -80,8 +81,10 @@ class Response
      */
     public function display()
     {
-        header_remove("Content-type");
-        header('Content-type:' . Config::mime($this->_display_type), true, 200);
+//        header_remove("Content-type");
+        if(!headers_sent()) {
+            header('Content-type:' . Config::mime($this->_display_type), true, 200);
+        }
         echo $this->render();
     }
 
@@ -119,7 +122,7 @@ class Response
 
             case 'xml':
                 if (is_array($this->_display_value[1])) {
-                    $html = (new \esp\library\Xml($this->_display_value[1], $this->_display_value[0]))->render();
+                    $html = (new \esp\extend\io\Xml($this->_display_value[1], $this->_display_value[0]))->render();
                 } else {
                     $html = $this->_display_value[1];
                 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-cn">
 <head>
     <meta charset="UTF-8">
     <?php
@@ -11,34 +11,44 @@
      * @var $_js_body ;
      * @var $_js_foot ;
      * @var $_js_defer ;
-     * @var $_body_html ;
+     * @var $_view_html ;
      */
     ?>
-    <title><?= $_title ?></title>
     <?= $_meta; ?>
     <?= $_css; ?>
     <?= $_js_head; ?>
+    <title><?= $_title ?></title>
     <style>
+        html {
+            font-family: "Microsoft YaHei", "Source Code Pro", "Arial", "sans-serif";
+        }
+
         body {
-            width: 100%;
-            height: 100%;
+            padding: 0;
+            margin: 0;
+            background: #eeeeee;
         }
 
         div {
             width: 100%;
-            height: 100%;
-            line-height: 100%;
+            height: 2em;
+            line-height: 2em;
+            display: block;
             font-size: 100px;
             clear: both;
             text-align: center;
-            margin-top: 300px;
-            color: #567;
+            margin-top: 3em;
+            overflow: hidden;
+            color: #eee;
+            background: #123;
+            text-shadow: 2px 2px 4px #fff;
+            border-bottom: 3px solid #aa0000;
         }
     </style>
 </head>
 <body>
 <?= $_js_body ?>
-<?= $_body_html ?>
+<?= $_view_html ?>
 </body>
 <?= $_js_foot ?>
 <?= $_js_defer ?>

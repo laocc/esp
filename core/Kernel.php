@@ -7,7 +7,6 @@ final class Kernel
     private $request;
     private $response;
     private $_Plugin = [];
-    private $_Plugin_CallBack = [];
 
     private $_shutdown;
     private $_autoDisplay = true;
@@ -143,6 +142,7 @@ final class Kernel
         $this->dispatch($this->request);
         $this->plugsHook('dispatchAfter');
         if ($this->request->loop === true) {
+            //控制器跳转
             if (--$loop > 0) goto loop;
         }
         $this->plugsHook('loopAfter');

@@ -134,7 +134,7 @@ final class View
 
             $html = $this->fetch($file, $value + $this->_view_val);
 
-            return $this->_layout->render($file, ['_body_html' => &$html]);
+            return $this->_layout->render($file, ['_view_html' => &$html]);
         }
 
         return $this->fetch($file, $value + $this->_view_val);

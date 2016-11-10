@@ -4,8 +4,8 @@ class IndexController extends BaseController
 {
     public function indexAction()
     {
-        $this->layout(false);
-        $this->title('WBF');
+//        $this->layout(false);
+        $this->title('ESP');
 
         $this->debug('debug');
 
@@ -17,12 +17,12 @@ class IndexController extends BaseController
 //        $this->keywords('wbf wide');
 //        $this->description('wbf wide');
 
-        $this->js([
-            'http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js',
-            'http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js',
-            'jquery', 'test.js',
-        ]);
-        $this->css(['http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css']);
+//        $this->js([
+//            'http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js',
+//            'http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js',
+//            'jquery', 'test.js',
+//        ]);
+//        $this->css(['http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css']);
 
 
 //        include 'application/www/models/Article.php';
@@ -35,6 +35,14 @@ class IndexController extends BaseController
         $this->set('esp', 'Efficient Simple PHP');
 //
 //        if ($this->reload(['action' => 'abc'])) return;
+
+
+        list($a, $b) = \esp\core\Input::get(['a' => 0, 'b' => 0]);
+        pre([$a, $b]);
+
+        var_dump(\esp\core\Input::get('a'));
+
+        var_dump(is_numeric(".20"));
 
 
     }
