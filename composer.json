@@ -10,7 +10,7 @@
       },
       "autoload": {
             "files": [
-                  "helper/functions.php",
+                  "core/functions.php",
                   "helper/shutdown.php",
                   "helper/bootstrap.php"
             ],
