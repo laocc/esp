@@ -2,7 +2,7 @@
 namespace esp\plugins;
 
 use esp\core\Plugin;
-use esp\core\Kernel;
+use esp\core\Main;
 use esp\core\Request;
 
 class Temp extends Plugin

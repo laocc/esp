@@ -139,7 +139,6 @@ class Response
     }
 
     /**
-     * 应该由Kernel::run();调用
      * 渲染视图并返回
      */
     public function display()
@@ -200,7 +199,6 @@ class Response
 
     /**
      * 最后显示内容
-     * 只能被Kernel中触发
      */
     private function display_response()
     {

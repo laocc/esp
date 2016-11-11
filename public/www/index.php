@@ -2,13 +2,12 @@
 ini_set('error_reporting', -1);
 ini_set('display_errors', true);
 ini_set('date.timezone', 'Asia/Shanghai');
-
 define("_MODULE", 'www');
 define("_ROOT", realpath(__DIR__ . '/../../') . '/');
 if (!include __DIR__ . "/../../vendor/autoload.php") {
     exit('请先运行[composer install]');
 }
-(new esp\core\Kernel())
+(new esp\core\Main())
     ->bootstrap()
     ->shutdown()
     ->run();

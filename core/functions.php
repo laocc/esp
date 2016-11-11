@@ -37,7 +37,7 @@ function error($str, $level = 0, array $errFile = null)
     if (is_array($level)) list($level, $errFile) = [0, $level];
 
     $err = $errFile ?: debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-    \esp\core\Mistake::try_error($str, $level, $err);
+    \esp\extend\Mistake::try_error($str, $level, $err);
     return;
 
     state:  //模拟成某个错误状态
@@ -69,18 +69,6 @@ function host($domain)
     } else {
         return null;
     }
-}
-
-/**
- * 取$_SERVER值
- * @param $key
- * @param null $auto
- * @return null
- */
-function server($key, $auto = null)
-{
-    $key = strtoupper($key);
-    return isset($_SERVER[$key]) ? $_SERVER[$key] : $auto;
 }
 
 /**

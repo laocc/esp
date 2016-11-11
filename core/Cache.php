@@ -55,7 +55,7 @@ final class Cache
         $filename = null;
         foreach ($pattern as &$ptn) {
             if (preg_match($ptn, $this->request->uri)) {
-                $filename = dirname(server('SCRIPT_FILENAME')) . server('REQUEST_URI');
+                $filename = dirname(getenv('SCRIPT_FILENAME')) . getenv('REQUEST_URI');
                 break;
             }
         }
@@ -158,12 +158,12 @@ final class Cache
         $expires = $this->cache_expires();
 
         //判断浏览器缓存是否过期
-        if (server('HTTP_IF_MODIFIED_SINCE') && (strtotime(server('HTTP_IF_MODIFIED_SINCE')) + $expires) > $NOW) {
-            $protocol = server('SERVER_PROTOCOL', 'HTTP/1.1');
+        if (getenv('HTTP_IF_MODIFIED_SINCE') && (strtotime(getenv('HTTP_IF_MODIFIED_SINCE')) + $expires) > $NOW) {
+            $protocol = getenv('SERVER_PROTOCOL') ?: 'HTTP/1.1';
             header("{$protocol} 304 Not Modified", true, 304);
         } else {
             $Expires = time() + $expires;//过期时间
-            $maxAge = $Expires - server('REQUEST_TIME', 0);//生命期
+            $maxAge = $Expires - (getenv('REQUEST_TIME') ?: 0);//生命期
             header('Cache-Control: max-age=' . $maxAge . ', public');
             header('Expires: ' . gmdate('D, d M Y H:i:s', $Expires) . ' GMT');
             header('Pragma: public');

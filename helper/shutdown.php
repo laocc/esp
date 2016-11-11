@@ -1,11 +1,11 @@
 <?php
 
-use \esp\core\Kernel;
+use \esp\core\Main;
 
 /**
  * 程序最后执行，exit后也会执行
  */
-function shutdown(Kernel $kernel)
+function shutdown(Main $main)
 {
-    if (!$kernel->shutdown()) return;
+    if (!$main->shutdown()) return;
 }

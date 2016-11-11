@@ -15,7 +15,7 @@ use esp\core\Response;
  *
  * 在dispatchLoopStartup()中，将自己记录到request中_plugin_debug，供控制器中读取，
  *
- * 另外_debug_action是Kernel::routerShutdown()里记录路由设置中的有没有要求启动debug记录，
+ * 另外_debug_action是 Main::routerShutdown()里记录路由设置中的有没有要求启动debug记录，
  *
  * save_logs()在整个系统最后一步执行，即便exit()也会被执行到。
  *
@@ -127,7 +127,7 @@ class Debug extends Plugin
         //把自己放入一下临时变量，供后面控制器读取，只能放在这个方法里，不可以提前。
         $request->setParam('_plugin_debug', $this);
 
-        //_debug_action是在kernel中赋入的
+        //_debug_action是在Main中赋入的
         $action = $request->getParam('_debug_action');
         if ($action === true)
             $this->star();
@@ -148,9 +148,9 @@ class Debug extends Plugin
     /**
      * 6.分发循环结束之后触发
      */
-    public function kernelEnd(Request $request, Response $response)
+    public function mainEnd(Request $request, Response $response)
     {
-        $this->relay('6.kernelEnd');
+        $this->relay('6.mainEnd');
 
     }
 
@@ -183,7 +183,7 @@ class Debug extends Plugin
         $data[] = "<?php \n\n";
         $data[] = "# " . $request->getMethod() . "\t" . (_CLI ? '[CLI]' : $request->url) . "\n";
         $data[] = "# IP\t" . (_IP) . "\n";
-        $data[] = "# AGENT\t" . server('HTTP_USER_AGENT', '') . "\n\n";
+        $data[] = "# AGENT\t" . getenv('HTTP_USER_AGENT') . "\n\n";
         $data[] = "# Router\t/{$request->module}/{$request->controller}/{$request->action}\t[{$request->route}]\n";
 
         //一些路由结果，路由结果参数

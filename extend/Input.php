@@ -1,5 +1,5 @@
 <?php
-namespace esp\core;
+namespace esp\extend;
 /**
  * Class Input
  * http://php.net/manual/zh/wrappers.php.php

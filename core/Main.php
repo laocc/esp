@@ -2,7 +2,7 @@
 namespace esp\core;
 
 
-final class Kernel
+final class Main
 {
     private $request;
     private $response;
@@ -17,16 +17,15 @@ final class Kernel
         if (!defined('_ROOT')) exit('网站入口处须定义_ROOT项');
 
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
-//        define('_IP', _CLI ? '127.0.0.1' : server('x-real-ip'));//客户端IP
-        define('_HTTPS', strtolower(server('HTTPS')) === 'on');
-        define('_DOMAIN', _CLI ? null : explode(':', server('HTTP_HOST') . ':')[0]);
+        define('_IP', _CLI ? '127.0.0.1' : getenv('REMOTE_ADDR'));//客户端IP
+        define('_HTTPS', strtolower(getenv('HTTPS')) === 'on');
+        define('_DOMAIN', _CLI ? null : explode(':', getenv('HTTP_HOST') . ':')[0]);
         define('_HOST', _CLI ? null : host(_DOMAIN));//域名的根域
-//        define('_RAND', mt_rand());
+        define('_LINUX', strtolower(PHP_OS) === 'linux');
+        define('_RAND', mt_rand());
 
         chdir(_ROOT);
-        Mistake::init();
         Config::load();
-        Session::init();
 
         $this->request = new Request();
         $this->response = new Response($this->request);
@@ -49,7 +48,7 @@ final class Kernel
     /**
      * 注册关门方法，exit后也会被执行
      * 在网站入口处明确调用才会注册
-     * @return bool|Kernel
+     * @return bool|Main
      */
     public function shutdown()
     {
@@ -86,7 +85,7 @@ final class Kernel
     private function plugsHook($time)
     {
         if (empty($this->_Plugin)) return;
-        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'kernelEnd'])) return;
+        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'mainEnd'])) return;
         foreach ($this->_Plugin as &$plug) {
             if (method_exists($plug, $time)) {
                 call_user_func_array([$plug, $time], [$this->request, $this->response]);
@@ -148,7 +147,7 @@ final class Kernel
 
         $this->cache('save');
 
-        $this->plugsHook('kernelEnd');
+        $this->plugsHook('mainEnd');
     }
 
     private function cache($action)

@@ -4,6 +4,7 @@ return [
         'master' => '127.0.0.1',
         'port' => 3306,
         'db' => 'espDemo',
+        'timeout' => 1,
         'username' => 'useEsp',
         'password' => 'password',
         'charset' => 'utf8',
@@ -15,6 +16,7 @@ return [
         'host' => '127.0.0.1',
         'port' => 6379,
         'db' => 1,
+        'timeout' => 1,
         'username' => 'useEsp',
         'password' => 'password',
     ],
@@ -24,6 +26,7 @@ return [
         'port' => 6379,
         'db' => 1,
         'maxDb' => 16,
+        'timeout' => 1,
         'username' => 'useEsp',
         'password' => 'password',
     ],
@@ -40,6 +43,7 @@ return [
         'host' => [
             ['127.0.0.1', 11211],
         ],
+        'timeout' => 1,
         'table' => _MODULE,
     ],
 ];

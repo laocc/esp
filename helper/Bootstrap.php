@@ -1,20 +1,31 @@
 <?php
-use \esp\core\Kernel;
-use \esp\plugins;
+use \esp\core\Main;
+use \esp\plugins\Smarty;
+use \esp\plugins\Debug;
+use \esp\extend\Mistake;
+use \esp\extend\Session;
 
 final class Bootstrap
 {
-    public function _initDebug(Kernel $kernel)
+
+    public function _initFirst(Main $main)
     {
-//        $debug = new plugins\Debug();
-//        $kernel->setPlugin($debug);
+        Mistake::init();
+        Session::init();
+    }
+
+
+    public function _initDebug(Main $main)
+    {
+//        $debug = new Debug();
+//        $main->setPlugin($debug);
 //        $debug->star();
     }
 
 
-    public function _initSmarty(Kernel $kernel)
+    public function _initSmarty(Main $main)
     {
-//        $kernel->setPlugin(new plugins\Smarty());
+//        $main->setPlugin(new Smarty());
 
     }
 

@@ -642,7 +642,7 @@ class Mysql
         $text['time'] = time();
         $text['date'] = date('Y-m-d H:i:s');
         $text['ip'] = _IP;
-        $text['agent'] = htmlentities(server('HTTP_USER_AGENT'));
+        $text['agent'] = htmlentities(getenv('HTTP_USER_AGENT'));
         $text['sql'] = htmlentities($sql);//htmlentities
 
         $val = [

@@ -1,5 +1,5 @@
 <?php
-namespace esp\core;
+namespace esp\extend;
 
 final class Mistake
 {

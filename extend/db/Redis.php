@@ -26,7 +26,7 @@ final class Redis implements ext\Nosql
             error('Redis库ID选择错误');
         }
         $this->redis = new \Redis();
-        if (!$this->redis->connect($conf['host'], $conf['port'])) {
+        if (!$this->redis->connect($conf['host'], $conf['port'], $conf['timeout'])) {
             error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
         }
         //用密码登录
