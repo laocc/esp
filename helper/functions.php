@@ -353,16 +353,20 @@ function server($key, $auto = null)
     return isset($_SERVER[$key]) ? $_SERVER[$key] : $auto;
 }
 
-
+/**
+ * 加载文件，同时加载结果被缓存
+ * @param $file
+ * @return bool|mixed
+ */
 function load($file)
 {
     if (!$file) return false;
     static $recode = [];
     $file = root($file);
     $md5 = md5($file);
-    if (isset($recode[$md5])) return true;
-    $recode[$md5] = time();
-    return include $file;
+    if (isset($recode[$md5])) return $recode[$md5];
+    $recode[$md5] = include $file;
+    return $recode[$md5];
 }
 
 /**

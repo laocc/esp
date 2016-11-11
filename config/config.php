@@ -20,6 +20,17 @@ return [
         'maxLoop' => 3,                 //控制器间最多跳转次数，无论跳转是否成功
     ],
 
+    //另外附加的config文件名，若文件不存在或不可读，则不加载
+    //遇到相同键时，以最后加载的为准，也就是说：
+    //  1.  在模块级config里可以覆盖当前文件的相关定义
+    //  2.  下面定义的文件先后顺序要安排好
+    //  3.  如果在下面的文件中也有include，也会被加载，所以建议各模块的更多配置文件可以在各自config中定义加载
+    //用_MODULE，可灵活加载不同模块的配置文件
+    //Config::get('include')读不到值
+    'include' => [
+        '/config/' . _MODULE . '/config.php',
+    ],
+
     'cache' => [
         'autoRun' => false,
         'expire' => 10,
@@ -44,10 +55,15 @@ return [
 
     'session' => [
         'autoRun' => true,
+        'urlKey' => 'SSID', //若客户端禁用Cookies，SessionID将被附在URL中
+        'cokKey' => 'SSID', //Cookies中SessionID名称
         'driver' => 'redis',
         'expire' => 20 * 60,//秒
         'redis' => [
             'db' => 2
+        ],
+        'memcache' => [
+            'table' => 'Session'
         ],
     ],
 

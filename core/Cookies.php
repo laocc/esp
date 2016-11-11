@@ -3,6 +3,12 @@ namespace esp\core;
 
 final class Cookies
 {
+
+    public static function init()
+    {
+        setcookie('Test', _RAND, time() + 10, '/', '.' . _HOST, _HTTPS, true);
+    }
+
     public static function set($key, $value, $ttl = null)
     {
         if (preg_match('/^(\d+)\s?([ymDhw])$/i', trim($ttl), $mat)) {

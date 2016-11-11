@@ -25,7 +25,6 @@ final class Redis implements ext\Nosql
         if (!($db > 0 and $db <= $conf['maxDb'])) {
             error('Redis库ID选择错误');
         }
-
         $this->redis = new \Redis();
         if (!$this->redis->connect($conf['host'], $conf['port'])) {
             error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
@@ -68,7 +67,6 @@ final class Redis implements ext\Nosql
         if (!!$this->table) {//指定哈希表
             return $this->redis->hSet($this->table, $key, serialize($value));
         }
-
         //普通值
         $ttl = $ttl ?: $this->ttl;
         if ($ttl) {

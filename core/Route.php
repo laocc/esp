@@ -4,24 +4,20 @@ namespace esp\core;
 
 final class Route
 {
-
     /**
      * 路由中心
      */
-    public function matching($routes, Request &$request)
+    public function matching(Request &$request)
     {
-        $default = [
-            'match' => '/\/(?:[\w\-]+\/?)*/',
-            'method' => 'all',
-            'route' => null,
-        ];
+        $default = ['_default' => ['match' => '/\/(?:[\w\-]+\/?)*/']];
+        $modRoute = load('config/' . _MODULE . '/routes.php');
+        if (!is_array($modRoute)) $modRoute = [];
 
-        foreach (array_merge($routes, ['_default' => $default]) as $key => &$route) {
+        foreach (array_merge($modRoute, $default) as $key => &$route) {
             if ($route['match'] == $request->uri or
                 //先判断一下是不是正则的格式
                 (preg_match('/^\/.+\/[ims]*$/', $route['match']) and preg_match($route['match'], $request->uri, $matches))
             ) {
-
                 if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->ajax))
                     error(Config::get('error.method'));
 

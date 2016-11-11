@@ -1,7 +1,6 @@
 <?php
 namespace esp\extend\io;
 
-use \Yaf\Registry;
 
 
 class Message

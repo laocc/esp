@@ -5,7 +5,7 @@ final class Mistake
 {
     public static function init()
     {
-        $handler_yaf = function ($errNo, $errStr, $errFile, $errLine) {
+        $handler_php = function ($errNo, $errStr, $errFile, $errLine) {
             $err = [];
             if (in_array($errNo, [256, 512, 1024])) {
                 $err = json_decode($errStr, 256);
@@ -37,7 +37,7 @@ final class Mistake
          * 3，程序中error()抛出的错误；
          * 4，找不到控制器，找不到控制动作等；
          */
-        set_error_handler($handler_yaf);
+        set_error_handler($handler_php);
 
         /**
          * 注册【异常】处理方法，

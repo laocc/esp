@@ -1,8 +1,6 @@
 <?php
 namespace esp\extend\io;
 
-use \Yaf\Registry;
-use \gd\Image;
 use \io\ext\Log;
 
 /*

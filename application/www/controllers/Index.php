@@ -29,9 +29,9 @@ class IndexController extends BaseController
 
 
 //        include 'application/www/models/Article.php';
-
-        $mod = Model::create(root('application/www/models/Article.php'));
-        echo $mod->first();
+//
+//        $mod = Model::create(root('application/www/models/Article.php'));
+//        echo $mod->first();
 
 //        var_dump($this->adapter());
 

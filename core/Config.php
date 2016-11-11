@@ -16,13 +16,28 @@ final class Config
     {
         if (!empty(self::$_conf)) return;
 
-        $file = ['config', 'database'];
-
+        $file = root('config/config.php', 'config/database.php');
         foreach ($file as &$fil) {
-            $_conf = self::load_file(root("config/{$fil}.php"));
+            $_conf = load($fil);
             if (is_array($_conf) && !empty($_conf)) {
                 self::$_conf = array_merge(self::$_conf, $_conf);
             }
+        }
+
+        reload: //定义此标签用于循环加载后面文件也有include的情况
+
+        if (isset(self::$_conf['include']) and !empty(self::$_conf['include'])) {
+            $file = self::$_conf['include'];
+            unset(self::$_conf['include']);
+            $file = is_array($file) ? root(...$file) : root($file);
+            if (!is_array($file)) $file = [$file];
+            foreach ($file as $fil) {
+                $_conf = is_readable($fil) ? load($fil) : null;
+                if (is_array($_conf) && !empty($_conf)) {
+                    self::$_conf = $_conf + self::$_conf;
+                }
+            }
+            goto reload;
         }
     }
 
@@ -57,12 +72,6 @@ final class Config
     public static function set($key, $value)
     {
         self::$_conf[$key] = $value;
-    }
-
-    private static function load_file($file)
-    {
-        if (!$file) return false;
-        return @include root($file);
     }
 
 

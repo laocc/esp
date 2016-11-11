@@ -21,6 +21,7 @@ final class Kernel
         define('_HTTPS', strtolower(server('HTTPS')) === 'on');
         define('_DOMAIN', _CLI ? null : explode(':', server('HTTP_HOST') . ':')[0]);
         define('_HOST', _CLI ? null : host(_DOMAIN));//域名的根域
+        define('_RAND', mt_rand());
 
         chdir(_ROOT);
         Mistake::init();
@@ -56,9 +57,7 @@ final class Kernel
             return $this->response->shutdown();
         }
         $this->_shutdown = true;
-        Session::set('timeA', microtime(true));
         register_shutdown_function(function () {
-            Session::set('timeB', microtime(true));
             shutdown($this);
         });
         return $this;
@@ -126,12 +125,9 @@ final class Kernel
      */
     public function run()
     {
-        $module = _MODULE;
-        $routes = load("config/routes_{$module}.php");
-        if (!$routes) exit("未定义当前模块路由：/config/routes_{$module}.php");
         $loop = Config::get('esp.maxLoop');
         $this->plugsHook('routeBefore');
-        (new Route())->matching($routes, $this->request);
+        (new Route())->matching($this->request);
         $this->plugsHook('routeAfter');
         $this->cache('display');
         $this->plugsHook('loopBefore');

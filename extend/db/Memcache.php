@@ -129,6 +129,7 @@ class Memcache implements ext\Nosql
         $this->check_table();
         if ($key === null or $key === '*') return $this->all();
         $val = $this->conn->get($this->tab . '.' . $key);
+        pre($this->tab . '.' . $key);
         if ($val === false and $try > 0) {
             return $this->get($key, 0);//只尝试一次
         }

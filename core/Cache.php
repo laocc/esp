@@ -153,6 +153,7 @@ final class Cache
      */
     private function cache_header($label = null)
     {
+        if (headers_sent()) return;
         $NOW = time();//编辑时间
         $expires = $this->cache_expires();
 
@@ -175,6 +176,7 @@ final class Cache
      */
     private function cache_disable_header($label = null)
     {
+        if (headers_sent()) return;
         header('Cache-Control: no-cache, must-revalidate, no-store', true);
         header('Pragma: no-cache', true);
         header('Cache-Info: no cache', true);

@@ -1,7 +1,8 @@
 <?php
 namespace esp\extend\tools;
 
-use \Yaf\Registry;
+use esp\core\Config;
+use esp\extend\db\Mongodb;
 
 /**
  * Ip应用：
@@ -18,9 +19,10 @@ use \Yaf\Registry;
  */
 final class Ip
 {
+
     private static function db($table)
     {
-        return new \db\Mongodb($table);
+        return new Mongodb($table);
     }
 
     /**
@@ -31,7 +33,7 @@ final class Ip
     {
         if (!$ipData or !is_file($ipData)) exit('Data File not exists.');
 
-        $conf = Registry::get('config')->ip;
+        $conf = Config::get('ip');
         $DB = self::db($conf)->table($conf->table);
         $file = file($ipData);
 
@@ -61,7 +63,7 @@ final class Ip
      */
     public static function get($ip = null)
     {
-        $conf = Registry::get('config')->ip;
+        $conf = Config::get('ip');
 
         $lng = ip2long($ip);
         $where = ['lng_b' => ['$gte' => $lng], 'lng_a' => ['$lte' => $lng]];

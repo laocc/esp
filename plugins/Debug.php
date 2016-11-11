@@ -12,7 +12,7 @@ use esp\core\Response;
  *
  * 本类只记录程序执行时间(ms)顺序及内存消耗(kb)
  *
- * 其中调用了yaf全部的6个HOOK，可以大致观察yaf进入控制器之前的执行顺序
+ * 其中调用了全部的6个HOOK，可以大致观察进入控制器之前的执行顺序
  *
  * 在dispatchLoopStartup()中，将自己记录到request中_plugin_debug，供控制器中读取，
  *
@@ -45,7 +45,7 @@ use esp\core\Response;
  * # Router    /Index/Article/list    [class]
  * # Params    {"class":"nosql"}
  *
- * #     0.924        8.898    YAF框架自身消耗
+ * #     0.924        8.898    框架自身消耗
  * # ----------------------------------------------------------------------------------------------------
  * #     0.006        0.000    0.start
  * #     0.695       59.609    1.routerStartup
