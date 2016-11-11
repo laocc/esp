@@ -6,7 +6,6 @@ class Response
 {
     private $_display_type;
     private $_display_value = [];
-    private $_control;
     private $_request;
     private $_shutdown = true;
 

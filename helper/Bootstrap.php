@@ -6,9 +6,9 @@ final class Bootstrap
 {
     public function _initDebug(Kernel $kernel)
     {
-        $debug = new plugins\Debug($kernel);
-        $kernel->setPlugin($debug);
-        $debug->star();
+//        $debug = new plugins\Debug();
+//        $kernel->setPlugin($debug);
+//        $debug->star();
     }
 
 

@@ -17,11 +17,11 @@ final class Kernel
         if (!defined('_ROOT')) exit('网站入口处须定义_ROOT项');
 
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
-        define('_IP', _CLI ? '127.0.0.1' : server('x-real-ip'));//客户端IP
+//        define('_IP', _CLI ? '127.0.0.1' : server('x-real-ip'));//客户端IP
         define('_HTTPS', strtolower(server('HTTPS')) === 'on');
         define('_DOMAIN', _CLI ? null : explode(':', server('HTTP_HOST') . ':')[0]);
         define('_HOST', _CLI ? null : host(_DOMAIN));//域名的根域
-        define('_RAND', mt_rand());
+//        define('_RAND', mt_rand());
 
         chdir(_ROOT);
         Mistake::init();

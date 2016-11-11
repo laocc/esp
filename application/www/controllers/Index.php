@@ -7,10 +7,10 @@ class IndexController extends BaseController
 {
     public function indexAction()
     {
-//        $this->layout(false);
+        $this->setLayout(false);
         $this->title('ESP');
 
-        $this->debug('debug');
+//        $this->debug('debug');
 
 //        $this->view(false);
 

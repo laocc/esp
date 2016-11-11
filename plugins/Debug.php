@@ -1,7 +1,6 @@
 <?php
 namespace esp\plugins;
 
-use esp\core\Kernel;
 use esp\core\Plugin;
 use esp\core\Request;
 use esp\core\Response;
@@ -60,7 +59,6 @@ use esp\core\Response;
  */
 class Debug extends Plugin
 {
-    private $kernel;
     private $prevTime;
     private $memory;
     private $save;
@@ -71,7 +69,7 @@ class Debug extends Plugin
     private $_node = [];
     private $_node_len = 0;
 
-    public function __construct(Kernel $kernel)
+    public function __construct()
     {
         /**
          * 这儿记录的是从站点入口index.php执行到现在的消耗，大致为bootstrap的总消耗
@@ -80,7 +78,6 @@ class Debug extends Plugin
         $star = defined('_STAR') ? _STAR : [microtime(true), memory_get_usage()];
         $this->prevTime = microtime(true) - $star[0];
         $this->memory = memory_get_usage();
-        $this->kernel = $kernel;
         $time = sprintf($this->_print_format, $this->prevTime * 1000);
         $memo = sprintf($this->_print_format, ($this->memory - $star[1]) / 1024);
         $now = sprintf($this->_print_format, ($this->memory) / 1024);
@@ -95,19 +92,20 @@ class Debug extends Plugin
      */
     public function routeBefore(Request $request, Response $response)
     {
+        $xDebug = isset($_GET['xdebug']) ? $_GET['xdebug'] : (isset($_GET['XDEBUG']) ? $_GET['XDEBUG'] : null);
+        if ($xDebug) {
+            new ext\Xdebug($xDebug, __FILE__);
+            exit;
+        }
+
         $this->relay('1.routeBefore');
 
         //将最后保存数据部分注册为关门动作
-        register_shutdown_function(function () {
-            $this->save_logs();
+        register_shutdown_function(function () use ($request) {
+            $this->save_logs($request);
             $this->show_debug();
         });
 
-        $xDebug = isset($_GET['xdebug']) ? $_GET['xdebug'] : (isset($_GET['XDEBUG']) ? $_GET['XDEBUG'] : null);
-        if (!$xDebug) return;
-        new ext\Xdebug($xDebug, __FILE__);
-        $this->disable();
-        exit;
     }
 
     /**
@@ -173,14 +171,13 @@ class Debug extends Plugin
     /**
      * 保存记录到的数据
      */
-    private function save_logs()
+    private function save_logs(Request $request)
     {
         if (_CLI) echo "\n\n";
 
         if (empty($this->_node) or $this->save === null) return;
         $this->relay('END:save_logs');
 
-        $request = $this->kernel->getRequest();
         $filename = $this->filename();
         $data = [];
         $data[] = "<?php \n\n";
