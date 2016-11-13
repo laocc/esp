@@ -198,3 +198,9 @@ function xml_encode($root, $array)
     return (new \esp\extend\io\Xml($array, $root))
         ->render();
 }
+
+if (!function_exists("fastcgi_finish_request")) {
+    function fastcgi_finish_request()
+    {
+    }
+}

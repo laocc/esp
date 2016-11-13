@@ -144,9 +144,9 @@ final class Main
         }
         $this->plugsHook('loopAfter');
         if ($this->_autoDisplay) $this->response->display();
+        fastcgi_finish_request();
 
         $this->cache('save');
-
         $this->plugsHook('mainEnd');
     }
 
