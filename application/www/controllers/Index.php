@@ -30,12 +30,10 @@ class IndexController extends BaseController
 
 //        include 'application/www/models/Article.php';
 //
-//        $mod = Model::create(root('application/www/models/Article.php'));
-//        echo $mod->first();
-
-//        var_dump($this->adapter());
-
-        $this->set('esp', 'Efficient Simple PHP');
+        $mod = Model::create(root('application/www/models/Article.php'));
+        $val = $mod->first();
+        var_dump($val);
+        $this->set('esp', $val);
 
 //
 //        if ($this->reload('admin')) return;

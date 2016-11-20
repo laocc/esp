@@ -57,6 +57,7 @@ function error($str, $level = 0, array $errFile = null)
  */
 function host($domain)
 {
+    if (empty($domain)) return null;
     $dm1 = 'cn|cm|my|ph|tw|uk|hk';
     $dm2 = 'com|net|org|gov|idv|co|name';
     if (strpos('/', $domain)) {
