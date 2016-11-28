@@ -309,6 +309,11 @@ class Response
         unset($this->_layout_val['_title_default']);
     }
 
+
+    /**
+     * 返回当前请求须响应的格式，json,xml,html,text等
+     * @return mixed
+     */
     public function getType()
     {
         return $this->_display_type;

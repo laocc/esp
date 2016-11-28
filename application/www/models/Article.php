@@ -3,7 +3,7 @@ namespace www;
 
 use esp\core\Config;
 use esp\core\Model;
-use laocc\db\Memcache;
+use laocc\dbs\Memcache;
 
 class ArticleModel extends Model
 {

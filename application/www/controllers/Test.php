@@ -5,7 +5,7 @@ class TestController extends BaseController
 {
     public function testAction()
     {
-        $this->view(false);
+        $this->getView();
         pre($this->getRequest());
     }
 }
