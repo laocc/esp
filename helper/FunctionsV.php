@@ -210,7 +210,7 @@ function clearBom(&$loadStr)
  * @param int $len
  * @return string
  */
-function rnd(int $amount, int $len = 2): string
+function rnd($amount, int $len = 2): string
 {
     return sprintf("%.{$len}f", $amount);
 }
