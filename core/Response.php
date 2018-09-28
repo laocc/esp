@@ -3,6 +3,8 @@
 namespace esp\core;
 
 
+use esp\library\ext\Xml;
+
 final class Response
 {
     private $_display_value = Array();

@@ -1,6 +1,6 @@
 <?php
 
-namespace esp\core;
+namespace esp\library\ext;
 
 /*
  *

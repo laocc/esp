@@ -35,12 +35,13 @@ class Controller
      * 若允许本站或空来路，则用：$this->check_host('');
      *
      * @param array ...$host
+     * @throws \Exception
      */
     final protected function check_host(...$host)
     {
         if (isset($host[0]) and is_array($host[0])) $host = $host[0];
         if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
-            Config::states(401);
+            throw new \Exception('禁止接入', 401);
         }
     }
 
@@ -183,6 +184,10 @@ class Controller
         $this->_debug->disable();
     }
 
+    /**
+     * 网页跳转
+     * @param string $url
+     */
     final protected function redirect(string $url)
     {
         header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1) . ' GMT');
@@ -329,6 +334,12 @@ class Controller
         }
     }
 
+    /**
+     * 设置js引入
+     * @param $file
+     * @param string $pos
+     * @return $this
+     */
     final protected function js($file, $pos = 'foot')
     {
         $this->_response->js($file, $pos);
@@ -336,6 +347,11 @@ class Controller
     }
 
 
+    /**
+     * 设置css引入
+     * @param $file
+     * @return $this
+     */
     final protected function css($file)
     {
         $this->_response->css($file);
@@ -343,6 +359,12 @@ class Controller
     }
 
 
+    /**
+     * 设置网页meta项
+     * @param string $name
+     * @param string $value
+     * @return $this
+     */
     final protected function meta(string $name, string $value)
     {
         $this->_response->meta($name, $value);
@@ -350,6 +372,11 @@ class Controller
     }
 
 
+    /**
+     * 设置网页keywords
+     * @param string $value
+     * @return $this
+     */
     final protected function keywords(string $value)
     {
         $this->_response->keywords($value);
@@ -357,6 +384,11 @@ class Controller
     }
 
 
+    /**
+     * 设置网页description
+     * @param string $value
+     * @return $this
+     */
     final protected function description(string $value)
     {
         $this->_response->description($value);
@@ -364,6 +396,10 @@ class Controller
     }
 
 
+    /**
+     * 注册关门后操作
+     * @param callable $fun
+     */
     final protected function shutdown(callable $fun)
     {
         register_shutdown_function($fun);

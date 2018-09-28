@@ -29,7 +29,7 @@ class Model
     final public function __construct(bool $cache = null)
     {
         $this->_controller = $GLOBALS['_Controller'];
-        if (0) $this->_controller = new Controller(null);//无作用，只是为了让下面有些函数调用能跟踪到而已
+        if (false) $this->_controller = new Controller(null);//无作用，只是为了让下面有些函数调用能跟踪到而已
 
         if (is_bool($cache)) $this->__cache = $cache;
 
@@ -196,12 +196,17 @@ class Model
         return $val['COLUMN_NAME'];
     }
 
+    /**
+     * 设置自增ID起始值
+     * @param string $table
+     * @param int $id
+     * @return bool|db\ext\Result|null
+     */
     final public function increment(string $table, int $id = 1)
     {
         //TRUNCATE TABLE dbAdmin;
         //alter table users AUTO_INCREMENT=10000;
-        $val = $this->_controller->Mysql()->query("alter table {$table} AUTO_INCREMENT={$id}");
-        return $val;
+        return $this->_controller->Mysql()->query("alter table {$table} AUTO_INCREMENT={$id}");
     }
 
     /**
@@ -423,12 +428,14 @@ class Model
     }
 
     /**
+     * id in
      * @param array $ids
      * @param null $where
      * @return array
      */
     final public function in(array $ids, $where = null)
     {
+        if (empty($ids)) return [];
         $table = $this->table();
         $val = $this->_controller->Mysql()->table($table)
             ->where_in($this->PRI(), $ids);
@@ -694,9 +701,9 @@ class Model
     {
         $hash = $this->_controller->Redis($db)->hash('CacheHash');
         if (is_null($value))
-            return $hash->hGet('CacheHash', $key);
+            return $hash->hGet($key);
         else
-            return $hash->hSet('CacheHash', $key, $value);
+            return $hash->hSet($key, $value);
     }
 
 }

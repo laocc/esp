@@ -1,6 +1,7 @@
 <?php
 
-namespace esp\core;
+namespace esp\library\ext;
+
 /**
  * 密码操作类
  * 单向加密：

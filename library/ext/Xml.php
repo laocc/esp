@@ -1,6 +1,6 @@
 <?php
 
-namespace esp\core;
+namespace esp\library\ext;
 
 final class Xml
 {
@@ -16,7 +16,7 @@ final class Xml
      */
     public static function encode(string $root, array $array)
     {
-        return (new \esp\core\Xml($array, $root))->render();
+        return (new Xml($array, $root))->render();
     }
 
     /**

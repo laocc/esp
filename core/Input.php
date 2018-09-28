@@ -1,6 +1,8 @@
 <?php
 
 namespace esp\core;
+use esp\library\ext\Xss;
+
 /**
  * Class Input
  * http://php.net/manual/zh/wrappers.php.php

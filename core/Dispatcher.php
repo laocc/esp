@@ -4,7 +4,6 @@ namespace esp\core;
 
 
 use esp\core\db\Redis;
-use esp\library\Tools;
 
 final class Dispatcher
 {
