@@ -1,27 +1,23 @@
 {
-      "name": "laocc/esp",
-      "title": "Efficient Simple PHP",
-      "require": {
-            "php": ">7.0"
-      },
-      "require-dev": {
-            "php": ">7.0",
-            "smarty/smarty": "~3.1",
-            "laocc/dbs": "dev-master",
-            "laocc/gds": "dev-master",
-            "laocc/plugs": "dev-master",
-            "dodgepudding/wechat-php-sdk": "1.1"
-      },
-      "autoload": {
-            "files": [
-                  "core/Functions.php",
-                  "helper/shutdown.php",
-                  "helper/bootstrap.php"
-            ],
-            "psr-4": {
-                  "esp\\core\\": "core/",
-                  "esp\\extend\\": "extend/",
-                  "esp\\plugins\\": "plugins/"
-            }
-      }
+  "name": "core/2.1",
+  "title": "esp core:composer dump-autoload --optimize",
+  "require": {
+    "php": ">7.0"
+  },
+  "require-dev": {
+    "php": ">7.0"
+  },
+  "autoload": {
+    "files": [
+      "helper/Functions.php",
+      "helper/Bootstrap.php"
+    ],
+    "psr-4": {
+      "esp\\core\\": "core/",
+      "esp\\plugs\\": "plugs/",
+      "esp\\library\\": "library/",
+      "esp\\library\\ext\\": "library/ext/",
+      "models\\": "application/models/"
+    }
+  }
 }

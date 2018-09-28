@@ -1,8 +1,6 @@
 <?php
-namespace esp\core;
 
-use \esp\extend\db\Redis;
-use \esp\extend\db\Memcache;
+namespace esp\core;
 
 /**
  * 页面HTML缓存
@@ -10,47 +8,112 @@ use \esp\extend\db\Memcache;
  */
 final class Cache
 {
-    private $_block = '/#CONTENT_TYPE#/';
-    private $_token = 'esp';
+    private $_option;
+    private $request;
+    private $response;
+    private $redis;
 
-    public function __construct(Request &$request, Response &$response)
+    public function __construct(Dispatcher $dispatcher, array &$option)
     {
-        $this->request = $request;
-        $this->response = $response;
+        $this->request = &$dispatcher->_request;
+        $this->response = &$dispatcher->_response;
+        $this->redis = &$dispatcher->_buffer;
+        $this->_option = &$option;
+        if (isset($option['run'])) $dispatcher->_request->set('_cache_set', $option['run']);
     }
 
-    public function cacheSave()
+    /**
+     * 禁止保存
+     */
+    public function disable()
     {
+        $this->_option['run'] = false;
+    }
+
+    /**
+     * 保存
+     * 仅由Dispatcher.run()调用
+     */
+    public function Save()
+    {
+        if (_CLI or !$this->_option['run'] or $this->_option['ttl'] < 1) return;
         if ($this->htmlSave()) return;
-        if (_CLI or $this->cache_expires() < 1) return;
         if (defined('_CACHE_DISABLE') and !!_CACHE_DISABLE) return;
         if (!$key = $this->request->get('_cache_key')) return;
         if (!$value = $this->response->render()) return;
 
-        $type = $this->response->type();
-        $zip = 0;
-
         //连续两个以上空格变成一个
-//        $value = preg_replace(['/\x20{2,}/'], ' ', $value);
+        if ($this->_option['space'] ?? 0) $value = preg_replace(['/\x20{2,}/'], ' ', $value);
 
         //删除:所有HTML注释
-        $value = preg_replace(['/\<\!--.*?--\>/'], '', $value);
+        if ($this->_option['notes'] ?? 0) $value = preg_replace(['/\<\!--.*?--\>/'], '', $value);
 
         //删除:HTML之间的空格
-        $value = preg_replace(['/\>([\s\x20])+\</'], '><', $value);
+        if ($this->_option['tags'] ?? 0) $value = preg_replace(['/\>([\s\x20])+\</'], '><', $value);
 
         //全部HTML归为一行
-        if ($zip) $value = preg_replace(['/[\n\t\r]/s'], '', $value);
+        if ($this->_option['zip'] ?? 0) $value = preg_replace(['/[\n\t\r]/s'], '', $value);
 
-        if ($this->cache_medium()->set($key, "{$value}{$this->_block}{$type}", $this->cache_expires())) {
-            $this->cache_header('by save');
+        $array = [];
+        $array['html'] = $value;
+        $array['type'] = $this->response->getType();
+        $array['expire'] = (time() + $this->_option['ttl']);
+
+        if ($this->redis->set($key, $array, $this->_option['ttl'])) {
+            $this->setHeader('by save');
         }
     }
 
+    /**
+     * 读取并显示     * 仅由Dispatcher.run()调用
+     * @return bool
+     */
+    public function Display()
+    {
+        if (_CLI or !$this->_option['run'] or $this->_option['ttl'] < 1) goto no_cache;
+        if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) goto no_cache;
+
+        //_cache_set是路由的设置，有可能是T/F，或需要组成KEY的数组
+        $_cache_set = $this->request->get('_cache_set');
+        if (is_bool($_cache_set) and !$_cache_set) goto no_cache;
+
+        //生成key
+        $key = $this->build_cache_key($_cache_set);
+        if (!$key) goto no_cache;
+
+        //读取
+        $this->request->set('_cache_key', $key);
+        $array = $this->redis->get($key);
+        if (!$array) goto no_cache;
+
+        header('Content-type:' . $array['type'], true);
+        $this->setHeader('by display');
+        echo($array['html']);
+        return true;
+
+        no_cache:
+        $this->disable_header('disable');
+        return false;
+    }
+
+    /**
+     * 删除
+     * @param $key
+     * @return bool|int
+     */
+    public function Delete($key)
+    {
+        return $this->redis->del($key);
+    }
+
+    /**
+     * 保存静态HTML
+     * @return bool
+     */
     private function htmlSave()
     {
         if ($this->request->get('_disable_static')) return false;
-        $pattern = Config::get('cache.static');
+        $pattern = $this->_option['static'];
         if (empty($pattern) or !$pattern) return false;
         $filename = null;
         foreach ($pattern as &$ptn) {
@@ -69,93 +132,34 @@ final class Cache
         return true;
     }
 
-    public function cacheDisplay()
-    {
-        if (_CLI or $this->cache_expires() < 1) goto no_cache;
-        if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) goto no_cache;
-
-        //_cache_set是路由的设置，有可能是T/F，或需要组成KEY的数组
-        $_cache_set = $this->request->get('_cache_set');
-        if (is_bool($_cache_set) and !$_cache_set) goto no_cache;
-
-        //生成key
-        $this->build_cache_key($key, $_cache_set);
-        if (!$key) goto no_cache;
-
-        //读取
-        $this->request->set('_cache_key', $key);
-        $cache = $this->cache_medium()->get($key);
-        if (!$cache) goto no_cache;
-
-        $cache = explode($this->_block, $cache);
-        if (!!$cache[0]) {
-            if (isset($cache[1]) and $cache[1]) header('Content-type:' . $cache[1], true);
-            $this->cache_header('by display');
-            exit($cache[0]);
-        }
-        return;
-
-        no_cache:
-        $this->cache_disable_header('disable');
-    }
-
-    public function cacheDelete($key)
-    {
-        return $this->cache_medium()->del($key);
-    }
-
     /**
      * 创建用于缓存的key
      */
-    private function build_cache_key(&$key, $_cache_set)
+    private function build_cache_key($_cache_set)
     {
-        $bud = [];
+        $bud = Array();
         //共公key
         if (!empty($_GET)) {
-            $param = Config::get('cache.param');
-            if (!is_array($param)) $param = [];
-            if (!is_array($_cache_set)) $_cache_set = [];
+            $param = $this->_option['param'] ?? [];
+            if (!is_array($param)) $param = Array();
+            if (!is_array($_cache_set)) $_cache_set = Array();
             //合并需要请求的值，并反转数组，最后获取与$_GET的交集
             $bud = array_intersect_key($_GET, array_flip(array_merge($param, $_cache_set)));
         }
         //路由结果
         $params = $this->request->getParams();
-        $key = (_MODULE . md5(json_encode($params) . json_encode($bud) . $this->_token));
-    }
-
-    private function cache_expires()
-    {
-        static $ttl;
-        if (!is_null($ttl)) return $ttl;
-        return $ttl = intval(Config::get('cache.expire'));
-    }
-
-    /**
-     * 选择存储介质
-     * @return Memcache|Redis
-     */
-    private function cache_medium()
-    {
-        static $medium;
-        if (!is_null($medium)) return $medium;
-
-        $conf = Config::get('cache');
-        $driver = strtolower($conf['driver']);
-        if (!in_array($driver, ['redis', 'memcache'])) $driver = 'redis';
-        $db = $conf[$driver] + Config::get($driver);
-        $driver = '\esp\extend\db\\' . ucfirst($driver);
-        return $medium = new $driver($db);
+        return (_MODULE . md5(json_encode($params) . json_encode($bud) . _ROOT));
     }
 
 
     /**
      * 设置缓存的HTTP头
      */
-    private function cache_header($label = null)
+    private function setHeader(string $label = null)
     {
         if (headers_sent()) return;
         $NOW = time();//编辑时间
-        $expires = $this->cache_expires();
+        $expires = $this->_option['ttl'];
 
         //判断浏览器缓存是否过期
         if (getenv('HTTP_IF_MODIFIED_SINCE') && (strtotime(getenv('HTTP_IF_MODIFIED_SINCE')) + $expires) > $NOW) {
@@ -174,7 +178,7 @@ final class Cache
     /**
      * 禁止向浏览器缓存
      */
-    private function cache_disable_header($label = null)
+    private function disable_header($label = null)
     {
         if (headers_sent()) return;
         header('Cache-Control: no-cache, must-revalidate, no-store', true);

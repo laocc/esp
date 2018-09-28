@@ -1,17 +1,271 @@
 <?php
 
 /**
+ * @param array ...$str
+ */
+function pre(...$str)
+{
+    $prev = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+    if (_CLI) {
+        if (isset($prev['file'])) echo "{$prev['file']}[{$prev['line']}]\n";
+        foreach ($str as $i => &$v) print_r($v);
+    } else {
+        unset($prev['file']);
+        if (isset($prev['file'])) {
+            $file = "<i style='color:blue;'>{$prev['file']}</i><i style='color:red;'>[{$prev['line']}]</i>\n";
+        } else {
+            $file = null;
+        }
+        echo "<pre style='background:#fff;display:block;'>", $file;
+        foreach ($str as $i => &$v) {
+            if (is_array($v)) print_r($v);
+            else var_dump($v);
+        }
+        echo "</pre>";
+    }
+}
+
+
+/**
+ * CLI环境中打印彩色字
+ * @param $text
+ * @param null $bgColor
+ * @param null $ftColor
+ */
+function _echo(string $text, string $bgColor = null, string $ftColor = null)
+{
+    if (is_array($text)) $text = print_r($text, true);
+    $text = trim($text, "\n");
+    $front = ['green' => 32, 'g' => 32, 'red' => 31, 'r' => 31, 'yellow' => 33, 'y' => 33, 'blue' => 34, 'b' => 34, 'white' => 37, 'w' => 37, 'black' => 30, 'h' => 30];
+    $ground = ['green' => 42, 'g' => 42, 'red' => 41, 'r' => 41, 'yellow' => 43, 'y' => 43, 'blue' => 44, 'b' => 44, 'white' => 47, 'w' => 47, 'black' => 40, 'h' => 40];
+    $color = '[' . ($ground[$bgColor] ?? 40) . ';' . ($front[$ftColor] ?? 37) . 'm';//默认黑底白字
+    echo chr(27) . $color . $text . chr(27) . "[0m\n";
+}
+
+
+/**
+ * 过滤用于sql的敏感字符，建议用Xss::clear()处理
+ * @param string $str
+ * @return string
+ */
+function safe_replace(string $str): string
+{
+    if (empty($str)) return '';
+    return preg_replace('/[\"\'\%\&\$\#\(\)\[\]\{\}\?]/', '', $str);
+}
+
+
+/**
+ * 查询域名的根域名，兼容国别的二级域名
+ * @param $domain
+ * @return string
+ */
+function host(string $domain): string
+{
+    if (empty($domain)) return '';
+    $dm1 = 'cn|cm|my|ph|tw|uk|hk';
+    $dm2 = 'com|net|org|gov|idv|co|name';
+    if (strpos('/', $domain)) $domain = explode('/', "{$domain}//")[2];
+
+    if (preg_match("/^(?:[\w\.\-]+\.)?([a-z]+)\.({$dm2})\.({$dm1})$/i", $domain, $match)) {
+        return "{$match[1]}.{$match[2]}.{$match[3]}";
+
+    } elseif (preg_match("/^(?:[\w\.\-]+\.)?([a-z0-9]+)\.([a-z]+)$/i", $domain, $match)) {
+        return "{$match[1]}.{$match[2]}";
+
+    } else {
+        return '';
+    }
+}
+
+/**
+ * 提取URL中的域名
+ * @param $url
+ * @return null
+ */
+function domain(string $url): string
+{
+    if (empty($url)) return '';
+    return explode('/', "{$url}//")[2];
+}
+
+
+/**
+ * 加载文件，同时加载结果被缓存
+ * @param $file
+ * @return bool|mixed
+ */
+function load(string $file)
+{
+    $file = root($file);
+    if (!$file or !is_readable($file)) return false;
+    static $recode = Array();
+    $md5 = md5($file);
+    if (isset($recode[$md5])) return $recode[$md5];
+    $recode[$md5] = include $file;
+    return $recode[$md5];
+}
+
+/**
+ * 修正为_ROOT开头
+ * @param string $path
+ * @return string|array
+ */
+function root(string $path): string
+{
+    if (stripos($path, _ROOT) !== 0) $path = _ROOT . "/" . trim($path, '/');
+    return $path;
+}
+
+
+/**
+ * @param $path
+ * @param int $mode
+ * @return bool
+ * 文件权限：
+ * 类型   所有者  所有者组    其它用户
+ * r    read    4
+ * w    write   2
+ * x    exec    1
+ * 通过PHP建立的文件夹权限一般为0740就可以了
+ */
+function mk_dir(string $path, int $mode = 0740): bool
+{
+    if (!$path) return false;
+    if (strrchr($path, '/')) $path = dirname($path);
+    if (file_exists($path)) return true;
+    if (!$mode) $mode = 0740;
+    try {
+        @mkdir($path, $mode, true);
+        return true;
+    } catch (\Exception $e) {
+        return true;
+    }
+}
+
+/**
+ * 储存文件
+ * @param $file
+ * @param $content
+ * @return int
+ */
+function save_file(string $file, string $content, bool $append = false): int
+{
+    if (is_array($content)) $content = json_encode($content, 256);
+    mk_dir($file);
+    return file_put_contents($file, $content, $append ? FILE_APPEND : LOCK_EX);
+}
+
+/**
+ * 设置HTTP响应头
+ * @param int $code
+ * @param null $text
+ * @throws Exception
+ */
+function header_state(int $code = 200, string $text = null)
+{
+    if (empty($code) OR !is_numeric($code)) {
+        throw new \Exception('状态码必须为数字');
+    }
+    if (empty($text)) {
+        $text = \esp\core\Config::states($code);
+    }
+    if (!stripos(PHP_SAPI, 'cgi')) {
+        header("Status: {$code} {$text}", true);
+    } else {
+        $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.1';
+        header("{$protocol} {$code} {$text}", true, $code);
+    }
+}
+
+/**
+ * 返回字符的 ASCII 码值
+ * @param string $string
+ * @return array
+ */
+function string_ord(string $string): array
+{
+    $val = Array();
+    $arr = str_split($string);
+    foreach ($arr as $s) {
+        $val[] = ord($s);
+    }
+    return $val;
+}
+
+/**
+ * 清除BOM
+ * @param $loadStr
+ */
+function clearBom(&$loadStr)
+{
+    if (ord(substr($loadStr, 0, 1)) === 239 and ord(substr($loadStr, 1, 1)) === 187 and ord(substr($loadStr, 2, 1)) === 191)
+        $loadStr = substr($loadStr, 3);
+}
+
+
+/**
+ * 格式化小数
+ * @param $amount
+ * @param int $len
+ * @return string
+ */
+function rnd(int $amount, int $len = 2): string
+{
+    return sprintf("%.{$len}f", $amount);
+}
+
+/**
+ * @param $number
+ * @param int $len
+ * @param string $add
+ * @param string $lr
+ * @return string
+ *
+ * %% - 返回一个百分号 %
+ * %b - 二进制数
+ * %c - ASCII 值对应的字符
+ * %d - 包含正负号的十进制数（负数、0、正数）
+ * %e - 使用小写的科学计数法（例如 1.2e+2）
+ * %E - 使用大写的科学计数法（例如 1.2E+2）
+ * %u - 不包含正负号的十进制数（大于等于 0）
+ * %f - 浮点数（本地设置）
+ * %F - 浮点数（非本地设置）
+ * %g - 较短的 %e 和 %f
+ * %G - 较短的 %E 和 %f
+ * %o - 八进制数
+ * %s - 字符串
+ * %x - 十六进制数（小写字母）
+ * %X - 十六进制数（大写字母）
+ * 附加的格式值。必需放置在 % 和字母之间（例如 %.2f）：
+ * + （在数字前面加上 + 或 - 来定义数字的正负性。默认情况下，只有负数才做标记，正数不做标记）
+ * ' （规定使用什么作为填充，默认是空格。它必须与宽度指定器一起使用。例如：%'x20s（使用 "x" 作为填充））
+ * - （左调整变量值）
+ * [0-9] （规定变量值的最小宽度）
+ * .[0-9] （规定小数位数或最大字符串长度）
+ * 注释：如果使用多个上述的格式值，它们必须按照以上顺序使用。
+ */
+function full(string $number, int $len = 2, string $add = '0', string $lr = 'left'): string
+{
+    if (in_array($add, ['left', 'right', 'l', 'r'])) list($add, $lr) = ['0', $add];
+    $fh = ($lr === 'left') ? '' : '-';//减号右补，无减号为左补
+    return sprintf("%{$fh}'{$add}{$len}s", $number);
+}
+
+
+/**
  * 随机字符，唯一值用：uniqid(true)
  * @param int $min 最小长度
- * @param null $len 最大长度，若不填，则以$min为固定长度
- * @return mixed|string
+ * @param int|null $max 最大长度，若不填，则以$min为固定长度
+ * @return string
  */
-function str_rand($min = 10, $len = null)
+function str_rand(int $min = 10, int $max = null): string
 {
-    $len = $len ? mt_rand($min, $len) : $min;
-    $arr = array_rand(['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'E' => 0, 'F' => 0, 'G' => 0, 'H' => 0, 'I' => 0, 'J' => 0, 'K' => 0, 'L' => 0, 'M' => 0, 'N' => 0, 'O' => 0, 'P' => 0, 'Q' => 0, 'R' => 0, 'S' => 0, 'T' => 0, 'U' => 0, 'V' => 0, 'W' => 0, 'X' => 0, 'Y' => 0, 'Z' => 0, 'a' => 0, 'b' => 0, 'c' => 0, 'd' => 0, 'e' => 0, 'f' => 0, 'g' => 0, 'h' => 0, 'i' => 0, 'j' => 0, 'k' => 0, 'l' => 0, 'm' => 0, 'n' => 0, 'o' => 0, 'p' => 0, 'q' => 0, 'r' => 0, 's' => 0, 't' => 0, 'u' => 0, 'v' => 0, 'w' => 0, 'x' => 0, 'y' => 0, 'z' => 0, '0' => 0, '1' => 0, '2' => 0, '3' => 0, '4' => 0, '5' => 0, '6' => 0, '7' => 0, '8' => 0, '9' => 0], $len ?: 10);
-    if ($len === 1) return $arr;
-    shuffle($arr);
+    $max = $max ? mt_rand($min, $max) : $min;
+    if ($max > 60) $max = 60;
+    $arr = array_rand(['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'E' => 0, 'F' => 0, 'G' => 0, 'H' => 0, 'I' => 0, 'J' => 0, 'K' => 0, 'L' => 0, 'M' => 0, 'N' => 0, 'O' => 0, 'P' => 0, 'Q' => 0, 'R' => 0, 'S' => 0, 'T' => 0, 'U' => 0, 'V' => 0, 'W' => 0, 'X' => 0, 'Y' => 0, 'Z' => 0, 'a' => 0, 'b' => 0, 'c' => 0, 'd' => 0, 'e' => 0, 'f' => 0, 'g' => 0, 'h' => 0, 'i' => 0, 'j' => 0, 'k' => 0, 'l' => 0, 'm' => 0, 'n' => 0, 'o' => 0, 'p' => 0, 'q' => 0, 'r' => 0, 's' => 0, 't' => 0, 'u' => 0, 'v' => 0, 'w' => 0, 'x' => 0, 'y' => 0, 'z' => 0, '0' => 0, '1' => 0, '2' => 0, '3' => 0, '4' => 0, '5' => 0, '6' => 0, '7' => 0, '8' => 0, '9' => 0], $max ?: 10);
+    if ($max === 1) return $arr;
+    shuffle($arr);//取得的字串是顺序的，要打乱
     return implode($arr);
 }
 
@@ -44,7 +298,7 @@ function gid($fh = null, $format = 0)
         if (intval($format) < 10) return wordwrap($md, $format, $fh, true);
         $format = str_split((string)$format);
     }
-    $str = [];
+    $str = Array();
     $j = 0;
     for ($i = 0; $i < count($format); $i++) {
         if ($format[$i] > 0) {
@@ -58,161 +312,172 @@ function gid($fh = null, $format = 0)
     return implode($fh, $str);
 }
 
+
 /**
- * 是否手机访问
- * 0不是
- * 1是手机
- * 2是微信
+ * 是否为手机号码
+ * @param $mobNumber
  * @return bool
  */
-function is_wap()
+function is_mob(string $mobNumber): bool
 {
-    $browser = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
-    if (empty($browser)) return 0;
-    if (strripos($browser, "MicroMessenger")) return 2;//微信
-    if (stripos($browser, "mobile") || stripos($browser, "android")) return 1;
-    if (isset($_SERVER['HTTP_VIA']) or isset($_SERVER['HTTP_X_NOKIA_CONNECTION_MODE']) or isset($_SERVER['HTTP_X_UP_CALLING_LINE_ID'])) return 1;
-    if (stripos(strtoupper($_SERVER['HTTP_ACCEPT']), "VND.WAP.WML") > 0) return 1;
-    $browser = substr($browser, 0, 4);
-    $mobs = ['Noki', 'Eric', 'WapI', 'MC21', 'AUR ', 'R380', 'UP.B', 'WinW', 'UPG1', 'upsi', 'QWAP', 'Jigs', 'Java', 'Alca', 'MITS', 'MOT-', 'My S', 'WAPJ', 'fetc', 'ALAV', 'Wapa', 'Oper'];
-    return in_array($browser, $mobs) ? 1 : 0;
-}
-
-function is_wechat()
-{
-    return is_wap() === 2;
+    if (empty($mobNumber)) return false;
+    return preg_match('/^1[3456789]\d{9}$/', $mobNumber);
 }
 
 /**
- * 分析客户端信息
- * @param null $agent
- * @return array ['agent' => '', 'browser' => '', 'version' => '', 'os' => '']
- *
- * ab压力测试： ApacheBench/2.3
+ * 电子邮箱地址格式
+ * @param string $eMail
+ * @return bool
  */
-function agent($agent = null)
+function is_mail(string $eMail): bool
 {
-    $u_agent = $agent ?: isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
-    if (!$u_agent) return ['agent' => '', 'browser' => '', 'version' => '', 'os' => ''];
+    if (empty($eMail)) return false;
+    return (bool)filter_var($eMail, FILTER_VALIDATE_EMAIL);
+//    return preg_match('/^\w+([-\.]\w+)*@\w+([-\.]\w+)*\.\w+([-\.]\w+)*$/', $eMail);
+}
 
-    //操作系统
-    if (preg_match('/Android/i', $u_agent)) {
-        $os = 'Android';
-    } elseif (preg_match('/linux/i', $u_agent)) {
-        $os = 'linux';
-    } elseif (preg_match('/macintosh|mac os x/i', $u_agent)) {
-        $os = 'mac';
-    } elseif (preg_match('/windows|win32/i', $u_agent)) {
-        $os = 'windows';
+/**
+ * 是否一完网址
+ * @param string $url
+ * @return bool
+ */
+function is_url(string $url): bool
+{
+    if (empty($url)) return false;
+    return (bool)filter_var($url, FILTER_VALIDATE_URL);
+//    return preg_match('/^https?\:\/\/[\w\-]+(\.[\w\-]+)+\/.+$/i', $url);
+}
+
+
+/**
+ * 是否URI格式
+ * @param string $string
+ * @return bool
+ */
+function is_uri(string $string): bool
+{
+    if (empty($string)) return false;
+    return (bool)filter_var($string, FILTER_VALIDATE_REGEXP, ['options' => ['regexp' => '/^(\/[\w\-\.\~]*)?(\/.+)*$/i']]);
+}
+
+
+/**
+ * 日期格式：2015-02-05 或 20150205
+ * @param string $day
+ * @return bool
+ */
+function is_date(string $day): bool
+{
+    if (empty($day)) return false;
+    if (1) {
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $day, $mac)) {
+            return checkdate($mac[2], $mac[3], $mac[1]);
+        } elseif (preg_match('/^(\d{4})(\d{1,2})(\d{1,2})$/', $day, $mac)) {
+            return checkdate($mac[2], $mac[3], $mac[1]);
+        } else {
+            return false;
+        }
     } else {
-        $os = 'Unknown';
+        return preg_match('/^(?:(?:1[789]\d{2}|2[012]\d{2})[-\/](?:(?:0?2[-\/](?:0?1\d|2[0-8]))|(?:0?[13578]|10|12)[-\/](?:[012]?\d|3[01]))|(?:(?:0?[469]|11)[-\/](?:[012]?\d|30)))|(?:(?:1[789]|2[012])(?:[02468][048]|[13579][26])[-\/](?:0?2[-\/]29))$/', $day);
     }
+}
 
-    //浏览器
-    switch (true) {
-        case (preg_match('/MSIE/i', $u_agent) && !preg_match('/Opera/i', $u_agent)) :
-            $browser = 'Internet Explorer';
-            $fix = 'MSIE';
+/**
+ * 字串是否为正则表达式
+ * @param $string
+ * @return bool
+ */
+function is_match(string $string): bool
+{
+    if (empty($string)) return false;
+    return (bool)filter_var($string, FILTER_VALIDATE_REGEXP, ['options' => ['regexp' => '/^([\/\#\@\!\~])\^?.+\$?\1[imUuAsDSXxJ]{0,3}$/i']]);
+}
+
+/**
+ * 是否mac码
+ * @param $mac
+ * @return bool
+ */
+function is_mac(string $mac): bool
+{
+    if (empty($mac)) return false;
+    return (bool)filter_var($mac, FILTER_VALIDATE_MAC);
+}
+
+
+/**
+ * @param string $ip
+ * @param string $which
+ * @return bool
+ */
+function is_ip(string $ip, string $which = 'ipv4'): bool
+{
+    switch (strtolower($which)) {
+        case 'ipv4':
+            $which = FILTER_FLAG_IPV4;
             break;
-        case (preg_match('/Trident/i', $u_agent)) : // IE11专用
-            $browser = 'Internet Explorer';
-            $fix = 'rv';
-            break;
-        case (preg_match('/Edge/i', $u_agent)) ://必须在Chrome之前判断
-            $browser = $fix = 'Edge';
-            break;
-        case (preg_match('/MicroMessenger/i', $u_agent)) ://必须在QQBrowser之前判断
-            $browser = $fix = 'MicroMessenger';
-            break;
-        case (preg_match('/QQBrowser/i', $u_agent)) ://必须在Chrome之前判断
-            $browser = $fix = 'QQBrowser';
-            break;
-        case (preg_match('/UCBrowser/i', $u_agent)) ://必须在Apple Safari之前判断
-            $browser = $fix = 'UCBrowser';
-            break;
-        case (preg_match('/Firefox/i', $u_agent)) :
-            $browser = $fix = 'Firefox';
-            break;
-        case (preg_match('/Chrome/i', $u_agent)) :
-            $browser = $fix = 'Chrome';
-            break;
-        case (preg_match('/Safari/i', $u_agent)) :
-            $browser = $fix = 'Safari';
-            break;
-        case (preg_match('/Opera/i', $u_agent)) :
-            $browser = $fix = 'Opera';
-            break;
-        case (preg_match('/Netscape/i', $u_agent)) :
-            $browser = $fix = 'Netscape';
+        case 'ipv6':
+            $which = FILTER_FLAG_IPV6;
             break;
         default:
-            $browser = $fix = 'Unknown';
+            $which = NULL;
+            break;
     }
-
-    $pattern = "/(?<bro>Version|{$fix}|other)[\/|\:|\s](?<ver>[0-9a-zA-Z\.]+)/i";
-    preg_match_all($pattern, $u_agent, $matches);
-    $i = count($matches['bro']) !== 1 ? (strripos($u_agent, "Version") < strripos($u_agent, $fix) ? 0 : 1) : 0;
-
-    return [
-        'agent' => $u_agent,
-        'browser' => $browser,
-        'version' => $matches['ver'][$i] ?: '?',
-        'os' => $os];
+    return (bool)filter_var($ip, FILTER_VALIDATE_IP, $which);
 }
-
-
-/**
- * 判断是否为手机号码
- * @param $mobNumber
- * @param bool|false $Zero 是否允许手机号为0
- * @return bool
- */
-function is_mob($mobNumber, $Zero = false)
-{
-    return ($mobNumber === 0 and $Zero) or preg_match('/^1[34578]\d{9}$/', $mobNumber);
-}
-
-function is_mail($eMail)
-{
-    return preg_match('/^\w+([-\.]\w+)*@\w+([-\.]\w+)*\.\w+([-\.]\w+)*$/', $eMail);
-}
-
-function is_date($date)
-{
-    return preg_match('/^(?:(?:1[789]\d{2}|2[012]\d{2})[-\/](?:(?:0?2[-\/](?:0?1\d|2[0-8]))|(?:0?[13578]|10|12)[-\/](?:[012]?\d|3[01]))|(?:(?:0?[469]|11)[-\/](?:[012]?\d|30)))|(?:(?:1[789]|2[012])(?:[02468][048]|[13579][26])[-\/](?:0?2[-\/]29))$/', $date);
-}
-
-
-/**
- * 是否搜索蜘蛛人
- * @return bool
- */
-function is_spider()
-{
-    if (isset($_SERVER['HTTP_USER_AGENT'])) {
-        $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
-        $keys = ['bot', 'slurp', 'spider', 'crawl', 'curl', 'mediapartners-google', 'fast-webcrawler', 'altavista', 'ia_archiver'];
-        foreach ($keys as &$key) {
-            if (!!strripos($agent, $key)) return true;
-        }
-    }
-    return false;
-}
-
 
 /**
  * 身份证号码检测，区分闰年，较验最后识别码
  * @param $number
  * @return bool
  */
-function is_card($number)
+function is_card(string $number): bool
 {
-    $png = '/^\d{6}(?:(?:(?:19\d{2}|20[01]\d)(?:(?:02(?:01\d|2[0-8]))|(?:0[13578]|10|12)(?:[012]?\d|3[01]))|(?:(?:0[469]|11)(?:[012]\d|30)))|(?:(?:19(?:[02468][048]|[13579][26])|20[0][048]|20[1][26])(?:0229)))\d{3}(\d|x|x)$/';
-    if (!preg_match($png, $number, $mac)) return false;
-    $total = 0;
-    $factor = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-    for ($i = 0; $i < 17; $i++) $total += (int)substr($number, $i, 1) * $factor[$i];
-    return strtoupper($mac[1]) == ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'][$total % 11];
+    if (empty($number)) return false;
+    if (!preg_match('/^\d{6}(\d{8})\d{3}(\d|x)$/i', $number, $mac)) return false;
+    if (!is_date($mac[1])) return false;
+    return strtoupper($mac[2]) === make_card($number);
+}
+
+
+/**
+ * 生成身份证最后一位识别码
+ * @param $zone
+ * @param string $day
+ * @param string $number
+ * @return mixed
+ */
+function make_card($zone, $day = '', $number = '')
+{
+    $body = "{$zone}{$day}{$number}";
+    $wi = array(7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2);//加权因子
+    $sigma = 0;
+    for ($i = 0; $i < 17; $i++) {
+        $sigma += intval($body{$i}) * $wi[$i]; //把从身份证号码中提取的一位数字和加权因子相乘，并累加
+    }
+    $ai = array('1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2');//校验码串
+    return $ai[$sigma % 11]; //按照序号从校验码串中提取相应的字符。
+}
+
+
+/**
+ * 根据权重随机选择一个值
+ * @param array $array
+ * @param string $key
+ * @param bool $returnValue
+ * @return int|array|string
+ */
+function array_rank(array $array, string $key, bool $returnValue = false)
+{
+    $index = null;
+    $cursor = 0;
+    $rand = mt_rand(0, array_sum(array_column($array, $key)));
+    foreach ($array as $k => $v) {
+        if ((($cursor += intval($v[$key])) > $rand) and ($index = $k)) break;
+    }
+    if (is_null($index)) $index = array_rand($array);
+    if (!$returnValue) return $index;
+    return $array[$index];
 }
 
 /**
@@ -220,36 +485,44 @@ function is_card($number)
  * @param $str
  * @return array
  */
-function str_cut($str)
+function str_cut(string $str): array
 {
     $len = mb_strlen($str);
-    $arr = [];
+    $arr = Array();
     for ($i = 0; $i < $len; $i++) {
         $arr[] = mb_substr($str, $i, 1, "utf8");
     }
     return $arr;
 }
 
-function str_len($str)
+/**
+ * @param string $str
+ * @return int
+ */
+function str_len(string $str): int
 {
-    $len = mb_strlen($str);
-    $arr = [];
-    for ($i = 0; $i < $len; $i++) {
-        $arr[] = mb_substr($str, $i, 1, "utf8");
-    }
-    return $arr;
+    return count(str_cut($str));
 }
 
+/**
+ * @param string $str
+ * @param int $len
+ * @return string
+ */
+function str_left(string $str, int $len): string
+{
+    return implode(array_slice(str_cut($str), 0, $len));
+}
 
 /**
  * 计算一个偶数的组成，比如：10=8+2，14=8+4+2，22=16+4+2。
  * @param $value
  * @return array
  */
-function numbers($value)
+function numbers(int $value): array
 {
-    if ($value % 2 != 0) return [];
-    $val = [];
+    if ($value % 2 != 0) return [];//非偶数
+    $val = Array();
     $i = 0;
     while (true) {
         if (2 << $i > $value) break;
@@ -266,66 +539,22 @@ function numbers($value)
 
 
 /**
- * 获取并验证用户的IP地址
- * $forced=true   强制返回真实IP
- * @return    string
- */
-function ip()
-{
-    if (_CLI) return '127.0.0.1';
-    $keys = ['x-real-ip', 'x-forwarded-for', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'REMOTE_ADDR'];
-    foreach ($keys as $header) {
-        if (isset($_SERVER[$header]) && !empty($_SERVER[$header]) && is_ip($_SERVER[$header])) return $_SERVER[$header];
-    }
-    return '127.0.0.1';
-}
-
-function is_ip($ip, $which = 'ipv4')
-{
-    switch (strtolower($which)) {
-        case 'ipv4':
-            $which = FILTER_FLAG_IPV4;
-            break;
-        case 'ipv6':
-            $which = FILTER_FLAG_IPV6;
-            break;
-        default:
-            $which = NULL;
-            break;
-    }
-    return (bool)filter_var($ip, FILTER_VALIDATE_IP, $which);
-}
-
-
-/**
- * 跳转页面
- * @param string $url
- * @param bool|false $js 用JS方式跳，top
- */
-function go($url, $js = false)
-{
-    if ($js) {
-        echo "<script>top.location.href='{$url}';</script>";
-    } else {
-//        header('HTTP/1.1 301 Moved Permanently');
-        header('Location:' . $url, true, 301);
-    }
-    exit;
-}
-
-/**
  * GB2312转UTF8
  * @param $str
  * @return string
  */
-function utf8($str)
+function utf8(string $str): string
 {
     return iconv('GB2312', 'UTF-8//IGNORE', $str);
 }
 
-function unicode_utf8($code)
+/**
+ * @param $code
+ * @return string
+ */
+function unicode_utf8(string $code): string
 {
-    $str = [];
+    $str = Array();
     $cs = str_split($code, 4);
     foreach ($cs as &$c) {
         $code = intval(hexdec($c));
@@ -347,7 +576,7 @@ function unicode_utf8($code)
  * @return string
  * strip_tags
  */
-function text($html, $star = null, $stop = null)
+function text(string $html, int $star = null, int $stop = null): string
 {
     if ($stop === null) list($star, $stop) = [0, $star];
     $v = preg_replace(['/\&lt\;(.*?)\&gt\;/is', '/<(.*?)>/is', '/[\s\x20\xa\xd\'\"\`]/is'], '', trim($html));
@@ -356,8 +585,15 @@ function text($html, $star = null, $stop = null)
 }
 
 
-//数字介于之间
-function between($n, $a, $b, $han = true)
+/**
+ * 判断$n是否介于$a和$b之间
+ * @param int $n
+ * @param int $a
+ * @param int $b
+ * @param bool $han
+ * @return bool
+ */
+function between(int $n, int $a, int $b, bool $han = true): bool
 {
     return $han ? ($n >= $a and $n <= $b) : ($n > $a and $n < $b);
 }
@@ -366,30 +602,34 @@ function between($n, $a, $b, $han = true)
 /**
  * 将12k,13G转换为字节长度
  * @param $size
- * @return mixed
+ * @return int
  */
-function re_size($size)
+function re_size(string $size): int
 {
     return preg_replace_callback('/(\d+)([kmGt])b?/i', function ($matches) {
-        switch (strtolower($matches[2])) {
-            case 'k':
-                return $matches[1] * 1024;
-            case 'm':
-                return $matches[1] * pow(1024, 2);
-            case 'g':
-                return $matches[1] * pow(1024, 3);
-            case 't':
-                return $matches[1] * pow(1024, 4);
-            default:
-                return $matches[1] * 1;
-        }
-    }, $size) * 1;
+            switch (strtolower($matches[2])) {
+                case 'k':
+                    return $matches[1] * 1024;
+                case 'm':
+                    return $matches[1] * pow(1024, 2);
+                case 'g':
+                    return $matches[1] * pow(1024, 3);
+                case 't':
+                    return $matches[1] * pow(1024, 4);
+                default:
+                    return $matches[1] * 1;
+            }
+        }, $size) * 1;
 }
 
 
-function image_type($ext)
+/**
+ * @param $ext
+ * @return int|null
+ */
+function image_type(string $ext)
 {
-    $file = [];
+    $file = Array();
     $file['gif'] = IMAGETYPE_GIF;
     $file['jpg'] = IMAGETYPE_JPEG;
     $file['jpeg'] = IMAGETYPE_JPEG;
@@ -407,7 +647,7 @@ function image_type($ext)
  * @param $str
  * @return mixed
  */
-function format($str)
+function format(string $str): string
 {
     return preg_replace_callback('/\%([a-z])/i', function ($matches) {
         switch ($matches[1]) {
@@ -424,12 +664,12 @@ function format($str)
 }
 
 /**
- * 对IMG转码，返回值可以直接用于<img src>
+ * 对IMG转码，返回值可以直接用于<img src="***">
  * @param $file
  * @return null|string
  * chunk_split
  */
-function img_code($file, $split = false)
+function img_base64(string $file, bool $split = false): string
 {
     if (!is_readable($file)) return null;
     $ext = image_type_to_extension(exif_imagetype($file), false);
@@ -439,7 +679,34 @@ function img_code($file, $split = false)
     return "data:image/{$ext};base64,{$file_content}";
 }
 
+/**
+ * 将base64转换为图片
+ * @param string $base64Code
+ * @param string|null $fileName 不带名时为直接输出
+ * @return bool
+ */
+function base64_img(string $base64Code, string $fileName = null): bool
+{
+    $data = base64_decode($base64Code);
+    if (!$data) return false;
+    $im = @imagecreatefromstring($data);
+    if ($im === false) return false;
 
+    if (is_null($fileName)) {
+        header('Content-Type: image/png');
+        imagepng($im);
+        imagedestroy($im);
+    } else {
+        mk_dir($fileName);
+        $ext = strtolower(substr($fileName, -3));
+        if ($ext === 'png') return imagepng($im, $fileName);
+        elseif ($ext === 'gif') return imagegif($im, $fileName);
+        elseif ($ext === 'bmp') return imagewbmp($im, $fileName);
+        elseif ($ext === 'jpg') return imagejpeg($im, $fileName, 80);
+        else return imagepng($im, $fileName);
+    }
+    return false;
+}
 
 /**
  * 时间友好型提示风格化（即XXX小时前、昨天等等）
@@ -464,11 +731,3 @@ function date_friendly($timestamp, $time_now = null)
     if ($Y === 2) return '前年';
     return sprintf("%s{$T}{$Q}", ${$V});
 }
-
-
-
-
-
-
-
-//END

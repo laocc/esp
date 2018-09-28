@@ -1,44 +1,130 @@
 <?php
+
 namespace esp\core;
 
+use esp\core\db\Redis;
+
 /**
- *
- * 此处读取/config/config.php中的设置
- *
  * Class Config
  * @package esp\core
  */
 final class Config
 {
-    static private $_conf = [];
+    static private $_CONFIG_ = null;
 
-    public static function load()
+    /**
+     * @param Redis $buffer
+     * @param array $config
+     */
+    public static function _init(Redis $buffer, array &$config)
     {
-        if (!empty(self::$_conf)) return;
+        self::$_CONFIG_ = $buffer->get($buffer->key . '_CONFIG_');
 
-        $file = root('config/config.php', 'config/database.php');
-        foreach ($file as &$fil) {
-            $_conf = load($fil);
-            if (is_array($_conf) && !empty($_conf)) {
-                self::$_conf = array_merge(self::$_conf, $_conf);
+        if (!empty(self::$_CONFIG_)) {
+            self::$_CONFIG_ = unserialize(self::$_CONFIG_);
+            if (!empty(self::$_CONFIG_)) return;
+        }
+        if (empty($config)) return;
+
+        self::$_CONFIG_ = Array();
+        foreach ($config as $i => $file) {
+            $_config = self::loadFile($file);
+            if (is_array($_config) && !empty($_config)) {
+                self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
             }
         }
+        self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
+        $buffer->set($buffer->key . '_CONFIG_', serialize(self::$_CONFIG_));
+    }
 
-        reload: //定义此标签用于循环加载后面文件也有include的情况
+    /**
+     * @param string $file
+     * @param bool $byKey
+     * @return array|bool|mixed|null
+     * @throws \Exception
+     */
+    public static function loadFile(string $file, $byKey = true)
+    {
+        $fullName = root($file);
+        if (!is_readable($fullName)) {
+            throw new \Exception("配置文件{$file}不存在", 404);
+        };
 
-        if (isset(self::$_conf['include']) and !empty(self::$_conf['include'])) {
-            $file = self::$_conf['include'];
-            unset(self::$_conf['include']);
-            $file = is_array($file) ? root(...$file) : root($file);
-            if (!is_array($file)) $file = [$file];
-            foreach ($file as $fil) {
-                $_conf = is_readable($fil) ? load($fil) : null;
-                if (is_array($_conf) && !empty($_conf)) {
-                    self::$_conf = $_conf + self::$_conf;
+        $_config = parse_ini_file($fullName, true);
+        if (isset($_config['include'])) {
+            $include = $_config['include'];
+            unset($_config['include']);
+            foreach ($include as $key => $fil) {
+                if (is_array($fil)) {
+                    $_config[$key] = Array();
+                    foreach ($fil as $l => $f) {
+                        $_inc = self::loadFile(root($f));
+                        if (is_array($_inc) && !empty($_inc)) {
+                            $_config[$key] = $_inc + $_config[$key];
+                        }
+                    }
+                } else {
+                    $_inc = self::loadFile(root($fil));
+                    if (is_array($_inc) && !empty($_inc)) {
+                        $_config = $_inc + $_config;
+                    }
                 }
             }
-            goto reload;
         }
+        return (empty($_config)) ? null : ($byKey ? [basename($fullName, '.ini') => $_config] : $_config);
+    }
+
+    /**
+     * 加载在format时没载入的，不经过缓存
+     * @param $key
+     * @param null $auto
+     * @return array|mixed|null
+     */
+    public static function load($file, $key = null, $auto = null)
+    {
+        $conf = parse_ini_file(root($file), true);
+        $conf = self::re_arr($conf);
+        if (is_null($key)) return $conf;
+
+        $key = preg_replace('/[\.\,\/]+/', '.', strtolower($key));
+        if (strrpos($key, '.')) {
+            $keys = explode('.', trim($key, '.'));
+            $_config = $conf;
+            foreach ($keys as $k) {
+                $_config = isset($_config[$k]) ? $_config[$k] : null;
+                if (is_null($_config)) return $auto;
+            }
+            return $_config;
+        }
+        return isset($conf[$key]) ? $conf[$key] : $auto;
+    }
+
+
+    private static function re_key($val)
+    {
+        $search = array('{_HOST}', '{_ROOT}', '{_DOMAIN}', '{_TIME}', '{_DATE}');
+        $replace = array(_HOST, _ROOT, _DOMAIN, time(), date('YmdHis'));
+        $value = str_ireplace($search, $replace, $val);
+        if (substr($value, 0, 1) === '[' and substr($value, -1, 1) === ']') {
+            $arr = json_decode($value, true);
+            if (is_array($arr)) $value = $arr;
+        } else if (is_numeric($value)) {
+            $value = intval($value);
+        }
+        return $value;
+    }
+
+    private static function re_arr($array)
+    {
+        $val = Array();
+        foreach ($array as $k => $arr) {
+            if (is_array($arr)) {
+                $val[strtolower($k)] = self::re_arr($arr);
+            } else {
+                $val[strtolower($k)] = self::re_key($arr);
+            }
+        }
+        return $val;
     }
 
     /**
@@ -50,19 +136,19 @@ final class Config
      */
     public static function get($key = null, $auto = null)
     {
-        if (is_null($key)) return self::$_conf;
-        $key = preg_replace('/[\.\,\_\/\\\]+/', '.', $key);
+        if (is_null($key)) return self::$_CONFIG_;
+        $key = preg_replace('/[\.\,\/]+/', '.', strtolower($key));
         if (strrpos($key, '.')) {
             $keys = explode('.', trim($key, '.'));
-            $conf = self::$_conf;
+            $conf = self::$_CONFIG_;
             foreach ($keys as $k) {
-                $conf = isset($conf[$k]) ? $conf[$k] : null;
-                if (is_null($conf)) return $auto;
+                if (is_null($conf = ($conf[$k] ?? null))) return $auto;
             }
             return $conf;
         }
-        return isset(self::$_conf[$key]) ? self::$_conf[$key] : $auto;
+        return self::$_CONFIG_[$key] ?? $auto;
     }
+
 
     public static function has($key)
     {
@@ -71,11 +157,15 @@ final class Config
 
     public static function set($key, $value)
     {
-        self::$_conf[$key] = $value;
+        self::$_CONFIG_[$key] = $value;
     }
 
 
-    public static function mime($type)
+    /**
+     * @param $type
+     * @return string
+     */
+    public static function mime(string $type): string
     {
         switch ($type) {
             case 'html':
@@ -240,14 +330,12 @@ final class Config
                 return 'application/octet-stream';
             case 'phtml':
                 return 'application/octet-stream';
-
             case 'docx':
                 return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             case 'xlsx':
                 return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
             case 'pptx':
                 return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-
             case 'mid':
                 return 'audio/midi';
             case 'midi':
@@ -262,7 +350,6 @@ final class Config
                 return 'audio/x-m4a';
             case 'ra':
                 return 'audio/x-realaudio';
-
             case '3gpp':
                 return 'video/3gpp';
             case '3gp':
@@ -302,88 +389,49 @@ final class Config
      * @param $code
      * @return null|string
      */
-    public static function states($code)
+    public static function states(int &$code)
     {
-        switch ($code) {
-            case 200:
-                return 'OK';
-            case 201:
-                return 'Created';
-            case 202:
-                return 'Accepted';
-            case 203:
-                return 'Non-Authoritative Information';
-            case 204:
-                return 'Not Content';
-            case 205:
-                return 'Reset Content';
-            case 206:
-                return 'Partial Content';
-            case 300:
-                return 'Multiple Choices';
-            case 301:
-                return 'Moved Permanently';
-            case 302:
-                return 'Found';
-            case 303:
-                return 'See Other';
-            case 304:
-                return 'Not Modified';
-            case 305:
-                return 'Use Proxy';
-            case 307:
-                return 'Temporary Redirect';
-            case 400:
-                return 'Bad Request';
-            case 401:
-                return 'Unauthorized';
-            case 403:
-                return 'Forbidden';
-            case 404:
-                return 'Not Found';
-            case 405:
-                return 'Method Not Allowed';
-            case 406:
-                return 'Not Acceptable';
-            case 407:
-                return 'Proxy Authentication Required';
-            case 408:
-                return 'Request Timeout';
-            case 409:
-                return 'Conflict';
-            case 410:
-                return 'Gone';
-            case 411:
-                return 'Length Required';
-            case 412:
-                return 'Precondition Failed';
-            case 413:
-                return 'Request Entity Too Large';
-            case 414:
-                return 'Request-URI Too Long';
-            case 415:
-                return 'Unsupported Media Type';
-            case 416:
-                return 'Requested Range Not Satisfiable';
-            case 417:
-                return 'Expectation Failed';
-            case 422:
-                return 'Unprocessable Entity';
-            case 500:
-                return 'Internal Server Error';
-            case 501:
-                return 'Not Implemented';
-            case 502:
-                return 'Bad Gateway';
-            case 503:
-                return 'Service Unavailable';
-            case 504:
-                return 'Gateway Timeout';
-            case 505:
-                return 'HTTP Version Not Supported';
-            default:
-                return null;
-        }
+        $state = [];
+        $state[200] = 'OK';
+        $state[201] = 'Created';
+        $state[202] = 'Accepted';
+        $state[203] = 'Non-Authoritative Information';
+        $state[204] = 'Not Content';
+        $state[205] = 'Reset Content';
+        $state[206] = 'Partial Content';
+        $state[300] = 'Multiple Choices';
+        $state[301] = 'Moved Permanently';
+        $state[302] = 'Found';
+        $state[303] = 'See Other';
+        $state[304] = 'Not Modified';
+        $state[305] = 'Use Proxy';
+        $state[307] = 'Temporary Redirect';
+        $state[400] = 'Bad Request';
+        $state[401] = 'Unauthorized';
+        $state[403] = 'Forbidden';
+        $state[404] = 'Not Found';
+        $state[405] = 'Method Not Allowed';
+        $state[406] = 'Not Acceptable';
+        $state[407] = 'Proxy Authentication Required';
+        $state[408] = 'Request Timeout';
+        $state[409] = 'Conflict';
+        $state[410] = 'Gone';
+        $state[411] = 'Length Required';
+        $state[412] = 'Precondition Failed';
+        $state[413] = 'Request Entity Too Large';
+        $state[414] = 'Request-URI Too Long';
+        $state[415] = 'Unsupported Media Type';
+        $state[416] = 'Requested Range Not Satisfiable';
+        $state[417] = 'Expectation Failed';
+        $state[422] = 'Unprocessable Entity';
+        $state[500] = 'Internal Server Error';
+        $state[501] = 'Not Implemented';
+        $state[502] = 'Bad Gateway';
+        $state[503] = 'Service Unavailable';
+        $state[504] = 'Gateway Timeout';
+        $state[505] = 'HTTP Version Not Supported';
+        if (!isset($state[$code])) $code = 400;
+        return isset($state[$code]) ? $state[$code] : 'Unexpected';
     }
 
 

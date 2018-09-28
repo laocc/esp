@@ -2,54 +2,24 @@
 <html lang="zh-cn">
 <head>
     <meta charset="UTF-8">
-    <?php
-    /**
-     * @var $_title ;
-     * @var $_meta ;
-     * @var $_css ;
-     * @var $_js_head ;
-     * @var $_js_body ;
-     * @var $_js_foot ;
-     * @var $_js_defer ;
-     * @var $_view_html ;
-     */
-    ?>
-    <?= $_meta; ?>
-    <?= $_css; ?>
-    <?= $_js_head; ?>
     <title><?= $_title ?></title>
-    <style>
-        html {
-            font-family: "Microsoft YaHei", "Source Code Pro", "Arial", "sans-serif";
-        }
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0"/>
+    <meta name="format-detection" content="telephone=no"/>
+    <?= $_css ?>
+    <link rel="stylesheet" href="/resource/layui-v2.4.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="/resource/css/auto.css" media="all">
+    <link rel="stylesheet" href="/resource/css/page.css" media="all">
 
-        body {
-            padding: 0;
-            margin: 0;
-            background: #eeeeee;
-        }
-
-        div {
-            width: 100%;
-            height: 2em;
-            line-height: 2em;
-            display: block;
-            font-size: 100px;
-            clear: both;
-            text-align: center;
-            margin-top: 3em;
-            overflow: hidden;
-            color: #eee;
-            background: #123;
-            text-shadow: 2px 2px 4px #fff;
-            border-bottom: 3px solid #aa0000;
-        }
-    </style>
 </head>
 <body>
-<?= $_js_body ?>
-<?= $_view_html ?>
+<?php
+echo $_view_html;
+?>
 </body>
-<?= $_js_foot ?>
-<?= $_js_defer ?>
+
+<script src="/resource/layui-v2.4.3/layui.all.js"></script>
+<script>
+    layui.table.init('layuiTable');
+</script>
 </html>

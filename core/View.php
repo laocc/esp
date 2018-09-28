@@ -1,5 +1,9 @@
 <?php
+
 namespace esp\core;
+
+use esp\core\face\Adapter;
+use esp\library\ext\Markdown;
 
 final class View
 {
@@ -7,12 +11,12 @@ final class View
         'dir' => null,
         'file' => null,
     ];
-    private $_view_val = [];
+    private $_view_val = Array();
     private $_layout;//框架对象
     private $_adapter;//标签解析器对象
     private $_adapter_use;
 
-    public function __construct($dir, $file)
+    public function __construct(string $dir, $file)
     {
         $this->_path['dir'] = $dir;
         $this->_path['file'] = $file;
@@ -21,7 +25,7 @@ final class View
     /**
      * 设置或获取视图路径
      */
-    public function dir($dir = null)
+    public function dir(string $dir = null)
     {
         if (is_null($dir)) {
             return $this->_path['dir'];
@@ -33,7 +37,7 @@ final class View
     /**
      * 设置视图文件名
      */
-    public function file($file = null)
+    public function file(string $file = null)
     {
         if (is_null($file)) {
             return $this->_path['file'];
@@ -58,22 +62,22 @@ final class View
         }
     }
 
-    final public function __set($name, $value)
+    final public function __set(string $name, $value)
     {
         $this->_view_val[$name] = $value;
     }
 
-    final public function __get($name)
+    final public function __get(string $name)
     {
         return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
     }
 
-    final public function set($name, $value = null)
+    final public function set(string $name, $value = null)
     {
         $this->assign($name, $value);
     }
 
-    final public function get($name)
+    final public function get(string $name)
     {
         return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
     }
@@ -90,20 +94,25 @@ final class View
 
     /**
      * @param null $object
-     * @return $this|\Smarty
+     * @return $this
      */
     public function getAdapter()
     {
         return $this->_adapter;
     }
 
+    /**
+     * @param $use
+     * @return $this
+     * @throws \Exception
+     */
     public function setAdapter($use)
     {
         if ($use === false) {
             $this->_adapter_use = false;
         } elseif ($use === true) {
             if (is_null($this->_adapter)) {
-                error('标签解析器没有注册，请在已注册过的插中注册标签解析器');
+                throw new \Exception('标签解析器没有注册，请在已注册过的插中注册标签解析器');
             }
             $this->_adapter_use = true;
         }
@@ -114,7 +123,7 @@ final class View
      * @param $object
      * @return $this
      */
-    public function registerAdapter(&$object)
+    public function registerAdapter($object)
     {
         $this->_adapter = $object;
         $this->_adapter_use = true;
@@ -124,26 +133,35 @@ final class View
 
     /**
      * 解析视图结果并返回
+     * @param string $file
+     * @param array $value
+     * @return string
+     * @throws \Exception
      */
-    public function render($file, $value)
+    public function render(string $file, array $value)
     {
-        $dir = root($this->dir(), true);
-        $file = $this->file() ?: $file;
+        $dir = root($this->dir());
+        $fileV = $this->file() ?: $file;//以之前设置的优先
 
-        if (stripos($file, $dir) !== 0) $file = rtrim($dir, '/') . '/' . ltrim($file, '/');
-        if (!is_readable($file)) error("视图文件{$file}不存在");
+        if (stripos($fileV, $dir) !== 0) $fileV = $dir . '/' . ltrim($fileV, '/');
+        if (!is_readable($fileV)) {
+            throw new \Exception("视图文件({$fileV})不存在", 400);
+        }
 
-        if ($this->_layout instanceof View) {
-            //先解析子视图
-            $html = $this->fetch($file, $value + $this->_view_val);
-
-            $layout = Config::get('layout.filename');
+        if ($this->_layout instanceof View) {//先解析子视图
+            if (substr($fileV, -3) === '.md') {
+                $html = Markdown::html(file_get_contents($fileV), 0);
+                $html = "<article class='markdown' style='width:90%;margin:0 auto;'>{$html}</article>";
+            } else {
+                $html = $this->fetch($fileV, $value + $this->_view_val);
+            }
+            $layout = '/layout.php';
             $layout_file = $dir . $layout;
-            if (!is_readable($layout_file)) $layout_file = dirname($dir) . '/' . $layout;
-            if (!is_readable($layout_file)) error('框架视图文件不存在');
+            if (!is_readable($layout_file)) $layout_file = dirname($dir) . $layout;//上一级目录
+            if (!is_readable($layout_file)) throw new \Exception("框架视图文件({$layout_file})不存在");
             return $this->_layout->render($layout_file, ['_view_html' => &$html]);
         }
-        return $this->fetch($file, $value + $this->_view_val);
+        return $this->fetch($fileV, $value + $this->_view_val);
     }
 
     /**
@@ -155,21 +173,24 @@ final class View
     }
 
 
-    private function fetch($file, $value)
+    /**
+     * 解析视图并返回
+     * @param string $__file__
+     * @param array $__value__
+     * @return string
+     */
+    private function fetch(string $__file__, array $__value__)
     {
         if ($this->_adapter_use and !is_null($this->_adapter)) {
-            $adp = $this->adapter();
-            $adp->assign($value);
-            return $adp->fetch($file, []);
+            $this->_adapter instanceof Adapter and 1;
+            $this->_adapter->assign($this->_view_val);
+            return $this->_adapter->fetch($__file__, $__value__);
         }
-
         ob_start();
-        extract($value);
-        include($file);
+        extract($__value__);
+        include($__file__);
         $content = ob_get_contents();
         ob_end_clean();
         return $content;
     }
-
-
 }

@@ -1,5 +1,4 @@
-*.db
 /.idea/
-vendor
-cache
-composer.lock
+/vendor
+/cache
+/public/resource/layui*

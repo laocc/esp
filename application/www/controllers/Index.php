@@ -1,53 +1,63 @@
 <?php
+
 namespace www;
 
-use \esp\core\Model;
+use esp\core\Controller;
+use esp\core\Output;
+use esp\core\Session;
 
-class IndexController extends BaseController
+class IndexController extends Controller
 {
+    /**
+     * @throws \Exception
+     */
     public function indexAction()
     {
-        $this->setLayout(false);
-        $this->title('ESP');
+//        var_dump(['session' => Session::get()]);
+//        var_dump(['time' => Session::get('time')]);
+//        Session::set('day', date('Y-m-d'));
+//        Session::set('time', date('H:i:s'));
+        Session::empty();
+        Session::set('time', date('中国 Y-m-d H:i:s'));
+        Session::set('nowsa', time());
 
-//        $this->debug('debug');
-
-//        $this->view(false);
-
-//        error(403);
-//        $this->check_host('aba.com');
-
-//        $this->keywords('wbf wide');
-//        $this->description('wbf wide');
-
-//        $this->js([
-//            'http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js',
-//            'http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js',
-//            'jquery', 'test.js',
-//        ]);
-//        $this->css(['http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css']);
+        $url = 'http://www.esp.com/server';
+        $this->debug('Output::post')->folder('/test');
 
 
-//        include 'application/www/models/Article.php';
-//
-        $mod = Model::create(root('application/www/models/Article.php'));
-        $val = $mod->first();
-        var_dump($val);
-        $this->set('esp', $val);
+        throw new \Exception('adafd', 505);
+//        trigger_error('中华人民共和国');
 
-//
-//        if ($this->reload('admin')) return;
+//        $this->error('abdafdsf');
+//        return Session::get();
+    }
 
+    public function errorAction()
+    {
 
-//        pre($this->getRequest());
-
-        /*
-                $mem=new \Memcached();
-                pre($mem);
-        */
-
+        $v = preg_match_all('/([A-Z][a-zA-Z]{4,15}\/\d+\.+\d+)+/', $_SERVER['HTTP_USER_AGENT'], $mac);
+        var_dump($v, $mac);
+        exit;
 
     }
 
+    /**
+     * 路由控制器运行结束后，会运行这个方法
+     * @param void $val 前面控制器返回的内容
+     */
+    public function _init($action)
+    {
+//        var_dump(['action' => $action]);
+    }
+
+    /**
+     * 路由控制器运行结束后，会运行这个方法
+     * @param void $val 前面控制器返回的内容
+     */
+    public function _close($action, $val)
+    {
+//        var_dump(['action' => $action, 'value' => $val]);
+//        $val = ['newVal' => time()];
+    }
 
 }

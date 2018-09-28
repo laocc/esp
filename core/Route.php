@@ -2,118 +2,154 @@
 
 namespace esp\core;
 
+
+use esp\core\db\Redis;
+
 final class Route
 {
     /**
      * 路由中心
+     * Route constructor.
+     * @param Redis $redis
+     * @param Request $request
+     * @throws \Exception
      */
-    public function matching(Request &$request)
+    public function __construct(Redis $redis, Request $request)
     {
-        $default = ['_default' => ['match' => '/\/(?:[\w\-]+\/?)*/']];
-        $modRoute = load('config/' . _MODULE . '/routes.php');
-        if (!is_array($modRoute)) $modRoute = [];
+        $default = [
+            '_default' => ['match' => '/^\/(?:[a-z][a-z0-9\-]+\/?)*/i', 'route' => []],
+        ];
+        $rdsKey = $redis->key . '_' . _MODULE;
 
+        $modRoute = $redis->hGet('_ROUTES_', $rdsKey);
+        if (empty($modRoute)) {
+            $file = $request->router_path . '/' . _MODULE . '.php';
+            if (is_readable($file)) {
+                $modRoute = load($file);
+                if (!empty($modRoute)) {
+                    foreach ($modRoute as $r => $route) {
+                        if (isset($route['match']) and !is_match($route['match']))
+                            throw new \Exception("Route[Match]：{$route['match']} 不是有效正则表达式", 505);
+                        if (isset($route['uri']) and !is_uri($route['uri']))
+                            throw new \Exception("Route[uri]：{$route['uri']} 不是合法的URI格式", 505);
+                        if (!isset($route['route'])) $route['route'] = [];
+                    }
+                    $saveRoute = $modRoute;
+                    if (is_array($saveRoute)) $saveRoute = serialize($saveRoute);
+                    $redis->hSet('_ROUTES_', $rdsKey, $saveRoute);
+                } else {//写入一个值，否则每次经过这里还要读取一次
+                    $redis->hSet('_ROUTES_', $rdsKey, 'empty');
+                }
+            } else {
+                $redis->hSet('_ROUTES_', $rdsKey, 'null');
+            }
+        } else {
+            if (in_array($modRoute, ['null', 'empty'])) $modRoute = array();
+            else if (!is_array($modRoute)) $modRoute = unserialize($modRoute);
+        }
+        if (empty($modRoute)) $modRoute = Array();
+
+        if (!is_array($modRoute)) $modRoute = Array();
         foreach (array_merge($modRoute, $default) as $key => &$route) {
-            if ($route['match'] == $request->uri or
-                //先判断一下是不是正则的格式
-                (preg_match('/^\/.+\/[ims]*$/', $route['match']) and preg_match($route['match'], $request->uri, $matches))
-            ) {
-                if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->ajax))
-                    error(Config::get('error.method'));
 
-                if (!isset($matches) or $key === '_default') {
+            if ((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0) or
+                (isset($route['match']) and preg_match($route['match'], $request->uri, $matches))) {
+
+                if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax()))
+                    throw new \Exception('非法Method请求', 404);
+
+                if ($key === '_default') {
                     $matches = explode('/', $request->uri);
                     $matches[0] = $request->uri;
                 }
 
                 //MVC位置，不含模块
-                if (isset($route['directory'])) {
-                    $request->directory = root($route['directory'], true);
-                }
-
-                //路由表中对MCA有指定
-                $mca = (isset($route['route']) and is_array($route['route'])) ? $route['route'] : [];
+                if (isset($route['directory'])) $request->directory = root($route['directory']);
 
                 //分别获取模块、控制器、动作的实际值
-                list($module, $controller, $action) = $this->fill_route($request->directory, $matches, $mca);
-                if (!$controller and !$action) continue;
+                list($module, $controller, $action, $param) = $this->fill_route($request->directory, $matches, $route['route']);
+                if (!$controller) $controller = 'index';
+                if (!$action) $action = 'index';
 
                 //分别获取各个指定参数
+                $params = Array();
                 if (isset($route['map'])) {
                     foreach ($route['map'] as $mi => $mk) {
-                        $matches[$mi] = isset($matches[$mk]) ? $matches[$mk] : null;
-//                        unset($matches[$mk]);
+                        $params[$mi] = isset($matches[$mk]) ? $matches[$mk] : null;
                     }
+                } else {
+                    $params = $param;
                 }
 
-                $request->route = $key;
-                $request->module = $module;
+                $request->router = $key;
+                $request->module = ($module ?: _MODULE);
                 $request->controller = $controller;
                 $request->action = $action;
-                $request->params = $matches;
-
+                $request->params = $params + array_fill(0, 10, null);
 
                 if (isset($route['static'])) {
                     $request->set('_disable_static', !$route['static']);
                 }
 
                 //缓存设置，结果可能为：true/false，或array(参与cache的$_GET参数)
-                //将结果放入request，供cache类读取
-                if (isset($route['cache'])) {
-                    $_cache_set = is_array($route['cache']) ? $route['cache'] : !!$route['cache'];
-                } else {
-                    $_cache_set = Config::get('cache.autoRun');
-                }
-                $request->set('_cache_set', $_cache_set);
+                //将结果放入request，供Cache类读取
+                if (isset($route['cache'])) $request->set('_cache_set', $route['cache']);
 
+                unset($modRoute, $default);
                 return;
             }
         }
-        exit('系统路由没有获取到相应内容');
+        throw new \Exception('系统路由没有获取到相应内容', 404);
     }
 
 
     /**
      * 分别获取模块、控制器、动作的实际值
-     * @param array $matches 路由匹配的正则结果集
-     * @param $route
+     * @param string $directory
+     * @param array $matches 正则匹配结果
+     * @param array $route
      * @return array
      * @throws \Exception
      */
-    private function fill_route($directory, $matches, $route)
+    private function fill_route(string $directory, array $matches, array $route): array
     {
         $module = $controller = $action = null;
+        $param = Array();
 
-        //正则结果中没有指定结果集，则都以index返回
-        if (empty($matches) or !isset($matches[1])) goto auto;
+        //正则结果中没有指定结果集
+        if (empty($matches) or !isset($matches[1])) return [null, null, null, null];
 
         //未指定MCA
         if (empty($route)) {
-            //在有三个以上匹配的情况下，且第一个是模块名称
-            if (isset($matches[3]) and is_dir($directory . $matches[1])) {
+            //在有三个以上匹配的情况下，第一个是模块名称，且不存在该名称的控制器文件
+            if (isset($matches[3]) and
+                is_dir($directory . $matches[1]) and
+                !is_file($directory . $matches[1] . '/controllers/' . ucfirst($matches[1]) . '.php')) {
                 $module = strval($matches[1]);
                 $controller = strval($matches[2]);
                 $action = strval($matches[3]);
+                $param = array_slice($matches, 4);
             } else {//否则第一模块指的就是控制器
                 $module = null;
                 $controller = strval($matches[1]);
-                if (isset($matches[2])) $action = strval($matches[2]);
+                if (isset($matches[2])) {
+                    $action = strval($matches[2]);
+                    $param = array_slice($matches, 3);
+                }
             }
         } else {
+            if (!isset($route['module'])) $route['module'] = _MODULE;
             foreach (['module', 'controller', 'action'] as $key) {
                 ${$key} = isset($route[$key]) ? $route[$key] : null;
                 if (is_numeric(${$key})) {
-                    if (!isset($matches[${$key}])) error("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。");
+                    if (!isset($matches[${$key}])) throw new \Exception("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。", 500);
                     ${$key} = $matches[${$key}];
                 }
             }
         }
+
         auto:
-        return [
-            $module ?: Config::get('esp.defaultModule'),
-            $controller ?: Config::get('esp.defaultControl'),
-            $action ?: Config::get('esp.defaultAction'),
-        ];
+        return [$module, $controller, $action, $param];
     }
 
     /**
@@ -128,7 +164,7 @@ final class Route
      * HTTP/AJAX两项后可以跟具体的method类型，如：HTTP,GET,POST
      * CLI  =   只能单独出现
      */
-    private function method_check($mode, $method, $ajax)
+    private function method_check(string $mode, string $method, bool $ajax)
     {
         if (!$mode) return true;
         list($mode, $method) = [strtoupper($mode), strtoupper($method)];

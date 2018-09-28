@@ -1,0 +1,88 @@
+
+form.pageForm {
+    display: block;
+    background: #eeeeee;
+    padding: 10px;
+    height: 32px;
+}
+
+form.pageForm ul, form.pageForm ul li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    float: left;
+    background: #fff;
+}
+
+form.pageForm ul li {
+    border: 1px solid #ccc;
+    border-left: 0;
+    height: 32px;
+    line-height: 32px;
+}
+
+form.pageForm ul li:first-child {
+    border-left: 1px solid #ccc;
+}
+
+form.pageForm ul li a {
+    margin: 0;
+    display: inline-block;
+    padding: 0 12px;
+}
+
+form.pageForm ul li.first {
+}
+
+form.pageForm ul li.prev {
+}
+
+form.pageForm ul li.next {
+}
+
+form.pageForm ul li.last {
+}
+
+form.pageForm ul li.link {
+}
+
+form.pageForm ul li.active {
+    background: #c00;
+    border: 1px solid #888;
+    border-left: 0;
+    border-right: 0;
+}
+
+form.pageForm ul li.active a {
+    color: #fff;
+}
+
+form.pageForm ul li.omit {
+}
+
+form.pageForm ul li.total {
+    padding: 0 12px;
+}
+
+form.pageForm ul li.submit {
+}
+
+form.pageForm input[type=tel] {
+    width: 48px;
+    border: 0;
+    height: 99.6%;
+    text-align: center;
+}
+
+form.pageForm input[type=submit] {
+    width: 48px;
+    border: 0;
+    padding: 1px;
+    height: 100%;
+    text-align: center;
+}
+
+form.pageForm input[type=submit]:hover {
+    background: #c00;
+    color: #fff;
+}
