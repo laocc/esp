@@ -165,7 +165,7 @@ final class Debug
      */
     public function post(bool $val)
     {
-        $this->_conf['post'] = $val;
+        $this->_conf['print']['post'] = $val;
         return $this;
     }
 
@@ -176,7 +176,7 @@ final class Debug
      */
     public function server(bool $val)
     {
-        $this->_conf['server'] = $val;
+        $this->_conf['print']['server'] = $val;
         return $this;
     }
 
@@ -229,7 +229,7 @@ final class Debug
 
     public function mysql_log($val)
     {
-        if ($this->_run === false or !($this->_conf['mysql'] ?? 0)) return;
+        if ($this->_run === false or !($this->_conf['print']['mysql'] ?? 0)) return;
         $this->_mysql[] = $val;
     }
 
