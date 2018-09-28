@@ -283,7 +283,6 @@ final class Output
 
         $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
         if ($cURL === false) return 'Create Protocol Object Error';
-        pre($cOption);
         curl_setopt_array($cURL, $cOption);
         $html = curl_exec($cURL);
         $err = curl_error($cURL);
