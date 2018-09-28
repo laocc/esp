@@ -25,7 +25,7 @@ final class Request
         if ($this->isAjax()) $this->method = 'AJAX';
 
         $this->directory = root($conf['directory'] ?? '/directory');
-        $this->router_path = root($conf['router'] ?? '/config/route');
+        $this->router_path = root($conf['router'] ?? '/config/routes');
         if (!isset($conf['suffix'])) $conf['suffix'] = array();
         $this->suffix = $conf['suffix'] + ['get' => 'Action', 'ajax' => 'Ajax', 'post' => 'Post'];
         $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
