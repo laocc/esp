@@ -2,10 +2,7 @@
 
 use \esp\core\Dispatcher;
 use \esp\library\gd\Image;
-use \esp\core\Config;
 use \esp\plugs\Example;
-use \esp\core\Mistake;
-use \esp\core\Session;
 
 final class Bootstrap
 {
