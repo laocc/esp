@@ -672,7 +672,13 @@ function format(string $str): string
 function img_base64(string $file, bool $split = false): string
 {
     if (!is_readable($file)) return null;
-    $ext = image_type_to_extension(exif_imagetype($file), false);
+    if (function_exists('exif_imagetype')) {
+        $t = exif_imagetype($file);
+    } else {
+        $ti = getimagesize($file);
+        $t = $ti[2];
+    }
+    $ext = image_type_to_extension($t, false);
     if (!$ext) return null;
     $file_content = base64_encode(file_get_contents($file));
     if ($split) $file_content = chunk_split($file_content);
