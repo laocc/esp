@@ -56,8 +56,7 @@ final class Debug
         $info['url'] = _URI;
         $info['referer'] = getenv("HTTP_REFERER");
         $info['debug'] = $this->filename();
-        $type = $error['level'] ?? 'Error';
-        $filename = root($this->_conf['path']) . "/{$type}/" . date("{$this->_conf['rules']['error']}") . mt_rand() . '.txt';
+        $filename = root($this->_conf['path']) . "/Error/" . date("{$this->_conf['rules']['error']}") . mt_rand() . '.txt';
         $route = $this->get_routes_info();
         $this->_errorText = '错误信息：' . print_r($error, true) .
             "\n\n文件位置：" . print_r($prev ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], true) .
