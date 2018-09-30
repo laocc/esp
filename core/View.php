@@ -142,8 +142,12 @@ final class View
     {
         $dir = root($this->dir());
         $fileV = $this->file() ?: $file;//以之前设置的优先
+        if (substr($fileV, 0, 1) === '/') {
+            $fileV = root($fileV);
+        } else {
+            $fileV = $dir . '/' . ltrim($fileV, '/');
+        }
 
-        if (stripos($fileV, $dir) !== 0) $fileV = $dir . '/' . ltrim($fileV, '/');
         if (!is_readable($fileV)) {
             throw new \Exception("视图文件({$fileV})不存在", 400);
         }
