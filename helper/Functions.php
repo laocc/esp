@@ -271,6 +271,33 @@ function str_rand(int $min = 10, int $max = null): string
 
 
 /**
+ * 查询某年第n周的星期一是哪天
+ * @param int $week
+ * @param int $year
+ * @return string
+ */
+function week_from(int $week = 0, int $year = 0): string
+{
+    if (!$year) {
+        $year = intval(date('Y'));
+    } elseif ($week > 60) {
+        list($week, $year) = [$year, $week];
+    }
+    if ($week > 60) return '';
+    $yTime = strtotime("{$year}-01-01");//元旦当天时间戳
+    $yWeek = intval(date('W', $yTime));//元旦当天处于第多少周
+    $yWeekD = intval(date('N', $yTime));//元旦当天是星期几
+    if ($yWeek === 1) {//当天是第一周，则要查这一周的星期一是哪天
+        $yTime -= (($yWeekD - 1) * 86400);
+    } else {//上年的最后一周
+        $yTime += ((8 - $yWeekD) * 86400);
+    }
+    $yTime += (($week - 1) * 7 * 86400);
+    return date('Y-m-d', $yTime);
+}
+
+
+/**
  * 生成唯一GUID，基于当前时间微秒数的唯一ID
  * @param null $fh 连接符号
  * @param int $format 格式化规则
