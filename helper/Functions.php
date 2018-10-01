@@ -113,7 +113,7 @@ function load(string $file)
  */
 function root(string $path): string
 {
-    if (stripos($path, _ROOT) !== 0) $path = _ROOT . "/" . $path;
+    if (stripos($path, _ROOT) !== 0) $path = _ROOT . "/" . trim($path, '/');
     return rtrim($path, '/');
 }
 
