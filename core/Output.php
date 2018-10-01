@@ -231,7 +231,6 @@ final class Output
 
         if (isset($option['proxy'])) {//指定代理
             $cOption[CURLOPT_PROXY] = $option['proxy'];
-//            $cOption[CURLOPT_PROXYPORT] = 80;  //代理的端口
         }
 
         if (isset($option['cookies'])) $cOption[CURLOPT_COOKIE] = $option['cookies'];      //带Cookies
