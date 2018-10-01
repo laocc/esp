@@ -103,8 +103,8 @@ final class Output
 
         curl_setopt($cURL, CURLOPT_HEADER, (isset($option['transfer']) and $option['transfer']));//带回头信息
         curl_setopt($cURL, CURLOPT_DNS_CACHE_TIMEOUT, 120);     //内存中保存DNS信息，默认120秒
-        curl_setopt($cURL, CURLOPT_CONNECTTIMEOUT, 10);         //在发起连接前等待的时间，如果设置为0，则无限等待
-        curl_setopt($cURL, CURLOPT_TIMEOUT, 10);                //允许执行的最长秒数，若用毫秒级，用CURLOPT_TIMEOUT_MS
+        curl_setopt($cURL, CURLOPT_CONNECTTIMEOUT, ($option['wait'] ?? 10));         //在发起连接前等待的时间，如果设置为0，则无限等待
+        curl_setopt($cURL, CURLOPT_TIMEOUT, ($option['timeout'] ?? 10));                //允许执行的最长秒数，若用毫秒级，用CURLOPT_TIMEOUT_MS
         curl_setopt($cURL, CURLOPT_RETURNTRANSFER, TRUE);       //返回文本流
         curl_setopt($cURL, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);//指定使用IPv4解析
 
