@@ -80,13 +80,13 @@ final class Debug
         $method = $request->getMethod();
         $data = Array();
         $data[] = "## 请求数据\n";
-        $data[] = " - METHOD:\t\t{$method}\n";
-        $data[] = " - GET_URL:\t\t" . (defined('_URL') ? _URL : '') . "\n";
-        $data[] = " - SERV_IP:\t\t" . ($_SERVER['SERVER_ADDR'] ?? '') . "\n";
-        $data[] = " - USER_IP:\t\t" . ($_SERVER['REMOTE_ADDR'] ?? '') . "\n";
-        $data[] = " - REAL_IP:\t\t" . ($_SERVER['X-REAL-IP'] ?? '') . "\n";
+        $data[] = " - METHOD:\t{$method}\n";
+        $data[] = " - GET_URL:\t" . (defined('_URL') ? _URL : '') . "\n";
+        $data[] = " - SERV_IP:\t" . ($_SERVER['SERVER_ADDR'] ?? '') . "\n";
+        $data[] = " - USER_IP:\t" . ($_SERVER['REMOTE_ADDR'] ?? '') . "\n";
+        $data[] = " - REAL_IP:\t" . Client::ip() . "\n";
         $data[] = " - DATETIME:\t" . date('Y-m-d H:i:s', $this->_time) . "\n";
-        $data[] = " - AGENT:\t\t" . ($_SERVER['HTTP_USER_AGENT'] ?? '') . "\n";
+        $data[] = " - AGENT:\t" . ($_SERVER['HTTP_USER_AGENT'] ?? '') . "\n";
 //        $data[] = " - UN_ID:\t\t" . (Client::id()) . "\n";
         $data[] = " - Router:\t\t/{$request->module}/{$request->controller}/{$request->action}\t({$request->router})\n";
 
