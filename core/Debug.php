@@ -88,11 +88,11 @@ final class Debug
         $data[] = " - DATETIME:\t" . date('Y-m-d H:i:s', $this->_time) . "\n";
         $data[] = " - AGENT:\t" . ($_SERVER['HTTP_USER_AGENT'] ?? '') . "\n";
 //        $data[] = " - UN_ID:\t\t" . (Client::id()) . "\n";
-        $data[] = " - Router:\t\t/{$request->module}/{$request->controller}/{$request->action}\t({$request->router})\n";
+        $data[] = " - Router:\t/{$request->module}/{$request->controller}/{$request->action}\t({$request->router})\n";
 
         //一些路由结果，路由结果参数
         $Params = implode(',', $request->getParams());
-        $data[] = " - Params:\t\t({$Params})\n";
+        $data[] = " - Params:\t({$Params})\n";
         if (!empty($this->_value)) {
             foreach ($this->_value as $k => &$v) {
                 $data[] = "- {$k}\t{$v}\n";
