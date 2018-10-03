@@ -177,7 +177,7 @@ final class Client
      */
     public static function is_alipay(): bool
     {
-        return stripos(($_SERVER['HTTP_USER_AGENT'] ?? ''), 'aliPay') > 0;
+        return stripos(($_SERVER['HTTP_USER_AGENT'] ?? ''), 'AlipayClient') > 0;
     }
 
     /**
