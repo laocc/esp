@@ -2,6 +2,7 @@
 
 namespace www;
 
+use esp\core\Client;
 use esp\core\Controller;
 use esp\core\Output;
 use esp\core\Session;
@@ -24,13 +25,25 @@ class IndexController extends Controller
         $url = 'http://www.esp.com/server';
         $this->debug('Output::post')->folder('/test');
 
+        $this->redirect('/index/redirect/1');
 
-        throw new \Exception('adafd', 505);
+
 //        trigger_error('中华人民共和国');
 
 //        $this->error('abdafdsf');
 //        return Session::get();
     }
+
+    public function redirectAction($index)
+    {
+        $index = intval($index);
+        $index++;
+        if ($index === 5) {
+            return ['ip' => Client::ip()];
+        }
+        $this->redirect('/index/redirect/' . $index);
+    }
+
 
     public function errorAction()
     {
