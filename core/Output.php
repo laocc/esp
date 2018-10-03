@@ -162,11 +162,11 @@ final class Output
     }
 
 
-    private static function curl(string $url, array $data = null, array $option = null)
+    public static function curl(string $url, array $data = null, array $option = [])
     {
         if (empty($url)) return 'empty API url';
 
-        $option['type'] = strtoupper($option['type']);
+        $option['type'] = strtoupper($option['type'] ?? 'get');
         if (!in_array($option['type'], ['GET', 'POST', 'PUT', 'HEAD', 'DELETE'])) $option['type'] = 'GET';
         if (!isset($option['headers'])) $option['headers'] = Array();
         if (!is_array($option['headers'])) $option['headers'] = [$option['headers']];
