@@ -142,7 +142,10 @@ final class Output
         }
 
         //提交上传数据放在最后
-        if (!!$data) curl_setopt($cURL, CURLOPT_POSTFIELDS, $data);
+        if (!!$data) {
+            if (is_array($data)) $data = json_encode($data, 256);
+            curl_setopt($cURL, CURLOPT_POSTFIELDS, $data);
+        }
 
         $html = curl_exec($cURL);
         $err = curl_error($cURL);
