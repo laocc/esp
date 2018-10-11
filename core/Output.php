@@ -13,7 +13,7 @@ final class Output
      * @param string $autoVal
      * @return bool|float|int|mixed|null|string
      */
-    public static function post(string $url, array $params = [], array $option = [], $autoVal = '')
+    public static function post(string $url, $params = null, array $option = [], $autoVal = '')
     {
         $option['type'] = 'post';
         return self::curl($url, $params, $option);
