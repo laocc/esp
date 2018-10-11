@@ -281,7 +281,10 @@ final class Output
             }
         }
 
-        if (!!$data) $cOption[CURLOPT_POSTFIELDS] = $data;////提交上传数据放在最后
+        if (!!$data) {
+            if (is_array($data)) $data = json_encode($data, 256);
+            $cOption[CURLOPT_POSTFIELDS] = $data;
+        }////提交上传数据放在最后
 
         $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
         if ($cURL === false) return 'Create Protocol Object Error';
