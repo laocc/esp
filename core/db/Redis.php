@@ -575,6 +575,11 @@ final class Redis implements KeyValue
         return $this->redis->hGet($key, $hasKey);
     }
 
+    public function hGetAll($key)
+    {
+        return $this->redis->hGetAll($key);
+    }
+
     public function hDel($key, ...$hasKey)
     {
         return $this->redis->hDel($key, ...$hasKey);

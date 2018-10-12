@@ -43,8 +43,9 @@ class RedisHash
      * wasn't replaced.
      * </pre>
      */
-    public function hSetNx($key, $hashKey, $value)
+    public function hSetNx(string $hashKey, $value)
     {
+        return $this->redis->hSetNx($this->table, $hashKey, $value);
     }
 
     /**
@@ -61,8 +62,9 @@ class RedisHash
      * $redis->hLen('h'); // returns 2
      * </pre>
      */
-    public function hLen($key)
+    public function hLen()
     {
+        return $this->redis->hLen($this->table);
     }
 
     /**
@@ -95,8 +97,9 @@ class RedisHash
      * //  }
      * </pre>
      */
-    public function hDel($key, $hashKey1, $hashKey2 = null, $hashKeyN = null)
+    public function hDel(string ...$hashKey)
     {
+        return $this->redis->hDel($this->table, ...$hashKey);
     }
 
     /**
@@ -128,8 +131,9 @@ class RedisHash
      * // The order is random and corresponds to redis' own internal representation of the set structure.
      * </pre>
      */
-    public function hKeys($key)
+    public function hKeys()
     {
+        return $this->redis->hKeys($this->table);
     }
 
     /**
@@ -161,8 +165,9 @@ class RedisHash
      * // The order is random and corresponds to redis' own internal representation of the set structure.
      * </pre>
      */
-    public function hVals($key)
+    public function hVals()
     {
+        return $this->redis->hVals($this->table);
     }
 
     /**
@@ -194,8 +199,9 @@ class RedisHash
      * // The order is random and corresponds to redis' own internal representation of the set structure.
      * </pre>
      */
-    public function hGetAll($key)
+    public function hGetAll()
     {
+        return $this->redis->hGetAll($this->table);
     }
 
     /**
@@ -212,8 +218,9 @@ class RedisHash
      * $redis->hExists('h', 'NonExistingKey');  // FALSE
      * </pre>
      */
-    public function hExists($key, $hashKey)
+    public function hExists(string $hashKey)
     {
+        return $this->redis->hExists($this->table, $hashKey);
     }
 
     /**
@@ -231,8 +238,9 @@ class RedisHash
      * $redis->hIncrBy('h', 'x', 1); // h[x] ← 2 + 1. Returns 3
      * </pre>
      */
-    public function hIncrBy($key, $hashKey, $value)
+    public function hIncrBy(string $hashKey, int $value)
     {
+        return $this->redis->hIncrBy($this->table, $hashKey, $value);
     }
 
     /**
@@ -261,8 +269,9 @@ class RedisHash
      *  }
      * </pre>
      */
-    public function hIncrByFloat($key, $field, $increment)
+    public function hIncrByFloat(int $field, float $increment)
     {
+        return $this->redis->hIncrByFloat($this->table, $field, $increment);
     }
 
     /**
@@ -280,8 +289,9 @@ class RedisHash
      * $redis->hIncrBy('user:1', 'salary', 100); // Joe earns 100 more now.
      * </pre>
      */
-    public function hMset($key, $hashKeys)
+    public function hMset(array $hashKeys)
     {
+        return $this->redis->hMset($this->table, $hashKeys);
     }
 
     /**
@@ -300,8 +310,9 @@ class RedisHash
      * $redis->hmGet('h', array('field1', 'field2')); // returns array('field1' => 'value1', 'field2' => 'value2')
      * </pre>
      */
-    public function hMGet($key, $hashKeys)
+    public function hMGet(array $hashKeys)
     {
+        return $this->redis->hMGet($this->table, $hashKeys);
     }
 
 }
