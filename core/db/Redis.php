@@ -41,12 +41,22 @@ final class Redis implements KeyValue
         }
 
         $this->redis = new \Redis();
-        if (!isset($conf['port']) or intval($conf['port']) === 0) {
-            if (!$this->redis->connect($conf['host'])) {
-                throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
+        if (isset($conf['pconnect']) and $conf['pconnect']) {
+            if (!isset($conf['port']) or intval($conf['port']) === 0) {
+                if (!$this->redis->pconnect($conf['host'])) {
+                    throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
+                }
+            } else if (!$this->redis->pconnect($conf['host'], $conf['port'])) {
+                throw new \Exception("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
             }
-        } else if (!$this->redis->connect($conf['host'], $conf['port'])) {
-            throw new \Exception("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
+        } else {
+            if (!isset($conf['port']) or intval($conf['port']) === 0) {
+                if (!$this->redis->connect($conf['host'])) {
+                    throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
+                }
+            } else if (!$this->redis->connect($conf['host'], $conf['port'])) {
+                throw new \Exception("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
+            }
         }
 
         //用密码登录

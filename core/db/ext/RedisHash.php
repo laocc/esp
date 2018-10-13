@@ -34,7 +34,7 @@ class RedisHash
     {
         $val = $this->redis->hGet($this->table, $hashKey);
         if (empty($val)) return null;
-        return unserialize($this->redis->hGet($this->table, $hashKey));
+        return unserialize($val);
     }
 
 
