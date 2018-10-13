@@ -405,7 +405,7 @@ final class Redis implements KeyValue
 
     public function delete(...$keys)
     {
-        return $this->del($keys);
+        return $this->redis->delete($keys);
     }
 
 
