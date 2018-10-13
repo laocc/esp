@@ -32,6 +32,8 @@ class RedisHash
      */
     public function get(string $hashKey)
     {
+        $val = $this->redis->hGet($this->table, $hashKey);
+        if (empty($val)) return null;
         return unserialize($this->redis->hGet($this->table, $hashKey));
     }
 
@@ -148,7 +150,9 @@ class RedisHash
 
     public function hGet(string $hashKey)
     {
-        return unserialize($this->redis->hGet($this->table, $hashKey));
+        $val = $this->redis->hGet($this->table, $hashKey);
+        if (empty($val)) return null;
+        return unserialize($val);
     }
 
 
