@@ -16,6 +16,75 @@ class RedisHash
         $this->table = $key;
     }
 
+    public function set(string $hashKey, $value)
+    {
+        return $this->redis->hSet($this->table, $hashKey, serialize($value));
+    }
+
+    public function get(string $hashKey)
+    {
+        return unserialize($this->redis->hGet($this->table, $hashKey));
+    }
+
+
+    public function nx(string $hashKey, $value)
+    {
+        return $this->redis->hSetNx($this->table, $hashKey, $value);
+    }
+
+
+    public function len()
+    {
+        return $this->redis->hLen($this->table);
+    }
+
+    public function del(string ...$hashKey)
+    {
+        return $this->redis->hDel($this->table, ...$hashKey);
+    }
+
+
+    public function keys()
+    {
+        return $this->redis->hKeys($this->table);
+    }
+
+
+    public function all()
+    {
+        return $this->redis->hGetAll($this->table);
+    }
+
+
+    public function exists(string $hashKey)
+    {
+        return $this->redis->hExists($this->table, $hashKey);
+    }
+
+    public function add(string $hashKey, int $value)
+    {
+        return $this->redis->hIncrBy($this->table, $hashKey, $value);
+    }
+
+    public function mSet(array $hashKeys)
+    {
+        return $this->redis->hMset($this->table, $hashKeys);
+    }
+
+    public function mGet(array $hashKeys)
+    {
+        return $this->redis->hMGet($this->table, $hashKeys);
+    }
+
+    /**
+     ***********************以下都是原生方法*******************
+     */
+
+    /**
+     * @param string $hashKey
+     * @param $value
+     * @return int
+     */
     public function hSet(string $hashKey, $value)
     {
         return $this->redis->hSet($this->table, $hashKey, serialize($value));
