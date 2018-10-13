@@ -16,64 +16,120 @@ class RedisHash
         $this->table = $key;
     }
 
+    /**
+     * @param string $hashKey
+     * @param $value
+     * @return int
+     */
     public function set(string $hashKey, $value)
     {
         return $this->redis->hSet($this->table, $hashKey, serialize($value));
     }
 
+    /**
+     * @param string $hashKey
+     * @return array|string|int
+     */
     public function get(string $hashKey)
     {
         return unserialize($this->redis->hGet($this->table, $hashKey));
     }
 
 
-    public function nx(string $hashKey, $value)
+    /**
+     * 当$hashKey不存在时，写入，若存在则忽略
+     * @param string $hashKey
+     * @param $value
+     * @return bool
+     */
+    public function insert(string $hashKey, $value)
     {
-        return $this->redis->hSetNx($this->table, $hashKey, $value);
+        return $this->redis->hSetNx($this->table, $hashKey, serialize($value));
     }
 
 
+    /**
+     * @return int
+     */
     public function len()
     {
         return $this->redis->hLen($this->table);
     }
 
+    /**
+     * @param string[] ...$hashKey
+     * @return int
+     */
     public function del(string ...$hashKey)
     {
         return $this->redis->hDel($this->table, ...$hashKey);
     }
 
 
+    /**
+     * @return array
+     */
     public function keys()
     {
         return $this->redis->hKeys($this->table);
     }
 
 
+    /**
+     * @return array
+     */
     public function all()
     {
-        return $this->redis->hGetAll($this->table);
+        $all = $this->redis->hGetAll($this->table);
+        foreach ($all as $k => $v) {
+            $all[$k] = unserialize($v);
+        }
+        return $all;
     }
 
 
+    /**
+     * @param string $hashKey
+     * @return bool
+     */
     public function exists(string $hashKey)
     {
         return $this->redis->hExists($this->table, $hashKey);
     }
 
+    /**
+     * @param string $hashKey
+     * @param int $value
+     * @return int
+     */
     public function add(string $hashKey, int $value)
     {
         return $this->redis->hIncrBy($this->table, $hashKey, $value);
     }
 
+    /**
+     * @param array $hashKeys
+     * @return bool
+     */
     public function mSet(array $hashKeys)
     {
+        foreach ($hashKeys as $k => $v) {
+            $hashKeys[$k] = serialize($v);
+        }
         return $this->redis->hMset($this->table, $hashKeys);
     }
 
+    /**
+     * @param array $hashKeys
+     * @return array
+     */
     public function mGet(array $hashKeys)
     {
-        return $this->redis->hMGet($this->table, $hashKeys);
+        $all = $this->redis->hMGet($this->table, $hashKeys);
+        foreach ($all as $k => $v) {
+            $all[$k] = unserialize($v);
+        }
+        return $all;
     }
 
     /**
