@@ -32,7 +32,6 @@ final class Config
             if (!empty($_config)) self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
         }
         self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
-        pre(self::$_CONFIG_);
         $buffer->set($buffer->key . '_CONFIG_', serialize(self::$_CONFIG_));
     }
 
