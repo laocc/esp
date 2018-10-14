@@ -682,9 +682,9 @@ function re_size(string $size): int
 
 /**
  * @param $ext
- * @return int|null
+ * @return int
  */
-function image_type(string $ext)
+function image_type(string $ext):int
 {
     $file = Array();
     $file['gif'] = IMAGETYPE_GIF;
@@ -696,7 +696,7 @@ function image_type(string $ext)
     $file['bmp'] = IMAGETYPE_BMP;
     $file['wbmp'] = IMAGETYPE_WBMP;
     $file['bmp'] = IMAGETYPE_XBM;
-    return isset($file[$ext]) ? $file[$ext] : null;
+    return isset($file[$ext]) ? $file[$ext] : 0;
 }
 
 /**
@@ -728,7 +728,7 @@ function format(string $str): string
  */
 function img_base64(string $file, bool $split = false): string
 {
-    if (!is_readable($file)) return null;
+    if (!is_readable($file)) return '';
     if (function_exists('exif_imagetype')) {
         $t = exif_imagetype($file);
     } else {
@@ -736,7 +736,7 @@ function img_base64(string $file, bool $split = false): string
         $t = $ti[2];
     }
     $ext = image_type_to_extension($t, false);
-    if (!$ext) return null;
+    if (!$ext) return '';
     $file_content = base64_encode(file_get_contents($file));
     if ($split) $file_content = chunk_split($file_content);
     return "data:image/{$ext};base64,{$file_content}";
