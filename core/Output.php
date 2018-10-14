@@ -165,7 +165,13 @@ final class Output
     }
 
 
-    public static function curl(string $url, array $data = null, array $option = [])
+    /**
+     * @param string $url
+     * @param null $data
+     * @param array $option
+     * @return array|string
+     */
+    public static function curl(string $url, $data = null, array $option = [])
     {
         if (empty($url)) return 'empty API url';
 
