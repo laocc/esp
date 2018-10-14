@@ -193,14 +193,6 @@ final class Output
             $cOption[CURLOPT_FAILONERROR] = true;//当 HTTP 状态码大于等于 400，TRUE 将将显示错误详情。 默认情况下将返回页面，忽略 HTTP 代码。
         }
 
-        if (isset($option['redirect'])) {
-            $cOption[CURLOPT_FOLLOWLOCATION] = true;//根据服务器返回 HTTP 头中的 "Location: " 重定向
-            $cOption[CURLOPT_MAXREDIRS] = $option['redirect'];//指定最多的 HTTP 重定向次数
-            $cOption[CURLOPT_POSTREDIR] = 1;//什么情况下需要再次 HTTP POST 到重定向网址:1 (301 永久重定向), 2 (302 Found) 和 4 (303 See Other)
-            $cOption[CURLOPT_UNRESTRICTED_AUTH] = 1;//重定向时，时继续发送用户名和密码信息，哪怕主机名已改变
-        }
-
-
         switch ($option['type']) {
             case "GET" :
                 $cOption[CURLOPT_HTTPGET] = true;
@@ -233,6 +225,13 @@ final class Output
 //        $cOption[CURLOPT_AUTOREFERER] = true;//根据 Location: 重定向时，自动设置 header 中的Referer:信息
 
 
+        if (isset($option['redirect'])) {
+            $cOption[CURLOPT_FOLLOWLOCATION] = true;//根据服务器返回 HTTP 头中的 "Location: " 重定向
+            $cOption[CURLOPT_MAXREDIRS] = $option['redirect'];//指定最多的 HTTP 重定向次数
+            $cOption[CURLOPT_POSTREDIR] = 1;//什么情况下需要再次 HTTP POST 到重定向网址:1 (301 永久重定向), 2 (302 Found) 和 4 (303 See Other)
+            $cOption[CURLOPT_UNRESTRICTED_AUTH] = 1;//重定向时，时继续发送用户名和密码信息，哪怕主机名已改变
+        }
+
         $cOption[CURLOPT_CUSTOMREQUEST] = $option['type'];
         $cOption[CURLOPT_URL] = $url;                                                      //接收页
         $cOption[CURLOPT_FRESH_CONNECT] = true;                                            //强制新连接，不用缓存中的
@@ -240,6 +239,11 @@ final class Output
 
         if (isset($option['proxy'])) {//指定代理
             $cOption[CURLOPT_PROXY] = $option['proxy'];
+        }
+
+        if (isset($option['ip'])) {
+            $option['headers'][] = "CLIENT-IP: {$option['ip']}";
+            $option['headers'][] = "X-FORWARDED-FOR: {$option['ip']}";
         }
 
         if (isset($option['cookies'])) $cOption[CURLOPT_COOKIE] = $option['cookies'];      //带Cookies
@@ -346,6 +350,52 @@ final class Output
         if (empty($arr)) return;
         $H = !strpos($URL, '?') ? '?' : '&';
         $URL .= $H . http_build_query($arr);
+    }
+
+
+    public function agent()
+    {
+        $agent = [];
+        $agent['window'] = [];
+        $agent['mac'] = [];
+        $agent['iso'] = [];
+        $agent['android'] = [];
+
+
+        $agent['window']['safari'] = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-us) AppleWebKit/534.50 (KHTML, like Gecko) Version/5.1 Safari/534.50";
+        $agent['window']['firefox'] = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0";
+        $agent['window']['firefox4'] = "Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1";
+        $agent['window']['ie11'] = "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; .NET4.0C; .NET4.0E; .NET CLR 2.0.50727; .NET CLR 3.0.30729; .NET CLR 3.5.30729; InfoPath.3; rv:11.0) like Gecko";
+        $agent['window']['ie9'] = "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0";
+        $agent['window']['ie8'] = "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)";
+        $agent['window']['ie7'] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)";
+        $agent['window']['ie6'] = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
+        $agent['window']['opera'] = "Opera/9.80 (Windows NT 6.1; U; en) Presto/2.8.131 Version/11.11";
+        $agent['window']['Maxthon'] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Maxthon 2.0)";//傲游
+        $agent['window']['tt'] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; TencentTraveler 4.0)";//腾讯TT
+        $agent['window']['world2'] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)";//世界之窗（The World） 2.x
+        $agent['window']['world3'] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; The World)";//世界之窗（The World） 3.x
+        $agent['window']['360'] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; 360SE)";
+        $agent['window']['dog'] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; SE 2.X MetaSr 1.0; SE 2.X MetaSr 1.0; .NET CLR 2.0.50727; SE 2.X MetaSr 1.0)";//搜狗浏览器
+        $agent['window']['Avant'] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Avant Browser)";
+        $agent['window']['ie11'] = "dafaa";
+
+        $agent['mac']['safari'] = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11";
+        $agent['mac']['firefox'] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:2.0.1) Gecko/20100101 Firefox/4.0.1";
+        $agent['mac']['opera'] = "Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; en) Presto/2.8.131 Version/11.11";
+        $agent['mac']['chrome'] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11";
+
+        $agent['iso']['iPhone'] = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_3_3 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5";
+        $agent['iso']['iPod'] = "Mozilla/5.0 (iPod; U; CPU iPhone OS 4_3_3 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5";
+        $agent['iso']['iPad'] = "Mozilla/5.0 (iPad; U; CPU OS 4_3_3 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5";
+
+        $agent['android']['n1'] = "Mozilla/5.0 (Linux; U; Android 2.3.7; en-us; Nexus One Build/FRF91) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1";
+        $agent['android']['qq'] = "MQQBrowser/26 Mozilla/5.0 (Linux; U; Android 2.3.7; zh-cn; MB200 Build/GRJ22; CyanogenMod-7) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1";
+        $agent['android']['Opera'] = "Opera/9.80 (Android 2.3.4; Linux; Opera Mobi/build-1107180945; U; en-GB) Presto/2.8.149 Version/11.10";
+        $agent['android']['moto'] = "Mozilla/5.0 (Linux; U; Android 3.0; en-us; Xoom Build/HRI39) AppleWebKit/534.13 (KHTML, like Gecko) Version/4.0 Safari/534.13";
+        $agent['android']['BlackBerry'] = "Mozilla/5.0 (BlackBerry; U; BlackBerry 9800; en) AppleWebKit/534.1+ (KHTML, like Gecko) Version/6.0.0.337 Mobile Safari/534.1+";
+        $agent['android']['Touchpad'] = "Mozilla/5.0 (hp-tablet; Linux; hpwOS/3.0.0; U; en-US) AppleWebKit/534.6 (KHTML, like Gecko) wOSBrowser/233.70 Safari/534.6 TouchPad/1.0";
+        $agent['android']['weixin'] = "Mozilla/5.0 (Linux; Android 6.0; 1503-M02 Build/MRA58K) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile MQQBrowser/6.2 TBS/036558 Safari/537.36 MicroMessenger/6.3.25.861 NetType/WIFI Language/zh_CN";
     }
 
 

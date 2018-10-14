@@ -3,6 +3,7 @@
 namespace www;
 
 use esp\core\Client;
+use esp\core\Config;
 use esp\core\Controller;
 use esp\core\Output;
 use esp\core\Session;
@@ -36,6 +37,10 @@ class IndexController extends Controller
 
     public function redirectAction($index)
     {
+        $a = Config::get('token');
+        echo json_encode($a, 256);
+
+
         $index = intval($index);
         $index++;
         if ($index === 5) {

@@ -10,4 +10,7 @@ define("_ROOT", dirname(dirname(__DIR__)));
 is_readable($auto = (_ROOT . "/vendor/autoload.php")) ? include($auto) : exit('composer dump-autoload --optimize');
 
 $option = include('../config.php');
+$option['config'][] = '/config/token.php';
+$option['config'][] = '/config/test.json';
+
 (new esp\core\Dispatcher($option))->bootstrap()->run();

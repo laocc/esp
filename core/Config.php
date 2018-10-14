@@ -29,28 +29,41 @@ final class Config
         self::$_CONFIG_ = Array();
         foreach ($config as $i => $file) {
             $_config = self::loadFile($file);
-            if (is_array($_config) && !empty($_config)) {
-                self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
-            }
+            if (!empty($_config)) self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
         }
         self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
+        pre(self::$_CONFIG_);
         $buffer->set($buffer->key . '_CONFIG_', serialize(self::$_CONFIG_));
     }
 
     /**
      * @param string $file
      * @param bool $byKey
-     * @return array|bool|mixed|null
+     * @return array
      * @throws \Exception
      */
-    public static function loadFile(string $file, $byKey = true)
+    public static function loadFile(string $file, $byKey = true): array
     {
         $fullName = root($file);
         if (!is_readable($fullName)) {
             throw new \Exception("配置文件{$file}不存在", 404);
         };
+        $info = pathinfo($fullName);
 
-        $_config = parse_ini_file($fullName, true);
+        if ($info['extension'] === 'php') {
+            $_config = include($fullName);
+            if (!is_array($_config)) $_config = [];
+
+        } elseif ($info['extension'] === 'ini') {
+            $_config = parse_ini_file($fullName, true);
+            if (!is_array($_config)) $_config = [];
+
+        } elseif ($info['extension'] === 'json') {
+            $_config = file_get_contents($fullName);
+            $_config = json_decode($_config, true);
+            if (!is_array($_config)) $_config = [];
+        }
+
         if (isset($_config['include'])) {
             $include = $_config['include'];
             unset($_config['include']);
@@ -59,19 +72,15 @@ final class Config
                     $_config[$key] = Array();
                     foreach ($fil as $l => $f) {
                         $_inc = self::loadFile(root($f));
-                        if (is_array($_inc) && !empty($_inc)) {
-                            $_config[$key] = $_inc + $_config[$key];
-                        }
+                        if (!empty($_inc)) $_config[$key] = $_inc + $_config[$key];
                     }
                 } else {
                     $_inc = self::loadFile(root($fil));
-                    if (is_array($_inc) && !empty($_inc)) {
-                        $_config = $_inc + $_config;
-                    }
+                    if (!empty($_inc)) $_config = $_inc + $_config;
                 }
             }
         }
-        return (empty($_config)) ? null : ($byKey ? [basename($fullName, '.ini') => $_config] : $_config);
+        return empty($_config) ? [] : ($byKey ? [$info['filename'] => $_config] : $_config);
     }
 
     /**
