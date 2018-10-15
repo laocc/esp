@@ -28,7 +28,7 @@ final class Config
 
         self::$_CONFIG_ = Array();
         foreach ($config as $i => $file) {
-            $_config = self::loadFile($file);
+            $_config = self::loadFile($file, $i);
             if (!empty($_config)) self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
         }
         self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
@@ -37,11 +37,11 @@ final class Config
 
     /**
      * @param string $file
-     * @param bool $byKey
+     * @param string $byKey
      * @return array
      * @throws \Exception
      */
-    public static function loadFile(string $file, $byKey = true): array
+    private static function loadFile(string $file, string $byKey = null): array
     {
         $fullName = root($file);
         if (!is_readable($fullName)) {
@@ -79,7 +79,9 @@ final class Config
                 }
             }
         }
-        return empty($_config) ? [] : ($byKey ? [$info['filename'] => $_config] : $_config);
+        if (is_null($byKey) or is_int($byKey) or is_numeric($byKey)) $byKey = $info['filename'];
+
+        return empty($_config) ? [] : [$byKey => $_config];
     }
 
     /**

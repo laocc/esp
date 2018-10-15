@@ -367,7 +367,11 @@ final class Debug
             $err['code'] = $errNo;
             $err['file'] = $errFile;
             $err['line'] = $errLine;
+            foreach ($errcontext as $k => $item) {
+                if (is_object($item)) $errcontext[$k] = '(OBJECT)';
+            }
             $err['text'] = $errcontext;
+
             $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]);
             if (is_int($display['run'])) {
                 if ($display['run'] === 0) {

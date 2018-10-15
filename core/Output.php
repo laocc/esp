@@ -90,6 +90,13 @@ final class Output
                 break;
         }
 
+        foreach ($option['headers'] as $k => $h) {
+            if (is_string($k)) {
+                $option['headers'][] = "{$k}: {$h}";
+                unset($option['headers'][$k]);
+            }
+        }
+
         curl_setopt($cURL, CURLOPT_CUSTOMREQUEST, $type);
         curl_setopt($cURL, CURLOPT_URL, $url);                                                      //接收页
         curl_setopt($cURL, CURLOPT_FRESH_CONNECT, true);                                            //强制新连接，不用缓存中的
@@ -245,6 +252,14 @@ final class Output
             $option['headers'][] = "CLIENT-IP: {$option['ip']}";
             $option['headers'][] = "X-FORWARDED-FOR: {$option['ip']}";
         }
+
+        foreach ($option['headers'] as $k => $h) {
+            if (is_string($k)) {
+                $option['headers'][] = "{$k}: {$h}";
+                unset($option['headers'][$k]);
+            }
+        }
+
 
         if (isset($option['cookies'])) $cOption[CURLOPT_COOKIE] = $option['cookies'];      //带Cookies
         if (isset($option['referer']) and $option['referer']) $cOption[CURLOPT_REFERER] = $option['referer'];//来源页
