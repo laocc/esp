@@ -125,7 +125,7 @@ final class Debug
             $data[] = "\n\n##程序出错：\n```\n" . print_r($e, true) . "\n```\n";
         }
 
-        if ($this->_conf['print']['mysql'] ?? 0) {
+        if (0 and $this->_conf['print']['mysql'] ?? 0) {
             if (is_array($this->_mysql)) {
                 $slow = Array();
                 foreach ($this->_mysql as $i => $sql) {
@@ -232,7 +232,7 @@ final class Debug
 //        $id = microtime(true) * 1000;
 //        $this->_mysql[$id] = $val;
 //        $this->relay("mysql:{$id}", []);
-        $this->relay('Mysql' . print_r($val, true), []);
+        $this->relay('Mysql' . print_r($val, true) . str_repeat('-', 100), []);
     }
 
     /**

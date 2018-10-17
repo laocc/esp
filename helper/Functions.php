@@ -684,7 +684,7 @@ function re_size(string $size): int
  * @param $ext
  * @return int
  */
-function image_type(string $ext):int
+function image_type(string $ext): int
 {
     $file = Array();
     $file['gif'] = IMAGETYPE_GIF;

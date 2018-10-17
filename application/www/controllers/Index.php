@@ -15,24 +15,7 @@ class IndexController extends Controller
      */
     public function indexAction()
     {
-//        var_dump(['session' => Session::get()]);
-//        var_dump(['time' => Session::get('time')]);
-//        Session::set('day', date('Y-m-d'));
-//        Session::set('time', date('H:i:s'));
-        Session::empty();
-        Session::set('time', date('中国 Y-m-d H:i:s'));
-        Session::set('nowsa', time());
-
-        $url = 'http://www.esp.com/server';
-        $this->debug('Output::post')->folder('/test');
-
-        $this->redirect('/index/redirect/1');
-
-
-//        trigger_error('中华人民共和国');
-
-//        $this->error('abdafdsf');
-//        return Session::get();
+        var_dump(1);
     }
 
     public function redirectAction($index)
