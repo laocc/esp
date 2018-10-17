@@ -16,7 +16,8 @@ final class Output
     public static function post(string $url, $params = null, array $option = [])
     {
         $option['type'] = 'post';
-        return self::curl($url, $params, $option);
+        $post = self::curl($url, $params, $option);
+        return $post['html'];
     }
 
     /**
@@ -29,7 +30,8 @@ final class Output
     public static function get(string $url, array $option = [])
     {
         $option['type'] = 'get';
-        return self::curl($url, null, $option);
+        $get = self::curl($url, null, $option);
+        return $get['html'];
     }
 
     public static function upload()
@@ -176,14 +178,33 @@ final class Output
      * @param string $url
      * @param null $data
      * @param array $option
-     * @return array|string
+     * @return array
+     *
+     * $option['port']      对方端口
+     * $option['gzip']      被读取的页面有gzip压缩
+     * $option['headers']   带出的头信息
+     * $option['transfer']  返回文本流全部信息，在返回的header里
+     * $option['agent']     模拟的客户端UA信息
+     * $option['proxy']     代理服务器IP
+     * $option['cookies']   带出的Cookies信息，或cookies文件
+     * $option['referer']   指定来路URL
+     * $option['cert']      带证书
+     * $option['charset']   目标URL编码，转换为utf-8
+     * $option['redirect']  是否跟着跳转，>0时为跟着跳
+     * $option['encode']    将目标html转换为数组，在返回的array里，可选：json,xml
      */
     public static function curl(string $url, $data = null, array $option = [])
     {
-        if (empty($url)) return 'empty API url';
+        $response = [];
+        $response['error'] = 100;
+
+        if (empty($url)) {
+            $response['message'] = 'empty API url';
+            return $response;
+        }
 
         $option['type'] = strtoupper($option['type'] ?? 'get');
-        if (!in_array($option['type'], ['GET', 'POST', 'PUT', 'HEAD', 'DELETE'])) $option['type'] = 'GET';
+        if (!in_array($option['type'], ['GET', 'POST', 'PUT', 'HEAD', 'DELETE', 'UPLOAD'])) $option['type'] = 'GET';
         if (!isset($option['headers'])) $option['headers'] = Array();
         if (!is_array($option['headers'])) $option['headers'] = [$option['headers']];
         if (isset($option['agent'])) {
@@ -209,6 +230,9 @@ final class Output
                 $cOption[CURLOPT_POST] = true;//类型为：application/x-www-form-urlencoded
                 $option['headers'][] = "X-HTTP-Method-Override: POST";
                 break;
+            case 'UPLOAD':
+                $cOption[CURLOPT_POST] = true;
+                break;
             case "HEAD" :   //这三种不常用，使用前须确认对方是否接受
             case "PUT" :
             case "DELETE":
@@ -218,7 +242,6 @@ final class Output
 //        $option['headers'][] = "Cache-Control: no-cache";
         $option['headers'][] = "Cache-Control: max-age=0";
         $option['headers'][] = "Connection: keep-alive";
-//        $option['headers'][] = "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5";
         $option['headers'][] = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.5,image/webp,image/apng,*/*;q=0.8";
 
         if (isset($option['lang'])) {
@@ -229,26 +252,20 @@ final class Output
             }
         }
 
-//        $cOption[CURLOPT_AUTOREFERER] = true;//根据 Location: 重定向时，自动设置 header 中的Referer:信息
-
-
         if (isset($option['redirect'])) {
-            $cOption[CURLOPT_FOLLOWLOCATION] = true;//根据服务器返回 HTTP 头中的 "Location: " 重定向
-            $cOption[CURLOPT_MAXREDIRS] = $option['redirect'];//指定最多的 HTTP 重定向次数
+            $cOption[CURLOPT_MAXREDIRS] = max($option['redirect'], 2);//指定最多的 HTTP 重定向次数，最小要为2
             $cOption[CURLOPT_POSTREDIR] = 1;//什么情况下需要再次 HTTP POST 到重定向网址:1 (301 永久重定向), 2 (302 Found) 和 4 (303 See Other)
+            $cOption[CURLOPT_FOLLOWLOCATION] = true;//根据服务器返回 HTTP 头中的 "Location: " 重定向
+            $cOption[CURLOPT_AUTOREFERER] = true;//根据 Location: 重定向时，自动设置 header 中的Referer:信息
             $cOption[CURLOPT_UNRESTRICTED_AUTH] = 1;//重定向时，时继续发送用户名和密码信息，哪怕主机名已改变
         }
 
-        $cOption[CURLOPT_CUSTOMREQUEST] = $option['type'];
         $cOption[CURLOPT_URL] = $url;                                                      //接收页
+        $cOption[CURLOPT_CUSTOMREQUEST] = $option['type'];
         $cOption[CURLOPT_FRESH_CONNECT] = true;                                            //强制新连接，不用缓存中的
-        if (isset($option['port'])) $cOption[CURLOPT_PORT] = intval($option['port']);      //端口
 
-        if (isset($option['proxy'])) {//指定代理
-            $cOption[CURLOPT_PROXY] = $option['proxy'];
-        }
 
-        if (isset($option['ip'])) {
+        if (isset($option['ip'])) {     //指定IP
             $option['headers'][] = "CLIENT-IP: {$option['ip']}";
             $option['headers'][] = "X-FORWARDED-FOR: {$option['ip']}";
         }
@@ -260,8 +277,17 @@ final class Output
             }
         }
 
+        if (isset($option['cookies'])) {//带Cookies
+            if (substr($option['cookies'], 0, 1) === '/') {
+                $cOption[CURLOPT_COOKIEFILE] = $option['cookies'];
+                $cOption[CURLOPT_COOKIEJAR] = $option['cookies'];
+            } else {
+                $cOption[CURLOPT_COOKIE] = $option['cookies'];
+            }
+        }
 
-        if (isset($option['cookies'])) $cOption[CURLOPT_COOKIE] = $option['cookies'];      //带Cookies
+        if (isset($option['port'])) $cOption[CURLOPT_PORT] = intval($option['port']);      //端口
+        if (isset($option['proxy'])) $cOption[CURLOPT_PROXY] = $option['proxy'];            //指定代理
         if (isset($option['referer']) and $option['referer']) $cOption[CURLOPT_REFERER] = $option['referer'];//来源页
         if (isset($option['gzip']) and $option['gzip']) $cOption[CURLOPT_ENCODING] = "gzip, deflate";   //有压缩
         if (isset($option['agent'])) $cOption[CURLOPT_USERAGENT] = $option['agent'];           //客户端UA
@@ -282,8 +308,6 @@ final class Output
             $cOption[CURLOPT_SSL_VERIFYHOST] = false;
 
             if (isset($option['cert'])) {//证书
-
-
                 $cOption[CURLOPT_SSLCERTTYPE] = 'PEM';
                 $cOption[CURLOPT_SSLKEYTYPE] = 'PEM';
                 if (isset($option['cert']['cert'])) $cOption[CURLOPT_SSLCERT] = $option['cert']['cert'];
@@ -296,39 +320,70 @@ final class Output
 
         //从可靠的角度，推荐指定CURL_SAFE_UPLOAD的值，明确告知php禁止旧的@语法。
         if ($option['type'] === 'UPLOAD') {
-            $cOption[CURLOPT_UPLOAD] = true;
 
-            if (defined('CURLOPT_SAFE_UPLOAD')) {
-                //PHP5.6以后，需要指定此值，且须在附加数据之前，否则对方得不到上传的数据文件
-                $cOption[CURLOPT_SAFE_UPLOAD] = false;
-            } elseif (class_exists('\CURLFile')) {//低版本
-                $cOption[CURLOPT_SAFE_UPLOAD] = true;
+            foreach ($data as $fil => $file) {
+//                $data[$fil] = new \CURLFile($file, 'image/jpeg', $fil);
+                $data[$fil] = new \CURLFile($file);
+            }
+
+            $cOption[CURLOPT_UPLOAD] = true;
+            $cOption[CURLOPT_POST] = 1;
+            $cOption[CURLOPT_POSTFIELDS] = $data;
+//
+//            if (defined('CURLOPT_SAFE_UPLOAD')) {
+//                //PHP5.6以后，需要指定此值，且须在附加数据之前，否则对方得不到上传的数据文件
+//                $cOption[CURLOPT_SAFE_UPLOAD] = false;
+//            } elseif (class_exists('\CURLFile')) {//低版本
+//                $cOption[CURLOPT_SAFE_UPLOAD] = true;
+//            }
+        } else if (!empty($data)) {////提交上传数据放在最后
+            if (is_array($data)) $data = json_encode($data, 256);
+            $cOption[CURLOPT_POSTFIELDS] = $data;
+        }
+
+        $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
+        if ($cURL === false) {
+            $response['message'] = 'Create Protocol Object Error';
+            return $response;
+        }
+
+        curl_setopt_array($cURL, $cOption);
+        $html = curl_exec($cURL);
+        $response['info'] = curl_getinfo($cURL);
+
+        if (($err = curl_errno($cURL)) > 0) {
+            $response['error'] = $err;
+            $response['message'] = curl_error($cURL);
+            return $response;
+        }
+        curl_close($cURL);
+
+
+        $response['error'] = 0;
+        $response['message'] = '';
+
+        if (isset($option['transfer']) and $option['transfer']) {
+            $response['header'] = self::header(substr($html, 0, $response['info']['header_size']));
+            $response['html'] = trim(substr($html, $response['info']['header_size']));
+        } else {
+            $response['html'] = trim($html);
+        }
+
+        if (isset($option['charset'])) {
+            $response['html'] = iconv(strtoupper($option['charset']), 'UTF-8//IGNORE', $response['html']);
+        }
+
+        if (isset($option['encode'])) {
+            if ($option['encode'] === 'json') {
+                $response['array'] = json_decode($response['html'], true);
+            } else if ($option['encode'] === 'xml') {
+                $response['array'] = (array)simplexml_load_string(trim($response['html']), 'SimpleXMLElement', LIBXML_NOCDATA);
             }
         }
 
-        if (!!$data) {
-            if (is_array($data)) $data = json_encode($data, 256);
-            $cOption[CURLOPT_POSTFIELDS] = $data;
-        }////提交上传数据放在最后
 
-        $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
-        if ($cURL === false) return 'Create Protocol Object Error';
-        curl_setopt_array($cURL, $cOption);
-        $html = curl_exec($cURL);
-        $err = curl_error($cURL);
-
-//        curl_getinfo($cURL, CURLINFO_COOKIELIST);
-
-        if ($err) {
-            return ['error' => $err, 'info' => curl_getinfo($cURL, CURLINFO_COOKIELIST)];
-        }
-
-        if (isset($option['transfer']) and $option['transfer']) {
-            $headerSize = curl_getinfo($cURL, CURLINFO_HEADER_SIZE);
-            return [self::header(substr($html, 0, $headerSize)), trim(substr($html, $headerSize))];
-        }
-        curl_close($cURL);
-        return trim($html);
+        end:
+        return $response;
     }
 
     private static function header(string $text)
