@@ -357,6 +357,11 @@ final class Output
             return $response;
         }
         curl_close($cURL);
+        if (intval($response['info']['http_code']) !== 200) {
+            $response['error'] = $response['info']['http_code'];
+            $response['message'] = $response['html'];
+            return $response;
+        }
 
 
         $response['error'] = 0;
