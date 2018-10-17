@@ -209,8 +209,10 @@ final class Output
         if (!is_array($option['headers'])) $option['headers'] = [$option['headers']];
         if (isset($option['agent'])) {
             if ($option['agent'] === 'default') $option['agent'] = 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/63.0.1364.172 Safari/537.22';
+            else if ($option['agent'] === 'chrome') $option['agent'] = 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/63.0.1364.172 Safari/537.22';
             else if ($option['agent'] === 'mobile') $option['agent'] = 'Mozilla/5.0 (Linux; Android 7.0; CPN-AL00 Build/HUAWEICPN-AL00) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30';
             else if ($option['agent'] === 'firefox') $option['agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0';
+            else if ($option['agent'] === 'weixin') $option['agent'] = 'Mozilla/5.0 (Linux; Android 6.0; 1503-M02 Build/MRA58K) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile MQQBrowser/6.2 TBS/036558 Safari/537.36 MicroMessenger/6.3.25.861 NetType/WIFI Language/zh_CN';
         }
         $cOption = [];
 
