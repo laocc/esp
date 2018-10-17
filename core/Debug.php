@@ -232,7 +232,7 @@ final class Debug
 //        $id = microtime(true) * 1000;
 //        $this->_mysql[$id] = $val;
 //        $this->relay("mysql:{$id}", []);
-        $this->relay(['mysql' => $val], []);
+        $this->relay('Mysql' . print_r($val, true), []);
     }
 
     /**
