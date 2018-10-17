@@ -357,13 +357,6 @@ final class Output
             return $response;
         }
         curl_close($cURL);
-        if (intval($response['info']['http_code']) !== 200) {
-            $response['error'] = $response['info']['http_code'];
-            $response['message'] = $response['html'];
-            return $response;
-        }
-
-
         $response['error'] = 0;
         $response['message'] = '';
 
@@ -376,6 +369,13 @@ final class Output
 
         if (isset($option['charset'])) {
             $response['html'] = iconv(strtoupper($option['charset']), 'UTF-8//IGNORE', $response['html']);
+        }
+
+        if (intval($response['info']['http_code']) !== 200) {
+            $response['error'] = intval($response['info']['http_code']);
+            $response['message'] = $response['html'];
+            unset($response['html']);
+            return $response;
         }
 
         if (isset($option['encode'])) {
