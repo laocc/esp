@@ -203,6 +203,35 @@ function clearBom(&$loadStr)
         $loadStr = substr($loadStr, 3);
 }
 
+/**
+ * XML解析成数组或对象
+ * @param $str
+ * @return bool|mixed
+ */
+function xml_decode(string $str, bool $toArray = true)
+{
+    if (!$str) return null;
+    $xml_parser = xml_parser_create();
+    if (!xml_parse($xml_parser, $str, true)) {
+        xml_parser_free($xml_parser);
+        return null;
+    }
+    return json_decode(json_encode(@simplexml_load_string($str, "SimpleXMLElement", LIBXML_NOCDATA)), $toArray);
+}
+
+
+/**
+ * 将数组转换成XML格式
+ * @param $root
+ * @param $array
+ * @return string
+ * @throws Exception
+ */
+function xml_encode($root, array $array)
+{
+    return (new \esp\library\ext\Xml($array, $root))->render();
+}
+
 
 /**
  * 格式化小数
