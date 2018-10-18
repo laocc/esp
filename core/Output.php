@@ -355,6 +355,7 @@ final class Output
 
         if (($err = curl_errno($cURL)) > 0) {
             $response['error'] = $err;
+            $response['url'] = $url;
             $response['message'] = curl_error($cURL);
             return $response;
         }
@@ -375,6 +376,7 @@ final class Output
 
         if (intval($response['info']['http_code']) !== 200) {
             $response['error'] = intval($response['info']['http_code']);
+            $response['url'] = $url;
             $response['message'] = $response['html'];
             unset($response['html']);
             return $response;
