@@ -223,6 +223,18 @@ final class Output
             $cOption[CURLOPT_FAILONERROR] = true;//当 HTTP 状态码大于等于 400，TRUE 将将显示错误详情。 默认情况下将返回页面，忽略 HTTP 代码。
         }
 
+        if (isset($option['host'])) {
+            if (!is_ip($option['host'])) {
+                $response['message'] = 'host must be a IP address';
+                return $response;
+            }
+
+            $urlDom = explode('/', $url);
+            $option['headers'][] = "HOST: {$urlDom[2]}";
+            $urlDom[2] = $option['host'];
+            $url = implode('/', $urlDom);
+        }
+
         switch ($option['type']) {
             case "GET" :
                 $cOption[CURLOPT_HTTPGET] = true;
