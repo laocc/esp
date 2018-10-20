@@ -22,6 +22,8 @@ $option['request']['post'] = 'Post';
  * 系统缓存设置
  * 此处设置的配置内容，在程序中用Config::get('File.Key');读取
  */
+//$option['config'][] = '/config/system.ini';
+//$option['config'][] = '/config/app.ini';
 $option['config'][] = '/config/database.ini';
 $option['config'][] = '/config/resource.ini';
 

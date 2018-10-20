@@ -18,6 +18,17 @@ class IndexController extends Controller
         var_dump(1);
     }
 
+    public function configAction()
+    {
+        $config = Config::get();
+//        pre($config);
+//        $a = Config::get('app.0.state');
+        $a = Config::get('ua.win');
+        pre($a);
+
+        exit;
+    }
+
     public function redirectAction($index)
     {
         $a = Config::get('token');

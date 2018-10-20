@@ -58,7 +58,7 @@ final class Dispatcher
 
         $this->_buffer = new Redis($option['buffer'] + ['_from' => 'dispatcher'], 0);
 
-        Config::_init($this->_buffer, $option['config']);
+        if (isset($option['config'])) Config::_init($this->_buffer, $option['config']);
 
         $this->_request = new Request($option['request']);
         $this->_response = new Response($this->_request);

@@ -24,7 +24,9 @@ final class Config
             self::$_CONFIG_ = unserialize(self::$_CONFIG_);
             if (!empty(self::$_CONFIG_)) return;
         }
-        if (empty($config)) return;
+        $config[] = __DIR__ . '/config/mime.ini';
+        $config[] = __DIR__ . '/config/state.ini';
+        $config[] = __DIR__ . '/config/ua.ini';
 
         self::$_CONFIG_ = Array();
         foreach ($config as $i => $file) {
@@ -41,7 +43,7 @@ final class Config
      * @return array
      * @throws \Exception
      */
-    private static function loadFile(string $file, string $byKey = null): array
+    private static function loadFile(string $file, $byKey = null): array
     {
         $fullName = root($file);
         if (!is_readable($fullName)) {
@@ -70,11 +72,11 @@ final class Config
                 if (is_array($fil)) {
                     $_config[$key] = Array();
                     foreach ($fil as $l => $f) {
-                        $_inc = self::loadFile(root($f));
+                        $_inc = self::loadFile(root($f), $l);
                         if (!empty($_inc)) $_config[$key] = $_inc + $_config[$key];
                     }
                 } else {
-                    $_inc = self::loadFile(root($fil));
+                    $_inc = self::loadFile(root($fil), $key);
                     if (!empty($_inc)) $_config = $_inc + $_config;
                 }
             }
@@ -139,30 +141,19 @@ final class Config
 
     /**
      * 读取config，可以用get('key1.key2')的方式读取多维数组值
-     * 连接符可以有：.,_/\
-     * @param null $key
-     * @param null $auto
-     * @return array|mixed|null
+     * @param array ...$key
+     * @return null|array|string
      */
-    public static function get($key = null, $auto = null)
+    public static function get(...$key)
     {
-        if (is_null($key)) return self::$_CONFIG_;
-        $key = preg_replace('/[\.\,\/]+/', '.', strtolower($key));
-        if (strrpos($key, '.')) {
-            $keys = explode('.', trim($key, '.'));
-            $conf = self::$_CONFIG_;
-            foreach ($keys as $k) {
-                if (is_null($conf = ($conf[$k] ?? null))) return $auto;
-            }
-            return $conf;
+        if (empty($key)) return self::$_CONFIG_;
+        $conf = &self::$_CONFIG_;
+        foreach (explode('.', implode('.', $key)) as $k) {
+            if ($k === '' or $k === '*') return $conf;
+            if (!isset($conf[$k])) return null;
+            $conf = &$conf[$k];
         }
-        return self::$_CONFIG_[$key] ?? $auto;
-    }
-
-
-    public static function has($key)
-    {
-        return self::get($key, "__Test_Config_{$key}__") !== "__Test_Config_{$key}__";
+        return $conf;
     }
 
     public static function set($key, $value)
@@ -177,272 +168,32 @@ final class Config
      */
     public static function mime(string $type): string
     {
-        switch ($type) {
-            case 'html':
-                return 'text/html';
-            case 'htm':
-                return 'text/html';
-            case 'shtml':
-                return 'text/html';
-            case 'css':
-                return 'text/css';
-            case 'xml':
-                return 'text/xml';
-            case 'mml':
-                return 'text/mathml';
-            case 'txt':
-                return 'text/plain';
-            case 'text':
-                return 'text/plain';
-            case 'jad':
-                return 'text/vnd.sun.j2me.app-descriptor';
-            case 'wml':
-                return 'text/vnd.wap.wml';
-            case 'htc':
-                return 'text/x-component';
-            case 'gif':
-                return 'image/gif';
-            case 'jpeg':
-                return 'image/jpeg';
-            case 'jpg':
-                return 'image/jpeg';
-            case 'png':
-                return 'image/png';
-            case 'tif':
-                return 'image/tiff';
-            case 'tiff':
-                return 'image/tiff';
-            case 'wbmp':
-                return 'image/vnd.wap.wbmp';
-            case 'ico':
-                return 'image/x-icon';
-            case 'jng':
-                return 'image/x-jng';
-            case 'bmp':
-                return 'image/x-ms-bmp';
-            case 'svg':
-                return 'image/svg+xml';
-            case 'svgz':
-                return 'image/svg+xml';
-            case 'webp':
-                return 'image/webp';
-            case 'js':
-                return 'application/javascript';
-            case 'atom':
-                return 'application/atom+xml';
-            case 'rss':
-                return 'application/rss+xml';
-            case 'woff':
-                return 'application/font-woff';
-            case 'jar':
-                return 'application/java-archive';
-            case 'war':
-                return 'application/java-archive';
-            case 'ear':
-                return 'application/java-archive';
-            case 'json':
-                return 'application/json';
-            case 'hqx':
-                return 'application/mac-binhex40';
-            case 'doc':
-                return 'application/msword';
-            case 'pdf':
-                return 'application/pdf';
-            case 'ps':
-                return 'application/postscript';
-            case 'eps':
-                return 'application/postscript';
-            case 'ai':
-                return 'application/postscript';
-            case 'rtf':
-                return 'application/rtf';
-            case 'm3u8':
-                return 'application/vnd.apple.mpegurl';
-            case 'xls':
-                return 'application/vnd.ms-excel';
-            case 'eot':
-                return 'application/vnd.ms-fontobject';
-            case 'ppt':
-                return 'application/vnd.ms-powerpoint';
-            case 'wmlc':
-                return 'application/vnd.wap.wmlc';
-            case 'kml':
-                return 'application/vnd.google-earth.kml+xml';
-            case 'kmz':
-                return 'application/vnd.google-earth.kmz';
-            case '7z':
-                return 'application/x-7z-compressed';
-            case 'cco':
-                return 'application/x-cocoa';
-            case 'jardiff':
-                return 'application/x-java-archive-diff';
-            case 'jnlp':
-                return 'application/x-java-jnlp-file';
-            case 'run':
-                return 'application/x-makeself';
-            case 'pl':
-                return 'application/x-perl';
-            case 'pm':
-                return 'application/x-perl';
-            case 'prc':
-                return 'application/x-pilot';
-            case 'pdb':
-                return 'application/x-pilot';
-            case 'rar':
-                return 'application/x-rar-compressed';
-            case 'rpm':
-                return 'application/x-redhat-package-manager';
-            case 'sea':
-                return 'application/x-sea';
-            case 'swf':
-                return 'application/x-shockwave-flash';
-            case 'sit':
-                return 'application/x-stuffit';
-            case 'tcl':
-                return 'application/x-tcl';
-            case 'tk':
-                return 'application/x-tcl';
-            case 'der':
-                return 'application/x-x509-ca-cert';
-            case 'pem':
-                return 'application/x-x509-ca-cert';
-            case 'crt':
-                return 'application/x-x509-ca-cert';
-            case 'xpi':
-                return 'application/x-xpinstall';
-            case 'xhtml':
-                return 'application/xhtml+xml';
-            case 'xspf':
-                return 'application/xspf+xml';
-            case 'zip':
-                return 'application/zip';
-            case 'bin':
-                return 'application/octet-stream';
-            case 'exe':
-                return 'application/octet-stream';
-            case 'dll':
-                return 'application/octet-stream';
-            case 'deb':
-                return 'application/octet-stream';
-            case 'dmg':
-                return 'application/octet-stream';
-            case 'iso':
-                return 'application/octet-stream';
-            case 'img':
-                return 'application/octet-stream';
-            case 'msi':
-                return 'application/octet-stream';
-            case 'msp':
-                return 'application/octet-stream';
-            case 'msm':
-                return 'application/octet-stream';
-            case 'php':
-                return 'application/octet-stream';
-            case 'phtml':
-                return 'application/octet-stream';
-            case 'docx':
-                return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-            case 'xlsx':
-                return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            case 'pptx':
-                return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-            case 'mid':
-                return 'audio/midi';
-            case 'midi':
-                return 'audio/midi';
-            case 'kar':
-                return 'audio/midi';
-            case 'mp3':
-                return 'audio/mpeg';
-            case 'ogg':
-                return 'audio/ogg';
-            case 'm4a':
-                return 'audio/x-m4a';
-            case 'ra':
-                return 'audio/x-realaudio';
-            case '3gpp':
-                return 'video/3gpp';
-            case '3gp':
-                return 'video/3gpp';
-            case 'ts':
-                return 'video/mp2t';
-            case 'mp4':
-                return 'video/mp4';
-            case 'mpeg':
-                return 'video/mpeg';
-            case 'mpg':
-                return 'video/mpeg';
-            case 'mov':
-                return 'video/quicktime';
-            case 'webm':
-                return 'video/webm';
-            case 'flv':
-                return 'video/x-flv';
-            case 'm4v':
-                return 'video/x-m4v';
-            case 'mng':
-                return 'video/x-mng';
-            case 'asx':
-                return 'video/x-ms-asf';
-            case 'asf':
-                return 'video/x-ms-asf';
-            case 'wmv':
-                return 'video/x-ms-wmv';
-            case 'avi':
-                return 'video/x-msvideo';
-            default:
-                return 'text/html';
-        }
+        $mime = self::get('mime', $type);
+        if (!$mime) $mime = 'text/html';
+        return $mime;
     }
 
     /**
      * @param $code
      * @return null|string
      */
-    public static function states(int &$code)
+    public static function states(int $code): string
     {
-        $state = [];
-        $state[200] = 'OK';
-        $state[201] = 'Created';
-        $state[202] = 'Accepted';
-        $state[203] = 'Non-Authoritative Information';
-        $state[204] = 'Not Content';
-        $state[205] = 'Reset Content';
-        $state[206] = 'Partial Content';
-        $state[300] = 'Multiple Choices';
-        $state[301] = 'Moved Permanently';
-        $state[302] = 'Found';
-        $state[303] = 'See Other';
-        $state[304] = 'Not Modified';
-        $state[305] = 'Use Proxy';
-        $state[307] = 'Temporary Redirect';
-        $state[400] = 'Bad Request';
-        $state[401] = 'Unauthorized';
-        $state[403] = 'Forbidden';
-        $state[404] = 'Not Found';
-        $state[405] = 'Method Not Allowed';
-        $state[406] = 'Not Acceptable';
-        $state[407] = 'Proxy Authentication Required';
-        $state[408] = 'Request Timeout';
-        $state[409] = 'Conflict';
-        $state[410] = 'Gone';
-        $state[411] = 'Length Required';
-        $state[412] = 'Precondition Failed';
-        $state[413] = 'Request Entity Too Large';
-        $state[414] = 'Request-URI Too Long';
-        $state[415] = 'Unsupported Media Type';
-        $state[416] = 'Requested Range Not Satisfiable';
-        $state[417] = 'Expectation Failed';
-        $state[422] = 'Unprocessable Entity';
-        $state[500] = 'Internal Server Error';
-        $state[501] = 'Not Implemented';
-        $state[502] = 'Bad Gateway';
-        $state[503] = 'Service Unavailable';
-        $state[504] = 'Gateway Timeout';
-        $state[505] = 'HTTP Version Not Supported';
-        if (!isset($state[$code])) $code = 400;
-        return isset($state[$code]) ? $state[$code] : 'Unexpected';
+        $state = self::get('state', $code);
+        if (!$state) $state = 'Unexpected';
+        return $state;
     }
 
+    /**
+     * @param string $type
+     * @return string
+     */
+    public static function ua(string $type): string
+    {
+        $ua = self::get('ua', $type);
+        if (is_array($ua)) $ua = json_encode($ua, 256);
+        if (!$ua) $ua = '';
+        return $ua;
+    }
 
 }

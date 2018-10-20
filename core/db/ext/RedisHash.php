@@ -34,6 +34,8 @@ class RedisHash
     {
         $val = $this->redis->hGet($this->table, $hashKey);
         if (empty($val)) return null;
+        //简单查一下是不是序列化的值
+        if (!in_array(substr($val, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) return $val;
         return unserialize($val);
     }
 
