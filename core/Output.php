@@ -17,6 +17,7 @@ final class Output
     {
         $option['type'] = 'post';
         $post = self::curl($url, $params, $option);
+        if ($post['error']) return $post['message'];
         return $post['html'];
     }
 

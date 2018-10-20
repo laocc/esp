@@ -229,10 +229,8 @@ final class Debug
     public function mysql_log($val)
     {
         if ($this->_run === false or !($this->_conf['print']['mysql'] ?? 0)) return;
-//        $id = microtime(true) * 1000;
-//        $this->_mysql[$id] = $val;
-//        $this->relay("mysql:{$id}", []);
-        $this->relay('Mysql' . print_r($val, true) . str_repeat('-', 100), []);
+        static $count = 0;
+        $this->relay("Mysql[" . (++$count) . '] = ' . print_r($val, true) . str_repeat('-', 100), []);
     }
 
     /**
