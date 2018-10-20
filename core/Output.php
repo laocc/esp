@@ -100,6 +100,12 @@ final class Output
             }
 
             $urlDom = explode('/', $url);
+            if (strpos($urlDom[2], ':')) {
+                $dom = explode(':', $urlDom[2]);
+                $urlDom[2] = $dom[0];
+                $option['port'] = intval($dom[1]);
+            }
+
             $option['headers'][] = "HOST: {$urlDom[2]}";
             $urlDom[2] = $option['host'];
             $url = implode('/', $urlDom);
