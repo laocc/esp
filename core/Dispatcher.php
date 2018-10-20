@@ -54,7 +54,7 @@ final class Dispatcher
             define('_HTTP_DOMAIN', ((_HTTPS ? 'https://' : 'http://') . _DOMAIN));
         }
 
-        chdir(dirname(_ROOT));
+        chdir(_ROOT);
 
         $this->_buffer = new Redis($option['buffer'] + ['_from' => 'dispatcher'], 0);
 

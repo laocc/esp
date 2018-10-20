@@ -24,9 +24,9 @@ final class Config
             self::$_CONFIG_ = unserialize(self::$_CONFIG_);
             if (!empty(self::$_CONFIG_)) return;
         }
-        $config[] = __DIR__ . '/config/mime.ini';
-        $config[] = __DIR__ . '/config/state.ini';
-        $config[] = __DIR__ . '/config/ua.ini';
+        $config[] = _ROOT . '/config/mime.ini';
+        $config[] = _ROOT . '/config/state.ini';
+        $config[] = _ROOT . '/config/ua.ini';
 
         self::$_CONFIG_ = Array();
         foreach ($config as $i => $file) {
