@@ -41,7 +41,7 @@ final class Redis implements KeyValue
         }
 
         $this->redis = new \Redis();
-        if (isset($conf['pconnect']) and $conf['pconnect']) {
+        if (_CLI and isset($conf['pconnect']) and $conf['pconnect']) {
             if (!isset($conf['port']) or intval($conf['port']) === 0) {
                 if (!$this->redis->pconnect($conf['host'])) {
                     throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
