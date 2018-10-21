@@ -240,6 +240,8 @@ final class Output
         curl_setopt_array($cURL, $cOption);
         $html = curl_exec($cURL);
         $response['info'] = curl_getinfo($cURL);
+        $response['post'] = $data;
+        $response['option'] = $option;
 
         if (($err = curl_errno($cURL)) > 0) {
             $response['error'] = $err;
