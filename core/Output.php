@@ -268,6 +268,7 @@ final class Output
 
         if (intval($response['info']['http_code']) !== 200) {
             $response['error'] = intval($response['info']['http_code']);
+            if ($response['error'] === 0) $response['error'] = 10;
             $response['url'] = $url;
             $response['message'] = $response['html'];
             unset($response['html']);
