@@ -100,7 +100,7 @@ final class Output
             }
 
             $urlDom = explode('/', $url);
-            $urlDom[0] = 'http';//只能用http
+            $urlDom[0] = 'http:';//只能用http
 
             if (strpos($urlDom[2], ':')) {//将端口移到port中
                 $dom = explode(':', $urlDom[2]);
