@@ -64,6 +64,10 @@ final class Redis implements KeyValue
             throw new \Exception("Redis密码错误，无法连接服务器。");
         }
 
+        if (isset($conf['timeout'])) {
+            $this->redis->setOption(\Redis::OPT_READ_TIMEOUT, intval($conf['timeout']));
+        }
+
         if (!$this->redis->select((int)$db)) {
             throw new \Exception("Redis选择库【{$db}】失败。");
         }
