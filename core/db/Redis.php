@@ -402,7 +402,8 @@ final class Redis implements KeyValue
                 }
                 return $val;
             } else {
-                return unserialize($this->redis->get($key));
+                $v = $this->redis->get($key);
+                return $v;
             }
         }
     }
