@@ -198,7 +198,7 @@ final class Redis implements KeyValue
             }
 
         }
-        return unserialize($val);
+        return $this->unserialize($val);
     }
 
 
@@ -229,14 +229,14 @@ final class Redis implements KeyValue
     {
         if ($count === 1 and !!$kill) {//只要一条，且删除，则直接用spop
             $val = $this->redis->sPop($this->table);
-            return ($val == false) ? [] : [unserialize($val)];
+            return ($val == false) ? [] : [$this->unserialize($val)];
         }
         $value = $this->redis->sRandMember($this->table, $count);
         if (!!$kill) {
             call_user_func_array([$this->redis, 'sRem'], array_merge([$this->table], $value));
         }
         foreach ($value as $k => &$val) {
-            $val = unserialize($val);
+            $val = $this->unserialize($val);
         }
         return $value;
     }
@@ -386,11 +386,11 @@ final class Redis implements KeyValue
             if ($key === null or $key === '*') {
                 $value = $this->redis->hGetAll($this->table);
                 foreach ($value as &$val) {
-                    $val = unserialize($val);
+                    $val = $this->unserialize($val);
                 }
                 return $value;
             } else {//从哈希表读一个出来
-                return unserialize($this->redis->hGet($this->table, $key));
+                return $this->unserialize($this->redis->hGet($this->table, $key));
             }
         } else {
             if ($key === null or $key === '*') {
@@ -398,19 +398,20 @@ final class Redis implements KeyValue
                 $val = Array();
                 foreach ($RS as $i => &$rs) {
                     $rv = $this->redis->get($rs);
-                    if (!in_array(substr($rv, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) {
-                        $val[$rs] = ['ttl' => $this->redis->ttl($rs), 'value' => ($rv)];
-                    } else {
-                        $val[$rs] = ['ttl' => $this->redis->ttl($rs), 'value' => unserialize($rv)];
-                    }
+                    $val[$rs] = ['ttl' => $this->redis->ttl($rs), 'value' => $this->unserialize($rv)];
                 }
                 return $val;
             } else {
                 $v = $this->redis->get($key);
-                if (!in_array(substr($v, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) return $v;
-                return unserialize($v);
+                return $this->unserialize($v);
             }
         }
+    }
+
+    private function unserialize($val)
+    {
+        if (!in_array(substr($val, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) return $val;
+        return unserialize($val);
     }
 
     /**

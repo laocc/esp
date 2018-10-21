@@ -86,7 +86,11 @@ class RedisHash
     {
         $all = $this->redis->hGetAll($this->table);
         foreach ($all as $k => $v) {
-            $all[$k] = unserialize($v);
+            if (!in_array(substr($v, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) {
+                $all[$k] = ($v);
+            } else {
+                $all[$k] = unserialize($v);
+            }
         }
         return $all;
     }
@@ -131,7 +135,12 @@ class RedisHash
     {
         $all = $this->redis->hMGet($this->table, $hashKeys);
         foreach ($all as $k => $v) {
-            $all[$k] = unserialize($v);
+            if (!in_array(substr($v, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) {
+                $all[$k] = $v;
+            } else {
+                $all[$k] = unserialize($v);
+            }
+
         }
         return $all;
     }
@@ -154,6 +163,7 @@ class RedisHash
     {
         $val = $this->redis->hGet($this->table, $hashKey);
         if (empty($val)) return null;
+        if (!in_array(substr($val, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) return $val;
         return unserialize($val);
     }
 
