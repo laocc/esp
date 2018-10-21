@@ -397,7 +397,8 @@ final class Redis implements KeyValue
                 $RS = $this->redis->keys('*');
                 $val = Array();
                 foreach ($RS as $i => &$rs) {
-                    $val[$rs] = ['ttl' => $this->redis->ttl($rs), 'value' => unserialize($this->redis->get($rs))];
+                    $rv = $this->redis->get($rs);
+                    $val[$rs] = ['ttl' => $this->redis->ttl($rs), 'value' => $rv];
                 }
                 return $val;
             } else {
