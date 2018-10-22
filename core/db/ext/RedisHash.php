@@ -17,6 +17,15 @@ class RedisHash
     }
 
     /**
+     * @return Redis
+     */
+    public function redis()
+    {
+        return $this->redis;
+    }
+
+
+    /**
      * @param string $hashKey
      * @param $value
      * @return int
