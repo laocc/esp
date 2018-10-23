@@ -32,7 +32,7 @@ class RedisHash
      */
     public function set(string $hashKey, $value)
     {
-        return $this->redis->hSet($this->table, $hashKey, serialize($value));
+        return $this->redis->hSet($this->table, $hashKey, ($value));
     }
 
     /**
@@ -43,9 +43,7 @@ class RedisHash
     {
         $val = $this->redis->hGet($this->table, $hashKey);
         if (empty($val)) return null;
-        //简单查一下是不是序列化的值
-        if (!in_array(substr($val, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) return $val;
-        return unserialize($val);
+        return ($val);
     }
 
 
@@ -57,7 +55,7 @@ class RedisHash
      */
     public function insert(string $hashKey, $value)
     {
-        return $this->redis->hSetNx($this->table, $hashKey, serialize($value));
+        return $this->redis->hSetNx($this->table, $hashKey, ($value));
     }
 
 
@@ -94,13 +92,6 @@ class RedisHash
     public function all()
     {
         $all = $this->redis->hGetAll($this->table);
-        foreach ($all as $k => $v) {
-            if (!in_array(substr($v, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) {
-                $all[$k] = ($v);
-            } else {
-                $all[$k] = unserialize($v);
-            }
-        }
         return $all;
     }
 
@@ -130,9 +121,6 @@ class RedisHash
      */
     public function mSet(array $hashKeys)
     {
-        foreach ($hashKeys as $k => $v) {
-            $hashKeys[$k] = serialize($v);
-        }
         return $this->redis->hMset($this->table, $hashKeys);
     }
 
@@ -143,14 +131,6 @@ class RedisHash
     public function mGet(array $hashKeys)
     {
         $all = $this->redis->hMGet($this->table, $hashKeys);
-        foreach ($all as $k => $v) {
-            if (!in_array(substr($v, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) {
-                $all[$k] = $v;
-            } else {
-                $all[$k] = unserialize($v);
-            }
-
-        }
         return $all;
     }
 
@@ -165,15 +145,14 @@ class RedisHash
      */
     public function hSet(string $hashKey, $value)
     {
-        return $this->redis->hSet($this->table, $hashKey, serialize($value));
+        return $this->redis->hSet($this->table, $hashKey, ($value));
     }
 
     public function hGet(string $hashKey)
     {
         $val = $this->redis->hGet($this->table, $hashKey);
         if (empty($val)) return null;
-        if (!in_array(substr($val, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) return $val;
-        return unserialize($val);
+        return $val;
     }
 
 

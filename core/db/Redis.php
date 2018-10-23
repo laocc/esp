@@ -67,6 +67,10 @@ final class Redis implements KeyValue
         if (isset($conf['timeout'])) {
             $this->redis->setOption(\Redis::OPT_READ_TIMEOUT, intval($conf['timeout']));
         }
+        if (isset($conf['prefix']) and !empty($conf['prefix'])) {
+            $this->redis->setOption(\Redis::OPT_PREFIX, strval($conf['prefix']));
+        }
+        $this->redis->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);//序列化方式
 
         if (!$this->redis->select((int)$db)) {
             throw new \Exception("Redis选择库【{$db}】失败。");
@@ -132,15 +136,15 @@ final class Redis implements KeyValue
     public function set(string $key, $value, int $ttl = null)
     {
         if (!!$this->table) {//指定哈希表
-            return $this->redis->hSet($this->table, $key, serialize($value));
+            return $this->redis->hSet($this->table, $key, ($value));
         }
 
         //普通值
         $ttl = $ttl ?: $this->ttl;
         if ($ttl) {
-            return $this->redis->setex($key, $ttl, serialize($value));
+            return $this->redis->setex($key, $ttl, ($value));
         } else {
-            return $this->redis->set($key, serialize($value));
+            return $this->redis->set($key, ($value));
         }
     }
 
@@ -162,11 +166,11 @@ final class Redis implements KeyValue
             $nVal = Array();
             foreach ($value as $k => &$v) {
                 $nVal[] = $timeKey($k);
-                $nVal[] = serialize($v);
+                $nVal[] = ($v);
             }
             return call_user_func_array([$this->redis, 'zAdd'], array_merge([$this->table], $nVal));
         } else {
-            return $this->redis->zAdd($this->table, $timeKey(), serialize($value));
+            return $this->redis->zAdd($this->table, $timeKey(), ($value));
         }
     }
 
@@ -198,7 +202,7 @@ final class Redis implements KeyValue
             }
 
         }
-        return $this->unserialize($val);
+        return $val;
     }
 
 
@@ -209,13 +213,10 @@ final class Redis implements KeyValue
     public function sAdd($value)
     {
         if (is_array($value)) {
-            foreach ($value as $k => &$val) {
-                $val = serialize($val);
-            }
             return $this->redis->sAdd($this->table, ...$value);
 //            return call_user_func_array([$this->redis, 'sAdd'], array_merge([$this->table], $value));
         } else {
-            return $this->redis->sAdd($this->table, serialize($value));
+            return $this->redis->sAdd($this->table, ($value));
         }
     }
 
@@ -229,14 +230,11 @@ final class Redis implements KeyValue
     {
         if ($count === 1 and !!$kill) {//只要一条，且删除，则直接用spop
             $val = $this->redis->sPop($this->table);
-            return ($val == false) ? [] : [$this->unserialize($val)];
+            return ($val == false) ? [] : [$val];
         }
         $value = $this->redis->sRandMember($this->table, $count);
         if (!!$kill) {
             call_user_func_array([$this->redis, 'sRem'], array_merge([$this->table], $value));
-        }
-        foreach ($value as $k => &$val) {
-            $val = $this->unserialize($val);
         }
         return $value;
     }
@@ -258,7 +256,7 @@ final class Redis implements KeyValue
      * @param array $value
      * @return int
      */
-    public function publish(string $action, array $value)
+    public function publish(string $action, $value)
     {
         return $this->redis->publish($action, serialize($value));
     }
@@ -385,12 +383,9 @@ final class Redis implements KeyValue
         if (!!$this->table) {//读哈希表,或无序集合
             if ($key === null or $key === '*') {
                 $value = $this->redis->hGetAll($this->table);
-                foreach ($value as &$val) {
-                    $val = $this->unserialize($val);
-                }
                 return $value;
             } else {//从哈希表读一个出来
-                return $this->unserialize($this->redis->hGet($this->table, $key));
+                return $this->redis->hGet($this->table, $key);
             }
         } else {
             if ($key === null or $key === '*') {
@@ -398,20 +393,13 @@ final class Redis implements KeyValue
                 $val = Array();
                 foreach ($RS as $i => &$rs) {
                     $rv = $this->redis->get($rs);
-                    $val[$rs] = ['ttl' => $this->redis->ttl($rs), 'value' => $this->unserialize($rv)];
+                    $val[$rs] = ['ttl' => $this->redis->ttl($rs), 'value' => $rv];
                 }
                 return $val;
             } else {
-                $v = $this->redis->get($key);
-                return $this->unserialize($v);
+                return $this->redis->get($key);
             }
         }
-    }
-
-    private function unserialize($val)
-    {
-        if (!in_array(substr($val, 0, 2), ['a:', 's:', 'i:', 'd:', 'O:', 'o:'])) return $val;
-        return unserialize($val);
     }
 
     /**
