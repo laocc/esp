@@ -23,14 +23,6 @@ final class Bootstrap
     }
 
     /**
-     * @param Dispatcher $dispatcher
-     */
-    public function _initDefine(Dispatcher $dispatcher)
-    {
-        define('_DEBUG', is_file(_ROOT . '/cache/debug.lock'));
-    }
-
-    /**
      * 引入注册插件示例
      * @param Dispatcher $dispatcher
      */

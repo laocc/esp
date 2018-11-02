@@ -54,22 +54,8 @@ $option['debug']['rules']['error'] = 'E_ymdHis_';  //记录错误的文件命名
 
 $option['debug']['print']['mysql'] = true;   //是否记录mysql所有语句，以下四项默认均为false
 $option['debug']['print']['post'] = true;    //是否记录接收到的POST内容
-$option['debug']['print']['html'] = true;    //是否记录最后打印html结果
-$option['debug']['print']['server'] = true;  //是否记录_server内容
-
-
-/**
- * 程序出错的时候，页面显示什么内容
- * 0：不显示任何内容，页面显示空白
- * 1：简单显示
- * 2：详细显示
- * 3：仅throw有效，显示为throw时指定的错误码
- * N：显示为一个错误信息，N=Config::state()中的某个数
- * T：显示此文本，T=要显示的信息内容
- */
-$option['error']['debug'] = false;  //是否仅在出错时，才记录debug，如果=true由若未出错将不记录debug
-$option['error']['run'] = 505;  //运行时出错
-$option['error']['throw'] = 3;  //手动throw，若throw时没指定错误代码，则以run为准
+//$option['debug']['print']['html'] = true;    //是否记录最后打印html结果
+//$option['debug']['print']['server'] = true;  //是否记录_server内容
 
 
 /**
@@ -105,6 +91,21 @@ $option['cache']['static'] = Array();
 //$option['cache']['static'][] = '/^\/\w+\/.+\.(html)([\?\#].*)?$/i';
 //$option['cache']['static'][] = '/^\/tmp.+$/i';
 //$option['cache']['static'][] = '/^\/article.+$/i';
+
+
+/**
+ * 程序出错的时候，页面显示什么内容，以下仅在非DEUBG状态下有效
+ * DEBUG环境中均为2，即显示详情
+ * 0：不显示任何内容，页面显示空白
+ * 1：简单显示
+ * 2：详细显示
+ * 3：仅throw有效，显示为throw时指定的错误码
+ * N：显示为一个错误信息，N=Config::state()中的某个值
+ * T：显示此文本，T=要显示的信息内容
+ */
+$option['error']['run'] = 505;  //运行时出错
+$option['error']['throw'] = 3;  //手动throw，若throw时没指定错误代码，则以run为准
+$option['error']['filename'] = 'Y-m-d/H.i.s.';  //错误日志文件名
 
 
 return $option;

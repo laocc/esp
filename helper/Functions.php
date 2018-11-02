@@ -133,10 +133,9 @@ function mk_dir(string $path, int $mode = 0740): bool
 {
     if (!$path) return false;
     if (strrchr($path, '/')) $path = dirname($path);
-    if (file_exists($path)) return true;
     if (!$mode) $mode = 0740;
     try {
-        @mkdir($path, $mode, true);
+        !file_exists($path) and mkdir($path, $mode, true);
         return true;
     } catch (\Exception $e) {
         return true;

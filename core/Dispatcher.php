@@ -22,15 +22,12 @@ final class Dispatcher
      */
     public function __construct(array $option)
     {
-        if (!defined('_MODULE')) {
-            throw new \Exception("网站入口处须定义 _MODULE 项", 404);
-        }
-        if (!defined('_ROOT')) {
-            throw new \Exception("网站入口处须定义 _ROOT 项，指向系统根目录", 404);
-        }
+        if (!defined('_ROOT')) exit("网站入口处须定义 _ROOT 项，指向系统根目录");
 
         define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
+        define('_DEBUG', is_file(_ROOT . '/cache/debug.lock'));
+
         if (_CLI) {
             define('_DOMAIN', null);
             define('_HOST', null);//域名的根域
@@ -54,11 +51,18 @@ final class Dispatcher
             define('_HTTP_DOMAIN', ((_HTTPS ? 'https://' : 'http://') . _DOMAIN));
         }
 
+        /**
+         * 以下三项必须在chdir之前，且三项顺序不可变
+         */
+        if (isset($option['error'])) new Error($this, $option['error']);
+        if (isset($option['buffer'])) $this->_buffer = new Redis($option['buffer'] + ['_from' => 'dispatcher'], 0);
+        if (isset($option['config'])) Config::_init($this->_buffer, $option['config']);
+
         chdir(_ROOT);
 
-        $this->_buffer = new Redis($option['buffer'] + ['_from' => 'dispatcher'], 0);
-
-        if (isset($option['config'])) Config::_init($this->_buffer, $option['config']);
+        if (!defined('_MODULE')) {
+            throw new \Exception("网站入口处须定义 _MODULE 项", 404);
+        }
 
         $this->_request = new Request($option['request']);
         $this->_response = new Response($this->_request);
@@ -67,11 +71,7 @@ final class Dispatcher
             $this->_response->autoRun(false);
         } else {
             if (isset($option['session'])) Session::_init($option['session']);
-            if (isset($option['debug'])) {
-                $this->_debug = new Debug($this->_request, $this->_response, $option['debug'], $option['error']);
-            } else {
-                Debug::simple_register_handler();
-            }
+            if (isset($option['debug'])) $this->_debug = new Debug($this->_request, $this->_response, $option['debug']);
             if (isset($option['cache'])) $this->_cache = new Cache($this, $option['cache']);
         }
 

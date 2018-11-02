@@ -13,7 +13,7 @@ class MysqlController extends Controller
 
     public function indexAction()
     {
-        return ['abadc' => time()];
+        $this->redirect('/mysql/tab1');
     }
 
     public function tab2Action()
