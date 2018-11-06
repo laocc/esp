@@ -1,13 +1,13 @@
 <?php
 
 namespace esp\core;
+
 use esp\library\ext\Xss;
 
 /**
  * Class Input
  * http://php.net/manual/zh/wrappers.php.php
  */
-
 final class Input
 {
     const _XSS_CLEAN = true;//是否默认进行防注检查

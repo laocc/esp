@@ -1,4 +1,5 @@
 <?php
+
 namespace esp\core\db\ext;
 
 interface KeyValue
@@ -27,7 +28,7 @@ interface KeyValue
      * @param int $ttl 生存期
      * @return bool
      */
-    public function set(string $key, $array,int $ttl = 0);
+    public function set(string $key, $array, int $ttl = 0);
 
 
     /**
@@ -61,7 +62,7 @@ interface KeyValue
      * @param int $incrby 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $key = 'count',int $incrby = 1);
+    public function counter(string $key = 'count', int $incrby = 1);
 
     /**
      *  关闭

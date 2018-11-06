@@ -125,7 +125,7 @@ class Code
             $enFont['en'][] = _ROOT . $f;
         }
         foreach ($option['cn_font'] as $i => $f) {
-            $enFont['en'][] = _ROOT . $f;
+            $enFont['cn'][] = _ROOT . $f;
         }
         $option['en_font'] = array_flip($enFont['en']);
         $option['cn_font'] = array_flip($enFont['cn']);

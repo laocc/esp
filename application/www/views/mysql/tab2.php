@@ -1,4 +1,3 @@
-
 <div style="padding:0 1em;">
     <table class="layui-table" lay-even lay-filter="layuiTable">
         <thead>

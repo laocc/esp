@@ -26,8 +26,7 @@ return array(
             'controller' => 'pay',
             'action' => 'income'
         ),
-        'map' => array(
-//            'test' => 0,
+        'map' => array(//            'test' => 0,
         ),
         'view' => array(
             'path' => null,

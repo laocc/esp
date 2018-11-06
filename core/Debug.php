@@ -31,9 +31,8 @@ final class Debug
         $now = sprintf($this->_print_format, ($this->memory) / 1024);
         $this->_node[0] = ['t' => $time, 'm' => $memo, 'n' => $now, 'g' => ''];
         $this->prevTime = microtime(true);
-        $this->relay('START:__construct', []);
+        $this->relay('START', []);
         $this->_request = $request;
-
 
         //将最后保存数据部分注册为关门动作
         register_shutdown_function(function () use ($request, $response) {

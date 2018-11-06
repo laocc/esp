@@ -1,4 +1,5 @@
 <?php
+
 namespace esp\core\db;
 
 
@@ -42,7 +43,7 @@ class Apcu implements KeyValue
      * 当$update=true:若不存在则创建
      * 当$update=false:若存在则失败
      */
-    public function set(string $key, $var,int $ttl = self::_TTL, $update = true)
+    public function set(string $key, $var, int $ttl = self::_TTL, $update = true)
     {
         if (is_bool($ttl)) list($ttl, $update) = [self::_TTL, $ttl];
         if ($update) {
@@ -101,7 +102,7 @@ class Apcu implements KeyValue
      * @param null $success 操作成功标识
      * @return bool|int|mixed
      */
-    public function counter(string $key = 'count',int $step = 1, &$success = null)
+    public function counter(string $key = 'count', int $step = 1, &$success = null)
     {
         if ($step >= 0) {
             return apcu_inc("{$this->table}_{$key}", $step, $success);

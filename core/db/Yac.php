@@ -1,4 +1,5 @@
 <?php
+
 namespace esp\core\db;
 
 use esp\core\db\ext\KeyValue;
@@ -62,7 +63,7 @@ class Yac implements KeyValue
      * @param int $ttl 生存期
      * @return bool
      */
-    public function set(string $key, $array,int $ttl = self::_TTL)
+    public function set(string $key, $array, int $ttl = self::_TTL)
     {
         return $this->conn->set($key, $array, $ttl);
     }
@@ -108,7 +109,7 @@ class Yac implements KeyValue
      * @param int $incrby 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $key = 'count',int $incrby = 1)
+    public function counter(string $key = 'count', int $incrby = 1)
     {
         $val = $this->conn->get($key);
         if ($incrby === 0) return intval($val);

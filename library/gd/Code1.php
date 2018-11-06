@@ -1,4 +1,5 @@
 <?php
+
 namespace esp\library\gd;
 
 use esp\library\gd\ext\Gd;

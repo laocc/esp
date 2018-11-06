@@ -102,7 +102,7 @@
         sql += "primary key(" + KeyID + ")" + key + ")\n";
 
         sql += "ENGINE=" + ENGINE + " DEFAULT CHARSET=" + CharSet + " COMMENT='" + COMMENT + "';\n";
-        $("sql").value = sql+ "\n\n\n\n\n\n";
+        $("sql").value = sql + "\n\n\n\n\n\n";
     }
 
     function empty() {

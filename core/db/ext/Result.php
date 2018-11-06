@@ -1,4 +1,5 @@
 <?php
+
 namespace esp\core\db\ext;
 
 final class Result

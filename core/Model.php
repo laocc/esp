@@ -26,7 +26,7 @@ class Model
      * Model constructor.
      * @param bool|null $cache
      */
-    final public function __construct(bool $cache = null)
+    public function __construct(bool $cache = null)
     {
         $this->_controller = $GLOBALS['_Controller'];
         if (false) $this->_controller = new Controller(null);//无作用，只是为了让下面有些函数调用能跟踪到而已

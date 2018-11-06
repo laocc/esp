@@ -1,4 +1,5 @@
 <?php
+
 namespace esp\library\gd;
 
 use esp\library\gd\ext\Gd;
@@ -9,13 +10,13 @@ class Text
 
     /**
      * 写文字到图片，这不是写文字水印，是直接将几个字生成一个图片
-     * @param string $file
      * @param string $text
      * @param array $option
+     * @return array
      */
-    public static function create($text, array $option = [])
+    public static function create(string $text, array $option = [])
     {
-        $dim = [
+        $option += [
             'width' => 0,
             'height' => 0,
             'size' => 20,
@@ -27,13 +28,13 @@ class Text
             'background' => '#ffffff',
             'alpha' => 0,//透明度
             'save' => 0,
-            'root' => _ROOT . '/code/',
+            'root' => _ROOT . '/cache/code/',
             'path' => 'text/',
             'angle' => 0,//每个字的角度
             'vertical' => false,//竖向
             'percent' => 1.5,//字体间距与字号比例
         ];
-        $option = $option + $dim;
+
         $cut = self::str_cut($text);
         $count = count($cut);
 
@@ -85,18 +86,17 @@ class Text
         }
 
         imagesavealpha($im, true);//设置保存PNG时保留透明通道信息
-        $file = $file + $option;
 
-        $option = [
+        $gdOption = [
             'save' => $option['save'],//0：只显示，1：只保存，2：即显示也保存
             'filename' => $filename,
             'type' => IMAGETYPE_PNG,//文件类型
             'quality' => $option['quality'],
         ];
 
-        Gd::draw($im, $option);
+        Gd::draw($im, $gdOption);
 
-        return $file;
+        return $file + $option;
     }
 
 
@@ -115,7 +115,16 @@ class Text
         return $arr;
     }
 
-    //计算文字位置
+
+    /**
+     * 计算文字位置
+     * @param $iw
+     * @param $ih
+     * @param $size
+     * @param $font
+     * @param $txt
+     * @return array
+     */
     private static function get_text_xy($iw, $ih, &$size, $font, $txt)
     {
         $temp = imagettfbbox(ceil($size), 0, $font, $txt);//取得使用 TrueType 字体的文本的范围

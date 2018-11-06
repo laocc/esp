@@ -20,7 +20,7 @@ class Controller
      * @param Dispatcher $dispatcher
      * @throws \Exception
      */
-    final public function __construct(Dispatcher $dispatcher)
+    public function __construct(Dispatcher $dispatcher)
     {
         $this->_plugs = &$dispatcher->_plugs;
         $this->_request = &$dispatcher->_request;
@@ -43,17 +43,6 @@ class Controller
         if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
             throw new \Exception('禁止接入', 401);
         }
-    }
-
-    /**
-     * 清空缓存
-     * 此方法仅针对Dispatcher中创建的缓存对象，如果是程序自己创建的，则需自行执行清空
-     * @param bool $flushAll
-     * @return bool|mixed
-     */
-    final public function buffer_flush(bool $flushAll = false)
-    {
-        return $this->_buffer->flush($flushAll);
     }
 
     /**
@@ -112,6 +101,14 @@ class Controller
     }
 
     /**
+     * @return Redis
+     */
+    final public function getBuffer()
+    {
+        return $this->_buffer;
+    }
+
+    /**
      * @return Request
      */
     final public function getRequest()
@@ -119,30 +116,24 @@ class Controller
         return $this->_request;
     }
 
+    /**
+     * @return Response
+     */
     final public function getResponse()
     {
         return $this->_response;
     }
 
+    /**
+     * @param string $name
+     * @return null|Plugin
+     */
     final public function getPlugin(string $name)
     {
         $name = ucfirst($name);
         return isset($this->_plugs[$name]) ? $this->_plugs[$name] : null;
     }
 
-    /**
-     * 记录错误，并不阻止程序继续运行
-     * @param $error
-     * @param null $pre
-     */
-    final public function error(string $error, array $pre = null)
-    {
-        $err = Array();
-        $err['level'] = 'Throw';
-        $err['error'] = $error;
-        $err['code'] = 400;
-        $this->_debug->error($err, ($pre ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]));
-    }
 
     /**
      * @param null $data
@@ -156,32 +147,6 @@ class Controller
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $this->_debug->relay($data, $pre);
         return $this->_debug;
-    }
-
-    final public function debug_mysql($data)
-    {
-        if (is_null($this->_debug)) return;
-        $this->_debug->mysql_log($data);
-    }
-
-    final public function debug_star($pre)
-    {
-        if (is_null($this->_debug)) return;
-        $pre = $pre ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $this->_debug->star($pre);
-    }
-
-    final public function debug_stop($pre)
-    {
-        if (is_null($this->_debug)) return;
-        $pre = $pre ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $this->_debug->stop($pre);
-    }
-
-    final public function debug_disable()
-    {
-        if (is_null($this->_debug)) return;
-        $this->_debug->disable();
     }
 
     /**
@@ -400,9 +365,9 @@ class Controller
      * 注册关门后操作
      * @param callable $fun
      */
-    final protected function shutdown(callable $fun)
+    final protected function shutdown(callable $fun, $parameter = null)
     {
-        register_shutdown_function($fun);
+        register_shutdown_function($fun, $parameter);
     }
 
 

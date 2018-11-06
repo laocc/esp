@@ -99,7 +99,6 @@ final class Response
      */
     public function display(&$value)
     {
-
         if ($this->_autoRun === false) return;
         if (is_null($value)) goto display;
 
@@ -121,7 +120,7 @@ final class Response
 
         } else if (is_int($value)) {//如果是某种错误代码，则显示为错误
             $this->_Content_Type = 'text/html';
-            echo $this->_display_Result = Debug::displayState($value);
+            echo $this->_display_Result = Error::displayState($value);
             return;
 
         } else if (is_bool($value)) {//简单表示是否立即渲染

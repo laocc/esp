@@ -18,7 +18,7 @@ class IndexController extends Controller
         $this->debug()->abc = time();
 
         $this->assign('time', $this->debug()->abc);
-//        echo 1 / 0;
+        echo 1 / 0;
     }
 
     public function configAction()

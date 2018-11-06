@@ -15,11 +15,8 @@ class Error
 
     /**
      * 简单处理出错信息
-     *
-     * //自定义出错处理方法
-     * //
      */
-    public static function simple_register_handler()
+    public function simple_register_handler()
     {
         set_error_handler(function (...$err) {
             header("Status: 400 Bad Request", true);
@@ -69,8 +66,7 @@ class Error
                 } else if ($option['run'] === 2) {
                     $this->displayError('Error', $err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
                 } else {
-                    echo $this->displayState($option['run']);
-                    exit;
+                    $this->displayState($option['run']);
                 }
             } else {
                 exit($option['run']);
@@ -99,11 +95,9 @@ class Error
                     $this->displayError('Throw', $err, $error->getTrace());
                 } else if ($option['throw'] === 3) {
                     if (!$err['code']) $err['code'] = $option['run'];
-                    echo $this->displayState($err['code']);
-                    exit;
+                    $this->displayState($err['code']);
                 } else {
-                    echo $this->displayState($option['throw']);
-                    exit;
+                    $this->displayState($option['throw']);
                 }
             } else {
                 exit($option['throw']);
@@ -136,7 +130,7 @@ class Error
      * 仅记录错误，但不阻止程序继续运行
      * @param $error
      */
-    public function error(array $error, array $prev = null, string $filename)
+    private function error(array $error, array $prev = null, string $filename)
     {
         $info = Array();
         $info['time'] = date('Y-m-d H:i:s');
@@ -150,7 +144,13 @@ class Error
             $request = null;
         }
 
-        file_put_contents($filename, print_r($info + $error + ['request' => $request], true) . "\n\n" . print_r($_SERVER, true), LOCK_EX);
+        file_put_contents($filename, print_r([
+            'info' => $info,
+            'error' => $error,
+            'prev' => $prev,
+            'request' => $request,
+            'server' => $_SERVER,
+        ], true), LOCK_EX);
     }
 
     /**
@@ -161,7 +161,7 @@ class Error
     public static function displayState(int $code)
     {
         $state = Config::states($code);
-        if (_CLI) return "[{$code}]:{$state}";
+        if (_CLI) exit("[{$code}]:{$state}\n");
         $server = isset($_SERVER['SERVER_SOFTWARE']) ? ucfirst($_SERVER['SERVER_SOFTWARE']) : null;
         $html = "<html>\n<head><title>{$code} {$state}</title></head>\n<body bgcolor=\"white\">\n<center><h1>{$code} {$state}</h1></center>\n<hr><center>{$server}</center>\n</body>\n</html>\n\n";
         if (!stripos(PHP_SAPI, 'cgi')) {
@@ -171,7 +171,7 @@ class Error
             header("{$protocol} {$code} {$state}", true, $code);
         }
         header('Content-type: text/html', true);
-        return $html;
+        exit($html);
     }
 
 
@@ -191,8 +191,7 @@ class Error
         }
 
         if (is_numeric($err['error'])) {
-            echo $this->displayState(intval($err['error']));
-            exit;
+            $this->displayState(intval($err['error']));
         }
 
         $traceHtml = '';
