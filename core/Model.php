@@ -20,7 +20,6 @@ class Model
     private $__table = null;        //创建对象时，或明确指定当前模型的对应表名
     private $__pri = null;          //同上，对应主键名
     private $__cache = false;       //是否缓存，若此值被设置，则覆盖子对象的相关设置
-    private $_controller;
 
     /**
      * Model constructor.
@@ -28,9 +27,6 @@ class Model
      */
     public function __construct(bool $cache = null)
     {
-        $this->_controller = $GLOBALS['_Controller'];
-        if (false) $this->_controller = new Controller(null);//无作用，只是为了让下面有些函数调用能跟踪到而已
-
         if (is_bool($cache)) $this->__cache = $cache;
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
@@ -39,27 +35,14 @@ class Model
     }
 
     /**
-     * 记录错误
-     * @param string ...$action
-     * @return mixed
-     */
-    final public function error(string $action)
-    {
-        $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $this->_controller->error($action, $pre);
-        return true;
-    }
-
-    /**
      * @param array ...$action
      * @return Debug|mixed
      */
     final public function debug(...$action)
     {
-        if (empty($action)) return $this->_controller->_debug;
         $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (count($action) === 1) $action = $action[0];
-        return $this->_controller->debug($action, $pre);
+        return Debug::relay($action, $pre);
     }
 
     /**
@@ -69,7 +52,7 @@ class Model
      */
     final public function debug_file(string $filename = null)
     {
-        $file = $this->_controller->_debug->filename($filename);
+        $file = Debug::filename($filename);
         return substr($file, strlen(_ROOT));
     }
 
@@ -81,7 +64,7 @@ class Model
      */
     final public function publish(string $key, array $value)
     {
-        return $this->_controller->publish($key, $value);
+        return Buffer::publish($key, $value);
     }
 
     /**
@@ -123,7 +106,7 @@ class Model
      */
     final public function tables($field = null)
     {
-        $mysql = $this->_controller->Mysql();
+        $mysql = Buffer::Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.TABLES')->select('*')->where(['TABLE_SCHEMA' => $mysql->dbName])->get()->rows();
         if (empty($val)) return null;
         if (!is_null($field)) return array_column($val, $field);
@@ -188,7 +171,7 @@ class Model
             if (isset($this->_id)) return $this->_id;
         }
         if (!$table) throw new \Exception('Unable to get table name');
-        $val = $this->_controller->Mysql()->table('INFORMATION_SCHEMA.Columns')
+        $val = Buffer::Mysql()->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME')
             ->where(['table_name' => $table, 'EXTRA' => 'auto_increment'])
             ->get()->row();
@@ -206,7 +189,7 @@ class Model
     {
         //TRUNCATE TABLE dbAdmin;
         //alter table users AUTO_INCREMENT=10000;
-        return $this->_controller->Mysql()->query("alter table {$table} AUTO_INCREMENT={$id}");
+        return Buffer::Mysql()->query("alter table {$table} AUTO_INCREMENT={$id}");
     }
 
     /**
@@ -218,7 +201,7 @@ class Model
     {
         $table = $table ?: $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
-        $mysql = $this->_controller->Mysql();
+        $mysql = Buffer::Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
             ->get()->rows();
@@ -230,12 +213,12 @@ class Model
      * @param array ...$key
      * @return $this
      */
-    final public function cache_delete(...$key)
+    final private function cache_delete(...$key)
     {
         $table = $this->table();
         $buffer = $this->_controller->_buffer;
         foreach ($key as $i => $k) {
-            $buffer->hDel("{$buffer->key}_{$table}", "_key:{$k}", "_id:{$k}");
+            Buffer::hDel("{$buffer->key}_{$table}", "_key:{$k}", "_id:{$k}");
         }
         return $this;
     }
@@ -249,7 +232,7 @@ class Model
      */
     final private function cache_set(string $table, string $key, array $value)
     {
-        return $this->_controller->_buffer->hSet("{$this->_controller->_buffer->key}_{$table}", "{$key}", serialize($value));
+        return Buffer::hSet("{$table}_{$key}", $value);
     }
 
     /**
@@ -259,8 +242,7 @@ class Model
      */
     final private function cache_get(string $table, string $key)
     {
-        $data = $this->_controller->_buffer->hGet("{$this->_controller->_buffer->key}_{$table}", $key);
-        return unserialize($data);
+        return Buffer::hGet("{$table}_{$key}");
     }
 
 
@@ -276,7 +258,7 @@ class Model
         if (!empty($data)) return $data;
 
         if (!$table) throw new \Exception('Unable to get table name');
-        $val = $this->_controller->Mysql()->table('INFORMATION_SCHEMA.Columns')->select('COLUMN_NAME as field,COLUMN_COMMENT as title')->where(['table_name' => $table])->get()->rows();
+        $val = Buffer::Mysql()->table('INFORMATION_SCHEMA.Columns')->select('COLUMN_NAME as field,COLUMN_COMMENT as title')->where(['table_name' => $table])->get()->rows();
         if (empty($val)) throw new \Exception("Table '{$table}' doesn't exist");
         $this->cache_set($table, '_title', $val);
         return $val;
@@ -321,7 +303,7 @@ class Model
     {
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
-        return $this->_controller->Mysql()->table($table)->insert($full ? $data : $this->_FillField($table, $data));
+        return Buffer::Mysql()->table($table)->insert($full ? $data : $this->_FillField($table, $data));
     }
 
     /**
@@ -337,7 +319,7 @@ class Model
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        return $this->_controller->Mysql()->table($table)->where($where)->delete();
+        return Buffer::Mysql()->table($table)->where($where)->delete();
     }
 
 
@@ -355,7 +337,7 @@ class Model
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        return $this->_controller->Mysql()->table($table)->where($where)->update($data);
+        return Buffer::Mysql()->table($table)->where($where)->update($data);
     }
 
 
@@ -379,7 +361,7 @@ class Model
             }
             $where = [$this->PRI() => intval($where)];
         }
-        $obj = $this->_controller->Mysql()->table($table);
+        $obj = Buffer::Mysql()->table($table);
 
         if ($this->selectKey) $obj->select(...$this->selectKey);
         if (!empty($this->tableJoin)) {
@@ -419,7 +401,7 @@ class Model
             if (!empty($data)) return $data;
         }
 
-        $val = $this->_controller->Mysql()->table($table)->where($this->_key, $keyValue)->get()->row();
+        $val = Buffer::Mysql()->table($table)->where($this->_key, $keyValue)->get()->row();
         if ($fromCache and $this->__cache === true and !empty($val)) {
             $this->cache_set($table, "_key:{$keyValue}", $val);
         }
@@ -437,7 +419,7 @@ class Model
     {
         if (empty($ids)) return [];
         $table = $this->table();
-        $val = $this->_controller->Mysql()->table($table)
+        $val = Buffer::Mysql()->table($table)
             ->where_in($this->PRI(), $ids);
         if ($where) $val->where($where);
         return $val->get()->rows();
@@ -455,7 +437,7 @@ class Model
     {
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
-        $obj = $this->_controller->Mysql()->table($table);
+        $obj = Buffer::Mysql()->table($table);
 
         if ($this->selectKey) $obj->select(...$this->selectKey);
         if (!empty($this->tableJoin)) {
@@ -489,7 +471,7 @@ class Model
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
         if ($this->pageSize === 0) $this->pageSet();
-        $rs = $this->_controller->Mysql()->table($table);
+        $rs = Buffer::Mysql()->table($table);
         if ($this->selectKey) $rs->select(...$this->selectKey);
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) {
@@ -521,7 +503,7 @@ class Model
      */
     final public function quote(string $string)
     {
-        return $this->_controller->Mysql()->quote($string);
+        return Buffer::Mysql()->quote($string);
     }
 
     final public function pageCount()
@@ -659,7 +641,7 @@ class Model
      */
     public function Mysql(int $tranID = 0, array $_conf = [])
     {
-        return $this->_controller->Mysql($tranID, $_conf);
+        return Buffer::Mysql($tranID, $_conf);
     }
 
     /**
@@ -669,7 +651,7 @@ class Model
      */
     public function Mongodb(string $db = 'temp', array $conf = [])
     {
-        return $this->_controller->Mongodb($db, $conf);
+        return Buffer::Mongodb($db, $conf);
     }
 
     /**
@@ -678,7 +660,7 @@ class Model
      */
     public function Yac(string $tab = 'tmp')
     {
-        return $this->_controller->Yac($tab);
+        return Buffer::Yac($tab);
     }
 
 
@@ -688,7 +670,7 @@ class Model
      */
     public function Redis(int $db = 1)
     {
-        return $this->_controller->Redis($db);
+        return Buffer::Redis($db);
     }
 
     /**
@@ -699,7 +681,7 @@ class Model
      */
     public function Hash(int $db = 1, string $key, string $value = null)
     {
-        $hash = $this->_controller->Redis($db)->hash('CacheHash');
+        $hash = Buffer::Redis($db)->hash('CacheHash');
         if (is_null($value))
             return $hash->hGet($key);
         else

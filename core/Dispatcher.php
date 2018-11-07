@@ -3,8 +3,6 @@
 namespace esp\core;
 
 
-use esp\core\db\Redis;
-
 final class Dispatcher
 {
     public $_plugs = Array();
@@ -13,18 +11,64 @@ final class Dispatcher
     public $_response;
     public $_debug;
     public $_cache;
-    public $_buffer;//缓存介质
+
+
+    /**
+     * 系统运行调度中心
+     * @throws \Exception
+     */
+    public static function run(array &$option): void
+    {
+        self::define();
+
+        /**
+         * 以下三项必须在chdir之前，且三项顺序不可变
+         */
+        if (isset($option['error'])) Error::register_handler($option['error']);
+        if (isset($option['buffer'])) Buffer::_init($option['buffer']);
+        if (isset($option['config'])) Config::_init($option['config']);
+
+        chdir(_ROOT);
+
+
+        Request::_init($option['request']);
+        Response::_init($option['response']);
+
+        if (!_CLI) {
+            if (isset($option['session'])) Session::_init($option['session']);
+            if (isset($option['debug'])) Debug::_init($option['debug']);
+            if (isset($option['cache'])) Cache::_init($option['cache']);
+        }
+
+//        unset($GLOBALS['option']);
+
+        Route::_init($option['router']);
+
+
+        if (!_CLI and isset($option['cache'])) if (Cache::Display()) goto end;
+
+        $disp = self::dispatch();
+        Response::display($disp);//运行控制器->方法
+
+        if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
+        if (!_CLI and isset($option['cache'])) Cache::save();
+
+        end:
+    }
+
 
     /**
      * Dispatcher constructor.
      * @param array $option
      * @throws \Exception
      */
-    public function __construct(array $option)
+    private static function define()
     {
         if (!defined('_ROOT')) exit("网站入口处须定义 _ROOT 项，指向系统根目录");
+        if (!defined('_MODULE')) exit('网站入口处须定义 _MODULE 项');
 
-        define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
+        define('_TIME', time());//今天零时整的时间戳
+        define('_DAY_TIME', strtotime(date('Ymd', _TIME)));//今天零时整的时间戳
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         define('_DEBUG', is_file(_ROOT . '/cache/debug.lock'));
 
@@ -50,54 +94,6 @@ final class Dispatcher
             define('_URL', ((_HTTPS ? 'https://' : 'http://') . _DOMAIN . getenv('REQUEST_URI')));
             define('_HTTP_DOMAIN', ((_HTTPS ? 'https://' : 'http://') . _DOMAIN));
         }
-
-        /**
-         * 以下三项必须在chdir之前，且三项顺序不可变
-         */
-        if (isset($option['error'])) new Error($this, $option['error']);
-        if (isset($option['buffer'])) $this->_buffer = new Redis($option['buffer'] + ['_from' => 'dispatcher'], 0);
-        if (isset($option['config'])) Config::_init($this->_buffer, $option['config']);
-
-        chdir(_ROOT);
-
-        if (!defined('_MODULE')) {
-            throw new \Exception("网站入口处须定义 _MODULE 项", 404);
-        }
-
-        $this->_request = new Request($option['request']);
-        $this->_response = new Response($this->_request);
-
-        if (_CLI) {
-            $this->_response->autoRun(false);
-        } else {
-            if (isset($option['session'])) Session::_init($option['session']);
-            if (isset($option['debug'])) $this->_debug = new Debug($this->_request, $this->_response, $option['debug']);
-            if (isset($option['cache'])) $this->_cache = new Cache($this, $option['cache']);
-        }
-
-        unset($GLOBALS['option']);
-    }
-
-    public function __destruct()
-    {
-
-    }
-
-
-    /**
-     * @return Request
-     */
-    public function getRequest(): Request
-    {
-        return $this->_request;
-    }
-
-    /**
-     * @return Response
-     */
-    public function getResponse(): Response
-    {
-        return $this->_response;
     }
 
 
@@ -152,72 +148,45 @@ final class Dispatcher
         }
     }
 
-    /**
-     * 系统运行调度中心
-     * @throws \Exception
-     */
-    public function run(): void
-    {
-        $this->_plugs_count and $this->plugsHook('routeBefore');
-        (new Route($this->_buffer, $this->_request));
-        $this->_plugs_count and $this->plugsHook('routeAfter');
-
-        if (!_CLI and !is_null($this->_cache)) if ($this->_cache->Display()) goto end;
-
-        $this->_plugs_count and $this->plugsHook('dispatchBefore');
-        $value = $this->dispatch();//运行控制器->方法
-        $this->_plugs_count and $this->plugsHook('dispatchAfter');
-
-        $this->_plugs_count and $this->plugsHook('displayBefore');
-        $this->_response->display($value);
-        $this->_plugs_count and $this->plugsHook('displayAfter');
-
-        if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
-        if (!_CLI and !is_null($this->_cache)) $this->_cache->Save();
-
-        end:
-        $this->_plugs_count and $this->plugsHook('mainEnd');
-    }
-
 
     /**
      * 路由结果分发至控制器动作
      * @return mixed
      * @throws \Exception
      */
-    private function dispatch()
+    private static function dispatch()
     {
-        $suffix = &$this->_request->suffix;
+        $suffix = Request::$suffix;
         $actionExt = $suffix['get'];
         if ((strtoupper(getenv('REQUEST_METHOD')) === 'POST') and ($p = $suffix['post'])) $actionExt = $p;
         elseif ((strtolower(getenv('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest') and ($p = $suffix['ajax'])) $actionExt = $p;
 
-        $module = strtolower($this->_request->module);
-        $controller = ucfirst(strtolower($this->_request->controller));
-        $action = strtolower($this->_request->action) . ucfirst($actionExt);
+        $module = strtolower(Request::$module);
+        $controller = ucfirst(strtolower(Request::$controller));
+        $action = strtolower(Request::$action) . ucfirst($actionExt);
 
         if ($controller === 'Base') throw new \Exception('控制器名不可以为base，这是系统保留公共控制器名', 404);
 
-        $base = $this->_request->directory . "/{$module}/controllers/Base.php";
-        $file = $this->_request->directory . "/{$module}/controllers/{$controller}.php";
+        $base = Request::$directory . "/{$module}/controllers/Base.php";
+        $file = Request::$directory . "/{$module}/controllers/{$controller}.php";
         if (is_readable($base)) load($base);//加载控制器公共类，有可能不存在
         if (!load($file)) {
             throw new \Exception("控制器[{$file}]不存在", 404);
         }
 
         $controller = $module . '\\' . $controller . 'Controller';
-        $GLOBALS['_Controller'] = new $controller($this);
-        if (!$GLOBALS['_Controller'] instanceof Controller) {
+        $_Controller = new $controller();
+        if (!$_Controller instanceof Controller) {
             throw new \Exception("{$controller} 须继承自 \\esp\\core\\Controller", 404);
         }
 
-        if (!method_exists($GLOBALS['_Controller'], $action) or !is_callable([$GLOBALS['_Controller'], $action])) {
+        if (!method_exists($_Controller, $action) or !is_callable([$_Controller, $action])) {
             if (_CLI) {
                 // cli中，若路由结果的action不存在，则检查是否存在indexAction，若存在，则调用此方法，并将原action作为参数提交到此方法
-                if (method_exists($GLOBALS['_Controller'], 'index' . ucfirst($actionExt)) and is_callable([$GLOBALS['_Controller'], 'index' . ucfirst($actionExt)])) {
-                    array_unshift($this->_request->params, $this->_request->action);
-                    $this->_request->action = 'index';
-                    $action = strtolower($this->_request->action) . ucfirst($actionExt);
+                if (method_exists($_Controller, 'index' . ucfirst($actionExt)) and is_callable([$_Controller, 'index' . ucfirst($actionExt)])) {
+                    array_unshift(Request::getParams(), Request::$action);
+                    Request::$action = 'index';
+                    $action = strtolower(Request::$action) . ucfirst($actionExt);
                 }
             } else {
                 throw new \Exception("控制器[{$controller}]动作[{$action}]方法不存在或不可运行", 404);
@@ -225,23 +194,21 @@ final class Dispatcher
         }
 
         //运行初始化方法
-        if (method_exists($GLOBALS['_Controller'], '_init') and is_callable([$GLOBALS['_Controller'], '_init'])) {
-            call_user_func_array([$GLOBALS['_Controller'], '_init'], [$action]);
+        if (method_exists($_Controller, '_init') and is_callable([$_Controller, '_init'])) {
+            call_user_func_array([$_Controller, '_init'], [$action]);
         }
 
         /**
          * 正式请求到控制器
          */
-        if (!is_null($this->_debug)) $this->_debug->relay('ControllerStar', []);
-        $val = call_user_func_array([$GLOBALS['_Controller'], $action], $this->_request->params);
-        if (!is_null($this->_debug)) $this->_debug->relay('ControllerStop', []);
+        $val = call_user_func_array([$_Controller, $action], Request::getParams());
 
         //运行结束方法
-        if (method_exists($GLOBALS['_Controller'], '_close') and is_callable([$GLOBALS['_Controller'], '_close'])) {
-            call_user_func_array([$GLOBALS['_Controller'], '_close'], [$action, $val]);
+        if (method_exists($_Controller, '_close') and is_callable([$_Controller, '_close'])) {
+            call_user_func_array([$_Controller, '_close'], [$action, $val]);
         }
 
-        unset($GLOBALS['_Controller']);
+        unset($_Controller);
         return $val;
     }
 

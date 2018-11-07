@@ -2,32 +2,17 @@
 
 namespace esp\core;
 
-use esp\core\db\Mongodb;
-use esp\core\db\Mysql;
-use esp\core\db\Redis;
-use esp\core\db\Yac;
-
 class Controller
 {
-    protected $_request;
-    protected $_response;
-    protected $_plugs;
-    public $_debug;
-    public $_buffer;
 
     /**
      * Controller constructor.
      * @param Dispatcher $dispatcher
      * @throws \Exception
      */
-    public function __construct(Dispatcher $dispatcher)
-    {
-        $this->_plugs = &$dispatcher->_plugs;
-        $this->_request = &$dispatcher->_request;
-        $this->_response = &$dispatcher->_response;
-        $this->_debug = &$dispatcher->_debug;
-        $this->_buffer = &$dispatcher->_buffer;
-    }
+//    public function __construct()
+//    {
+//    }
 
     /**
      * 检查来路是否本站相同域名
@@ -40,9 +25,21 @@ class Controller
     final protected function check_host(...$host)
     {
         if (isset($host[0]) and is_array($host[0])) $host = $host[0];
-        if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
+        if (!in_array(host(Request::getReferer()), array_merge([_HOST], $host))) {
             throw new \Exception('禁止接入', 401);
         }
+    }
+
+    private $_runValue = [];
+
+    final public function __set($name, $value)
+    {
+        $this->_runValue[$name] = $value;
+    }
+
+    final public function __get($name)
+    {
+        return $this->_runValue[$name] ?? null;
     }
 
     /**
@@ -53,21 +50,13 @@ class Controller
      */
     final public function publish(string $action, array $value)
     {
-        return $this->_buffer->publish($action, $value);
+        return Buffer::publish($action, $value);
     }
 
-    /**
-     * 设置视图文件，或获取对象
-     * @return View|bool
-     */
-    final public function getView()
-    {
-        return $this->_response->getView();
-    }
 
     final public function setView($value)
     {
-        $this->_response->setView($value);
+        View::setView($value);
     }
 
     /**
@@ -77,76 +66,29 @@ class Controller
      */
     final protected function getAdapter()
     {
-        return $this->_response->getView()->getAdapter();
+        return View::getAdapter();
     }
 
     final protected function setAdapter($bool)
     {
-        return $this->_response->getView()->setAdapter($bool);
-    }
-
-    /**
-     * 关闭，或获取layout对象，可同时指定框架文件
-     * @param null $file
-     * @return bool|View
-     */
-    final protected function getLayout()
-    {
-        return $this->_response->getLayout();
+        View::setAdapter($bool);
     }
 
     final protected function setLayout($value)
     {
-        $this->_response->setLayout($value);
+        View::setLayout($value);
     }
-
-    /**
-     * @return Redis
-     */
-    final public function getBuffer()
-    {
-        return $this->_buffer;
-    }
-
-    /**
-     * @return Request
-     */
-    final public function getRequest()
-    {
-        return $this->_request;
-    }
-
-    /**
-     * @return Response
-     */
-    final public function getResponse()
-    {
-        return $this->_response;
-    }
-
-    /**
-     * @param string $name
-     * @return null|Plugin
-     */
-    final public function getPlugin(string $name)
-    {
-        $name = ucfirst($name);
-        return isset($this->_plugs[$name]) ? $this->_plugs[$name] : null;
-    }
-
 
     /**
      * @param null $data
      * @param null $pre
-     * @return Debug|null
+     * @return null
      */
     final public function debug($data = null, $pre = null)
     {
-        if (is_null($this->_debug)) return null;
-        if (is_null($data)) return $this->_debug;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $this->_debug->relay($data, $pre);
-        return $this->_debug;
+        Debug::relay($data, $pre);
+        return $this;
     }
 
     /**
@@ -155,7 +97,7 @@ class Controller
      */
     final protected function redirect(string $url)
     {
-        header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1) . ' GMT');
+        header('Expires: ' . gmdate('D, d M Y H:i:s', _TIME - 1) . ' GMT');
         header("Cache-Control: no-cache");
         header("Pragma: no-cache");
         header("Location: {$url}", true, 301);
@@ -177,8 +119,8 @@ class Controller
     final protected function reload(...$param)
     {
         if (empty($param)) return false;
-        $directory = $this->_request->directory;
-        $module = $this->_request->module;
+        $directory = Request::$directory;
+        $module = Request::$module;
         $controller = $action = $params = null;
 
         if (is_dir($param[0])) {
@@ -197,23 +139,23 @@ class Controller
             list($controller, $action) = $param;
             $params = array_slice($param, 2);
         }
-        if (!is_string($controller)) $controller = $this->_request->controller;
-        if (!is_string($action)) $action = $this->_request->action;
+        if (!is_string($controller)) $controller = Request::$controller;
+        if (!is_string($action)) $action = Request::$action;
 
         //路径，模块，控制器，动作，这四项都没变动，返回false，也就是闹着玩的，不真跳
-        if ($directory == $this->_request->directory
-            and $module == $this->_request->module
-            and $controller == $this->_request->controller
-            and $action == $this->_request->action
+        if ($directory == Request::$directory
+            and $module == Request::$module
+            and $controller == Request::$controller
+            and $action == Request::$action
         ) return false;
 
-        $this->_request->directory = $directory;
-        $this->_request->module = $module;
+        Request::$directory = $directory;
+        Request::$module = $module;
 
-        if ($controller) ($this->_request->controller = $controller);
-        if ($action) ($this->_request->action = $action);
-        if ($params) $this->_request->params = $params;
-        return $this->_request->loop = true;
+        if ($controller) (Request::$controller = $controller);
+        if ($action) (Request::$action = $action);
+        if ($params) Request::$params = $params;
+        return true;
     }
 
     /**
@@ -223,27 +165,17 @@ class Controller
      */
     final protected function assign(string $name, $value = null)
     {
-        $this->_response->assign($name, $value);
-    }
-
-    final public function __set(string $name, $value)
-    {
-        $this->_response->assign($name, $value);
-    }
-
-    final public function __get(string $name)
-    {
-        return $this->_response->get($name);
+        View::assign($name, $value);
     }
 
     final protected function set(string $name, $value = null)
     {
-        $this->_response->assign($name, $value);
+        View::assign($name, $value);
     }
 
     final protected function get(string $name)
     {
-        return $this->_response->get($name);
+        return View::get($name);
     }
 
     final protected function markdown(string $mdFile = null, string $mdCss = '/css/markdown.css?2')
@@ -254,33 +186,33 @@ class Controller
     final protected function md(string $mdFile = null, string $mdCss = '/css/markdown.css?1')
     {
         $this->css($mdCss);
-        return $this->_response->set_value('md', $mdFile);
+        return Response::setDisplay('md', $mdFile);
     }
 
     final protected function html(string $value = null)
     {
-        return $this->_response->set_value('html', $value);
+        return Response::setDisplay('html', $value);
     }
 
     final protected function json(array $value)
     {
-        return $this->_response->set_value('json', $value);
+        return Response::setDisplay('json', $value);
     }
 
     final protected function title(string $title, bool $default = false)
     {
-        $this->_response->title($title, $default);
+        View::setTitle($title, $default);
         return $this;
     }
 
     final protected function php(array $value)
     {
-        return $this->_response->set_value('php', $value);
+        return Response::setDisplay('php', $value);
     }
 
     final protected function text(string $value)
     {
-        return $this->_response->set_value('text', $value);
+        return Response::setDisplay('text', $value);
     }
 
     final protected function xml($root, $value = null)
@@ -288,12 +220,12 @@ class Controller
         if (is_array($root)) list($root, $value) = [$value ?: 'xml', $root];
         if (is_null($value)) list($root, $value) = ['xml', $root];
         if (!preg_match('/^\w+$/', $root)) $root = 'xml';
-        return $this->_response->set_value('xml', [$root, $value]);
+        return Response::setDisplay('xml', [$root, $value]);
     }
 
     final protected function ajax($viewFile)
     {
-        if ($this->getRequest()->isAjax()) {
+        if (Request::isAjax()) {
             $this->setLayout(false);
             $this->setView($viewFile);
         }
@@ -307,7 +239,7 @@ class Controller
      */
     final protected function js($file, $pos = 'foot')
     {
-        $this->_response->js($file, $pos);
+        View::setJs($file, $pos);
         return $this;
     }
 
@@ -319,7 +251,7 @@ class Controller
      */
     final protected function css($file)
     {
-        $this->_response->css($file);
+        View::setCss($file);
         return $this;
     }
 
@@ -332,7 +264,7 @@ class Controller
      */
     final protected function meta(string $name, string $value)
     {
-        $this->_response->meta($name, $value);
+        View::setMeta($name, $value);
         return $this;
     }
 
@@ -344,7 +276,7 @@ class Controller
      */
     final protected function keywords(string $value)
     {
-        $this->_response->keywords($value);
+        View::setKeywords($value);
         return $this;
     }
 
@@ -356,7 +288,7 @@ class Controller
      */
     final protected function description(string $value)
     {
-        $this->_response->description($value);
+        View::setDescription($value);
         return $this;
     }
 
@@ -368,82 +300,6 @@ class Controller
     final protected function shutdown(callable $fun, $parameter = null)
     {
         register_shutdown_function($fun, $parameter);
-    }
-
-
-    //=========数据相关===========
-
-
-    /**
-     * @param string $tab
-     * @return Yac
-     */
-    final public function Yac(string $tab = 'tmp')
-    {
-        static $yac = Array();
-        if (!isset($yac[$tab])) {
-            $yac[$tab] = new Yac($tab);
-            $this->debug("New Yac({$tab});");
-        }
-        return $yac[$tab];
-    }
-
-    /**
-     * @param int $dbID
-     * @param array $_conf
-     * @return Redis
-     */
-    final public function Redis(int $dbID = 1, array $_conf = [])
-    {
-        static $redis = array();
-        if (!isset($redis[$dbID])) {
-            $conf = Config::get('database.redis');
-            $redis[$dbID] = new Redis($_conf + $conf, $dbID);
-            $this->debug("create Redis({$dbID});");
-        }
-        return $redis[$dbID];
-    }
-
-    /**
-     * 创建一个Mysql实例
-     * @param int $tranID
-     * @param array $_conf 如果要创建一个持久连接，则$_conf需要传入参数：persistent=true，
-     * @return Mysql
-     * @throws \Exception
-     */
-    final public function Mysql(int $tranID = 0, array $_conf = [])
-    {
-        static $mysql = Array();
-        if (!isset($mysql[$tranID])) {
-            $conf = Config::get('database.mysql');
-            if (empty($conf)) {
-                throw new \Exception('无法读取Mysql配置信息', 501);
-            }
-            $mysql[$tranID] = new Mysql($tranID, ($_conf + $conf), $this);
-            $this->debug("New Mysql({$tranID});");
-        }
-        return $mysql[$tranID];
-    }
-
-
-    /**
-     * @param string $db
-     * @param array $_conf
-     * @return Mongodb
-     * @throws \Exception
-     */
-    final public function Mongodb(string $db = 'temp', array $_conf = [])
-    {
-        static $mongodb = Array();
-        if (!isset($mongodb[$db])) {
-            $conf = Config::get('database.mongodb');
-            if (empty($conf)) {
-                throw new \Exception('无法读取mongodb配置信息', 501);
-            }
-            $mongodb[$db] = new Mongodb($_conf + $conf, $db);
-            $this->debug("New Mongodb({$db});");
-        }
-        return $mongodb[$db];
     }
 
 

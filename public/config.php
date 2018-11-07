@@ -7,7 +7,11 @@ $option = array();
  * 系统框架基本设置
  */
 $option['request']['directory'] = '/application';//程序主目录
-$option['request']['router'] = '/config/routes';//路由设置目录
+
+/**
+ * 路由设置目录
+ */
+$option['router']['path'] = '/config/routes';
 
 /**
  * 控制方法函数后缀
@@ -16,6 +20,12 @@ $option['request']['suffix'] = array();
 $option['request']['get'] = 'Action';
 $option['request']['ajax'] = 'Ajax';
 $option['request']['post'] = 'Post';
+
+
+/**
+ *
+ */
+$option['response']['auto'] = true;
 
 
 /**
@@ -73,7 +83,7 @@ $option['session']['ttl'] = 86400;          //session有效时间
 /**
  * 页面缓存
  */
-$option['cache']['run'] = false;
+$option['cache']['run'] = false;        //是否启用
 $option['cache']['type'] = 'string';    //存储方式：string或hash
 $option['cache']['ttl'] = 86400;        //缓存保存时间
 $option['cache']['zip'] = true;         //是否去除所有空行

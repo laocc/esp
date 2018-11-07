@@ -70,7 +70,7 @@ final class Redis implements KeyValue
         if (isset($conf['prefix']) and !empty($conf['prefix'])) {
             $this->redis->setOption(\Redis::OPT_PREFIX, strval($conf['prefix']));
         }
-        $this->redis->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);//序列化方式
+//        $this->redis->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);//序列化方式
 
         if (!$this->redis->select((int)$db)) {
             throw new \Exception("Redis选择库【{$db}】失败。");

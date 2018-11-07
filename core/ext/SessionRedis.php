@@ -97,8 +97,6 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function create_sid()
     {
-//        var_dump(['create_sid' => time()]);
-//        return str_rand(10);
         $id = session_create_id($this->_conf['prefix']);
         return $id;
     }

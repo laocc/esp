@@ -4,100 +4,96 @@ namespace esp\core;
 
 final class Request
 {
-    private $_var = Array();
+    private static $method;//请求方式
+    private static $_var = Array();//临时数据
+
     public $loop = false;//控制器间跳转循环标识
-    public $router_path = null;//路由配置目录
-    public $router = null;//实际生效的路由器名称
-    public $params = Array();
 
-    public $module;
-    public $controller;//控制器名
-    public $action;
-    public $method;
-    public $directory;
-    public $referer;
-    public $uri;
-    public $suffix;
+    public static $module;
+    public static $controller;//控制器名
+    public static $action;
+    public static $params = Array();
+    public static $router = null;//实际生效的路由器名称
 
-    public function __construct(array $conf)
+    public static $directory;
+    private static $uri;
+    public static $suffix;
+
+    public static function _init(array &$conf)
     {
-        $this->method = strtoupper(getenv('REQUEST_METHOD'));
-        if ($this->isAjax()) $this->method = 'AJAX';
+        self::$method = strtoupper(getenv('REQUEST_METHOD'));
+        if (self::isAjax()) self::$method = 'AJAX';
+        self::$suffix = ($conf['suffix'] ?? []) + ['get' => 'Action', 'ajax' => 'Ajax', 'post' => 'Post'];
 
-        $this->directory = root($conf['directory'] ?? '/directory');
-        $this->router_path = root($conf['router'] ?? '/config/routes');
-        if (!isset($conf['suffix'])) $conf['suffix'] = array();
-        $this->suffix = $conf['suffix'] + ['get' => 'Action', 'ajax' => 'Ajax', 'post' => 'Post'];
-        $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
-        $this->uri = _CLI ? //CLI模式下 取参数作为路由
+        self::$directory = root($conf['directory'] ?? '/directory');
+        self::$uri = _CLI ? //CLI模式下 取参数作为路由
             ('/' . trim(implode('/', array_slice($GLOBALS["argv"], 1)), '/')) :
             parse_url(getenv('REQUEST_URI'), PHP_URL_PATH);
     }
 
-    public function __get(string $name)
+    public static function getActionPath()
     {
-        return isset($this->_var[$name]) ? $this->_var[$name] : null;
+        return '/' . Request::$module . '/' . Request::$controller . '/' . Request::$action . ucfirst(Request::getMethod());
     }
 
-    public function get(string $name)
+    public static function get(string $name)
     {
-        return isset($this->_var[$name]) ? $this->_var[$name] : null;
+        return isset(self::$_var[$name]) ? self::$_var[$name] : null;
     }
 
-    public function __set(string $name, $value)
+    public static function set(string $name, $value)
     {
-        $this->_var[$name] = $value;
+        self::$_var[$name] = $value;
     }
 
-    public function set(string $name, $value)
+    public static function getUri()
     {
-        $this->_var[$name] = $value;
+        return self::$uri;
     }
 
-    public function getParams()
+    public static function getParams()
     {
-        unset($this->params['_plugin_debug']);
-        return $this->params;
+        return self::$params;
     }
 
-    public function getParam(string $key)
+    public static function getParam(string $key)
     {
-        return isset($this->params[$key]) ? $this->params[$key] : null;
+        return isset(self::$params[$key]) ? self::$params[$key] : null;
     }
 
-    public function setParam(string $name, $value)
+    public static function getMethod(): string
     {
-        $this->params[$name] = $value;
+        return self::$method;
     }
 
-    public function getMethod()
+    public static function isGet(): bool
     {
-        return $this->method;
+        return self::$method === 'GET';
     }
 
-    public function isGet()
+    public static function isPost(): bool
     {
-        return $this->method === 'GET';
+        return self::$method === 'POST';
     }
 
-    public function isPost()
+    public static function isCli(): bool
     {
-        return $this->method === 'POST';
+        return self::$method === 'CLI';
     }
 
-    public function isCli()
-    {
-        return $this->method === 'CLI';
-    }
-
-    public function isAjax()
+    public static function isAjax(): bool
     {
         return _CLI ? false : strtolower(getenv('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest';
     }
 
-    public function agent()
+    public static function getAgent(): string
     {
         return getenv('HTTP_USER_AGENT') ?: '';
+    }
+
+    public static function getReferer(): string
+    {
+        return _CLI ? '' : (getenv("HTTP_REFERER") ?: '');
     }
 
 }

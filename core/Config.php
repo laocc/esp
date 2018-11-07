@@ -13,17 +13,13 @@ final class Config
     static private $_CONFIG_ = null;
 
     /**
-     * @param Redis $buffer
      * @param array $config
      */
-    public static function _init(Redis $buffer, array &$config)
+    public static function _init(array &$config)
     {
-        self::$_CONFIG_ = $buffer->get($buffer->key . '_CONFIG_');
+        self::$_CONFIG_ = Buffer::get('_CONFIG_');
+        if (!empty(self::$_CONFIG_)) return;
 
-        if (!empty(self::$_CONFIG_)) {
-            self::$_CONFIG_ = unserialize(self::$_CONFIG_);
-            if (!empty(self::$_CONFIG_)) return;
-        }
         $config[] = __DIR__ . '/config/mime.ini';
         $config[] = __DIR__ . '/config/state.ini';
         $config[] = __DIR__ . '/config/ua.ini';
@@ -34,7 +30,7 @@ final class Config
             if (!empty($_config)) self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
         }
         self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
-        $buffer->set($buffer->key . '_CONFIG_', serialize(self::$_CONFIG_));
+        Buffer::set('_CONFIG_', self::$_CONFIG_);
     }
 
     /**
@@ -115,7 +111,7 @@ final class Config
     private static function re_key($val)
     {
         $search = array('{_HOST}', '{_ROOT}', '{_DOMAIN}', '{_TIME}', '{_DATE}');
-        $replace = array(_HOST, _ROOT, _DOMAIN, time(), date('YmdHis'));
+        $replace = array(_HOST, _ROOT, _DOMAIN, _TIME, date('YmdHis', _TIME));
         $value = str_ireplace($search, $replace, $val);
         if (substr($value, 0, 1) === '[' and substr($value, -1, 1) === ']') {
             $arr = json_decode($value, true);

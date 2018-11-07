@@ -18,7 +18,7 @@ final class Client
 
         if (!$unique) {
             $unique = self::str_rand(20);
-            $time = time() + 86400 * 365;
+            $time = _TIME + 86400 * 365;
             if (headers_sent()) return $unique;
             (setcookie($key, $unique, $time, '/', _HOST, true, true));
             (setcookie($key, $unique, $time, '/', _HOST, false, true));

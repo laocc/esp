@@ -14,16 +14,15 @@ final class Route
      * @param Request $request
      * @throws \Exception
      */
-    public function __construct(Redis $redis, Request $request)
+    public static function _init(array $conf)
     {
         $default = [
             '_default' => ['match' => '/^\/(?:[a-z][a-z0-9\-]+\/?)*/i', 'route' => []],
         ];
-        $rdsKey = $redis->key . '_' . _MODULE;
 
-        $modRoute = $redis->hGet('_ROUTES_', $rdsKey);
+        $modRoute = Buffer::get('_ROUTES_' . _MODULE);
         if (empty($modRoute)) {
-            $file = $request->router_path . '/' . _MODULE . '.php';
+            $file = rtrim($conf['path'], '/') . '/' . _MODULE . '.php';
             if (is_readable($file)) {
                 $modRoute = load($file);
                 if (!empty($modRoute)) {
@@ -36,38 +35,37 @@ final class Route
                     }
                     $saveRoute = $modRoute;
                     if (is_array($saveRoute)) $saveRoute = serialize($saveRoute);
-                    $redis->hSet('_ROUTES_', $rdsKey, $saveRoute);
+                    Buffer::set('_ROUTES_' . _MODULE, $saveRoute);
                 } else {//写入一个值，否则每次经过这里还要读取一次
-                    $redis->hSet('_ROUTES_', $rdsKey, 'empty');
+                    Buffer::set('_ROUTES_' . _MODULE, 'empty');
                 }
             } else {
-                $redis->hSet('_ROUTES_', $rdsKey, 'null');
+                Buffer::set('_ROUTES_' . _MODULE, 'null');
             }
         } else {
             if (in_array($modRoute, ['null', 'empty'])) $modRoute = array();
             else if (!is_array($modRoute)) $modRoute = unserialize($modRoute);
         }
-        if (empty($modRoute)) $modRoute = Array();
+        if (empty($modRoute) or !is_array($modRoute)) $modRoute = Array();
+        $uri = Request::getUri();
 
-        if (!is_array($modRoute)) $modRoute = Array();
         foreach (array_merge($modRoute, $default) as $key => &$route) {
 
-            if ((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0) or
-                (isset($route['match']) and preg_match($route['match'], $request->uri, $matches))) {
+            if ((isset($route['uri']) and stripos($uri, $route['uri']) === 0) or
+                (isset($route['match']) and preg_match($route['match'], $uri, $matches))) {
 
-                if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax()))
+                if (isset($route['method']) and !self::method_check($route['method'], Request::getMethod(), Request::isAjax()))
                     throw new \Exception('非法Method请求', 404);
 
                 if ($key === '_default') {
-                    $matches = explode('/', $request->uri);
-                    $matches[0] = $request->uri;
+                    $matches = explode('/', $uri);
+                    $matches[0] = $uri;
                 }
 
-                //MVC位置，不含模块
-                if (isset($route['directory'])) $request->directory = root($route['directory']);
+                if (isset($route['directory'])) Request::$directory = root($route['directory']);
 
                 //分别获取模块、控制器、动作的实际值
-                list($module, $controller, $action, $param) = $this->fill_route($request->directory, $matches, $route['route']);
+                list($module, $controller, $action, $param) = self::fill_route(Request::$directory, $matches, $route['route']);
                 if (!$controller) $controller = 'index';
                 if (!$action) $action = 'index';
 
@@ -81,19 +79,21 @@ final class Route
                     $params = $param;
                 }
 
-                $request->router = $key;
-                $request->module = ($module ?: _MODULE);
-                $request->controller = $controller;
-                $request->action = $action;
-                $request->params = $params + array_fill(0, 10, null);
+                Request::$router = $key;
+                Request::$module = ($module ?: _MODULE);
+                Request::$controller = $controller;
+                Request::$action = $action;
+                Request::$params = $params + array_fill(0, 10, null);
 
                 if (isset($route['static'])) {
-                    $request->set('_disable_static', !$route['static']);
+                    Request::set('_disable_static', !$route['static']);
                 }
 
                 //缓存设置，结果可能为：true/false，或array(参与cache的$_GET参数)
                 //将结果放入request，供Cache类读取
-                if (isset($route['cache'])) $request->set('_cache_set', $route['cache']);
+                if (isset($route['cache'])) {
+                    Request::set('_cache_set', $route['cache']);
+                }
 
                 unset($modRoute, $default);
                 return;
@@ -111,7 +111,7 @@ final class Route
      * @return array
      * @throws \Exception
      */
-    private function fill_route(string $directory, array $matches, array $route): array
+    private static function fill_route(string $directory, array $matches, array $route): array
     {
         $module = $controller = $action = null;
         $param = Array();
@@ -164,7 +164,7 @@ final class Route
      * HTTP/AJAX两项后可以跟具体的method类型，如：HTTP,GET,POST
      * CLI  =   只能单独出现
      */
-    private function method_check(string $mode, string $method, bool $ajax)
+    private static function method_check(string $mode, string $method, bool $ajax)
     {
         if (!$mode) return true;
         list($mode, $method) = [strtoupper($mode), strtoupper($method)];

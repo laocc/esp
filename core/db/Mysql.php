@@ -3,9 +3,9 @@
 namespace esp\core\db;
 
 use esp\core\Client;
-use esp\core\Controller;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\Result;
+use esp\core\Debug;
 use esp\core\Model;
 
 class Mysql
@@ -18,7 +18,6 @@ class Mysql
     public $_error = Array();//每个连接的错误信息
     public $dbName;
     private $transID = 0;
-    private $_controller;
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
 
@@ -29,7 +28,7 @@ class Mysql
      * @param Model|null $model
      * @throws \Exception
      */
-    public function __construct($tranID = 0, array $conf = null, Controller $controller = null)
+    public function __construct($tranID = 0, array $conf = null)
     {
         if (is_array($tranID)) list($tranID, $conf) = [0, $tranID];
         if (!is_array($conf)) {
@@ -37,15 +36,13 @@ class Mysql
         }
         $this->_CONF = $conf;
         if ($tranID) $this->transID = $tranID;
-        $this->_controller = $controller;
         $this->_checkGoneAway = _CLI;
         $this->dbName = $conf['db'];
     }
 
     private function debug($sql)
     {
-        if (is_null($this->_controller)) return;
-        $this->_controller->debug_mysql($sql);
+        Debug::relay_mysql_log($sql);
     }
 
     /**
@@ -127,7 +124,7 @@ class Mysql
             } catch (\PDOException $PdoError) {
                 throw new \Exception("Mysql Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage());
             }
-            $this->connect_time[$trans_id] = time();
+            $this->connect_time[$trans_id] = _TIME;
             $this->{$real}[$trans_id] = $pdo;
             return $this->{$real}[$trans_id];
 
@@ -251,8 +248,8 @@ class Mysql
                     print_r([
                         'id' => $option['trans_id'],
                         'connect_time' => $this->connect_time[$option['trans_id']],
-                        'now' => time(),
-                        'after' => time() - $this->connect_time[$option['trans_id']],
+                        'now' => _TIME,
+                        'after' => _TIME - $this->connect_time[$option['trans_id']],
                     ]);
 
                     unset($this->{$real}[$option['trans_id']]);
@@ -299,8 +296,8 @@ class Mysql
                     print_r([
                         'id' => $option['trans_id'],
                         'connect_time' => $this->connect_time[$option['trans_id']],
-                        'now' => time(),
-                        'after' => time() - $this->connect_time[$option['trans_id']],
+                        'now' => _TIME,
+                        'after' => _TIME - $this->connect_time[$option['trans_id']],
                     ]);
                     $this->PdoAttribute($CONN);
                 } else {

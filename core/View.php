@@ -7,127 +7,96 @@ use esp\library\ext\Markdown;
 
 final class View
 {
-    private $_path = [
-        'dir' => null,
-        'file' => null,
-    ];
-    private $_view_val = Array();
-    private $_layout;//框架对象
-    private $_adapter;//标签解析器对象
-    private $_adapter_use;
 
-    public function __construct(string $dir, $file)
-    {
-        $this->_path['dir'] = $dir;
-        $this->_path['file'] = $file;
-    }
-
-    /**
-     * 设置或获取视图路径
-     */
-    public function dir(string $dir = null)
-    {
-        if (is_null($dir)) {
-            return $this->_path['dir'];
-        } else {
-            return $this->_path['dir'] = $dir;
-        }
-    }
-
-    /**
-     * 设置视图文件名
-     */
-    public function file(string $file = null)
-    {
-        if (is_null($file)) {
-            return $this->_path['file'];
-        } else {
-            return $this->_path['file'] = $file;
-        }
-    }
-
-    /**
-     * 视图接收变量
-     * @param $name
-     * @param $value
-     */
-    public function assign($name, $value = null)
-    {
-        if (is_array($name)) {
-            foreach ($name as $k => $v) {
-                $this->_view_val[$k] = $v;
-            }
-        } else {
-            $this->_view_val[$name] = $value;
-        }
-    }
-
-    final public function __set(string $name, $value)
-    {
-        $this->_view_val[$name] = $value;
-    }
-
-    final public function __get(string $name)
-    {
-        return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
-    }
-
-    final public function set(string $name, $value = null)
-    {
-        $this->assign($name, $value);
-    }
-
-    final public function get(string $name)
-    {
-        return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
-    }
-
-
-    /**
-     * 设置框架对象
-     */
-    public function layout(View $object)
-    {
-        $this->_layout = $object;
-        return $this;
-    }
+    private static $_adapter;//标签解析器对象
+    private static $_adapter_use;
 
     /**
      * @param null $object
-     * @return $this
      */
-    public function getAdapter()
+    public static function getAdapter()
     {
-        return $this->_adapter;
-    }
-
-    /**
-     * @param $use
-     * @return $this
-     * @throws \Exception
-     */
-    public function setAdapter($use)
-    {
-        if ($use === false) {
-            $this->_adapter_use = false;
-        } elseif ($use === true) {
-            if (is_null($this->_adapter)) {
-                throw new \Exception('标签解析器没有注册，请在已注册过的插中注册标签解析器');
-            }
-            $this->_adapter_use = true;
-        }
-        return $this;
+        return self::$_adapter;
     }
 
     /**
      * @param $object
-     * @return $this
      */
-    public function registerAdapter($object)
+    public static function setAdapter($object)
     {
-        $this->_adapter = $object;
-        $this->_adapter_use = true;
-        return $this;
+        self::$_adapter = $object;
+        return self::$_adapter_use = true;
+    }
+
+    /**
+     * @param $object
+     */
+    public static function registerAdapter($object)
+    {
+        self::$_adapter = $object;
+        return self::$_adapter_use = true;
+    }
+
+    /**
+     * 视图目录
+     * @return string
+     */
+    private static function path()
+    {
+        static $dir;
+        if (!is_null($dir)) return $dir;
+
+        $dir = Request::$directory . '/' . Request::$module . '/views/';
+        if (Client::is_wap()) {
+            if (is_dir($dir_wap = Request::$directory . '/' . Request::$module . '/views_wap/')) {
+                $dir = $dir_wap;
+            }
+        }
+        return $dir;
+    }
+
+    private static $_view_val = Array();
+    private static $_layout_val = [
+        '_js_foot' => [],
+        '_js_head' => [],
+        '_js_body' => [],
+        '_js_defer' => [],
+        '_css' => [],
+        '_meta' => ['keywords' => null, 'description' => null],
+        '_title' => null,
+        '_title_default' => true,
+    ];
+
+    private static $_view_set = [
+        'view_use' => true,
+        'view_file' => null,
+        'layout_use' => true,
+        'layout_file' => null,
+    ];
+
+
+    /**
+     * 设置视图文件
+     * @param $value
+     */
+    public static function setView($value)
+    {
+        if (is_bool($value)) {
+            self::$_view_set['view_use'] = $value;
+        } elseif (is_string($value)) {
+            self::$_view_set['view_use'] = true;
+            self::$_view_set['view_file'] = $value;
+        }
+    }
+
+    public static function setLayout($value)
+    {
+        if (is_bool($value)) {
+            self::$_view_set['layout_use'] = $value;
+        } elseif (is_string($value)) {
+            self::$_view_set['layout_use'] = true;
+            self::$_view_set['layout_file'] = $value;
+        }
     }
 
 
@@ -138,42 +107,39 @@ final class View
      * @return string
      * @throws \Exception
      */
-    public function render(string $file, array $value)
+    public static function render()
     {
-        $dir = root($this->dir());
-        $fileV = $this->file() ?: $file;//以之前设置的优先
-        if (substr($fileV, 0, 1) === '/') {
-            $fileV = root($fileV);
+        self::cleared_layout_val();
+
+        $path = root(self::path());//视图目录
+
+        $viewFile = self::$_view_set['view_file'];
+        if (substr($viewFile, 0, 1) === '/') {
+            $viewFile = root($viewFile);
+        } else if (empty($viewFile)) {
+            $viewFile = $path . '/' . Request::$controller . '/' . Request::$action . '.php';
         } else {
-            $fileV = $dir . '/' . ltrim($fileV, '/');
+            $viewFile = $path . '/' . ltrim($viewFile, '/');
+        }
+        if (!is_readable($viewFile) or !is_file($viewFile)) {
+            throw new \Exception("视图文件({$viewFile})不存在", 400);
         }
 
-        if (!is_readable($fileV)) {
-            throw new \Exception("视图文件({$fileV})不存在", 400);
+        if (substr($viewFile, -3) === '.md') {
+            $html = Markdown::html(file_get_contents($viewFile), 0);
+            $html = "<article class='markdown' style='width:90%;margin:0 auto;'>{$html}</article>";
+        } else {
+            $html = self::fetch($viewFile, self::$_view_val);
         }
 
-        if ($this->_layout instanceof View) {//先解析子视图
-            if (substr($fileV, -3) === '.md') {
-                $html = Markdown::html(file_get_contents($fileV), 0);
-                $html = "<article class='markdown' style='width:90%;margin:0 auto;'>{$html}</article>";
-            } else {
-                $html = $this->fetch($fileV, $value + $this->_view_val);
-            }
-            $layout = '/layout.php';
-            $layout_file = $dir . $layout;
-            if (!is_readable($layout_file)) $layout_file = dirname($dir) . $layout;//上一级目录
-            if (!is_readable($layout_file)) throw new \Exception("框架视图文件({$layout_file})不存在");
-            return $this->_layout->render($layout_file, ['_view_html' => &$html]);
-        }
-        return $this->fetch($fileV, $value + $this->_view_val);
-    }
+        if (!self::$_view_set['layout_use']) return $html;
 
-    /**
-     * 显示解析视图结果
-     */
-    public function display($file, $value)
-    {
-        echo $this->render($file, $value);
+
+        $layout_file = $path . '/layout.php';
+        if (!is_readable($layout_file)) $layout_file = dirname($path) . '/layout.php';//上一级目录
+        if (!is_readable($layout_file)) throw new \Exception("框架视图文件({$layout_file})不存在");
+
+        return self::fetch($layout_file, self::$_layout_val + ['_view_html' => &$html]);
     }
 
 
@@ -183,12 +149,12 @@ final class View
      * @param array $__value__
      * @return string
      */
-    private function fetch(string $__file__, array $__value__)
+    private static function fetch(string $__file__, array $__value__)
     {
-        if ($this->_adapter_use and !is_null($this->_adapter)) {
-            $this->_adapter instanceof Adapter and 1;
-            $this->_adapter->assign($this->_view_val);
-            return $this->_adapter->fetch($__file__, $__value__);
+        if (self::$_adapter_use and !is_null(self::$_adapter)) {
+            self::$_adapter instanceof Adapter and 1;
+            self::$_adapter->assign(self::$_view_val);
+            return self::$_adapter->fetch($__file__, $__value__);
         }
         ob_start();
         extract($__value__);
@@ -197,4 +163,172 @@ final class View
         ob_end_clean();
         return $content;
     }
+
+    /**
+     * 向视图送变量
+     * @param $name
+     * @param $value
+     */
+    public static function assign(string $name, $value = null)
+    {
+        if (is_array($name)) {
+            foreach ($name as $k => $v) {
+                self::$_view_val[$k] = $v;
+            }
+        } else {
+            self::$_view_val[$name] = $value;
+        }
+    }
+
+    public static function get(string $name)
+    {
+        return isset(self::$_view_val[$name]) ? self::$_view_val[$name] : null;
+    }
+
+    public static function set(string $name, $value)
+    {
+        if (is_array($name)) {
+            foreach ($name as $k => $v) {
+                self::$_view_val[$k] = $v;
+            }
+        } else {
+            self::$_view_val[$name] = $value;
+        }
+    }
+
+
+    public static function setJs($file, $pos = 'foot')
+    {
+        $pos = in_array($pos, ['foot', 'head', 'body', 'defer']) ? $pos : 'foot';
+        if (is_array($file)) {
+            array_push(self::$_layout_val["_js_{$pos}"], ...$file);
+        } else {
+            self::$_layout_val["_js_{$pos}"][] = $file;
+        }
+    }
+
+
+    public static function setCss($file)
+    {
+        if (is_array($file)) {
+            array_push(self::$_layout_val['_css'], ...$file);
+        } else {
+            self::$_layout_val['_css'][] = $file;
+        }
+    }
+
+
+    public static function setMeta(string $name, $value)
+    {
+        self::$_layout_val['_meta'][$name] = $value;
+    }
+
+
+    public static function setTitle(string $title, bool $default = true)
+    {
+        self::$_layout_val['_title'] = $title;
+        if (!$default) self::$_layout_val['_title_default'] = false;
+    }
+
+
+    public static function setKeywords(string $value)
+    {
+        self::$_layout_val['_meta']['keywords'] = $value;
+    }
+
+
+    public static function setDescription(string $value)
+    {
+        self::$_layout_val['_meta']['description'] = $value;
+    }
+
+    /**
+     * 整理layout中的变量
+     */
+    private static function cleared_layout_val()
+    {
+        $resource = Config::get('resource.default');
+        $module = Config::get('resource.' . _MODULE);
+        if (is_array($module)) $resource = $module + $resource;
+
+        $dom = rtrim($resource['domain'] ?? '', '/');
+
+        $domain = function ($item) use ($dom, $resource) {
+            if (substr($item, 0, 4) === 'http') return $item;
+            if (substr($item, 0, 1) === '.') return $item;
+            if (substr($item, 0, 2) === '//') return substr($item, 1);
+            if ($item === 'jquery') $item = $resource['jquery'];
+            return $dom . '/' . ltrim($item, '/');
+        };
+
+        if ($resource['concat'] ?? false) {
+            foreach (['foot', 'head', 'body', 'defer'] as $pos) {
+                if (!empty(self::$_layout_val["_js_{$pos}"])) {
+                    $defer = ($pos === 'defer') ? ' defer="defer"' : null;
+                    $concat = Array();
+                    $http = Array();
+                    foreach (self::$_layout_val["_js_{$pos}"] as &$js) {
+                        if ($js === 'jquery') $js = $resource['jquery'] ?? '';
+                        if (substr($js, 0, 4) === 'http') {
+                            $http[] = "<script type=\"text/javascript\" src=\"{$js}\" charset=\"utf-8\" {$defer} ></script>";
+                        } else {
+                            $concat[] = $js;
+                        }
+                    }
+                    $concat = empty($concat) ? null : ($dom . '??' . implode(',', $concat));
+                    self::$_layout_val["_js_{$pos}"] = '';
+                    if ($concat) self::$_layout_val["_js_{$pos}"] .= "<script type=\"text/javascript\" src=\"{$concat}\" charset=\"utf-8\" {$defer} ></script>\n";
+                    if (!empty($http)) self::$_layout_val["_js_{$pos}"] .= implode("\n", $http) . "\n";
+                } else {
+                    self::$_layout_val["_js_{$pos}"] = null;
+                }
+            }
+            if (!empty(self::$_layout_val['_css'])) {
+                $concat = Array();
+                $http = Array();
+                foreach (self::$_layout_val['_css'] as &$css) {
+                    if (substr($css, 0, 4) === 'http') {
+                        $http[] = "<link rel=\"stylesheet\" href=\"{$css}\" charset=\"utf-8\" />";
+                    } else {
+                        $concat[] = $css;
+                    }
+                }
+                $concat = empty($concat) ? null : ($dom . '??' . implode(',', self::$_layout_val['_css']));
+                self::$_layout_val['_css'] = '';
+                if ($concat) self::$_layout_val['_css'] .= "<link rel=\"stylesheet\" href=\"{$concat}\" charset=\"utf-8\" />\n";
+                if (!empty($http)) self::$_layout_val['_css'] .= implode("\n", $http) . "\n";
+
+            } else {
+                self::$_layout_val['_css'] = null;
+            }
+        } else {
+            foreach (['foot', 'head', 'body', 'defer'] as $pos) {
+                $defer = ($pos === 'defer') ? ' defer="defer"' : null;
+                foreach (self::$_layout_val["_js_{$pos}"] as $i => &$js) {
+                    $js = "<script type=\"text/javascript\" src=\"{$domain($js)}\" charset=\"utf-8\" {$defer} ></script>";
+                }
+                self::$_layout_val["_js_{$pos}"] = implode("\n", self::$_layout_val["_js_{$pos}"]) . "\n";
+            }
+            foreach (self::$_layout_val['_css'] as $i => &$css) {
+                $css = "<link rel=\"stylesheet\" href=\"{$domain($css)}\" charset=\"utf-8\" />";
+            }
+            self::$_layout_val['_css'] = implode("\n", self::$_layout_val['_css']) . "\n";
+        }
+
+        self::$_layout_val['_meta']['keywords'] = self::$_layout_val['_meta']['keywords'] ?: $resource['keywords'] ?? '';
+        self::$_layout_val['_meta']['description'] = self::$_layout_val['_meta']['description'] ?: $resource['description'] ?? '';
+
+        foreach (self::$_layout_val['_meta'] as $i => &$meta) {
+            self::$_layout_val['_meta'][$i] = "<meta name=\"{$i}\" content=\"{$meta}\" />";
+        }
+        self::$_layout_val['_meta'] = implode("\n", self::$_layout_val['_meta']) . "\n";
+
+        if (is_null(self::$_layout_val['_title'])) {
+            self::$_layout_val['_title'] = $resource['title'] ?? '';
+        } elseif (self::$_layout_val['_title_default']) {
+            self::$_layout_val['_title'] .= ' - ' . $resource['title'] ?? '';
+        }
+        unset(self::$_layout_val['_title_default']);
+    }
+
 }

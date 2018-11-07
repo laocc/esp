@@ -5,18 +5,11 @@ namespace esp\core;
 
 class Error
 {
-    private $dispatcher;
-
-    public function __construct(Dispatcher $dispatcher, array &$option)
-    {
-        $this->dispatcher = $dispatcher;
-        $this->register_handler($option);
-    }
 
     /**
      * 简单处理出错信息
      */
-    public function simple_register_handler()
+    public static function simple_register_handler()
     {
         set_error_handler(function (...$err) {
             header("Status: 400 Bad Request", true);
@@ -32,7 +25,7 @@ class Error
      * @param $option
      * 显示程度:0=不显示,1=简单,2=完整
      */
-    private function register_handler(array $option)
+    public static function register_handler(array $option)
     {
         if (_DEBUG) $option = ['run' => 2, 'throw' => 2] + $option;
 
@@ -55,7 +48,7 @@ class Error
             }
             $err['text'] = $errcontext;
 
-            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['filename']);
+            self::error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['filename']);
             if (is_int($option['run'])) {
                 if ($option['run'] === 0) {
                     exit;
@@ -64,9 +57,9 @@ class Error
                     print_r($err);
                     exit;
                 } else if ($option['run'] === 2) {
-                    $this->displayError('Error', $err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
+                    self::displayError('Error', $err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
                 } else {
-                    $this->displayState($option['run']);
+                    self::displayState($option['run']);
                 }
             } else {
                 exit($option['run']);
@@ -84,7 +77,7 @@ class Error
             $err['code'] = $error->getCode();
             $err['file'] = $error->getFile();
             $err['line'] = $error->getLine();
-            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['filename']);
+            self::error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['filename']);
             if (is_int($option['throw'])) {
                 if ($option['throw'] === 0) {
                     exit;
@@ -92,12 +85,12 @@ class Error
                     print_r($err);
                     exit;
                 } else if ($option['throw'] === 2) {
-                    $this->displayError('Throw', $err, $error->getTrace());
+                    self::displayError('Throw', $err, $error->getTrace());
                 } else if ($option['throw'] === 3) {
                     if (!$err['code']) $err['code'] = $option['run'];
-                    $this->displayState($err['code']);
+                    self::displayState($err['code']);
                 } else {
-                    $this->displayState($option['throw']);
+                    self::displayState($option['throw']);
                 }
             } else {
                 exit($option['throw']);
@@ -130,7 +123,7 @@ class Error
      * 仅记录错误，但不阻止程序继续运行
      * @param $error
      */
-    private function error(array $error, array $prev = null, string $filename)
+    private static function error(array $error, array $prev = null, string $filename)
     {
         $info = Array();
         $info['time'] = date('Y-m-d H:i:s');
@@ -138,17 +131,12 @@ class Error
         $info['referer'] = getenv("HTTP_REFERER");
         $filename = _ROOT . "/cache/error/" . date($filename) . mt_rand() . '.txt';
         mk_dir($filename);
-        if (!empty($this->dispatcher->_request)) {
-            $request = $this->dispatcher->_request;
-        } else {
-            $request = null;
-        }
 
         file_put_contents($filename, print_r([
             'info' => $info,
             'error' => $error,
             'prev' => $prev,
-            'request' => $request,
+            'request' => Request::class,
             'server' => $_SERVER,
         ], true), LOCK_EX);
     }
@@ -181,7 +169,7 @@ class Error
      * @param $err
      * @param $trace
      */
-    private function displayError(string $type, array $err, array $trace)
+    private static function displayError(string $type, array $err, array $trace)
     {
         if (_CLI) {
             echo "\n\e[40;31;m================ERROR=====================\e[0m\n";
@@ -191,13 +179,13 @@ class Error
         }
 
         if (is_numeric($err['error'])) {
-            $this->displayState(intval($err['error']));
+            self::displayState(intval($err['error']));
         }
 
         $traceHtml = '';
         foreach (array_reverse($trace) as $tr) {
             $str = '<tr><td class="l">';
-            if (isset($tr['file'])) $str .= $this->filter_root($tr['file']);
+            if (isset($tr['file'])) $str .= self::filter_root($tr['file']);
             if (isset($tr['line'])) $str .= " ({$tr['line']})";
             $str .= '</td><td>';
 
@@ -219,13 +207,13 @@ class Error
         }
 
         if (0) {
-            $route = $this->get_routes_info();
+//            $route = $this->get_routes_info();
             if (!empty($route)) {
                 $Params = empty($route['Params']) ? '' : (implode(',', $route['Params']));
                 $mca_name = "{$route['Router']} : {$route['Module']} / {$route['Control']} / {$route['Action']}";
                 $mca_file = $route['Path'] . $route['ModulePath'] . $route['Control'] . '->' . $route['Action'] . '(' . $Params . ')';
                 $routeHtml = '<tr><td class="l">路由结果：</td><td>' . $mca_name . '</td></tr><tr><td class="l">路由请求：</td><td>';
-                $routeHtml .= $this->filter_root($mca_file) . '</td></tr>';
+                $routeHtml .= self::filter_root($mca_file) . '</td></tr>';
                 $err['route_name'] = $mca_name;
                 $err['route_mca'] = $mca_file;
             } else {
@@ -237,9 +225,9 @@ class Error
 
         $errValue = [];
         $errValue['time'] = date('Y-m-d H:i:s');
-        $errValue['title'] = $this->filter_root($err['error']);
+        $errValue['title'] = self::filter_root($err['error']);
         $errValue['code'] = "{$type}={$err['code']}";
-        $errValue['file'] = "{$this->filter_root($err['file'])} ({$err['line']})";
+        $errValue['file'] = self::filter_root($err['file']) . "({$err['line']})";
         $errValue['info'] = $routeHtml;
         $errValue['trace'] = $traceHtml;
 
@@ -251,7 +239,7 @@ class Error
         exit($content);
     }
 
-    private function filter_root($str)
+    private static function filter_root($str)
     {
         return str_replace(_ROOT, '', $str);
     }
