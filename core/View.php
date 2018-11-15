@@ -12,7 +12,7 @@ final class View
     private static $_adapter_use;
 
     /**
-     * @param null $object
+     * 读取解析器
      */
     public static function getAdapter()
     {
@@ -20,7 +20,7 @@ final class View
     }
 
     /**
-     * @param $object
+     * 注册解析器
      */
     public static function setAdapter($object)
     {
@@ -29,7 +29,7 @@ final class View
     }
 
     /**
-     * @param $object
+     * 注册解析器
      */
     public static function registerAdapter($object)
     {
@@ -38,7 +38,7 @@ final class View
     }
 
     /**
-     * 视图目录
+     * 读取视图目录
      * @return string
      */
     private static function path()
@@ -55,7 +55,11 @@ final class View
         return $dir;
     }
 
-    private static $_view_val = Array();
+
+    /**
+     * Layout变量相对固定
+     * @var array
+     */
     private static $_layout_val = [
         '_js_foot' => [],
         '_js_head' => [],
@@ -67,6 +71,7 @@ final class View
         '_title_default' => true,
     ];
 
+    private static $_view_val = Array();
     private static $_view_set = [
         'view_use' => true,
         'view_file' => null,
@@ -89,6 +94,9 @@ final class View
         }
     }
 
+    /**
+     * @param $value
+     */
     public static function setLayout($value)
     {
         if (is_bool($value)) {
@@ -102,8 +110,6 @@ final class View
 
     /**
      * 解析视图结果并返回
-     * @param string $file
-     * @param array $value
      * @return string
      * @throws \Exception
      */
@@ -128,11 +134,14 @@ final class View
         if (substr($viewFile, -3) === '.md') {
             $html = Markdown::html(file_get_contents($viewFile), 0);
             $html = "<article class='markdown' style='width:90%;margin:0 auto;'>{$html}</article>";
+
+        } else if (!self::$_view_set['layout_use']) {
+            $html = self::fetch($viewFile, self::$_view_val + self::$_layout_val);
+            return $html;
+
         } else {
             $html = self::fetch($viewFile, self::$_view_val);
         }
-
-        if (!self::$_view_set['layout_use']) return $html;
 
 
         $layout_file = $path . '/layout.php';
