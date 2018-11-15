@@ -5,13 +5,7 @@ namespace esp\core;
 
 final class Dispatcher
 {
-    public $_plugs = Array();
-    private $_plugs_count = 0;
-    public $_request;
-    public $_response;
-    public $_debug;
-    public $_cache;
-
+    private static $debug_run = false;
 
     /**
      * 系统运行调度中心
@@ -19,6 +13,10 @@ final class Dispatcher
      */
     public static function run(array &$option): void
     {
+        if (isset($option['debug'])) {
+            self::$debug_run = true;
+            Debug::_init($option['debug']);
+        }
         self::define();
 
         /**
@@ -36,7 +34,6 @@ final class Dispatcher
 
         if (!_CLI) {
             if (isset($option['session'])) Session::_init($option['session']);
-            if (isset($option['debug'])) Debug::_init($option['debug']);
             if (isset($option['cache'])) Cache::_init($option['cache']);
         }
 
@@ -47,8 +44,10 @@ final class Dispatcher
 
         if (!_CLI and isset($option['cache'])) if (Cache::Display()) goto end;
 
-        $disp = self::dispatch();
-        Response::display($disp);//运行控制器->方法
+        self::$debug_run and Debug::relay('Dispatcher Star', []);
+        $dispatch = self::dispatch();
+        Response::display($dispatch);//运行控制器->方法
+        self::$debug_run and Debug::relay('Dispatcher Display', []);
 
         if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
         if (!_CLI and isset($option['cache'])) Cache::save();
@@ -57,11 +56,6 @@ final class Dispatcher
     }
 
 
-    /**
-     * Dispatcher constructor.
-     * @param array $option
-     * @throws \Exception
-     */
     private static function define()
     {
         if (!defined('_ROOT')) exit("网站入口处须定义 _ROOT 项，指向系统根目录");
@@ -115,39 +109,6 @@ final class Dispatcher
         return $this;
     }
 
-    /**
-     * 接受注册插件
-     * @param Plugin $class
-     * @return bool
-     * @throws \Exception
-     */
-    public function setPlugin(Plugin $class): bool
-    {
-        $name = get_class($class);
-        $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
-        if (isset($this->_plugs[$name])) {
-            throw new \Exception("插件名{$name}已被注册过", 404);
-        }
-        $this->_plugs[$name] = $class;
-        $this->_plugs_count++;
-        return true;
-    }
-
-    /**
-     * 执行HOOK
-     * @param $time
-     */
-    private function plugsHook(string $time): void
-    {
-        if (empty($this->_plugs)) return;
-        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'displayBefore', 'displayAfter', 'mainEnd'])) return;
-        foreach ($this->_plugs as &$plug) {
-            if (method_exists($plug, $time)) {
-                call_user_func_array([$plug, $time], [$this->_request, $this->_response]);
-            }
-        }
-    }
-
 
     /**
      * 路由结果分发至控制器动作
@@ -174,6 +135,7 @@ final class Dispatcher
             throw new \Exception("控制器[{$file}]不存在", 404);
         }
 
+        self::$debug_run and Debug::relay('Controller Create', []);
         $controller = $module . '\\' . $controller . 'Controller';
         $_Controller = new $controller();
         if (!$_Controller instanceof Controller) {
@@ -201,14 +163,16 @@ final class Dispatcher
         /**
          * 正式请求到控制器
          */
+        self::$debug_run and Debug::relay('Controller Action Call', []);
         $val = call_user_func_array([$_Controller, $action], Request::getParams());
+        self::$debug_run and Debug::relay('Controller Action End', []);
 
         //运行结束方法
         if (method_exists($_Controller, '_close') and is_callable([$_Controller, '_close'])) {
             call_user_func_array([$_Controller, '_close'], [$action, $val]);
         }
-
         unset($_Controller);
+        self::$debug_run and Debug::relay('Controller Unset', []);
         return $val;
     }
 

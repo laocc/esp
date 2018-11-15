@@ -80,15 +80,13 @@ class Controller
     }
 
     /**
-     * @param null $data
-     * @param null $pre
-     * @return null
+     * @param  $data
+     * @param array $pre
      */
-    final public function debug($data = null, $pre = null)
+    final public function debug($data, array $pre = null)
     {
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         Debug::relay($data, $pre);
-        return $this;
     }
 
     /**

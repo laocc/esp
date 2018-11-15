@@ -13,6 +13,7 @@ final class Debug
 
     private static $prevTime = 0;
     private static $prevMemory = 0;
+    private static $starMemory = 0;
 
     private static $_value = Array();
 
@@ -21,49 +22,34 @@ final class Debug
     private static $_file = '';
     private static $_hasError = false;
 
+    private static $_line = '';
+
     public static function _init(array &$conf)
     {
         self::$_conf = $conf;
         self::$_run = boolval($conf['run'] ?? false);
-        if (defined('_STAR')) {
-            self::$_node[0] = [
-                't' => _STAR[0],
-                'm' => _STAR[1],
-                'n' => '',
-                'g' => '',
-                'f' => '',
-            ];
-            self::$prevTime = microtime(true) - _STAR[0];
-            self::$prevMemory = memory_get_usage();
-        } else {
-            self::$_node[0] = [
-                't' => microtime(true),
-                'm' => memory_get_usage(),
-                'n' => '',
-                'g' => '',
-                'f' => '',
-            ];
-            self::$prevTime = 0;
-            self::$prevMemory = 0;
-        }
+        self::$_line = str_repeat('-', 100);
 
-        self::$_node[1] = [
-            't' => sprintf(self::$_print_format, (self::$prevTime - self::$_node[0]['t']) * 1000),
-            'm' => sprintf(self::$_print_format, (self::$prevMemory - self::$_node[0]['m']) / 1024),
+        self::$prevTime = microtime(true);
+        self::$prevMemory = self::$starMemory = memory_get_usage();
+
+        self::$_node[0] = [
+            't' => sprintf(self::$_print_format, (self::$prevTime - $_SERVER['REQUEST_TIME_FLOAT']) * 1000),
+            'm' => sprintf(self::$_print_format, (self::$prevMemory - 0) / 1024),
             'n' => sprintf(self::$_print_format, (self::$prevMemory) / 1024),
             'g' => '',
             'f' => '',
         ];
 
-        self::relay('START', []);
+        self::relay('Debug STAR', []);
 
         //将最后保存数据部分注册为关门动作
         register_shutdown_function(function (array $conf) {
 
-            if (empty(self::$_node) or self::$_run === false) return;
+            if (empty(self::$_node) or !self::$_run) return;
             $filename = self::getFilename();
             if (is_null($filename)) return;
-            self::relay('END:save_logs', []);
+            self::relay('Debug STOP', []);
             $method = Request::getMethod();
             $data = Array();
             $data[] = "## 请求数据\n```\n";
@@ -88,20 +74,24 @@ final class Debug
             }
 
             $data[] = "\n## 执行顺序\n```\n\t\t耗时\t\t耗内存\t\t占内存\t\n";
-//            $data[] = "  {self::$_node[0]['t']}\t{self::$_node[0]['m']}\t{self::$_node[0]['n']}\t{self::$_node[0]['g']}进程启动到Debug被创建的消耗总量\n";
-//            unset(self::$_node[0]);
-            $data[] = "" . (str_repeat('-', 100)) . "\n";
+            $data[] = '  ' . self::$_node[0]['t'] . "\t" .
+                self::$_node[0]['m'] . "\t" .
+                self::$_node[0]['n'] . "\t进程启动到Debug创建的消耗总量\n";
+
+            unset(self::$_node[0]);
+            $data[] = "" . self::$_line . "\n";
             //具体监控点
             $len = min(self::$_node_len + 3, 50);
             foreach (self::$_node as $i => &$row) {
                 $data[] = "  {$row['t']}\t{$row['m']}\t{$row['n']}\t" . sprintf("%-{$len}s", $row['g']) . "\t{$row['f']}\n";
             }
 
-            $data[] = "" . (str_repeat('-', 100)) . "\n";
-            $time = sprintf(self::$_print_format, (microtime(true) - self::$_node[0]['t']) * 1000);
-            $memo = sprintf(self::$_print_format, (memory_get_usage() - self::$_node[0]['m']) / 1024);
-            $total = sprintf(self::$_print_format, (memory_get_usage()) / 1024);
-            $data[] = "  {$time}\t{$memo}\t{$total}\t进程启动到Debug结束时的消耗总量\n```\n";
+            $data[] = "" . self::$_line . "\n";
+            $time = sprintf(self::$_print_format, (microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000);
+            $total = memory_get_usage();
+            $memo = sprintf(self::$_print_format, ($total - self::$starMemory) / 1024);
+            $total = sprintf(self::$_print_format, ($total) / 1024);
+            $data[] = "  {$time}\t{$memo}\t{$total}\t进程启动到Debug结束的消耗总量\n```\n";
 
             $e = error_get_last();
             if (!empty($e)) {
@@ -155,15 +145,15 @@ final class Debug
             $pre = $pre ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
             self::relay('STOP BY HANDer', $pre);//创建一个结束点
         }
-        self::$_run = null;
+        self::$_run = false;
     }
 
 
     public static function relay_mysql_log($val)
     {
-        if (self::$_run === false or !(self::$_conf['print']['mysql'] ?? 0)) return;
+        if (!self::$_run or !(self::$_conf['print']['mysql'] ?? 0)) return;
         static $count = 0;
-        self::relay("Mysql[" . (++$count) . '] = ' . print_r($val, true) . str_repeat('-', 100), []);
+        self::relay("Mysql[" . (++$count) . '] = ' . print_r($val, true) . self::$_line, []);
     }
 
     public static function set(string $key, $value)
@@ -180,10 +170,12 @@ final class Debug
      * 创建一个debug点
      * @param $msg
      * @param array|null $prev 调用的位置，若是通过中间件调用，请在调用此函数时提供下面的内容：
-     *      * $pre=debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+     * $pre=debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
      */
     public static function relay($msg, array $prev = null)
     {
+        if (!self::$_run) return;
+
         $prev = is_null($prev) ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0] : $prev;
         if (isset($prev['file'])) {
             $file = substr($prev['file'], strlen(_ROOT)) . " [{$prev['line']}]";
