@@ -32,7 +32,8 @@ final class Response
     public static function setDisplay(string $name, $value)
     {
         if (!in_array($name, ['json', 'xml', 'php', 'text', 'md', 'html'])) throw new \Exception("不接受{$name}类型的值");
-        self::$_display += ['type' => $name, 'value' => $value];
+        self::$_display['type'] = $name;
+        self::$_display['value'] = $value;
         return true;
     }
 
