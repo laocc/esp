@@ -18,7 +18,7 @@ final class Response
 
     public static function _init(array $conf)
     {
-        self::$_autoRun = $conf['auto'] ?? (!_CLI);
+        !_CLI and self::$_autoRun = $conf['auto'] ?? true;
     }
 
 

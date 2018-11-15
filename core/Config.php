@@ -110,8 +110,8 @@ final class Config
 
     private static function re_key($val)
     {
-        $search = array('{_HOST}', '{_ROOT}', '{_DOMAIN}', '{_TIME}', '{_DATE}');
-        $replace = array(_HOST, _ROOT, _DOMAIN, _TIME, date('YmdHis', _TIME));
+        $search = array('{_ROOT}', '{_TIME}', '{_DATE}');
+        $replace = array(_ROOT, _TIME, date('YmdHis', _TIME));
         $value = str_ireplace($search, $replace, $val);
         if (substr($value, 0, 1) === '[' and substr($value, -1, 1) === ']') {
             $arr = json_decode($value, true);
