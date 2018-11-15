@@ -27,6 +27,11 @@ class Buffer
         return self::$_buffer;
     }
 
+    public static function flush()
+    {
+        return self::medium()->flush();
+    }
+
     public static function get(string $key)
     {
         return self::medium()->get(self::$_key . $key);
