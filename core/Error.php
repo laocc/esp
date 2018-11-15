@@ -25,7 +25,7 @@ class Error
      * @param $option
      * 显示程度:0=不显示,1=简单,2=完整
      */
-    public static function register_handler(array $option)
+    public static function _init(array $option)
     {
         if (_DEBUG) $option = ['run' => 2, 'throw' => 2] + $option;
 
@@ -77,7 +77,9 @@ class Error
             $err['code'] = $error->getCode();
             $err['file'] = $error->getFile();
             $err['line'] = $error->getLine();
+
             self::error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['filename']);
+
             if (is_int($option['throw'])) {
                 if ($option['throw'] === 0) {
                     exit;
@@ -127,7 +129,7 @@ class Error
     {
         $info = Array();
         $info['time'] = date('Y-m-d H:i:s');
-        $info['url'] = _HTTP_DOMAIN . _URI;
+        $info['url'] = _PROTOCOL . _DOMAIN . _URI;
         $info['referer'] = getenv("HTTP_REFERER");
         $filename = _ROOT . "/cache/error/" . date($filename) . mt_rand() . '.txt';
         mk_dir($filename);

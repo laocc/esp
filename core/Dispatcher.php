@@ -22,11 +22,12 @@ final class Dispatcher
         /**
          * 以下三项必须在chdir之前，且三项顺序不可变
          */
-        if (isset($option['error'])) Error::register_handler($option['error']);
+        if (isset($option['error'])) Error::_init($option['error']);
         if (isset($option['buffer'])) Buffer::_init($option['buffer']);
         if (isset($option['config'])) Config::_init($option['config']);
 
         chdir(_ROOT);
+        if (isset($option['callback'])) call_user_func($option['callback']);
 
 
         Request::_init($option['request']);
@@ -42,21 +43,20 @@ final class Dispatcher
         Route::_init($option['router']);
 
 
-        if (!_CLI and isset($option['cache'])) if (Cache::Display()) goto end;
+        if (!_CLI and isset($option['cache'])) if (Cache::Display()) return;
 
         self::$debug_run and Debug::relay('Dispatcher Star', []);
         $dispatch = self::dispatch();
         Response::display($dispatch);//运行控制器->方法
         self::$debug_run and Debug::relay('Dispatcher Display', []);
+        if (_CLI) return;
 
-        if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
-        if (!_CLI and isset($option['cache'])) Cache::save();
-
-        end:
+        fastcgi_finish_request(); //运行结束，客户端断开
+        if (isset($option['cache'])) Cache::save();
     }
 
 
-    private static function define()
+    private static function define(): void
     {
         if (!defined('_ROOT')) exit("网站入口处须定义 _ROOT 项，指向系统根目录");
         if (!defined('_MODULE')) exit('网站入口处须定义 _MODULE 项');
@@ -66,47 +66,20 @@ final class Dispatcher
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         define('_DEBUG', is_file(_ROOT . '/cache/debug.lock'));
 
-        if (_CLI) {
-            define('_DOMAIN', null);
-            define('_HOST', null);//域名的根域
-            define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
-            define('_HTTPS', false);
-            define('_URL', null);
-            define('_HTTP_DOMAIN', null);
+        if (_CLI) return;
 
-        } else {
-            define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
-            define('_HOST', host(_DOMAIN));//域名的根域
-            define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
-            if (_URI === '/favicon.ico') die();
+        define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
+        define('_HOST', host(_DOMAIN));//域名的根域
+        define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
+        if (_URI === '/favicon.ico') die();
 
-            /**
-             * 若服务器为负截均衡架构，且主分发点没有做HTTPS，需要识别负截点是否有HTTPS，
-             * 在负载点Nginx中加参数：【proxy_set_header HTTPS $https;】
-             */
-            define('_HTTPS', (getenv('HTTP_HTTPS') === 'on' or getenv('HTTPS') === 'on'));
-            define('_URL', ((_HTTPS ? 'https://' : 'http://') . _DOMAIN . getenv('REQUEST_URI')));
-            define('_HTTP_DOMAIN', ((_HTTPS ? 'https://' : 'http://') . _DOMAIN));
-        }
-    }
-
-
-    /**
-     * @return $this
-     * @throws \Exception
-     */
-    public function bootstrap(): Dispatcher
-    {
-        if (!class_exists('Bootstrap')) {
-            throw new \Exception('Bootstrap类不存在，请检查/helper/Bootstrap.php文件', 404);
-        }
-        $boot = new \Bootstrap();
-        foreach (get_class_methods($boot) as $method) {
-            if (substr($method, 0, 5) === '_init') {
-                call_user_func_array([$boot, $method], [$this]);
-            }
-        }
-        return $this;
+        /**
+         * 若服务器为负截均衡架构，且主分发点没有做HTTPS，需要识别负截点是否有HTTPS，
+         * 在负载点Nginx中加参数：【proxy_set_header HTTPS $https;】
+         */
+        define('_HTTPS', (getenv('HTTP_HTTPS') === 'on' or getenv('HTTPS') === 'on'));
+        define('_URL', ((_HTTPS ? 'https://' : 'http://') . _DOMAIN . getenv('REQUEST_URI')));
+        define('_PROTOCOL', (_HTTPS ? 'https://' : 'http://'));
     }
 
 
