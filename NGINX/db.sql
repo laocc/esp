@@ -6,6 +6,9 @@ flush privileges;
 use dbTest;
 
 
+
+
+
 DROP TABLE IF EXISTS `tabTest`;
 CREATE TABLE `tabTest` (
   `testID` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
