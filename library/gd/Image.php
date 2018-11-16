@@ -496,7 +496,7 @@ class Image
                     'shade' => [0, 0],
                     'shade_color' => '#555555',
                     'offset' => [0, 0],
-                    'font' => dirname(dirname(__DIR__)) . '/fonts/simkai.ttf',
+                    'font' => dirname(__DIR__, 2) . '/fonts/simkai.ttf',
                 ];
             $_txt_set['font'] = self::root($_txt_set['font']);
             if (!is_array($_txt_set['offset'])) $_txt_set['offset'] = json_decode($_txt_set['offset'], true);

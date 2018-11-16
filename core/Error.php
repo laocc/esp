@@ -3,7 +3,7 @@
 namespace esp\core;
 
 
-class Error
+final class Error
 {
 
     /**
@@ -129,7 +129,7 @@ class Error
     {
         $info = Array();
         $info['time'] = date('Y-m-d H:i:s');
-        $info['url'] = _PROTOCOL . _DOMAIN . _URI;
+        if (!_CLI) $info['url'] = _PROTOCOL . _DOMAIN . _URI;
         $info['referer'] = getenv("HTTP_REFERER");
         $filename = _ROOT . "/cache/error/" . date($filename) . mt_rand() . '.txt';
         mk_dir($filename);
@@ -187,7 +187,7 @@ class Error
         $traceHtml = '';
         foreach (array_reverse($trace) as $tr) {
             $str = '<tr><td class="l">';
-            if (isset($tr['file'])) $str .= self::filter_root($tr['file']);
+            if (isset($tr['file'])) $str .= str_replace(_ROOT, '', $tr['file']);
             if (isset($tr['line'])) $str .= " ({$tr['line']})";
             $str .= '</td><td>';
 
@@ -215,7 +215,7 @@ class Error
                 $mca_name = "{$route['Router']} : {$route['Module']} / {$route['Control']} / {$route['Action']}";
                 $mca_file = $route['Path'] . $route['ModulePath'] . $route['Control'] . '->' . $route['Action'] . '(' . $Params . ')';
                 $routeHtml = '<tr><td class="l">路由结果：</td><td>' . $mca_name . '</td></tr><tr><td class="l">路由请求：</td><td>';
-                $routeHtml .= self::filter_root($mca_file) . '</td></tr>';
+                $routeHtml .= str_replace(_ROOT, '', $mca_file) . '</td></tr>';
                 $err['route_name'] = $mca_name;
                 $err['route_mca'] = $mca_file;
             } else {
@@ -227,9 +227,9 @@ class Error
 
         $errValue = [];
         $errValue['time'] = date('Y-m-d H:i:s');
-        $errValue['title'] = self::filter_root($err['error']);
+        $errValue['title'] = str_replace(_ROOT, '', $err['error']);
         $errValue['code'] = "{$type}={$err['code']}";
-        $errValue['file'] = self::filter_root($err['file']) . "({$err['line']})";
+        $errValue['file'] = str_replace(_ROOT, '', $err['file']) . "({$err['line']})";
         $errValue['info'] = $routeHtml;
         $errValue['trace'] = $traceHtml;
 
@@ -239,11 +239,6 @@ class Error
         $content = ob_get_contents();
         ob_end_clean();
         exit($content);
-    }
-
-    private static function filter_root($str)
-    {
-        return str_replace(_ROOT, '', $str);
     }
 
 }

@@ -672,16 +672,15 @@ final class Builder
      * @param int $offset 偏移
      * @return $this
      */
-    public function limit($size, $skip = 0)
+    public function limit(int $size, int $skip)
     {
         $skip = $skip ?: $this->_skip;
         if ($skip === 0) {
             $this->_limit = intval($size);
-            $this->_count = true;
         } else {
             $this->_limit = intval($skip) . ',' . intval($size);
-            $this->_count = true;
         }
+        $this->_count = true;
         return $this;
     }
 

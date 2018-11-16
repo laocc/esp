@@ -507,7 +507,7 @@ class Mysql
         }
 
         //查询总数
-        $count = $option['count'] ? $CONN->query('SELECT FOUND_ROWS()', \PDO::FETCH_NUM)->fetch()[0] : null;
+        $count = $option['count'] ? $CONN->query('SELECT FOUND_ROWS()', \PDO::FETCH_NUM)->fetch()[0] : 0;
         return new Result($stmt, $count, $sql);
     }
 

@@ -47,6 +47,10 @@ class Buffer
         return self::medium()->del(self::$_key . $key);
     }
 
+    /**
+     * @param string $key
+     * @return string
+     */
     public static function hGet(string $key)
     {
         return self::medium()->hGet(self::$_key, $key);
@@ -55,6 +59,11 @@ class Buffer
     public static function hSet(string $key, $value)
     {
         return self::medium()->hSet(self::$_key, $key, $value);
+    }
+
+    public static function hDel(string ...$key)
+    {
+        return self::medium()->hDel(self::$_key, $key);
     }
 
     public static function publish(string $action, array $value)

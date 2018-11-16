@@ -3,7 +3,7 @@ ini_set('error_reporting', -1);
 ini_set('display_errors', true);
 ini_set('date.timezone', 'Asia/Shanghai');
 define("_MODULE", 'www');
-define("_ROOT", dirname(dirname(__DIR__)));
+define("_ROOT", dirname(__DIR__, 2));
 
 is_readable($auto = (_ROOT . '/vendor/autoload.php')) ? include($auto) : exit("\ncomposer dump-autoload --optimize\n");
 

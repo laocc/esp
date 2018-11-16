@@ -46,7 +46,7 @@ $option['config'][] = '/config/resource.ini';
  *
  */
 $option['buffer']['flush'] = true;       //清空缓存，实际应用中请删除此或，或设为false
-$option['buffer']['key'] = 'Esp';       //多站点标识，当同一Redis服务器要保存不同站点数据时，此key用于区分不同站点
+$option['buffer']['key'] = 'ESP';       //多站点标识，当同一Redis服务器要保存不同站点数据时，此key用于区分不同站点
 $option['buffer']['driver'] = 'Redis';
 $option['buffer']['host'] = '/tmp/redis.sock';
 $option['buffer']['db'] = 0;

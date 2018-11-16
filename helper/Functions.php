@@ -132,14 +132,25 @@ function root(string $path): string
 function mk_dir(string $path, int $mode = 0740): bool
 {
     if (!$path) return false;
-    if (strrchr($path, '/')) $path = dirname($path);
-    if (!$mode) $mode = 0740;
+    if (strrchr($path, '/') !== '/') $path = dirname($path);
     try {
-        !file_exists($path) and mkdir($path, $mode, true);
-        return true;
+        return (!file_exists($path) and mkdir($path, $mode ?: 0740, true));
     } catch (\Exception $e) {
         return true;
     }
+}
+
+/**
+ * 移动文件夹，目标若存在则失败
+ * @param string $from
+ * @param string $to
+ * @return bool
+ */
+function move_file(string $from, string $to): bool
+{
+    if (empty($from) or empty($to) or ($from === $to)) return false;
+    if (!is_readable($from) or is_readable($to)) return false;
+    return rename($from, $to);
 }
 
 /**
@@ -161,7 +172,7 @@ function save_file(string $file, string $content, bool $append = false): int
  * @param null $text
  * @throws Exception
  */
-function header_state(int $code = 200, string $text = null)
+function header_state(int $code = 200, string $text = null): void
 {
     if (empty($code) OR !is_numeric($code)) {
         throw new \Exception('状态码必须为数字');
@@ -194,12 +205,14 @@ function string_ord(string $string): array
 
 /**
  * 清除BOM
- * @param $loadStr
+ * @param $str
  */
-function clearBom(&$loadStr)
+function clearBom(string &$str): void
 {
-    if (ord(substr($loadStr, 0, 1)) === 239 and ord(substr($loadStr, 1, 1)) === 187 and ord(substr($loadStr, 2, 1)) === 191)
-        $loadStr = substr($loadStr, 3);
+    if (ord(substr($str, 0, 1)) === 239
+        and ord(substr($str, 1, 1)) === 187
+        and ord(substr($str, 2, 1)) === 191)
+        $str = substr($str, 3);
 }
 
 /**
@@ -226,7 +239,7 @@ function xml_decode(string $str, bool $toArray = true)
  * @return string
  * @throws Exception
  */
-function xml_encode($root, array $array)
+function xml_encode($root, array $array): string
 {
     return (new \esp\library\ext\Xml($array, $root))->render();
 }

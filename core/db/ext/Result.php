@@ -12,7 +12,7 @@ final class Result
     /**
      * @param \PDOStatement $result
      */
-    public function __construct(\PDOStatement $result, $count, $sql)
+    public function __construct(\PDOStatement $result, int $count, string $sql)
     {
         $this->rs = $result;
         $this->count = $count;
@@ -86,9 +86,7 @@ final class Result
      */
     public function count()
     {
-        return ($this->count === null) ?
-            $this->rs->rowCount() :
-            $this->count;
+        return is_null($this->count) ? $this->rs->rowCount() : $this->count;
     }
 
     /**

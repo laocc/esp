@@ -6,6 +6,7 @@ use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
 use esp\core\db\Yac;
+use esp\core\ext\Page;
 
 /**
  * Class Model
@@ -13,10 +14,9 @@ use esp\core\db\Yac;
  *
  * func_get_args()
  */
-class Model
+abstract class Model
 {
     private $_table_fix = 'tab';    //表前缀
-    private $_page_key = 'page';       //分页，页码键名，可以任意命名，只要不和常用的别的键冲突就可以
     private $__table = null;        //创建对象时，或明确指定当前模型的对应表名
     private $__pri = null;          //同上，对应主键名
     private $__cache = false;       //是否缓存，若此值被设置，则覆盖子对象的相关设置
@@ -36,13 +36,12 @@ class Model
 
     /**
      * @param array ...$action
-     * @return Debug|mixed
      */
     final public function debug(...$action)
     {
         $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (count($action) === 1) $action = $action[0];
-        return Debug::relay($action, $pre);
+        Debug::relay($action, $pre);
     }
 
     /**
@@ -52,8 +51,8 @@ class Model
      */
     final public function debug_file(string $filename = null)
     {
-        $file = Debug::filename($filename);
-        return substr($file, strlen(_ROOT));
+        Debug::setFilename($filename);
+        return substr($filename, strlen(_ROOT));
     }
 
     /**
@@ -106,7 +105,7 @@ class Model
      */
     final public function tables($field = null)
     {
-        $mysql = Buffer::Mysql();
+        $mysql = $this->Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.TABLES')->select('*')->where(['TABLE_SCHEMA' => $mysql->dbName])->get()->rows();
         if (empty($val)) return null;
         if (!is_null($field)) return array_column($val, $field);
@@ -127,7 +126,6 @@ class Model
 
         static $val;
         if (!is_null($val)) return $val;
-        if (isset($this->_table)) return $this->_table;
 
         preg_match('/(.+\\\)?(\w+)model$/i', get_class($this), $mac);
         if (!$mac) return null;
@@ -171,7 +169,7 @@ class Model
             if (isset($this->_id)) return $this->_id;
         }
         if (!$table) throw new \Exception('Unable to get table name');
-        $val = Buffer::Mysql()->table('INFORMATION_SCHEMA.Columns')
+        $val = $this->Mysql()->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME')
             ->where(['table_name' => $table, 'EXTRA' => 'auto_increment'])
             ->get()->row();
@@ -189,7 +187,7 @@ class Model
     {
         //TRUNCATE TABLE dbAdmin;
         //alter table users AUTO_INCREMENT=10000;
-        return Buffer::Mysql()->query("alter table {$table} AUTO_INCREMENT={$id}");
+        return $this->Mysql()->query("alter table {$table} AUTO_INCREMENT={$id}");
     }
 
     /**
@@ -201,7 +199,7 @@ class Model
     {
         $table = $table ?: $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
-        $mysql = Buffer::Mysql();
+        $mysql = $this->Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
             ->get()->rows();
@@ -209,30 +207,15 @@ class Model
         return $val;
     }
 
-    /**
-     * @param array ...$key
-     * @return $this
-     */
-    final private function cache_delete(...$key)
-    {
-        $table = $this->table();
-        $buffer = $this->_controller->_buffer;
-        foreach ($key as $i => $k) {
-            Buffer::hDel("{$buffer->key}_{$table}", "_key:{$k}", "_id:{$k}");
-        }
-        return $this;
-    }
-
 
     /**
-     * @param string $table
      * @param string $key
      * @param array $value
      * @return int
      */
-    final private function cache_set(string $table, string $key, array $value)
+    final private function cache_set(string $key, array $value)
     {
-        return Buffer::hSet("{$table}_{$key}", $value);
+        return Buffer::hSet($this->table() . "_{$key}", $value);
     }
 
     /**
@@ -240,9 +223,23 @@ class Model
      * @param string $key
      * @return bool|mixed|string
      */
-    final private function cache_get(string $table, string $key)
+    final private function cache_get(string $key)
     {
-        return Buffer::hGet("{$table}_{$key}");
+        return Buffer::hGet($this->table() . "_{$key}");
+    }
+
+
+    /**
+     * @param string[] ...$key
+     * @return $this
+     */
+    final private function cache_del(string ...$key)
+    {
+        $table = $this->table();
+        foreach ($key as $i => $k) {
+            Buffer::hDel("{$table}_{$key}", "_key:{$k}", "_id:{$k}");
+        }
+        return $this;
     }
 
 
@@ -253,14 +250,16 @@ class Model
      */
     final public function title()
     {
-        $table = $this->table();
-        $data = $this->cache_get($table, '_title');
+        $data = $this->cache_get('_title');
         if (!empty($data)) return $data;
 
+        $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
-        $val = Buffer::Mysql()->table('INFORMATION_SCHEMA.Columns')->select('COLUMN_NAME as field,COLUMN_COMMENT as title')->where(['table_name' => $table])->get()->rows();
+        $val = $this->Mysql()->table('INFORMATION_SCHEMA.Columns')
+            ->select('COLUMN_NAME as field,COLUMN_COMMENT as title')
+            ->where(['table_name' => $table])->get()->rows();
         if (empty($val)) throw new \Exception("Table '{$table}' doesn't exist");
-        $this->cache_set($table, '_title', $val);
+        $this->cache_set('_title', $val);
         return $val;
     }
 
@@ -273,10 +272,10 @@ class Model
      */
     final private function _FillField(string $table, array $data)
     {
-        $field = $this->cache_get($table, '_field');
+        $field = $this->cache_get('_field');
         if (empty($field)) {
             $field = $this->field($table);
-            $this->cache_set($table, '_field', $field);
+            $this->cache_set('_field', $field);
         }
 
         foreach ($field as $i => $rs) {
@@ -303,7 +302,7 @@ class Model
     {
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
-        return Buffer::Mysql()->table($table)->insert($full ? $data : $this->_FillField($table, $data));
+        return $this->Mysql()->table($table)->insert($full ? $data : $this->_FillField($table, $data));
     }
 
     /**
@@ -319,7 +318,7 @@ class Model
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        return Buffer::Mysql()->table($table)->where($where)->delete();
+        return $this->Mysql()->table($table)->where($where)->delete();
     }
 
 
@@ -337,7 +336,7 @@ class Model
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        return Buffer::Mysql()->table($table)->where($where)->update($data);
+        return $this->Mysql()->table($table)->where($where)->update($data);
     }
 
 
@@ -356,12 +355,12 @@ class Model
         if (is_numeric($where)) {
             if ($this->__cache === true) {
                 $kID = $where;
-                $data = $this->cache_get($table, "_id:{$kID}");
+                $data = $this->cache_get("_id:{$kID}");
                 if (!empty($data)) return $data;
             }
             $where = [$this->PRI() => intval($where)];
         }
-        $obj = Buffer::Mysql()->table($table);
+        $obj = $this->Mysql()->table($table);
 
         if ($this->selectKey) $obj->select(...$this->selectKey);
         if (!empty($this->tableJoin)) {
@@ -379,7 +378,7 @@ class Model
 
         $data = $obj->get()->row();
         if ($this->__cache === true and isset($kID) and !empty($data)) {
-            $this->cache_set($table, "_id:{$kID}", $data);
+            $this->cache_set("_id:{$kID}", $data);
         }
         return $data;
     }
@@ -397,13 +396,13 @@ class Model
         $table = $this->table();
 
         if ($fromCache and $this->__cache === true) {
-            $data = $this->cache_get($table, "_key:{$keyValue}");
+            $data = $this->cache_get("_key:{$keyValue}");
             if (!empty($data)) return $data;
         }
 
-        $val = Buffer::Mysql()->table($table)->where($this->_key, $keyValue)->get()->row();
+        $val = $this->Mysql()->table($table)->where($this->_key, $keyValue)->get()->row();
         if ($fromCache and $this->__cache === true and !empty($val)) {
-            $this->cache_set($table, "_key:{$keyValue}", $val);
+            $this->cache_set("_key:{$keyValue}", $val);
         }
 
         return $val;
@@ -419,7 +418,7 @@ class Model
     {
         if (empty($ids)) return [];
         $table = $this->table();
-        $val = Buffer::Mysql()->table($table)
+        $val = $this->Mysql()->table($table)
             ->where_in($this->PRI(), $ids);
         if ($where) $val->where($where);
         return $val->get()->rows();
@@ -437,7 +436,7 @@ class Model
     {
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
-        $obj = Buffer::Mysql()->table($table);
+        $obj = $this->Mysql()->table($table);
 
         if ($this->selectKey) $obj->select(...$this->selectKey);
         if (!empty($this->tableJoin)) {
@@ -460,6 +459,16 @@ class Model
     }
 
 
+    private $page;
+
+    final public function page(int $size = 10, int $index = 0, string $key = null)
+    {
+        if (!is_null($this->page)) return $this->page;
+        $this->page = new Page($size, $index, $key);
+        return $this->page;
+    }
+
+
     /**
      * @param null $where
      * @param string $ascDesc
@@ -469,9 +478,10 @@ class Model
     final public function list($where = null, $ascKey = null, string $ascDesc = 'desc')
     {
         $table = $this->table();
+        if (is_null($this->page)) $this->page = new Page();
+
         if (!$table) throw new \Exception('Unable to get table name');
-        if ($this->pageSize === 0) $this->pageSet();
-        $rs = Buffer::Mysql()->table($table);
+        $rs = $this->Mysql()->table($table);
         if ($this->selectKey) $rs->select(...$this->selectKey);
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) {
@@ -490,9 +500,13 @@ class Model
             }
             list($key, $asc) = [$ascKey, $ascDesc];
         }
-        $val = $rs->limit($this->pageSize, $this->pageSkip)->order($key, $asc)->get();
-        $this->pageCount = $val->count();
-        return $val->rows();
+
+        $result = $rs->limit($this->page->size(), $this->page->skip())
+            ->order($key, $asc)
+            ->get();
+
+        $this->page->count($result->count());
+        return $result->rows();
     }
 
 
@@ -503,18 +517,9 @@ class Model
      */
     final public function quote(string $string)
     {
-        return Buffer::Mysql()->quote($string);
+        return $this->Mysql()->quote($string);
     }
 
-    final public function pageCount()
-    {
-        return $this->pageCount;
-    }
-
-    protected $pageCount = 0;
-    protected $pageSize = 0;
-    protected $pageIndex = 1;
-    protected $pageSkip = 0;
     protected $tableJoin = Array();
     protected $tableJoinCount = 0;
     protected $groupKey = null;
@@ -541,96 +546,6 @@ class Model
         $this->selectKey = [$select, $add_identifier];
         return $this;
     }
-
-    final public function pageKey(string $key)
-    {
-        $this->_page_key = $key;
-        return $this;
-    }
-
-    final public function pageSet(int $size = 10, int $index = 0)
-    {
-        $this->pageIndex = $index ?: Input::get($this->_page_key, 1);
-        if ($this->pageIndex < 1) $this->pageIndex = 1;
-        $this->pageSize = $size;
-        $this->pageSkip = ($this->pageIndex - 1) * $this->pageSize;
-        if ($this->pageSkip < 0) $this->pageSkip = 0;
-        return $this;
-    }
-
-
-    /**
-     * 组合分页连接
-     * @param string $class
-     * @return string
-     */
-    final public function pageGet(string $class = 'pageForm'): string
-    {
-        $info = [
-            'recode' => $this->pageCount,//记录数
-            'size' => max(2, $this->pageSize),//每页数量
-            'index' => $this->pageIndex,//当前页码
-        ];
-
-        $key = $this->_page_key;  //URL中标识页码的键名，可以任意指定，但不要和网站其他可能的参数重名
-        $_show = 5;             //页码显示为当前页前后页数
-
-        $info['index'] = $info['index'] ?: Input::get($key, 1);//当前页码
-
-        $info['last'] = (int)($info['recode'] % $info['size']);//最后一页数
-        $info['page'] = (int)($info['recode'] / $info['size']);
-        $info['page'] += !!$info['last'] ? 1 : 0;//总页数
-
-        $info['prev'] = $info['index'] - 1;//上一页
-        $info['next'] = $info['index'] + 1;//下一页
-        $info['prev'] < 1 and $info['prev'] = 1;
-        if ($info['next'] > $info['page']) $info['next'] = $info['page'];
-
-        $link = Array();
-        $link[] = "<form method='get' action='?' autocomplete='off' class='{$class}'><ul>";
-        $link[] = "<li><a href='?{$key}=1&[QueryString]' class='first'>&lt;&lt;</a></li>";
-        $link[] = "<li><a href='?{$key}={$info['prev']}&[QueryString]' class='prev'>&lt;</a></li>";
-
-        $get = $_GET;
-        unset($get[$key]);
-        foreach ($get as $_k => $_v) {
-            $link[] = "<input type='hidden' name='{$_k}' value='{$_v}'>";
-        }
-
-        $page = Array();
-
-        //页面导航的起止点
-        $star = $info['index'] - $_show;
-        $star < 1 and $star = 1;
-        $stop = $info['index'] + $_show;
-        $stop > $info['page'] and $stop = $info['page'];
-
-        if ($star >= $_show) {
-            $page[] = "<li class='omit'><a>...</a></li>";
-        }
-
-        for ($i = $star; $i <= $stop; $i++) {
-            if ($i == $info['index'])
-                $page[] = "<li class='active'><a>{$i}</a></li>";
-            else
-                $page[] = "<li class='link'><a href='?{$key}={$i}&[QueryString]'>{$i}</a></li>";
-        }
-
-        if ($stop <= ($info['page'] - $_show)) {
-            $page[] = "<li class='omit'><a>...</a></li>";
-        }
-
-        $link[] = implode($page);
-        $link[] = "<li><a href='?{$key}={$info['next']}&[QueryString]' class='next'>&gt;</a></li>";
-        $link[] = "<li><a href='?{$key}={$info['page']}&[QueryString]' class='last'>&gt;&gt;</a></li>";
-        $link[] = "<li class='total'>第{$info['index']}/{$info['page']}页 每页{$info['size']}条/共{$info['recode']}条</li>";
-        $link[] = "<li class='submit'><input type='tel' onclick='this.select();' name='{$key}' id='pageIndex' value='{$info['index']}'><input id='pageGo' type='submit' value='Go'></li>";
-
-        $link[] = "</ul></form>";
-        $get['_'] = mt_rand();
-        return str_replace(['[QueryString]'], [http_build_query($get)], implode("", $link));
-    }
-
 
     /**
      * 创建一个Mysql实例

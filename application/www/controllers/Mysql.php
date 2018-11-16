@@ -19,20 +19,18 @@ class MysqlController extends Controller
     public function tab2Action()
     {
         $mod = new TestModel();
-        $limit = Input::get('limit', 0);
-        $mod->pageKey('page')->pageSet($limit);
 
         $where = Array();
         $data = $mod->list($where);
+
         $resp = [];
         $resp['code'] = 0;
         $resp['msg'] = 'null';
-        $resp['count'] = $mod->pageCount();
+        $resp['count'] = $mod->page()->count();
         $resp['data'] = $data;
 
         $this->assign('data', $data);
-        $this->assign('page', $mod->pageGet());
-
+        $this->assign('page', $mod->page()->html());
     }
 
     public function tab1Action()
@@ -51,7 +49,7 @@ class MysqlController extends Controller
         $resp = [];
         $resp['code'] = 0;
         $resp['msg'] = 'null';
-        $resp['count'] = $mod->pageCount();
+        $resp['count'] = $mod->page()->Count();
         $resp['data'] = $data;
 
         return $resp;
