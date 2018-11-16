@@ -63,16 +63,59 @@ class Page
 
     /**
      * 组合分页连接
-     * @param string $class
+     * @param string $classForm
      * @return string
      */
-    final public function html(string $class = 'pageForm'): string
+    final public function html($class = ''): string
     {
+
+        $classLayui = [
+            'form' => 'layui-btn-group',
+            'first' => 'layui-btn layui-btn-primary layui-btn-sm',
+            'last' => 'layui-btn layui-btn-primary layui-btn-sm',
+            'prev' => 'layui-btn layui-btn-primary layui-btn-sm',
+            'next' => 'layui-btn layui-btn-primary layui-btn-sm',
+            'omit' => 'layui-btn layui-btn-sm layui-btn-disabled',
+            'active' => 'layui-btn layui-btn-sm layui-btn-danger',
+            'link' => 'layui-btn layui-btn-primary layui-btn-sm',
+            'total' => 'layui-btn layui-btn-primary layui-btn-sm',
+            'quick' => 'layui-input',
+            'input' => 'input',
+            'submit' => 'layui-btn layui-btn-primary layui-btn-sm',
+        ];
+
+        $classAuto = [
+            'form' => 'pageForm',
+            'first' => 'first',
+            'last' => 'last',
+            'prev' => 'prev',
+            'next' => 'next',
+            'omit' => 'omit',
+            'active' => 'active',
+            'link' => 'link',
+            'total' => 'total',
+            'quick' => 'quick',
+            'input' => 'input',
+            'submit' => 'submit',
+        ];
+
+        if (is_array($class)) {
+            $class += $classAuto;
+        } else if ($class === 'layui') {
+            $class = $classLayui;
+        } else if ($class === '') {
+            $class = $classAuto;
+        } else {
+            $class = ['form' => $class] + $classAuto;
+        }
+
+
         $info = [
             'recode' => $this->Count,//记录数
             'size' => max(2, $this->Size),//每页数量
             'index' => $this->Index,//当前页码
         ];
+
 
         $info['index'] = $info['index'] ?: Input::get($this->Key, 1);//当前页码
 
@@ -86,9 +129,9 @@ class Page
         if ($info['next'] > $info['page']) $info['next'] = $info['page'];
 
         $link = Array();
-        $link[] = "<form method='get' action='?' autocomplete='off' class='{$class}'><ul>";
-        $link[] = "<li><a href='?{$this->Key}=1&[QueryString]' class='first'>&lt;&lt;</a></li>";
-        $link[] = "<li><a href='?{$this->Key}={$info['prev']}&[QueryString]' class='prev'>&lt;</a></li>";
+        $link[] = "<form method='get' action='?' autocomplete='off' class='{$class['form']}'><ul>";
+        $link[] = "<li class='{$class['first']}'><a href='?{$this->Key}=1&[QueryString]' >&lt;&lt;</a></li>";
+        $link[] = "<li class='{$class['prev']}'><a href='?{$this->Key}={$info['prev']}&[QueryString]'>&lt;</a></li>";
 
         $get = $_GET;
         unset($get[$this->Key]);
@@ -105,25 +148,27 @@ class Page
         $stop > $info['page'] and $stop = $info['page'];
 
         if ($star >= $this->PrevNext) {
-            $page[] = "<li class='omit'><a>...</a></li>";
+            $page[] = "<li class='{$class['omit']}'><a>...</a></li>";
         }
 
         for ($i = $star; $i <= $stop; $i++) {
             if ($i == $info['index'])
-                $page[] = "<li class='active'><a>{$i}</a></li>";
+                $page[] = "<li class='{$class['active']}'><a>{$i}</a></li>";
             else
-                $page[] = "<li class='link'><a href='?{$this->Key}={$i}&[QueryString]'>{$i}</a></li>";
+                $page[] = "<li class='{$class['link']}'><a style='display: inline-block;width:100%;height:100%;' href='?{$this->Key}={$i}&[QueryString]'>{$i}</a></li>";
         }
 
         if ($stop <= ($info['page'] - $this->PrevNext)) {
-            $page[] = "<li class='omit'><a>...</a></li>";
+            $page[] = "<li class='{$class['omit']}'><a>...</a></li>";
         }
 
         $link[] = implode($page);
-        $link[] = "<li><a href='?{$this->Key}={$info['next']}&[QueryString]' class='next'>&gt;</a></li>";
-        $link[] = "<li><a href='?{$this->Key}={$info['page']}&[QueryString]' class='last'>&gt;&gt;</a></li>";
-        $link[] = "<li class='total'>第{$info['index']}/{$info['page']}页&nbsp;每页{$info['size']}条/共{$info['recode']}条</li>";
-        $link[] = "<li class='submit'><input type='tel' onclick='this.select();' name='{$this->Key}' id='pageIndex' value='{$info['index']}'><input id='pageGo' type='submit' value='Go'></li>";
+        $link[] = "<li class='{$class['next']}'><a href='?{$this->Key}={$info['next']}&[QueryString]'>&gt;</a></li>";
+        $link[] = "<li class='{$class['last']}'><a href='?{$this->Key}={$info['page']}&[QueryString]'>&gt;&gt;</a></li>";
+        $link[] = "<li class='{$class['total']}'>第{$info['index']}/{$info['page']}页&nbsp;每页{$info['size']}条/共{$info['recode']}条</li>";
+        $link[] = "<li class='{$class['quick']}'>
+                    <input type='tel' class='{$class['input']}' onclick='this.select();' name='{$this->Key}' id='pageIndex' value='{$info['index']}'>
+                    <input id='pageGo' class='{$class['submit']}' type='submit' value='Go'></li>";
 
         $link[] = "</ul></form>";
         $get['_'] = mt_rand();

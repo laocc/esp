@@ -30,7 +30,7 @@ class MysqlController extends Controller
         $resp['data'] = $data;
 
         $this->assign('data', $data);
-        $this->assign('page', $mod->page()->html());
+        $this->assign('page', $mod->page()->html('pageForm'));
     }
 
     public function tab1Action()
@@ -40,9 +40,9 @@ class MysqlController extends Controller
 
     public function tab1Ajax()
     {
+        $limit = Input::get('limit', 10);
         $mod = new TestModel();
-        $limit = Input::get('limit', 0);
-        $mod->pageKey('page')->pageSet($limit);
+        $mod->page($limit, 0, 'page');
 
         $where = Array();
         $data = $mod->list($where);

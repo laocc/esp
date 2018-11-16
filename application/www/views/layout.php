@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/resource/layui-v2.3.0/css/layui.css" media="all">
     <link rel="stylesheet" href="/resource/css/auto.css" media="all">
     <link rel="stylesheet" href="/resource/css/page.css" media="all">
+    <script src="/resource/layui-v2.3.0/layui.all.js"></script>
 
 </head>
 <body>
@@ -18,7 +19,6 @@ echo $_view_html;
 ?>
 </body>
 
-<script src="/resource/layui-v2.3.0/layui.all.js"></script>
 <script>
     layui.table.init('layuiTable');
 </script>

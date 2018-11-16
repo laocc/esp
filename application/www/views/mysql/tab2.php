@@ -29,13 +29,5 @@
         ?>
         </tbody>
     </table>
-    <table class="layui-table">
-        <tfoot>
-        <tr>
-            <td style="padding:0;">
-                <?= $page; ?>
-            </td>
-        </tr>
-        </tfoot>
-    </table>
+    <?= $page; ?>
 </div>
