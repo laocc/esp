@@ -14,22 +14,6 @@ class Controller
 //    {
 //    }
 
-    /**
-     * 检查来路是否本站相同域名
-     * 本站_HOST，总是被列入查询，另外自定义更多的host，
-     * 若允许本站或空来路，则用：$this->check_host('');
-     *
-     * @param array ...$host
-     * @throws \Exception
-     */
-    final protected function check_host(...$host)
-    {
-        if (isset($host[0]) and is_array($host[0])) $host = $host[0];
-        if (!in_array(host(Request::getReferer()), array_merge([_HOST], $host))) {
-            throw new \Exception('禁止接入', 401);
-        }
-    }
-
     private $_runValue = [];
 
     final public function __set($name, $value)
@@ -57,21 +41,6 @@ class Controller
     final public function setView($value)
     {
         View::setView($value);
-    }
-
-    /**
-     * 标签解析器
-     * @param null $bool
-     * @return bool|View
-     */
-    final protected function getAdapter()
-    {
-        return View::getAdapter();
-    }
-
-    final protected function setAdapter($bool)
-    {
-        View::setAdapter($bool);
     }
 
     final protected function setLayout($value)
@@ -183,7 +152,7 @@ class Controller
 
     final protected function md(string $mdFile = null, string $mdCss = '/css/markdown.css?1')
     {
-        $this->css($mdCss);
+        Layout::setCss($mdCss);
         return Response::setDisplay('md', $mdFile);
     }
 
@@ -195,12 +164,6 @@ class Controller
     final protected function json(array $value)
     {
         return Response::setDisplay('json', $value);
-    }
-
-    final protected function title(string $title, bool $default = false)
-    {
-        View::setTitle($title, $default);
-        return $this;
     }
 
     final protected function php(array $value)
@@ -237,7 +200,13 @@ class Controller
      */
     final protected function js($file, $pos = 'foot')
     {
-        View::setJs($file, $pos);
+        Layout::setJs($file, $pos);
+        return $this;
+    }
+
+    final protected function title(string $title, bool $default = false)
+    {
+        Layout::setTitle($title, $default);
         return $this;
     }
 
@@ -249,7 +218,7 @@ class Controller
      */
     final protected function css($file)
     {
-        View::setCss($file);
+        Layout::setCss($file);
         return $this;
     }
 
@@ -262,7 +231,7 @@ class Controller
      */
     final protected function meta(string $name, string $value)
     {
-        View::setMeta($name, $value);
+        Layout::setMeta($name, $value);
         return $this;
     }
 
@@ -274,7 +243,7 @@ class Controller
      */
     final protected function keywords(string $value)
     {
-        View::setKeywords($value);
+        Layout::setKeywords($value);
         return $this;
     }
 
@@ -286,7 +255,7 @@ class Controller
      */
     final protected function description(string $value)
     {
-        View::setDescription($value);
+        Layout::setDescription($value);
         return $this;
     }
 

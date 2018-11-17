@@ -33,7 +33,8 @@ final class Request
 
     public static function getActionPath()
     {
-        return '/' . Request::$module . '/' . Request::$controller . '/' . Request::$action . ucfirst(Request::getMethod());
+        $method = strtolower(self::$method);
+        return '/' . Request::$module . '/' . Request::$controller . '/' . Request::$action . ucfirst($method);
     }
 
     public static function get(string $name)

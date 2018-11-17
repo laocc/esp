@@ -73,8 +73,6 @@ final class Output
             return $response;
         }
 
-        $option['type'] = strtoupper($option['type'] ?? 'get');
-        if (!in_array($option['type'], ['GET', 'POST', 'PUT', 'HEAD', 'DELETE', 'UPLOAD'])) $option['type'] = 'GET';
         if (!isset($option['headers'])) $option['headers'] = Array();
         if (!is_array($option['headers'])) $option['headers'] = [$option['headers']];
 
@@ -113,23 +111,6 @@ final class Output
             $url = implode('/', $urlDom);
         }
 
-        switch ($option['type']) {
-            case "GET" :
-                $cOption[CURLOPT_HTTPGET] = true;
-                if (!empty($data)) self::serialize_url($url, $data); //GET时，需格式化数据为字符串
-                break;
-            case "POST":
-                $cOption[CURLOPT_POST] = true;//类型为：application/x-www-form-urlencoded
-                $option['headers'][] = "X-HTTP-Method-Override: POST";
-                break;
-            case 'UPLOAD':
-                $cOption[CURLOPT_POST] = true;
-                break;
-            case "HEAD" :   //这三种不常用，使用前须确认对方是否接受
-            case "PUT" :
-            case "DELETE":
-                break;
-        }
 
 //        $option['headers'][] = "Cache-Control: no-cache";
         $option['headers'][] = "Cache-Control: max-age=0";
@@ -153,7 +134,6 @@ final class Output
         }
 
         $cOption[CURLOPT_URL] = $url;                                                      //接收页
-        $cOption[CURLOPT_CUSTOMREQUEST] = $option['type'];
         $cOption[CURLOPT_FRESH_CONNECT] = true;                                            //强制新连接，不用缓存中的
 
 
@@ -210,27 +190,49 @@ final class Output
             $cOption[CURLOPT_HTTP_VERSION] = CURL_HTTP_VERSION_1_1;
         }
 
-        //从可靠的角度，推荐指定CURL_SAFE_UPLOAD的值，明确告知php禁止旧的@语法。
-        if ($option['type'] === 'UPLOAD') {
+        $option['type'] = strtoupper($option['type'] ?? 'get');
+        if (!in_array($option['type'], ['GET', 'POST', 'PUT', 'HEAD', 'DELETE', 'UPLOAD'])) $option['type'] = 'GET';
+        switch ($option['type']) {
+            case "GET" :
+                $cOption[CURLOPT_HTTPGET] = true;
+                if (!empty($data)) {//GET时，需格式化数据为字符串
+                    if (is_array($data)) $data = http_build_query($data);
+                    $url .= (!strpos($url, '?') ? '?' : '&') . $data;
+                }
+                break;
 
-            foreach ($data as $fil => $file) {
-//                $data[$fil] = new \CURLFile($file, 'image/jpeg', $fil);
-                $data[$fil] = new \CURLFile($file);
-            }
+            case "POST":
+                if (is_array($data)) $data = json_encode($data, 256);
+                $option['headers'][] = "X-HTTP-Method-Override: POST";
+                $cOption[CURLOPT_POST] = true;//类型为：application/x-www-form-urlencoded
+                $cOption[CURLOPT_POSTFIELDS] = $data;
+                break;
 
-            $cOption[CURLOPT_UPLOAD] = true;
-            $cOption[CURLOPT_POST] = 1;
-            $cOption[CURLOPT_POSTFIELDS] = $data;
-//
-//            if (defined('CURLOPT_SAFE_UPLOAD')) {
-//                //PHP5.6以后，需要指定此值，且须在附加数据之前，否则对方得不到上传的数据文件
-//                $cOption[CURLOPT_SAFE_UPLOAD] = false;
-//            } elseif (class_exists('\CURLFile')) {//低版本
-//                $cOption[CURLOPT_SAFE_UPLOAD] = true;
-//            }
-        } else if (!empty($data)) {////提交上传数据放在最后
-            if (is_array($data)) $data = json_encode($data, 256);
-            $cOption[CURLOPT_POSTFIELDS] = $data;
+            case 'UPLOAD':
+                $field = (isset($option['field']) ? $option['field'] : 'files');
+                $option['headers'][] = "X-HTTP-Method-Override: POST";
+                $option['headers'][] = "Content-Type: multipart/form-data; boundary=-------------" . uniqid();
+
+                if (!is_array($data)) {
+                    $response['message'] = '上传数据只能为数组，用被上传的文件置于files字段内';
+                    return $response;
+                }
+                if (isset($data['files'])) {
+                    foreach ($data['files'] as $fil => $file) {
+                        $data["{$field}[{$fil}]"] = new \CURLFile($file);
+                    }
+                    unset($data['files']);
+                }
+                $cOption[CURLOPT_POST] = true;
+                $cOption[CURLOPT_POSTFIELDS] = $data;
+                break;
+
+            case "HEAD" :   //这三种不常用，使用前须确认对方是否接受
+            case "PUT" :
+            case "DELETE":
+                //不确定服务器支持这个自定义方法则不要使用它。
+                $cOption[CURLOPT_CUSTOMREQUEST] = $option['type'];
+                break;
         }
 
         $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
@@ -238,12 +240,12 @@ final class Output
             $response['message'] = 'Create Protocol Object Error';
             return $response;
         }
+        $response['post'] = $data;
+        $response['option'] = $cOption;
 
         curl_setopt_array($cURL, $cOption);
         $html = curl_exec($cURL);
         $response['info'] = curl_getinfo($cURL);
-        $response['post'] = $data;
-        $response['option'] = $option;
 
         if (($err = curl_errno($cURL)) > 0) {
             $response['error'] = $err;
@@ -309,19 +311,6 @@ final class Output
         $arr = json_decode($value, true);
         if (is_array($arr)) return $arr;
         return (string)$value;
-    }
-
-
-    /**
-     * 序列化数组，将数组转为URL后接参数
-     * @param string $URL
-     * @param array $arr
-     */
-    private static function serialize_url(string &$URL, array &$arr)
-    {
-        if (empty($arr)) return;
-        $H = !strpos($URL, '?') ? '?' : '&';
-        $URL .= $H . http_build_query($arr);
     }
 
 

@@ -11,7 +11,7 @@ $option = include('../config.php');
 $option['config'][] = '/config/token.php';
 $option['config'][] = '/config/test.json';
 
-$option['debug']['run'] = false;
+//$option['debug']['run'] = false;
 
 //(new esp\core\Dispatcher($option))->bootstrap()->run();
 esp\core\Dispatcher::run($option);

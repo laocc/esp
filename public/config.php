@@ -64,8 +64,8 @@ $option['debug']['rules']['error'] = 'E_ymdHis_';  //记录错误的文件命名
 
 $option['debug']['print']['mysql'] = true;   //是否记录mysql所有语句，以下四项默认均为false
 $option['debug']['print']['post'] = true;    //是否记录接收到的POST内容
-//$option['debug']['print']['html'] = true;    //是否记录最后打印html结果
-//$option['debug']['print']['server'] = true;  //是否记录_server内容
+$option['debug']['print']['html'] = true;    //是否记录最后打印html结果
+$option['debug']['print']['server'] = true;  //是否记录_server内容
 
 
 /**

@@ -122,6 +122,7 @@ final class Response
 
             case 'php':
                 self::$_display['result'] = serialize(self::$_display['value']);
+                self::$_display['type'] = 'text';
                 break;
 
             case 'html':
@@ -142,8 +143,8 @@ final class Response
 
             case 'md':
             default:
-                self::$_display['type'] = 'html';
                 self::$_display['result'] = View::render();
+                self::$_display['type'] = 'html';//务必放在render之后重新赋值，因为render时要读取type值
         }
 
         self::$_display['content'] = Config::mime(self::$_display['type']);

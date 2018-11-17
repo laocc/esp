@@ -31,6 +31,7 @@ namespace esp\library\ext;
 
 */
 
+use esp\core\Config;
 use esp\library\gd\Image;
 
 final class Upload
