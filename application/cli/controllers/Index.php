@@ -12,7 +12,8 @@ class IndexController extends Controller
     {
         $api = 'http://www.esp.com';
         $option = [];
-        $option['dns'] = ['www.esp.com:80:127.0.0.1:80'];
+        $option['host'] = '127.0.0.1';
+        $option['agent'] = 'chrome';
 
         $html = Output::curl($api, '', $option);
         print_r($html);

@@ -91,36 +91,46 @@ final class Output
             $cOption[CURLOPT_FAILONERROR] = true;//当 HTTP 状态码大于等于 400，TRUE 将将显示错误详情。 默认情况下将返回页面，忽略 HTTP 代码。
         }
 
-        /**
-         * 连接到指定的主机和端口，替换 URL 中的主机和端口。接受指定字符串格式的数组： HOST:PORT:CONNECT-TO-HOST:CONNECT-TO-PORT。
-         */
-        if (isset($option['dns'])) {
-//            $host = ['www.esp.com:80:127.0.0.1:80'];
-//            $cOption[CURLOPT_CONNECT_TO] = $option['dns'];
-            $cOption[CURLOPT_RESOLVE] = $option['dns'];
-        }
+//        if (isset($option['port'])) $cOption[CURLOPT_PORT] = intval($option['port']);      //端口
 
 
         if (isset($option['host'])) {
-            if (!is_ip($option['host'])) {
-                $response['message'] = 'host must be a IP address';
-                return $response;
+            if (is_array($option['host'])) {
+                $cOption[CURLOPT_RESOLVE] = $option['host'];
+            } else {
+                if (!is_ip($option['host'])) {
+                    $response['message'] = 'host must be a IP address';
+                    return $response;
+                }
+
+                $urlDom = explode('/', $url);
+
+                if (1 or version_compare((curl_version())['version'], '7.21.3', '>=')) {//cURL 7.21.3 以上可用
+                    if (strpos($urlDom[2], ':')) {//将端口移到port中
+                        $dom = explode(':', $urlDom[2]);
+                        $urlDom[2] = $dom[0];
+                        $option['port'] = intval($dom[1]);
+                    } else if (strtolower(substr($url, 0, 5)) === 'https') {
+                        $option['port'] = 443;
+                    } else {
+                        $option['port'] = 80;
+                    }
+
+                    $cOption[CURLOPT_RESOLVE] = ["{$urlDom[2]}:{$option['port']}:{$option['host']}"];
+
+                } else {
+                    $urlDom[0] = 'http:';//只能用http
+                    if (strpos($urlDom[2], ':')) {//将端口移到port中
+                        $dom = explode(':', $urlDom[2]);
+                        $urlDom[2] = $dom[0];
+                        $option['port'] = intval($dom[1]);
+                    }
+                    $option['headers'][] = "HOST: {$urlDom[2]}";
+                    $urlDom[2] = $option['host'];
+                    $url = implode('/', $urlDom);
+                }
             }
-
-            $urlDom = explode('/', $url);
-            $urlDom[0] = 'http:';//只能用http
-
-            if (strpos($urlDom[2], ':')) {//将端口移到port中
-                $dom = explode(':', $urlDom[2]);
-                $urlDom[2] = $dom[0];
-                $option['port'] = intval($dom[1]);
-            }
-
-            $option['headers'][] = "HOST: {$urlDom[2]}";
-            $urlDom[2] = $option['host'];
-            $url = implode('/', $urlDom);
         }
-
 
 //        $option['headers'][] = "Cache-Control: no-cache";
         $option['headers'][] = "Cache-Control: max-age=0";
@@ -168,7 +178,6 @@ final class Output
             }
         }
 
-        if (isset($option['port'])) $cOption[CURLOPT_PORT] = intval($option['port']);      //端口
         if (isset($option['proxy'])) $cOption[CURLOPT_PROXY] = $option['proxy'];            //指定代理
         if (isset($option['referer']) and $option['referer']) $cOption[CURLOPT_REFERER] = $option['referer'];//来源页
         if (isset($option['gzip']) and $option['gzip']) $cOption[CURLOPT_ENCODING] = "gzip, deflate";   //有压缩
@@ -179,9 +188,8 @@ final class Output
         $cOption[CURLOPT_DNS_CACHE_TIMEOUT] = 120;     //内存中保存DNS信息，默认120秒
         $cOption[CURLOPT_CONNECTTIMEOUT] = $option['wait'] ?? 10;         //在发起连接前等待的时间，如果设置为0，则无限等待
         $cOption[CURLOPT_TIMEOUT] = ($option['timeout'] ?? 10);    //允许执行的最长秒数，若用毫秒级，用CURLOPT_TIMEOUT_MS
-        $cOption[CURLOPT_RETURNTRANSFER] = TRUE;       //返回文本流
         $cOption[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V4;//指定使用IPv4解析
-
+        $cOption[CURLOPT_RETURNTRANSFER] = true;       //返回文本流，若不指定则是直接打印
 
         if (strtoupper(substr($url, 0, 5)) === "HTTPS") {
 //            $cOption[CURLOPT_HTTP_VERSION]=CURLOPT_HTTP_VERSION_2_0;
@@ -225,7 +233,7 @@ final class Output
                 $option['headers'][] = "Content-Type: multipart/form-data; boundary=-------------" . uniqid();
 
                 if (!is_array($data)) {
-                    $response['message'] = '上传数据只能为数组，用被上传的文件置于files字段内';
+                    $response['message'] = '上传数据只能为数组，被上传的文件置于files字段内';
                     return $response;
                 }
                 if (isset($data['files'])) {
@@ -255,7 +263,7 @@ final class Output
         $response['option'] = $cOption;
 
         curl_setopt_array($cURL, $cOption);
-        $html = curl_exec($cURL);
+        $response['html'] = curl_exec($cURL);
         $response['info'] = curl_getinfo($cURL);
 
         if (($err = curl_errno($cURL)) > 0) {
@@ -269,10 +277,8 @@ final class Output
         $response['message'] = '';
 
         if (isset($option['transfer']) and $option['transfer']) {
-            $response['header'] = self::header(substr($html, 0, $response['info']['header_size']));
-            $response['html'] = trim(substr($html, $response['info']['header_size']));
-        } else {
-            $response['html'] = trim($html);
+            $response['header'] = self::header(substr($response['html'], 0, $response['info']['header_size']));
+            $response['html'] = trim(substr($response['html'], $response['info']['header_size']));
         }
 
         if (isset($option['charset'])) {
