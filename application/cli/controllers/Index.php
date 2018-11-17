@@ -3,15 +3,18 @@
 namespace cli;
 
 use esp\core\Controller;
+use esp\core\Output;
 use models\TestModel;
 
 class IndexController extends Controller
 {
     public function indexAction()
     {
-        $from = _ROOT . '/cache/debug/2018-11-02-01/';
-//        var_dump(move_file($from, $from . '-01'));
+        $api = 'http://www.esp.com';
+        $option = [];
+        $option['dns'] = ['www.esp.com:80:127.0.0.1:80'];
 
-        var_dump(strrchr($from, '/'));
+        $html = Output::curl($api, '', $option);
+        print_r($html);
     }
 }

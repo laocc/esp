@@ -91,6 +91,16 @@ final class Output
             $cOption[CURLOPT_FAILONERROR] = true;//当 HTTP 状态码大于等于 400，TRUE 将将显示错误详情。 默认情况下将返回页面，忽略 HTTP 代码。
         }
 
+        /**
+         * 连接到指定的主机和端口，替换 URL 中的主机和端口。接受指定字符串格式的数组： HOST:PORT:CONNECT-TO-HOST:CONNECT-TO-PORT。
+         */
+        if (isset($option['dns'])) {
+//            $host = ['www.esp.com:80:127.0.0.1:80'];
+//            $cOption[CURLOPT_CONNECT_TO] = $option['dns'];
+            $cOption[CURLOPT_RESOLVE] = $option['dns'];
+        }
+
+
         if (isset($option['host'])) {
             if (!is_ip($option['host'])) {
                 $response['message'] = 'host must be a IP address';
@@ -137,7 +147,7 @@ final class Output
         $cOption[CURLOPT_FRESH_CONNECT] = true;                                            //强制新连接，不用缓存中的
 
 
-        if (isset($option['ip'])) {     //指定IP
+        if (isset($option['ip'])) {     //指定客户端IP
             $option['headers'][] = "CLIENT-IP: {$option['ip']}";
             $option['headers'][] = "X-FORWARDED-FOR: {$option['ip']}";
         }
@@ -171,6 +181,7 @@ final class Output
         $cOption[CURLOPT_TIMEOUT] = ($option['timeout'] ?? 10);    //允许执行的最长秒数，若用毫秒级，用CURLOPT_TIMEOUT_MS
         $cOption[CURLOPT_RETURNTRANSFER] = TRUE;       //返回文本流
         $cOption[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V4;//指定使用IPv4解析
+
 
         if (strtoupper(substr($url, 0, 5)) === "HTTPS") {
 //            $cOption[CURLOPT_HTTP_VERSION]=CURLOPT_HTTP_VERSION_2_0;
