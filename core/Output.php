@@ -137,6 +137,11 @@ final class Output
         $option['headers'][] = "Connection: keep-alive";
         $option['headers'][] = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.5,image/webp,image/apng,*/*;q=0.8";
 
+        /**
+         * post大于1024时，会带100 ContinueHTTP标头的请求，加此指令禁止
+         */
+        $option['headers'][] = "Expect: ";
+
         if (isset($option['lang'])) {
             if ($option['lang'] === 'en') {
                 $option['headers'][] = "Accept-Language: en-us,en;q=0.5";
