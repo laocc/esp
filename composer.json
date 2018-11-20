@@ -1,8 +1,10 @@
 {
   "name": "core/2.1",
-  "title": "esp core:composer dump-autoload --optimize",
+  "description": "composer dump-autoload --optimize",
   "require": {
-    "php": ">7.0"
+    "php": ">7.0",
+    "ext-curl": "*",
+    "ext-json": "*"
   },
   "require-dev": {
     "php": ">7.0"

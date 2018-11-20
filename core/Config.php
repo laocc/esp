@@ -2,8 +2,6 @@
 
 namespace esp\core;
 
-use esp\core\db\Redis;
-
 /**
  * Class Config
  * @package esp\core
@@ -14,6 +12,7 @@ final class Config
 
     /**
      * @param array $config
+     * @throws \Exception
      */
     public static function _init(array &$config)
     {
