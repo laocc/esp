@@ -15,12 +15,8 @@ class IndexController extends Controller
      */
     public function indexAction()
     {
-        $this->debug('ad');
-
-        $this->assign('time', $this->abc);
-//        echo 1 / 0;
-
-        return ['a' => _TIME];
+        exit(_ROOT);
+//        return ['a' => _TIME];
     }
 
     public function configAction()
