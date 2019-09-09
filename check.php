@@ -1,7 +1,5 @@
 <?php
-
 if (!class_exists('redis')) echo "当前系统未安装Redis缓存扩展";
-
 
 $status = session_status();
 if ($status === PHP_SESSION_DISABLED) {
