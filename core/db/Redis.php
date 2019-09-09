@@ -1,0 +1,466 @@
+<?php
+
+namespace esp\core\db;
+
+use esp\core\db\ext\KeyValue;
+use esp\core\db\ext\RedisHash;
+use esp\core\db\ext\RedisList;
+
+/**
+ * Class Redis
+ * @package db
+ * http://doc.redisfans.com/
+ */
+final class Redis implements KeyValue
+{
+    public $redis;
+    private $host;
+    private $conf;
+
+    /**
+     * Redis constructor.
+     * @param null $conf
+     * @param int $db
+     * @throws \Exception
+     */
+    public function __construct(array $conf = null, int $db = null)
+    {
+        $conf += ['host' => '/tmp/redis.sock', 'port' => 0];
+        if (is_null($db)) $db = intval($conf['db'] ?? 1);
+        if (!($db >= 0 and $db <= 16)) {
+            throw new \Exception('Redis库ID选择错误，0库为系统库不可直接调用，暂不支持大于16的库');
+        }
+        if (isset($conf['self']) and getenv('REMOTE_ADDR') === '127.0.0.1') {
+            $conf['host'] = $conf['self'];
+            unset($conf['port']);
+        }
+        $this->conf = $conf;
+        $this->redis = new \Redis();
+        $tryCont = 0;
+        try {
+            tryCont:
+            if (isset($conf['pconnect']) and $conf['pconnect']) {
+                if ($conf['host'][0] === '/') {
+                    if (!$this->redis->pconnect($conf['host'])) {
+                        throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
+                    }
+                } else if (!$this->redis->pconnect($conf['host'], $conf['port'])) {
+                    throw new \Exception("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
+                }
+            } else {
+                if ($conf['host'][0] === '/') {
+                    if (!$this->redis->connect($conf['host'])) {
+                        throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
+                    }
+                } else if (!$this->redis->connect($conf['host'], $conf['port'])) {
+                    throw new \Exception("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
+                }
+            }
+        } catch (\Exception $e) {
+            if ($tryCont++ > 2) {
+                if (_DEBUG) print_r($conf);
+                throw new \Exception($e->getMessage(), $e->getCode());
+            }
+            usleep(10000);
+            goto tryCont;
+        }
+        $this->host = [$conf['host'], $conf['port']];
+
+        //用密码登录
+        if (isset($conf['password']) and !empty($conf['password']) and !$this->redis->auth($conf['password'])) {
+            throw new \Exception("Redis密码错误，无法连接服务器。");
+        }
+
+        if (isset($conf['timeout'])) {
+            $this->redis->setOption(\Redis::OPT_READ_TIMEOUT, intval($conf['timeout']));
+        }
+        if (isset($conf['prefix']) and !empty($conf['prefix'])) {
+            $this->redis->setOption(\Redis::OPT_PREFIX, strval($conf['prefix']));
+        }
+        if (!isset($conf['nophp'])) {
+            $this->redis->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);//序列化方式
+        }
+
+        if (!$this->redis->select((int)$db)) {
+            throw new \Exception("Redis选择库【{$db}】失败。");
+        }
+        if (isset($conf['flush']) and $conf['flush']) $this->redis->flushDB();
+    }
+
+
+    /**
+     * 创建一个LIST集合
+     * @param string|null $tabName
+     * @return RedisList
+     */
+    public function list(string $tabName)
+    {
+        static $list = Array();
+        if (!isset($list[$tabName])) {
+            $list[$tabName] = new RedisList($this->redis, $tabName);
+        }
+        return $list[$tabName];
+    }
+
+    /**
+     * 创建一个hash表
+     * @param string $tabName
+     * @return RedisHash
+     */
+    public function hash(string $tabName)
+    {
+        static $list = Array();
+        if (!isset($list[$tabName])) {
+            $list[$tabName] = new RedisHash($this->redis, $tabName);
+        }
+        return $list[$tabName];
+    }
+
+    public function hGetAlls($table)
+    {
+        return $this->redis->hGetAll($table);
+    }
+
+    /**
+     * 主机地址
+     * @return array
+     */
+    public function host()
+    {
+        return $this->host;
+    }
+
+    /**
+     * 保存
+     * @param $key
+     * @param $value
+     * @param int $ttl ：=null以config为准，=0不过期，>0指定时间
+     * @return bool
+     */
+    public function set(string $key, $value, int $ttl = null)
+    {
+        if ($ttl) {
+            return $this->redis->setex($key, $ttl, $value);
+        } else {
+            return $this->redis->set($key, $value);
+        }
+    }
+
+    public function update(string $key, $value, int $ttl = null)
+    {
+        $val = $this->get($key);
+        if (!$val) return false;
+        if (is_array($val)) $value += $val;
+        $exp = $this->ttl($key);
+        if ($exp > 0) $ttl = $exp;
+        return $this->set($key, $value, $ttl);
+    }
+
+    /**
+     * 清空
+     * @return bool|mixed
+     */
+    public function flush(bool $flushAll = false)
+    {
+//        if ($flushAll) return $this->redis->flushAll();
+        return $this->redis->flushDB();
+    }
+
+
+    /**
+     * 发送订阅，需要在swoole\redis中接收
+     * @param string $action
+     * @param array $value
+     * @return int
+     */
+    public function publish(string $channel, string $action, $message)
+    {
+        $value = [];
+        $value['action'] = $action;
+        $value['message'] = $message;
+        return $this->redis->publish($channel, serialize($value));
+    }
+
+
+    /**
+     * 设定过期时间
+     * @param string $key
+     * @param int|null $ttl
+     * @return bool|int
+     */
+    public function expire(string $key, int $ttl = null)
+    {
+        if ($ttl === null) {//只是查询过期时间
+            return $this->redis->ttl($key);
+        } elseif ($ttl === -1) {//设为永不过期
+            return $this->redis->persist($key);
+        } else {//设定过期时间
+            return $this->redis->expire($key, $ttl);
+        }
+    }
+
+    /**
+     * 查询剩余有效期
+     * 当 key 不存在时，返回 -2 。 当 key 存在但没有设置剩余生存时间时，返回 -1 。 否则，以秒为单位，返回 key 的剩余生存时间。
+     * @param string $key
+     * @param int|null $ttl
+     * @return bool|int
+     */
+    public function ttl(string $key, int $ttl = null)
+    {
+        return $this->expire($key, $ttl);
+    }
+
+    /**
+     * 给某个键改名
+     * 当 key 和 newkey 相同，或者 key 不存在时，返回一个错误。
+     * 当 newkey 已经存在时， RENAME 命令将覆盖旧值。
+     *
+     * @param string $srcKey
+     * @param string $dstKey
+     * @return bool 改名成功时提示 OK ，失败时候返回一个错误
+     */
+    public function rename(string $srcKey, string $dstKey)
+    {
+        return $this->redis->rename($srcKey, $dstKey);
+    }
+
+
+    /**
+     * 最近一次持久化保存的时间
+     */
+    public function lastSave($date = true)
+    {
+        $time = (int)$this->redis->lastSave();
+        return $date ? date('Y-m-d H:i:s', $time) : $time;
+    }
+
+    /**
+     * 持久化保存，RDB
+     * @param bool|false $now ，是否立即保存，注意：此操作会中断其他用户，
+     *                          建议由后台保存
+     * @return bool
+     */
+    public function save(bool $now = false)
+    {
+        return !!$now ? $this->redis->save() : $this->redis->bgsave();
+    }
+
+
+    /**
+     * 返回当前所有键的数量
+     */
+    public function dbSize()
+    {
+        return $this->redis->dbSize();
+    }
+
+    public function close()
+    {
+        $this->redis->close();
+    }
+
+    /**
+     * 返回服务器时间
+     * @return mixed
+     * @throws \Exception
+     * 一个包含两个字符串的列表： 第一个字符串是当前时间(以 UNIX 时间戳格式表示)，而第二个字符串是当前这一秒钟已经逝去的微秒数。
+     */
+    public function time()
+    {
+        return $this->redis->time();
+
+    }
+
+
+    /**
+     * 读取信息，但好象读不到
+     * @param null $option
+     * @return mixed
+     * @throws \Exception
+     */
+    public function info($option = null)
+    {
+        return $this->redis->info($option);
+    }
+
+
+    /**
+     * 查询某键是否存在
+     * @param $key
+     */
+    public function exists($key)
+    {
+        return $this->redis->exists($key);
+
+    }
+
+    /**
+     * 读取
+     * @param $keys
+     * @return bool|string|array
+     */
+    public function get(string $key = null, $try = 0)
+    {
+        if ($key === null or $key === '*') {
+            $RS = $this->redis->keys('*');
+            $val = Array();
+            foreach ($RS as $i => &$rs) {
+                $rv = $this->redis->get($rs);
+                $val[$rs] = ['ttl' => $this->redis->ttl($rs), 'value' => $rv];
+            }
+            return $val;
+        } else {
+            return $this->redis->get($key);
+        }
+    }
+
+    /**
+     * 返回所有键，这个可以用通配符'user*'
+     * @param string $keys
+     * @return mixed
+     * @throws \Exception
+     */
+    public function keys(string $keys = '*')
+    {
+        return $this->redis->keys($keys);
+    }
+
+    /**
+     * @param string ...$keys
+     * @return int
+     */
+    public function delete(string ...$keys)
+    {
+        return $this->redis->delete($keys);
+    }
+
+
+    /**
+     * @param string[] ...$keys
+     * @return bool|int
+     */
+    public function del(string ...$keys)
+    {
+        return $this->redis->delete($keys);
+    }
+
+
+    /**
+     * @param $key
+     * @return int     * $v = ['NULL', 'STRING', 'SET', 'LIST', 'ZSET', 'HASH'];
+     */
+    public function type($key)
+    {
+        return $this->redis->type($key);
+    }
+
+    /**
+     * @return mixed
+     * 正常情况会返回：+PONG
+     */
+    public function ping()
+    {
+        return $this->redis->ping() === '+PONG';
+    }
+
+    /**
+     * 计数器
+     * 如果值包含错误的类型，或字符串类型的值不能表示为数字，那么返回一个错误。
+     * @param string $key
+     * @param int $inc
+     * @return bool|int
+     */
+    public function counter(string $key = 'count', int $inc = 1)
+    {
+        if ($inc === 1) {
+            return $this->redis->incr($key);
+        } elseif ($inc === -1) {
+            return $this->redis->decr($key);
+        } elseif ($inc > 0) {
+            return $this->redis->incrBy($key, $inc);
+        } elseif ($inc < 0) {
+            return $this->redis->decrBy($key, abs($inc));
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
+     * 标记事务开始
+     * @return \Redis
+     */
+    public function trans_star()
+    {
+        return $this->redis->multi();
+    }
+
+    /**
+     *
+     * 取消事务，放弃执行事务块内的所有命令。
+     * 如果正在使用 WATCH 命令监视某个(或某些) key，那么取消所有监视，等同于执行命令 UNWATCH 。
+     */
+    public function trans_back()
+    {
+        $this->redis->discard();
+    }
+
+    /**
+     * 提交事务
+     * 假如某个(或某些) key 正处于 WATCH 命令的监视之下，且事务块中有和这个(或这些) key 相关的命令，那么 EXEC 命令只在这个(或这些) key 没有被其他命令所改动的情况下执行并生效，否则该事务被打断(abort)。
+     */
+    public function trans_push()
+    {
+        return $this->redis->exec();
+    }
+
+
+    /**
+     * 监视一个(或多个) key ，如果在事务执行之前这个(或这些) key 被其他命令所改动，那么事务将被打断。
+     * @param $key
+     */
+    public function watch($key)
+    {
+        $this->redis->watch($key);
+    }
+
+
+    /**
+     * 取消 WATCH 命令对所有 key 的监视。
+     */
+    public function unwatch()
+    {
+        $this->redis->unwatch();
+    }
+
+    public function table(string $table)
+    {
+        // TODO: Implement table() method.
+    }
+
+
+    public function push(string $table, $value)
+    {
+        return $this->redis->rPush($table, $value);
+    }
+
+    public function pop(string $table)
+    {
+        return $this->redis->lPop($table);
+    }
+
+    public function __call($name, $arguments)
+    {
+        return call_user_func_array([$this->redis, $name], $arguments);
+//        return $this->redis->{$name}(...$arguments);
+    }
+
+    public function __toString()
+    {
+        return json_encode($this->conf, 256);
+    }
+
+
+}
+

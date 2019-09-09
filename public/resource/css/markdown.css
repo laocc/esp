@@ -1,0 +1,227 @@
+
+h1.title {
+    color: #000;
+    height: 2em;
+    text-align: center;
+    margin-top: 50px;
+    font-size: 30px;
+}
+
+div.masterBar {
+    margin-bottom: 20px;
+    background: #eee;
+    text-align: center;
+}
+
+article.markdown {
+    margin: 0 20px;
+    position: relative;
+    padding-bottom: 100px;
+}
+
+article.markdown h1 {
+    font-size: 2.25em !important;
+    padding: 0.5em 0;
+    margin-bottom: 1em;
+    border-bottom: 1px dotted #888888;
+}
+
+article.markdown h2 {
+    font-size: 2em !important;
+    padding: 0.5em 0;
+}
+
+article.markdown h3 {
+    font-size: 1.75em !important;
+    padding: 0.5em 0;
+}
+
+article.markdown h4 {
+    font-size: 1.25em !important;
+    padding: 0.5em 0;
+}
+
+article.markdown h5 {
+    font-size: 1em !important;
+    padding: 0.5em 0;
+}
+
+article.markdown p {
+    margin: 5px 0;
+    font-size: 16px;
+    line-height: 2em;
+}
+
+article.markdown pre {
+    margin: 10px 0;
+    margin-bottom: 16px;
+    border-radius: 3px;
+    background: #3e3e4c;
+    display: block;
+    box-sizing: border-box;
+    word-break: normal;
+    border: 0;
+    max-width: initial;
+    overflow: initial;
+    color: #fefefe;
+    padding: 10px;
+    word-wrap: break-word; /* Internet Explorer 5.5+ */
+    white-space: pre-wrap; /* Firefox */
+    line-height: 1.5em;
+    font-size: 16px;
+    font-family: '宋体' !important;
+    letter-spacing: 0.1em;
+    text-shadow: 1px 1px 1px #789;
+}
+
+/*font-family: "Arial", "微软雅黑", "Microsoft YaHei", "msyh", "sans-serif";*/
+
+article.markdown pre.ini {
+    color: #ddffda;
+}
+
+article.markdown pre.shell {
+    color: #ffffda;
+}
+
+article.markdown pre.php, article.markdown pre.c {
+    text-shadow: none !important;
+}
+
+article.markdown pre span {
+    text-shadow: none;
+}
+
+article.markdown span.code {
+    background: #ddd;
+    padding: 0 2px;
+    margin: 0 1px;
+    line-height: 1.3em;
+}
+
+article.markdown span.important {
+    background: #ee7407;
+    border-radius: 3px;
+    padding: 1px 10px;
+    display: inline-block;
+    border: 1px solid #ee7407;
+    margin: 0 3px;
+    color: #fff;
+}
+
+article.markdown span {
+    /*letter-spacing: 0.005em !important;*/
+}
+
+article.markdown blockquote {
+    border: 1px solid #CCCCCC;
+    border-left: 5px #ee7407 solid;
+    padding: 5px;
+    margin: 10px 0;
+    background: #fff;
+    max-width: 100%;
+}
+
+article.markdown table {
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-collapse: collapse;
+    background: #fff;
+    width: 100%;
+}
+
+article.markdown table tr {
+    min-height: 1.5em;
+    line-height: 1.5em;
+    border-collapse: collapse;
+    border-bottom: 1px solid #ccc;
+}
+
+article.markdown table td, article.markdown table th {
+    min-height: 2em;
+    line-height: 2em;
+    border-collapse: collapse;
+    border: 1px solid #ccc;
+    border-bottom: 0;
+    /*padding-left: 0.5em;*/
+    word-wrap: break-word; /* Internet Explorer 5.5+ */
+    white-space: pre-wrap; /* Firefox */
+    padding: 6px 13px;
+}
+
+article.markdown table thead {
+    background: #ddd;
+}
+
+article.markdown ol, article.markdown ul {
+    border: 1px solid #aaa;
+    background: #f7f7f7;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+article.markdown ol li {
+    list-style: decimal-leading-zero;
+}
+
+article.markdown ul li {
+    list-style: disc;
+}
+
+article.markdown li {
+    margin-left: 28px;
+}
+
+article.markdown ol.nav {
+    position: fixed;
+    left: 0;
+    top: 100px;
+    margin: 0;
+    padding: 0;
+    background: none;
+    width: 11%;
+    overflow: hidden;
+    border: 0;
+}
+
+article.markdown ol.navMore {
+    position: static !important;
+    width: 100% !important;
+}
+
+article.markdown ol.navMore li {
+    float: left !important;
+    color: #000 !important;
+}
+
+article.markdown ol.navMore li a {
+    color: #a00 !important;
+}
+
+article.markdown ol.nav li {
+    /*margin-left: 10px;*/
+    color: #fff;
+}
+
+article.markdown ol.nav li a {
+    color: #fff;
+}
+
+article.markdown div.notes {
+    display: inline-block;
+    width: 100%;
+    background: #CCCCCC;
+    border: 1px solid #555;
+    border-radius: 10px;
+
+}
+
+article.markdown div.notes h2 {
+    font-size: 16px !important;
+    color: #ee7407;
+}
+
+article.markdown div.notes div {
+    padding: 10px;
+}
