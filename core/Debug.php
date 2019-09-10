@@ -378,6 +378,11 @@ final class Debug
         return $this;
     }
 
+    /**
+     * 修改前置目录
+     * @param string|null $path
+     * @return $this|string
+     */
     public function folder(string $path = null)
     {
         if (is_null($path)) {
@@ -385,15 +390,19 @@ final class Debug
                 return $this->_folder = "/{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
             return $this->_folder;
         }
-        $this->_folder = '/' . trim($path, '/');
+        $path = trim($path, '/');
+        $this->_folder = "/{$path}/{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
         return $this;
     }
 
+    /**
+     * 修改后置目录
+     * @param string|null $path
+     * @return $this|string
+     */
     public function path(string $path = null)
     {
-        if (is_null($path)) {
-            return $this->_path;
-        }
+        if (is_null($path)) return $this->_path;
         $this->_path = '/' . trim($path, '/');
         return $this;
     }

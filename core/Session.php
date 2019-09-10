@@ -109,7 +109,6 @@ final class Session
                 session_id($_GET[$option['name']]);
             }
         }
-//        file_put_contents(_RUNTIME . '/session.json', json_encode($option, 128 | 256 | 64));
 
         return session_start($option);
     }
