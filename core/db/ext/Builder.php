@@ -938,13 +938,15 @@ final class Builder
      * @return Result
      * @throws \Exception
      */
-    public function get(int $row = 0, &$sql = '')
+    public function get(int $row = 0, &$sql = '', $pre = null)
     {
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+
         if ($row > 0) $this->limit($row);
         $_build_sql = $this->_build_get();
         $this->replace_tempTable($_build_sql);
         $option = $this->option('select');
-        $get = $this->_MySQL->query_exec($_build_sql, $option);
+        $get = $this->_MySQL->query_exec($_build_sql, $option, null, $pre);
 
         if (is_null($sql)) {
             $sql = $_build_sql;

@@ -18,6 +18,7 @@ final class Debug
     private $_request;
     private $_errorText;
     private $_save_RPC = false;
+    private $_ROOT_len = 0;
     private static $_object;
 
     public function __construct(Request $request, Response $response, array &$config)
@@ -31,6 +32,7 @@ final class Debug
             $this->_save_RPC = true;
 
         $this->_conf = $conf;
+        $this->_ROOT_len = strlen(_ROOT);
         $this->_run = boolval($conf['run'] ?? false);
         $this->_time = time();
         $this->prevTime = microtime(true) - $this->_star[0];
@@ -95,6 +97,7 @@ final class Debug
         $data[] = " - REAL_IP:\t" . Client::ip() . "\n";
         $data[] = " - DATETIME:\t" . date('Y-m-d H:i:s', $this->_time) . "\n";
         $data[] = " - AGENT:\t" . ($_SERVER['HTTP_USER_AGENT'] ?? '') . "\n";
+        $data[] = " - ROOT:\t" . _ROOT . "\n";
 //        $data[] = " - Client:\t" . Client::id() . "\n";
         $data[] = " - Router:\t/{$request->module}/{$request->controller}/{$request->action}\t({$request->router})\n";
 
@@ -317,7 +320,7 @@ final class Debug
         static $count = 0;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
-        $this->relay("Mysql[" . (++$count) . '] = ' . print_r($val, true) . str_repeat('-', 100), $pre);
+        $this->relay("Mysql[" . (++$count) . '] = ' . print_r($val, true) . str_repeat('-', 10) . '>', $pre);
     }
 
     /**
@@ -336,7 +339,7 @@ final class Debug
         if (!$this->_run) return $this;
         $prev = is_null($prev) ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0] : $prev;
         if (isset($prev['file'])) {
-            $file = $prev['file'] . " [{$prev['line']}]";
+            $file = substr($prev['file'], $this->_ROOT_len) . " [{$prev['line']}]";
         } else {
             $file = null;
         }

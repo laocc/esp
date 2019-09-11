@@ -215,8 +215,10 @@ class Mysql
      * @return null|bool|Result
      * @throws \Exception
      */
-    public function query_exec(string $sql, array $option, \PDO $CONN = null)
+    public function query_exec(string $sql, array $option, \PDO $CONN = null, $pre = null)
     {
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+
         if (empty($sql)) {
             throw new \Exception("PDO_Error :  SQL语句不能为空");
         }
@@ -317,7 +319,7 @@ class Mysql
                     ]);
                     print_r($this->PdoAttribute($CONN));
                 } else {
-                    ($debug and !_CLI) and $this->debug($debugOption + $debugVal);
+                    ($debug and !_CLI) and $this->debug($debugOption + $debugVal, $pre);
                 }
 
                 unset($this->{$real}[$option['trans_id']]);
@@ -328,10 +330,10 @@ class Mysql
             }
             if ($debug) $error['sql'] = $sql;
             if (_CLI) print_r($debugVal);
-            ($debug and !_CLI) and $this->debug($debugOption + $debugVal);
+            ($debug and !_CLI) and $this->debug($debugOption + $debugVal, $pre);
             return json_encode($error, 256);
         }
-        ($debug and !_CLI) and $this->debug($debugOption + $debugVal);
+        ($debug and !_CLI) and $this->debug($debugOption + $debugVal, $pre);
         return $result;
     }
 

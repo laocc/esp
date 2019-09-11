@@ -165,7 +165,7 @@ class Model
      * @return int|array
      * @throws \Exception
      */
-    final public function insert(array $data, bool $full = false, bool $returnID = true)
+    final public function insert(array $data, bool $full = false, bool $returnID = true, $pre = null)
     {
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
@@ -175,17 +175,18 @@ class Model
         $val = $obj->insert($data);
         if (is_string($val)) return $val;
         if ($returnID) return $val;
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
         $pri = $this->PRI();
         $obj = $obj->param(false)->prepare(false);
         if (is_array($val)) {
             $value = [];
             foreach ($val as $id) {
-                $value[] = $obj->where($pri, $id)->get(1)->row();
+                $value[] = $obj->where($pri, $id)->get(1, $sql, $pre)->row();
             }
             return $value;
         } else {
-            return $obj->where($pri, $val)->get(1)->row();
+            return $obj->where($pri, $val)->get(1, $sql, $pre)->row();
         }
     }
 
@@ -265,7 +266,7 @@ class Model
      * @return array|bool
      * @throws \Exception
      */
-    final public function get($where, string $orderBy = null, string $sort = 'asc', &$sql = '')
+    final public function get($where, string $orderBy = null, string $sort = 'asc', &$sql = '', $pre = null)
     {
         $mysql = $this->Mysql();
         $table = $this->table();
@@ -302,8 +303,8 @@ class Model
                 $obj->order($a['key'], $a['sort'], $a['pro']);
             }
         }
-
-        $data = $obj->get(0, $sql);
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $data = $obj->get(0, $sql, $pre);
         $c = $this->checkRunData('get', $data);
         if ($c) return $c;
         $val = $data->row();
@@ -324,7 +325,7 @@ class Model
      * @return array
      * @throws \Exception
      */
-    final public function in(array $ids, $where = null, $orderBy = null, $sort = 'asc', &$sql = '')
+    final public function in(array $ids, $where = null, $orderBy = null, $sort = 'asc', &$sql = '', $pre = null)
     {
         if (empty($ids)) return [];
         $table = $this->table();
@@ -345,10 +346,10 @@ class Model
             }
         }
 
-
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $obj = $obj->where_in($this->PRI(), $ids);
         if ($where) $obj->where($where);
-        $data = $obj->get(0, $sql);
+        $data = $obj->get(0, $sql, $pre);
         return $this->checkRunData('in', $data) ?: $data->rows();
     }
 
@@ -376,7 +377,7 @@ class Model
      * @return array
      * @throws \Exception
      */
-    final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0, &$sql = '')
+    final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0, &$sql = '', $pre = null)
     {
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
@@ -400,9 +401,9 @@ class Model
                 $obj->order($a['key'], $a['sort'], $a['pro']);
             }
         }
-
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (is_bool($this->_count)) $obj->count($this->_count);
-        $data = $obj->get($limit, $sql);
+        $data = $obj->get($limit, $sql, $pre);
         $v = $this->checkRunData('all', $data);
         if ($v) return $v;
 
@@ -425,7 +426,7 @@ class Model
      * @return array
      * @throws \Exception
      */
-    final public function list($where = null, $orderBy = null, string $sort = 'desc', &$sql = '')
+    final public function list($where = null, $orderBy = null, string $sort = 'desc', &$sql = '', $pre = null)
     {
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
@@ -451,8 +452,8 @@ class Model
 
         if (is_null($this->_count)) $this->_count = true;
         $obj->count($this->_count);
-
-        $data = $obj->limit($this->pageSize, $this->pageSkip)->get(0, $sql);
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $data = $obj->limit($this->pageSize, $this->pageSkip)->get(0, $sql, $pre);
 
         $v = $this->checkRunData('list', $data);
         if ($v) return $v;
