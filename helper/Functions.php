@@ -894,12 +894,12 @@ function date_friendly($timestamp, $time_now = null)
     $Y = intval($M / 12) and $V = 'Y' and $T = '年';
     if ($D === 1) return '昨天 ' . date('H:i', $timestamp);
     if ($D === 2) return '前天 ' . date('H:i', $timestamp);
-    if ($M === 1) return '上个月 ' . date('m-d H:i', $timestamp);
-    if ($Y === 1) return '去年 ' . date('m-d H:i', $timestamp);
-    if ($Y === 2) return '前年 ' . date('m-d H:i', $timestamp);
+    if ($M === 1) return '上个月 ' . date('m-d', $timestamp);
+    if ($Y === 1) return '去年 ' . date('m-d', $timestamp);
+    if ($Y === 2) return '前年 ' . date('m-d', $timestamp);
     if ($D > 2) $dt = date('H:i', $timestamp);
-    if ($M > 1) $dt = date('m-d H:i', $timestamp);
-    if ($Y > 2) $dt = date('m-d H:i', $timestamp);
+    if ($M > 1) $dt = date('m-d', $timestamp);
+    if ($Y > 2) $dt = date('m-d', $timestamp);
     return sprintf("%s{$T}{$Q} %s", ${$V}, $dt);
 }
 
