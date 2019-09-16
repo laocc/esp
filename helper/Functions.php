@@ -897,7 +897,7 @@ function date_friendly($timestamp, $time_now = null)
     if ($M === 1) return '上个月 ' . date('m-d', $timestamp);
     if ($Y === 1) return '去年 ' . date('m-d', $timestamp);
     if ($Y === 2) return '前年 ' . date('m-d', $timestamp);
-    if ($D > 2) $dt = date('H:i', $timestamp);
+//    if ($D > 2) $dt = date('m-d', $timestamp);
     if ($M > 1) $dt = date('m-d', $timestamp);
     if ($Y > 2) $dt = date('m-d', $timestamp);
     return sprintf("%s{$T}{$Q} %s", ${$V}, $dt);
