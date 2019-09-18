@@ -132,24 +132,6 @@ final class Client
         return $ip ?? '127.0.0.1';
     }
 
-
-    /**
-     * 是否搜索蜘蛛人
-     * @return bool
-     */
-    public static function is_spider()
-    {
-        if (isset($_SERVER['HTTP_USER_AGENT'])) {
-            $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
-            $keys = ['bot', 'slurp', 'spider', 'crawl', 'curl', 'mediapartners-google', 'fast-webcrawler', 'altavista', 'ia_archiver'];
-            foreach ($keys as $key) {
-                if (!!strripos($agent, $key)) return true;
-            }
-        }
-        return false;
-    }
-
-
     /**
      * 是否手机端
      * @param string|null $browser
@@ -222,16 +204,33 @@ final class Client
      * 当前客户端是否真实浏览器，注意：这是本人瞎写的，判断起来不保证百分百准确
      * @return bool
      */
-    public static function is_Mozilla(): bool
+    public static function is_Robot(): bool
     {
         $v = preg_match_all('/([A-Z][a-zA-Z]{4,15}\/\d+\.+\d+)+/', $_SERVER['HTTP_USER_AGENT'] ?? '', $mac);
-        if (!$v or !isset($mac[1]) or count($mac[1]) < 3) return false;
+        if (!$v or !isset($mac[1]) or count($mac[1]) < 3) return true;
+        if (self::is_spider()) return true;
 
         //如果这几个基本参数少于4个，基本可以确定为非真实浏览器
         $check = ['HTTP_COOKIE', 'HTTP_ACCEPT', 'HTTP_ACCEPT_LANGUAGE', 'HTTP_ACCEPT_ENCODING', 'HTTP_UPGRADE_INSECURE_REQUESTS', 'HTTP_CACHE_CONTROL', 'HTTP_CONNECTION'];
         $c = 0;
         foreach ($check as $k) if (isset($_SERVER[$k])) $c++;
-        return ($c > (count($check) * 0.5));
+        return !($c > (count($check) * 0.5));
+    }
+
+    /**
+     * 是否搜索蜘蛛人
+     * @return bool
+     */
+    public static function is_spider(): bool
+    {
+        if (isset($_SERVER['HTTP_USER_AGENT'])) {
+            $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
+            $keys = ['bot', 'slurp', 'spider', 'crawl', 'curl', 'mediapartners-google', 'fast-webcrawler', 'altavista', 'ia_archiver'];
+            foreach ($keys as $key) {
+                if (!!strripos($agent, $key)) return true;
+            }
+        }
+        return false;
     }
 
 
