@@ -262,6 +262,22 @@ function rnd(float $amount, int $len = 2, bool $zero = true): string
 }
 
 /**
+ * 读取CPU数量信息
+ * @return array
+ */
+function get_cpu()
+{
+    $str = file_get_contents("/proc/cpuinfo");
+    if (!$str) return ['number' => 0, 'name' => 'null'];
+    $cpu = [];
+    if (preg_match_all("/model\s+name\s{0,}\:+\s{0,}([\w\s\)\(\@.-]+)([\r\n]+)/s", $str, $model)) {
+        $cpu['number'] = count($model[1]);
+        $cpu['name'] = $model[1][0];
+    }
+    return $cpu;
+}
+
+/**
  * @param $number
  * @param int $len
  * @param string $add
