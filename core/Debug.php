@@ -173,7 +173,7 @@ final class Debug
         }
 
         if ($this->_save_RPC) {
-            return RPC::put('/debug', $filename, implode($data));
+            return RPC::post('/debug', $filename, implode($data));
         }
 
         if (is_dir(_RUNTIME . '/debug/move/')) {

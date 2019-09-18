@@ -187,7 +187,7 @@ class Error
         if (strlen($info['Post']) > 1000) $info['Post'] = substr($info['Post'], 0, 1000);
 
         $filename = $path . "/" . date($filename) . mt_rand() . '.md';
-        if (defined('_RPC') and RPC::put('/debug', $filename, $info)) return;
+        if (defined('_RPC') and RPC::post('/debug', $filename, $info)) return;
 
         if (!is_dir($path)) mkdir($path, 0740, true);
         if (is_readable($path)) file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);

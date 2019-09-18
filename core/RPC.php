@@ -5,7 +5,12 @@ namespace esp\core;
 
 class RPC
 {
-    public static function put($uri, $filename, $data)
+    public static function put(string $uri, string $filename, $data)
+    {
+        return self::post($uri, $filename, $data);
+    }
+
+    public static function post(string $uri, string $filename, $data)
     {
         if (getenv('SERVER_ADDR') === _RPC['ip']) return false;
 
@@ -17,21 +22,21 @@ class RPC
 
         $post = ['filename' => $filename, 'data' => $data];
         $uri = '/' . ltrim($uri, '/');
-        $api = sprintf('http://%s:%s%s?host=%s&filename=%s', _RPC['host'], _RPC['port'], $uri, getenv('HTTP_HOST'), base64_encode($filename));
-
-        $req = Output::request($api, $post, $opt);
+        $req = Output::request(sprintf('http://%s:%s%s', _RPC['host'], _RPC['port'], $uri), $post, $opt);
         if ($req['error'] > 0) return $req['message'];
         return $req['array'];
     }
 
-    public static function get($uri, bool $json = false)
+    public static function get(string $uri, bool $json = false)
     {
         if (_RPC['ip'] === getenv('SERVER_ADDR')) return null;
 
         $opt = [];
+        $opt['type'] = 'get';
         $opt['host'] = [implode(':', _RPC)];
         if ($json) $opt['encode'] = 'json';
-        $content = Output::request(sprintf('http://%s:%s', _RPC['host'], _RPC['port']) . $uri, $opt);
+        $uri = '/' . ltrim($uri, '/');
+        $content = Output::request(sprintf('http://%s:%s%s', _RPC['host'], _RPC['port'], $uri), $opt);
         if ($content['error'] > 0) return $content['message'];
         return $json ? $content['array'] : $content['html'];
     }
