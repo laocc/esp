@@ -16,7 +16,7 @@ class RPC
         if (is_array($data)) $data = json_encode($data, 64 | 128 | 256);
 
         $post = ['filename' => $filename, 'data' => $data];
-
+        $uri = '/' . ltrim($uri, '/');
         $api = sprintf('http://%s:%s%s?host=%s&filename=%s', _RPC['host'], _RPC['port'], $uri, getenv('HTTP_HOST'), base64_encode($filename));
 
         $r = Output::request($api, $post, $opt);
