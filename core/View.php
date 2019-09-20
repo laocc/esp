@@ -63,7 +63,6 @@ final class View
         } else {
             $this->_view_val[$name] = $value;
         }
-//        print_r($this->_view_val);
     }
 
     final public function __set(string $name, $value)
@@ -98,7 +97,7 @@ final class View
 
     /**
      * @param null $object
-     * @return $this
+     * @return Adapter
      */
     public function getAdapter()
     {
@@ -127,7 +126,7 @@ final class View
      * @param $object
      * @return $this
      */
-    public function registerAdapter($object)
+    public function registerAdapter(Adapter $object)
     {
         $this->_adapter = $object;
         $this->_adapter_use = true;

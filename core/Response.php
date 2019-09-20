@@ -2,6 +2,7 @@
 
 namespace esp\core;
 
+use esp\core\face\Adapter;
 use esp\library\ext\Xml;
 
 final class Response
@@ -105,7 +106,7 @@ final class Response
     public function display(&$value)
     {
         if ($this->_autoRun === false) return;
-        if (!headers_sent()) header('sid: ' . ip2long(getenv('SERVER_ADDR')));
+//        if (!headers_sent()) header('sid: ' . ip2long(getenv('SERVER_ADDR')));
         if (is_null($value)) goto display;
 
         if (is_array($value)) {//直接显示为json/jsonP
@@ -163,7 +164,7 @@ final class Response
 
     /**
      * 返回标签解析器
-     * @return View
+     * @return Adapter
      */
     public function getAdapter()
     {
@@ -172,11 +173,16 @@ final class Response
 
     /**
      * 视图注册标签解析器
-     * @param $adapter
+     * @param Adapter $adapter
+     * @return View
+     * @throws \Exception
      */
-    public function registerAdapter($adapter)
+    public function registerAdapter(Adapter $adapter)
     {
-        $this->getView()->registerAdapter($adapter);
+        if (!$this->_request->module) {
+            throw new \Exception("registerAdapter要在routeAfter之后执行", 500);
+        }
+        return $this->getView()->registerAdapter($adapter);
     }
 
 

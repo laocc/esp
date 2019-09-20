@@ -693,7 +693,8 @@ function numbers(int $value): array
  */
 function utf8(string $str): string
 {
-    return iconv('GB2312', 'UTF-8//IGNORE', $str);
+//    return iconv('GB2312', 'UTF-8//IGNORE', $str);
+    return mb_convert_encoding($str, 'UTF-8', 'auto');
 }
 
 /**

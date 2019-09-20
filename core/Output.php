@@ -257,7 +257,8 @@ final class Output
         }
 
         if (isset($option['charset'])) {
-            $response['html'] = iconv(strtoupper($option['charset']), 'UTF-8//IGNORE', $response['html']);
+//            $response['html'] = iconv($option['charset'], 'UTF-8//IGNORE', $response['html']);
+            $response['html'] = mb_convert_encoding($response['html'], 'UTF-8', $option['charset']);
         }
 
         if (intval($response['info']['http_code']) !== 200) {

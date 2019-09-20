@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-
 final class Dispatcher
 {
     public $_plugs = Array();
@@ -134,7 +133,7 @@ final class Dispatcher
     {
         if (empty($this->_plugs)) return;
         if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'displayBefore', 'displayAfter', 'mainEnd'])) return;
-        foreach ($this->_plugs as &$plug) {
+        foreach ($this->_plugs as $plug) {
             if (method_exists($plug, $time)) {
                 call_user_func_array([$plug, $time], [$this->_request, $this->_response]);
             }
@@ -145,8 +144,10 @@ final class Dispatcher
      * 系统运行调度中心
      * @throws \Exception
      */
-    public function run(): void
+    public function run(callable $callable = null): void
     {
+        if ($callable and call_user_func($callable)) return;
+
         if ($this->run === false) return;
 
         $this->_plugs_count and $this->plugsHook('routeBefore');
@@ -254,33 +255,6 @@ final class Dispatcher
         }
 //        $this->_debug->disable();
         return $msg;
-    }
-
-    /**
-     * 是否非正常请求
-     * 简单判断是不是ab压测，除了ab，还有很多其他压测工具，即便是ab，客户端的user-agent也是可以被伪造的
-     * @return bool
-     */
-    final private function isAttack(): bool
-    {
-        if (empty($ua = $_SERVER['HTTP_USER_AGENT'] ?? '')) return true;
-
-        //ApacheBench/2.3
-        if (stripos($ua, 'ApacheBench') !== false) return true;
-
-        //正常情况下浏览器都发出这种accept
-        if (!isset($_SERVER['HTTP_ACCEPT_ENCODING']) and !isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) return true;
-        /**
-         * 网页请求
-         * [accept] => text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,* /*; q=0.8
-         */
-        /**
-         * 这两个一般都会有，如果没有，则可能也异常
-         * [accept-encoding] => gzip, deflate
-         * [accept-language] => zh-CN,zh;q=0.9,en;q=0.8
-         */
-
-        return false;
     }
 
 }
