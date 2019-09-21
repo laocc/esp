@@ -235,7 +235,9 @@ final class Output
             $response['message'] = 'Create Protocol Object Error';
             return $response;
         }
-        $response['post'] = $data;
+        if ($option['type'] === 'POST') {
+            $response['post'] = $data;
+        }
         $response['option'] = $cOption;
 
         curl_setopt_array($cURL, $cOption);
