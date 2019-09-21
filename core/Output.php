@@ -105,7 +105,6 @@ final class Output
         $cOption[CURLOPT_URL] = $url;                                                      //接收页
         $cOption[CURLOPT_FRESH_CONNECT] = true;                                            //强制新连接，不用缓存中的
 
-
         if (isset($option['ip'])) {     //指定客户端IP
             $option['headers'][] = "CLIENT-IP: {$option['ip']}";
             $option['headers'][] = "X-FORWARDED-FOR: {$option['ip']}";
@@ -118,7 +117,7 @@ final class Output
             }
         }
 
-        if (isset($option['cookies'])) {//带Cookies
+        if (isset($option['cookies']) and !empty($option['cookies'])) {//带Cookies
             if ($option['cookies'][0] === '/') {
                 $cOption[CURLOPT_COOKIEFILE] = $option['cookies'];
                 $cOption[CURLOPT_COOKIEJAR] = $option['cookies'];
