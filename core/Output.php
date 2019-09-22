@@ -258,8 +258,19 @@ final class Output
         }
 
         if (isset($option['charset'])) {
-//            $response['html'] = iconv($option['charset'], 'UTF-8//IGNORE', $response['html']);
-            $response['html'] = mb_convert_encoding($response['html'], 'UTF-8', $option['charset']);
+            if ($option['charset'] === 'auto') {
+                //自动识别gbk/gb2312转换为utf-8
+                if (preg_match('/<meta.+?charset=[\'\"]?([gbk2312]{3,6})[\'\"]?/i', $response['html'], $chat)) {
+                    $option['charset'] = $chat[1];
+                } else {
+                    $option['charset'] = null;
+                }
+            }
+            if (is_null($option['charset'])) {
+                $response['html'] = mb_convert_encoding($response['html'], 'UTF-8');
+            } else {
+                $response['html'] = mb_convert_encoding($response['html'], 'UTF-8', $option['charset']);
+            }
         }
 
         if (intval($response['info']['http_code']) !== 200) {
