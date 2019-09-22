@@ -5,12 +5,8 @@ namespace esp\core;
 
 class RPC
 {
-    public static function put(string $uri, string $filename, $data)
-    {
-        return self::post($uri, $filename, $data);
-    }
 
-    public static function post(string $uri, string $filename, $data)
+    public static function post(string $uri, $data)
     {
         if (getenv('SERVER_ADDR') === _RPC['ip']) return false;
 
@@ -18,11 +14,9 @@ class RPC
         $opt['type'] = 'post';
         $opt['encode'] = 'json';
         $opt['host'] = [implode(':', _RPC)];
-        if (is_array($data)) $data = json_encode($data, 64 | 128 | 256);
 
-        $post = ['filename' => $filename, 'data' => $data];
         $uri = '/' . ltrim($uri, '/');
-        $req = Output::request(sprintf('http://%s:%s%s', _RPC['host'], _RPC['port'], $uri), $post, $opt);
+        $req = Output::request(sprintf('http://%s:%s%s', _RPC['host'], _RPC['port'], $uri), $data, $opt);
         if ($req['error'] > 0) return $req['message'];
         return $req['array'];
     }

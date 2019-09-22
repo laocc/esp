@@ -28,7 +28,7 @@ class Exception extends \Exception
         $filename = 'YmdHis';
 
         $filename = $path . "/" . date($filename) . mt_rand() . '.md';
-        if (RPC::post('/debug', $filename, $info)) return;
+        if (RPC::post('/debug', ['filename' => $filename, 'data' => $info])) return;
 
         if (!is_dir($path)) mkdir($path, 0740, true);
         if (is_readable($path)) file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
