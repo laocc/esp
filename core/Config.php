@@ -40,14 +40,14 @@ final class Config
             }
         }
 
-        if (!_DEBUG and !_CLI and defined('_RPC') and _RPC and _RPC['ip'] !== getenv('SERVER_ADDR')) {
+        if (!_DEBUG and !_CLI and defined('_RPC') and _RPC and _RPC['ip'] !== getenv('SERVER_ADDR') and !defined('_CONFIG_LOAD')) {
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
              * 并且主服务器返回的是`success`，如果返回的不是这个，就是出错了。
              * 然后，再次goto tryGet;从redis中读取config
              */
-            $get = RPC::get('/debug/config',false);
+            $get = RPC::get('/debug/config', false);
             if ($get === 'success') {
                 if ($tryCount > 1) throw new \Exception("系统出错." . $get, 505);
                 $tryCount++;
