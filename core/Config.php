@@ -41,8 +41,9 @@ final class Config
         }
 
         if (!_DEBUG and !_CLI and
-            defined('_RPC') and _RPC and _RPC['ip'] !== getenv('SERVER_ADDR') and (_RPC['config'] ?? true)
-            and !defined('_CONFIG_LOAD')) {
+            defined('_RPC') and _RPC and _RPC['ip'] !== getenv('SERVER_ADDR')
+            and (!defined('_CONFIG_RPC') or (defined('_CONFIG_RPC') and _CONFIG_RPC))
+            and (!defined('_CONFIG_LOAD') or (defined('_CONFIG_LOAD') and !_CONFIG_LOAD))) {
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
