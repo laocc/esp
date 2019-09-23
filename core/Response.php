@@ -474,7 +474,7 @@ final class Response
         foreach ($this->_layout_val['_meta'] as $i => &$meta) {
             $this->_layout_val['_meta'][$i] = "<meta name=\"{$i}\" content=\"{$meta}\" />";
         }
-        $this->_layout_val['_meta'] = implode("\n", $this->_layout_val['_meta']) . "\n";
+        $this->_layout_val['_meta'] = implode("\n    ", $this->_layout_val['_meta']) . "\n";
 
         if (is_null($this->_layout_val['_title'])) {
             $this->_layout_val['_title'] = $resource['title'] ?? '';
