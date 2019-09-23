@@ -51,6 +51,7 @@ final class Route
         }
         if (is_string($modRoute) and !empty($modRoute)) $modRoute = json_decode($modRoute, true);
         if (empty($modRoute) or !is_array($modRoute)) $modRoute = Array();
+//        var_dump($modRoute);
 
         foreach (array_merge($modRoute, $default) as $key => &$route) {
             if ((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0) or
@@ -69,6 +70,7 @@ final class Route
 
                 //分别获取模块、控制器、动作的实际值
                 list($module, $controller, $action, $param) = $this->fill_route($request->directory, $matches, $route['route']);
+
                 if (!$controller) $controller = 'index';
                 if (!$action) $action = 'index';
                 //分别获取各个指定参数
@@ -126,7 +128,7 @@ final class Route
         $param = Array();
 
         //正则结果中没有指定结果集
-        if (empty($matches) or !isset($matches[1])) return [null, null, null, null];
+        if (empty($matches) or !isset($matches[0])) return [null, null, null, null];
 
         //未指定MCA
         if (empty($route)) {

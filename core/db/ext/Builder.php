@@ -7,8 +7,6 @@ use esp\core\Exception;
 
 /**
  *
- * https://www.codefarmer.wang/article/5cac8f05e13823022d5157b4.html
- *
  * 负责查询或执行语句的创建
  * Class Builder
  */
