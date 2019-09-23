@@ -8,7 +8,7 @@ class RPC
 
     public static function post(string $uri, $data)
     {
-        if (getenv('SERVER_ADDR') === _RPC['ip']) return false;
+        if (!_DEBUG and _RPC['ip'] === getenv('SERVER_ADDR')) return null;
 
         $opt = [];
         $opt['type'] = 'post';
@@ -23,7 +23,7 @@ class RPC
 
     public static function get(string $uri, bool $json = false)
     {
-        if (_RPC['ip'] === getenv('SERVER_ADDR')) return null;
+        if (!_DEBUG and _RPC['ip'] === getenv('SERVER_ADDR')) return null;
 
         $opt = [];
         $opt['type'] = 'get';

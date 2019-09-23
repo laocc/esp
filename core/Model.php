@@ -355,8 +355,17 @@ class Model
 
     private $_order = [];
 
-    final public function order(string $key, string $sort = 'asc', bool $addProtect = true)
+    final public function order($key, string $sort = 'asc', bool $addProtect = true)
     {
+        if (is_array($key)) {
+            foreach ($key as $ks) {
+                if (!isset($ks[1])) $ks[1] = 'asc';
+                if (!isset($ks[2])) $ks[2] = true;
+                if (!in_array(strtolower($ks[1]), ['asc', 'desc', 'rand'])) $ks[1] = 'ASC';
+                $this->_order[] = ['key' => $ks[0], 'sort' => $ks[1], 'pro' => $ks[2]];
+            }
+            return $this;
+        }
         if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
         $this->_order[] = ['key' => $key, 'sort' => $sort, 'pro' => $addProtect];
         return $this;
@@ -391,16 +400,18 @@ class Model
         if ($this->groupKey) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
 
-        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
-        if ($orderBy) {
-            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
-            $obj->order($orderBy, $sort);
-        }
         if (!empty($this->_order)) {
             foreach ($this->_order as $k => $a) {
                 $obj->order($a['key'], $a['sort'], $a['pro']);
             }
         }
+        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
+        if ($orderBy) {
+            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
+            $obj->order($orderBy, $sort);
+        }
+
+
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (is_bool($this->_count)) $obj->count($this->_count);
         $data = $obj->get($limit, $sql, $pre);
