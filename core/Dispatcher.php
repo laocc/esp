@@ -202,9 +202,14 @@ final class Dispatcher
         $base = $this->_request->directory . "/{$module}/controllers/Base.php";
         $file = $this->_request->directory . "/{$module}/controllers/{$controller}.php";
         if (is_readable($base)) load($base);//加载控制器公共类，有可能不存在
-        if (!load($file)) return $this->err404("[{$controller}] not exists.");
+        if (!load($file)) {
+            return $this->err404("[{$controller}] not exists.");
+        }
 
         $controller = '\\' . $module . '\\' . $controller . 'Controller';
+        if (!class_exists($controller)) {
+            return $this->err404("[{$controller}] not exists.");
+        }
         $cont = new $controller($this);
         if (!$cont instanceof Controller) {
             throw new \Exception("{$controller} 须继承自 \\esp\\core\\Controller", 404);
@@ -250,8 +255,7 @@ final class Dispatcher
 
     final private function err404(string $msg)
     {
-        $empty = Config::get('frame.empty');
-
+        $empty = Config::get('frame.request.empty');
         if (is_int($empty)) {
             if (_DEBUG) {
                 throw new \Exception($msg, 404);
@@ -260,6 +264,7 @@ final class Dispatcher
             return $msg;
         }
 
+//        return $msg;
         return $empty;
     }
 
