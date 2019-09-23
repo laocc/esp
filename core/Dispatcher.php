@@ -250,11 +250,17 @@ final class Dispatcher
 
     final private function err404(string $msg)
     {
-        if (_DEBUG) {
-            throw new \Exception($msg, 404);
-        }
+        $empty = Config::get('frame.empty');
+
+        if (is_int($empty)) {
+            if (_DEBUG) {
+                throw new \Exception($msg, 404);
+            }
 //        $this->_debug->disable();
-        return $msg;
+            return $msg;
+        }
+
+        return $empty;
     }
 
 }

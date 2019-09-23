@@ -142,7 +142,7 @@ final class Client
         $browser = $browser ?: ($_SERVER['HTTP_USER_AGENT'] ?? '');
         if (empty($browser)) return true;
 
-        $uaKey = ['MicroMessenger', 'android', 'mobile', 'iphone', 'ipad', 'ipod', 'opera mini', 'windows ce', 'windows mobile', 'symbianos', 'ucweb', 'netfront'];
+        $uaKey = ['MicroMessenger', 'android', 'AlipayClient', 'mobile', 'iphone', 'ipad', 'ipod', 'opera mini', 'windows ce', 'windows mobile', 'symbianos', 'ucweb', 'netfront'];
         foreach ($uaKey as $i => $k) if (stripos($browser, $k)) return true;
 
         $mobKey = ['Noki', 'Eric', 'WapI', 'MC21', 'AUR ', 'R380', 'UP.B', 'WinW', 'UPG1', 'upsi', 'QWAP', 'Jigs', 'Java', 'Alca', 'MITS', 'MOT-', 'My S', 'WAPJ', 'fetc', 'ALAV', 'Wapa', 'Oper'];
