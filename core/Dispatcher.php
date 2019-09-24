@@ -264,6 +264,8 @@ final class Dispatcher
             return $msg;
         }
 
+        if (is_null($empty) or empty($empty)) return $msg;
+
 //        return $msg;
         return $empty;
     }
