@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\db\Redis;
+use esp\core\face\Adapter;
 
 class Controller
 {
@@ -70,6 +71,11 @@ class Controller
         $this->_response->setView($value);
     }
 
+    final public function setViewPath(string $value)
+    {
+        $this->_response->viewPath($value);
+    }
+
     final public function run_user(string $user = 'www')
     {
         if (getenv('USER') !== $user) {
@@ -81,7 +87,7 @@ class Controller
     /**
      * 标签解析器
      * @param null $bool
-     * @return bool|View
+     * @return bool|View|Adapter
      */
     final protected function getAdapter()
     {
