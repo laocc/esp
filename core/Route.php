@@ -19,14 +19,10 @@ final class Route
         $default = [
             '_default' => ['match' => '/^\/(?:[a-z][a-z0-9\-]+\/?)*/i', 'route' => []],
         ];
-        $rdsKey = '_ROUTES_' . _MODULE;
+        $rdsKey = Config::$_token . '_ROUTES_' . _MODULE;
         $redis = Config::Redis();
-        if (!_CLI and !defined('_CONFIG_LOAD')) {
-            $modRoute = is_null($redis) ? null : $redis->get($rdsKey);
-        } else {
-            $modRoute = null;
-        }
-//        var_dump($modRoute);
+        $modRoute = (!_CLI and !defined('_CONFIG_LOAD') and $redis) ? $redis->get($rdsKey) : null;
+
         if (empty($modRoute) or $modRoute === 'null') {
             $file = $request->router_path . '/' . _MODULE . '.php';
             if (is_readable($file)) {
@@ -51,7 +47,6 @@ final class Route
         }
         if (is_string($modRoute) and !empty($modRoute)) $modRoute = json_decode($modRoute, true);
         if (empty($modRoute) or !is_array($modRoute)) $modRoute = Array();
-//        var_dump($modRoute);
 
         foreach (array_merge($modRoute, $default) as $key => &$route) {
             if ((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0) or

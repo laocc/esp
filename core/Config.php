@@ -13,7 +13,7 @@ final class Config
 {
     static private $_CONFIG_ = null;
     static private $_Redis;
-    static private $_token;
+    static public $_token;
 
     /**
      * @param array $config

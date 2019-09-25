@@ -198,7 +198,7 @@ class Model
         foreach ($where as $w) {
             if (is_numeric($w)) $w = [$this->PRI() => intval($w)];
             $kID = md5(serialize($w));
-            $this->cache_del("{$mysql->dbName}.{$table}", "_id:{$kID}");
+            $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
         }
         return $this;
     }
@@ -221,7 +221,7 @@ class Model
 
         if ($this->__cache === true) {
             $kID = md5(serialize($where));
-            $this->cache_del("{$mysql->dbName}.{$table}", "_id:{$kID}");
+            $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
         }
         return $this->checkRunData('delete', $val) ?: $val;
     }
@@ -247,7 +247,7 @@ class Model
 
             if ($this->__cache === true) {
                 $kID = md5(serialize($where));
-                $this->cache_del("{$mysql->dbName}.{$table}", "_id:{$kID}");
+                $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
             }
 
             $val = $mysql->table($table)->where($where)->update($data);
@@ -276,7 +276,7 @@ class Model
         }
         if ($this->__cache === true) {
             $kID = md5(serialize($where));
-            $data = $this->cache_get("{$mysql->dbName}.{$table}", "_id:{$kID}");
+            $data = $this->cache_get("{$mysql->dbName}.{$table}", "_id_{$kID}");
             $this->debug('getCache = ' . print_r(['table' => $table, 'where' => $where, 'key' => $kID, 'value' => !empty($data)], true));
             if (!empty($data)) {
                 $this->clear_initial();
@@ -311,7 +311,7 @@ class Model
         if ($val === false) $val = null;
 
         if ($this->__cache === true and isset($kID) and !empty($val)) {
-            $this->cache_set("{$mysql->dbName}.{$table}", "_id:{$kID}", $val);
+            $this->cache_set("{$mysql->dbName}.{$table}", "_id_{$kID}", $val);
             $this->__cache = false;
         }
         $this->clear_initial();
