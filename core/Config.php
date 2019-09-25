@@ -2,6 +2,7 @@
 
 namespace esp\core;
 
+use esp\core\db\File;
 use esp\core\db\Redis;
 
 /**
@@ -23,27 +24,26 @@ final class Config
         self::$_token = md5(_ROOT);
         $conf += ['path' => '/config'];
         $conf['path'] = root($conf['path']);
-        $_rdsConf = parse_ini_file("{$conf['path']}/buffer.ini", true);
-//        $_rdsConf = $_config = include("{$conf['path']}/buffer.php");;
-        if (defined('_SYSTEM')) $_rdsConf = $_rdsConf[_SYSTEM];
-        self::$_Redis = new Redis($_rdsConf);
 
+        $_bufferConf = parse_ini_file("{$conf['path']}/buffer.ini", true);
+        if (defined('_SYSTEM')) $_bufferConf = $_bufferConf[_SYSTEM];
+        if ($_bufferConf['medium'] ?? 'redis' === 'file') {
+            self::$_Redis = new File($_bufferConf);
+        } else {
+            self::$_Redis = new Redis($_bufferConf);
+        }
         $tryCount = 0;
         tryGet:
 
         //没有强制从文件加载
         if (!_CLI and !defined('_CONFIG_LOAD')) {
             self::$_CONFIG_ = self::$_Redis->get(self::$_token . '_CONFIG_');
-            if (!empty(self::$_CONFIG_)) {
-                self::$_CONFIG_ = unserialize(self::$_CONFIG_);
-                if (!empty(self::$_CONFIG_)) return;
-            }
+            if (!empty(self::$_CONFIG_)) return;
         }
 
         if (!_DEBUG and !_CLI and
             defined('_RPC') and _RPC and _RPC['ip'] !== getenv('SERVER_ADDR')
-            and (!defined('_CONFIG_RPC') or (defined('_CONFIG_RPC') and _CONFIG_RPC))
-            and (!defined('_CONFIG_LOAD') or (defined('_CONFIG_LOAD') and !_CONFIG_LOAD))) {
+            and ($_bufferConf['rpc'] ?? true)) {
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
@@ -85,7 +85,7 @@ final class Config
             if (!empty($_config)) self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
         }
         self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
-        if (!_CLI) self::$_Redis->set(self::$_token . '_CONFIG_', serialize(self::$_CONFIG_));
+        if (!_CLI) self::$_Redis->set(self::$_token . '_CONFIG_', self::$_CONFIG_);
     }
 
     public static function flush(int $lev = 0)
@@ -233,7 +233,7 @@ final class Config
             $replace = array(date('H:i:s'), date('Ymd'), time());
             $re = str_ireplace($search, $replace, $matches[1]);
             if ($re !== $matches[1]) return $re;
-            return constant($matches[1]);
+            return defined($matches[1]) ? constant($matches[1]) : $matches[1];
         }, $value);
 
         if (substr($value, 0, 1) === '[' and substr($value, -1, 1) === ']') {

@@ -45,7 +45,6 @@ final class Dispatcher
             $this->_debug = new Debug($this->_request, $this->_response, $debug);
             $GLOBALS['_Debug'] = &$this->_debug;
         }
-
         if ($session = Config::get('session')) Session::_init($session);
 
         if ($cache = Config::get('cache')) {

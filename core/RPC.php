@@ -8,11 +8,11 @@ class RPC
 
     public static function post(string $uri, $data)
     {
-        if (!_DEBUG and _RPC['ip'] === getenv('SERVER_ADDR')) return null;
-
+        if ((_MODULE === 'rpc') or !_DEBUG and _RPC['ip'] === getenv('SERVER_ADDR')) return null;
         $opt = [];
         $opt['type'] = 'post';
         $opt['encode'] = 'json';
+        $opt['timeout'] = 3;
         $opt['host'] = [implode(':', _RPC)];
 
         $uri = '/' . ltrim($uri, '/');
@@ -23,10 +23,11 @@ class RPC
 
     public static function get(string $uri, bool $json = false)
     {
-        if (!_DEBUG and _RPC['ip'] === getenv('SERVER_ADDR')) return null;
+        if ((_MODULE === 'rpc') or !_DEBUG and _RPC['ip'] === getenv('SERVER_ADDR')) return null;
 
         $opt = [];
         $opt['type'] = 'get';
+        $opt['timeout'] = 3;
         $opt['host'] = [implode(':', _RPC)];
         if ($json) $opt['encode'] = 'json';
         $uri = '/' . ltrim($uri, '/');
