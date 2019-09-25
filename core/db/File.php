@@ -20,15 +20,14 @@ final class File
 
     public function set(string $key, $value)
     {
-        if (is_array($value)) $value = serialize($value);
-        return file_put_contents("{$this->path}/{$key}.tmp", $value);
+        return file_put_contents("{$this->path}/{$key}.tmp", serialize($value));
     }
 
     public function get(string $key)
     {
         if (!is_file("{$this->path}/{$key}.tmp")) return null;
         $val = file_get_contents("{$this->path}/{$key}.tmp");
-        return $val;
+        return unserialize($val);
     }
 
     public function flush()
