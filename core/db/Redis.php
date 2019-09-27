@@ -194,6 +194,8 @@ final class Redis implements KeyValue
             return $this->redis->ttl($key);
         } elseif ($ttl === -1) {//设为永不过期
             return $this->redis->persist($key);
+        } elseif ($ttl > time()) {//设置指定过期时间戳
+            return $this->redis->expireAt($key, $ttl);
         } else {//设定过期时间
             return $this->redis->expire($key, $ttl);
         }
