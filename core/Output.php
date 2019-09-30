@@ -257,7 +257,10 @@ final class Output
             $response['html'] = trim(substr($response['html'], $response['info']['header_size']));
         }
 
-        if (isset($option['charset'])) {
+        if (preg_match('/charset=([gbk2312]{3,6})/i', $response['info']['content_type'], $chat)) {
+            $response['html'] = mb_convert_encoding($response['html'], 'UTF-8', $chat[1]);
+
+        } else if (isset($option['charset'])) {
             if ($option['charset'] === 'auto') {
                 //自动识别gbk/gb2312转换为utf-8
                 if (preg_match('/<meta.+?charset=[\'\"]?([gbk2312]{3,6})[\'\"]?/i', $response['html'], $chat)) {

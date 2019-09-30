@@ -289,7 +289,6 @@ class Mysql
             'server' => $CONN->getAttribute(\PDO::FETCH_COLUMN),//服务器IP
             'sql' => $sql,
             'prepare' => (!empty($option['param']) or $option['prepare']) ? 'YES' : 'NO',
-//            'param' => empty($option['param']) ? null : json_encode(isset($option['param'][1]) ? $option['param'] : $option['param'][0], 256),
             'param' => json_encode($option['param'], 256 | 64),
             'ready' => microtime(true),
         ];
@@ -301,7 +300,7 @@ class Mysql
             'error' => empty($error) ? null : $error,
             'sql' => $sql,
             'param' => json_encode($option['param'], 256 | 64),
-            'result' => is_object($result) ? 'OBJECT' : $result,
+            'result' => is_object($result) ? 'OBJECT' : var_export($result, true),
         ];
 
         if (!empty($error)) {
@@ -492,7 +491,6 @@ class Mysql
                         $stmt->bindColumn($k, $av);
                     }
                 }
-//                print_r($option['param']);
                 $run = $stmt->execute($option['param']);
                 if ($run === false) {
                     $error = $stmt->errorInfo();

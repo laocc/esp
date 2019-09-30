@@ -44,8 +44,8 @@ class Error
         }
         //ajax方式下，都只显示简单信息
         if (strtolower(getenv('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest') {
-            $default['run'] = 1;
-            $default['throw'] = 1;
+            $default['run'] = 9;
+            $default['throw'] = 9;
         }
 
         $option = $default + $option;
@@ -71,13 +71,24 @@ class Error
                 unset($errcontext['all']);
             }
             if (!_CLI) $err['text'] = $errcontext;
-            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+
+            if (!isset($errcontext['errorTitle'])) {
+                $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+            }
+
             if (is_int($option['run'])) {
                 if ($option['run'] === 0) {
                     exit;
                 } else if ($option['run'] === 1) {
                     unset($err['text']);
                     pre($err);
+                    exit;
+                } else if ($option['run'] === 9) {
+                    header("Content-type: application/json; charset=UTF-8", true, 200);
+                    unset($err['text']);
+                    $text = $err['error'];
+                    if (isset($errcontext['errorTitle'])) $text = "{$errcontext['errorTitle']}：{$err['error']}";
+                    echo json_encode(['success' => 0, 'message' => $text, 'level' => 'Error', 'file' => "{$errFile}({$errLine})"], 256);
                     exit;
                 } else if ($option['run'] === 2) {
                     $this->displayError('Error', $err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
@@ -110,6 +121,10 @@ class Error
                     exit;
                 } else if ($option['throw'] === 1) {
                     print_r($err);
+                    exit;
+                } else if ($option['throw'] === 9) {
+                    header("Content-type: application/json; charset=UTF-8", true, 200);
+                    echo json_encode(['success' => 0, 'messages' => $err['error'], 'level' => 'Throw'], 256);
                     exit;
                 } else if ($option['throw'] === 2) {
                     $this->displayError('Throw', $err, $error->getTrace());

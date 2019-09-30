@@ -124,7 +124,7 @@ final class Xss
             }
 
             if (preg_match('/<img/i', $str)) {
-                $str = preg_replace_callback('/\<img[^a-z0-9]+([^>]*?)(?:\s?/?\>|$)/si', function ($match) {
+                $str = preg_replace_callback('/\<img[^a-z0-9]+([^>]*?)(?:\s\?\/\?\>\|\$)/is', function ($match) {
                     return str_replace($match[1],
                         preg_replace('/src=.*?(?:(?:alert|prompt|confirm)(?:\(|&\#40;)|javascript:|livescript:|mocha:|charset=|window\.|document\.|\.cookie|<script|<xss|base64\s*,)/is',
                             '',
