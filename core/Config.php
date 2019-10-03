@@ -26,7 +26,7 @@ final class Config
         $conf['path'] = root($conf['path']);
 
         $_bufferConf = parse_ini_file("{$conf['path']}/buffer.ini", true);
-        if (defined('_SYSTEM')) $_bufferConf = $_bufferConf[_SYSTEM];
+        if (isset($conf['folder'])) $_bufferConf = $_bufferConf[$conf['folder']];
 
         if (($_bufferConf['medium'] ?? 'redis') === 'file') {
             self::$_Redis = new File($_bufferConf);

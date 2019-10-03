@@ -11,6 +11,7 @@ class Controller
     protected $_request;
     protected $_response;
     protected $_plugs;
+    protected $_system;
     public $_debug;
     public $_buffer;
 
@@ -26,6 +27,7 @@ class Controller
         $this->_response = &$dispatcher->_response;
         $this->_debug = &$dispatcher->_debug;
         $this->_buffer = Config::Redis();
+        $this->_system = _SYSTEM;
     }
 
     /**
