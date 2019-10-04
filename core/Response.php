@@ -310,7 +310,9 @@ final class Response
         if (!$res_domain) {
             $res_domain = '';
         } else {
-            if ($res_domain[0] !== '/') $res_domain = _HTTP_ . $res_domain;
+            if (!($res_domain[0] === '/' or substr($res_domain, 0, 4) === 'http')) {
+                $res_domain = _HTTP_ . $res_domain;
+            }
         }
 
         $res_rand = Config::Redis()->get('resourceRand');
