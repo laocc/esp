@@ -29,7 +29,8 @@ class SessionRedis implements \SessionHandlerInterface
 
     /**
      * 设置或读取过期时间
-     * @return int|bool
+     * @param int|null $ttl
+     * @return bool|int
      */
     public function ttl(int $ttl = null)
     {
@@ -52,8 +53,8 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function open($save_path, $session_name)
     {
-        $conf =& $this->_conf;
-//        var_dump(['open', $save_path, $session_name, $conf]);
+        $conf = $this->_conf;
+//        pre(['open', $save_path, $session_name, $conf]);
         if (!isset($conf['port']) or intval($conf['port']) === 0) {
             if (!$this->_Redis->connect($conf['host'])) {
                 throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");

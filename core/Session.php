@@ -60,7 +60,7 @@ final class Session
      * @return bool
      * @throws \Exception
      */
-    public static function _init(array $session)
+    public static function _init(array $session): bool
     {
         if (_CLI) return false;
         $config = $session['default'];
@@ -128,7 +128,7 @@ final class Session
      * @param bool $createNew 换新ID后，原数据清空，一般都要清空，否则会导至数据库暴增
      * @return string
      */
-    public static function id(bool $createNew = false)
+    public static function id(bool $createNew = false): string
     {
         if ($createNew) session_regenerate_id(true);
         return session_id();

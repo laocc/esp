@@ -52,7 +52,7 @@ final class Response
      * @return bool
      * @throws \Exception
      */
-    public function set_value(string $name, $value)
+    public function set_value(string $name, $value): bool
     {
         switch ($name) {
             case 'json':
@@ -103,7 +103,7 @@ final class Response
      * @param void $value 控制器返回的值
      * @throws \Exception
      */
-    public function display(&$value)
+    public function display(&$value): void
     {
         if ($this->_autoRun === false) return;
 //        if (!headers_sent()) header('sid: ' . ip2long(getenv('SERVER_ADDR')));
@@ -145,18 +145,18 @@ final class Response
         echo $this->_display_Result = $this->render();
     }
 
-    public function redirect($val)
+    public function redirect($val): void
     {
         $this->_display_Result = $val;
     }
 
-    public function autoRun(bool $run)
+    public function autoRun(bool $run): Response
     {
         $this->_autoRun = $run;
         return $this;
     }
 
-    public function concat(bool $run)
+    public function concat(bool $run): Response
     {
         $this->_concat = $run;
         return $this;
@@ -166,7 +166,7 @@ final class Response
      * 返回标签解析器
      * @return Adapter
      */
-    public function getAdapter()
+    public function getAdapter(): Adapter
     {
         return $this->getView()->getAdapter();
     }
@@ -177,7 +177,7 @@ final class Response
      * @return View
      * @throws \Exception
      */
-    public function registerAdapter(Adapter $adapter)
+    public function registerAdapter(Adapter $adapter): View
     {
         if (!$this->_request->module) {
             throw new \Exception("registerAdapter要在routeAfter之后执行", 500);
@@ -208,7 +208,7 @@ final class Response
      * @param $file
      * @return bool|View
      */
-    public function getView()
+    public function getView(): View
     {
         static $obj;
         if (!is_null($obj)) return $obj;
@@ -216,7 +216,7 @@ final class Response
         return $obj = new View($this->viewPath(), $this->_view_set['view_file']);
     }
 
-    public function setView($value)
+    public function setView($value): Response
     {
         if (is_bool($value)) {
             $this->_view_set['view_use'] = $value;
@@ -225,10 +225,14 @@ final class Response
             $this->_view_set['view_file'] = $value;
             $this->getView()->file($value);
         }
+        return $this;
     }
 
 
-    public function getLayout()
+    /**
+     * @return View
+     */
+    public function getLayout(): View
     {
         static $obj;
         if (!is_null($obj)) return $obj;
@@ -236,7 +240,7 @@ final class Response
         return $obj = new View($this->viewPath(), $this->_view_set['layout_file']);
     }
 
-    public function setLayout($value)
+    public function setLayout($value): Response
     {
         if (is_bool($value)) {
             $this->_view_set['layout_use'] = $value;
@@ -245,6 +249,7 @@ final class Response
             $this->_view_set['layout_file'] = $value;
             $this->getLayout()->file($value);
         }
+        return $this;
     }
 
     /**
@@ -399,7 +404,7 @@ final class Response
     /**
      * 整理layout中的变量
      */
-    private function cleared_layout_val()
+    private function cleared_layout_val(): void
     {
         $resource = Config::get('resource.default');
         $module = Config::get('resource.' . _MODULE);

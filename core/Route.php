@@ -170,7 +170,7 @@ final class Route
      * HTTP/AJAX两项后可以跟具体的method类型，如：HTTP,GET,POST
      * CLI  =   只能单独出现
      */
-    private function method_check(string $mode, string $method, bool $ajax)
+    private function method_check(string $mode, string $method, bool $ajax): bool
     {
         if (!$mode) return true;
         list($mode, $method) = [strtoupper($mode), strtoupper($method)];

@@ -2,6 +2,7 @@
 
 namespace esp\core\db\ext;
 
+use esp\core\Config;
 use esp\core\db\Mysql;
 use esp\core\Exception;
 
@@ -800,7 +801,6 @@ final class Builder
 
         // 保护标识符
         if ($identifier) $table = $this->protect_identifier($table);
-
         //连接条件允许以数组方式
         $_filters = is_array($_filter) ? $_filter : explode(',', $_filter);
 //

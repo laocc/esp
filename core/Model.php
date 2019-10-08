@@ -603,7 +603,7 @@ class Model
      * @return Mysql
      * @throws \Exception
      */
-    final public function Mysql(int $tranID = 0, array $_conf = [])
+    final public function Mysql(int $tranID = 0, array $_conf = []): Mysql
     {
         if (!isset($this->_Mysql[$tranID])) {
             $conf = Config::get('database.mysql');

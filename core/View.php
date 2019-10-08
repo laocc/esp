@@ -24,8 +24,10 @@ final class View
 
     /**
      * 设置或获取视图路径
+     * @param string|null $dir
+     * @return mixed|string
      */
-    public function dir(string $dir = null)
+    public function dir(string $dir = null): string
     {
         if (is_null($dir)) {
             return $this->_path['dir'];
@@ -39,6 +41,8 @@ final class View
 
     /**
      * 设置视图文件名
+     * @param string|null $file
+     * @return mixed|string
      */
     public function file(string $file = null)
     {
@@ -54,7 +58,7 @@ final class View
      * @param $name
      * @param $value
      */
-    public function assign($name, $value = null)
+    public function assign($name, $value = null): void
     {
         if (is_array($name)) {
             foreach ($name as $k => $v) {
@@ -65,7 +69,7 @@ final class View
         }
     }
 
-    final public function __set(string $name, $value)
+    final public function __set(string $name, $value): void
     {
         $this->_view_val[$name] = $value;
     }
@@ -75,11 +79,15 @@ final class View
         return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
     }
 
-    final public function set(string $name, $value = null)
+    final public function set(string $name, $value = null): void
     {
         $this->assign($name, $value);
     }
 
+    /**
+     * @param string $name
+     * @return mixed|null
+     */
     final public function get(string $name)
     {
         return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
@@ -88,8 +96,10 @@ final class View
 
     /**
      * 设置框架对象
+     * @param View $object
+     * @return View
      */
-    public function layout(View $object)
+    public function layout(View $object): View
     {
         $this->_layout = $object;
         return $this;
@@ -99,7 +109,7 @@ final class View
      * @param null $object
      * @return Adapter
      */
-    public function getAdapter()
+    public function getAdapter(): Adapter
     {
         return $this->_adapter;
     }
@@ -109,7 +119,7 @@ final class View
      * @return $this
      * @throws \Exception
      */
-    public function setAdapter($use)
+    public function setAdapter($use): View
     {
         if ($use === false) {
             $this->_adapter_use = false;
@@ -126,7 +136,7 @@ final class View
      * @param $object
      * @return $this
      */
-    public function registerAdapter(Adapter $object)
+    public function registerAdapter(Adapter $object): View
     {
         $this->_adapter = $object;
         $this->_adapter_use = true;
@@ -141,7 +151,7 @@ final class View
      * @return string
      * @throws \Exception
      */
-    public function render(string $file, array $value)
+    public function render(string $file, array $value): string
     {
         $dir = root($this->dir());
         $fileV = $this->file() ?: $file;//以之前设置的优先
@@ -173,7 +183,7 @@ final class View
     /**
      * 显示解析视图结果
      */
-    public function display($file, $value)
+    public function display($file, $value): void
     {
         echo $this->render($file, $value);
     }
@@ -185,7 +195,7 @@ final class View
      * @param array $__value__
      * @return string
      */
-    private function fetch(string $__file__, array $__value__)
+    private function fetch(string $__file__, array $__value__): string
     {
         if ($this->_adapter_use and !is_null($this->_adapter)) {
             $this->_adapter instanceof Adapter and 1;

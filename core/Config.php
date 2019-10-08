@@ -22,11 +22,15 @@ final class Config
     public static function _init(array $conf)
     {
         self::$_token = md5(_ROOT);
-        $conf += ['path' => '/config'];
+        $conf += ['path' => '/common/config'];
         $conf['path'] = root($conf['path']);
 
         $_bufferConf = parse_ini_file("{$conf['path']}/buffer.ini", true);
-        if (isset($conf['folder'])) $_bufferConf = $_bufferConf[$conf['folder']];
+        if (isset($conf['folder'])) {
+            $_bufferConf = $_bufferConf[$conf['folder']];
+        } else if (_DEBUG and isset($_bufferConf['debug'])) {
+            $_bufferConf = $_bufferConf['debug'];
+        }
 
         if (($_bufferConf['medium'] ?? 'redis') === 'file') {
             self::$_Redis = new File($_bufferConf);
@@ -37,7 +41,11 @@ final class Config
         tryGet:
 
         //没有强制从文件加载
-        if (!_CLI and !defined('_CONFIG_LOAD')) {
+        if (!_CLI
+            and !defined('_CONFIG_LOAD')
+            and (!isset($_bufferConf['cache']) or $_bufferConf['cache'])
+            and (!isset($conf['cache']) or $conf['cache'])
+        ) {
             self::$_CONFIG_ = self::$_Redis->get(self::$_token . '_CONFIG_');
             if (!empty(self::$_CONFIG_)) return;
         }
@@ -75,7 +83,8 @@ final class Config
         foreach ($config as $i => $file) {
             $_config = self::loadFile($file, $i);
             //查找子目录下相同文件，如果存在，则覆盖相关值
-            if (isset($conf['folder'])) {
+            if (isset($conf['folder']) or _DEBUG) {
+                if (!isset($conf['folder'])) $conf['folder'] = 'debug';
                 $tmp = explode('/', $file);
                 $tmp[count($tmp) - 1] = $conf['folder'] . '/' . $tmp[count($tmp) - 1];
                 $tmp = implode('/', $tmp);
@@ -86,7 +95,9 @@ final class Config
             if (!empty($_config)) self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
         }
         self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
-        if (!_CLI) self::$_Redis->set(self::$_token . '_CONFIG_', self::$_CONFIG_);
+        if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) self::$_Redis->set(self::$_token . '_CONFIG_', self::$_CONFIG_);
+
+//        pre(self::$_CONFIG_);
     }
 
     public static function flush(int $lev = 0)

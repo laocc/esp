@@ -183,6 +183,7 @@ trait Mysql
      * 根据数据库中的表，创建相应的模型
      * @param string $path
      * @param string $baseModel
+     * @return string
      */
     final public function createModel(string $path, string $baseModel = 'BaseModel')
     {

@@ -299,22 +299,12 @@ final class Redis implements KeyValue
 
     /**
      * 读取
-     * @param $keys
-     * @return bool|string|array
+     * @param string $key
+     * @return array|bool|string
      */
-    public function get(string $key = null, $try = 0)
+    public function get(string $key)
     {
-        if ($key === null or $key === '*') {
-            $RS = $this->redis->keys('*');
-            $val = Array();
-            foreach ($RS as $i => &$rs) {
-                $rv = $this->redis->get($rs);
-                $val[$rs] = ['ttl' => $this->redis->ttl($rs), 'value' => $rv];
-            }
-            return $val;
-        } else {
-            return $this->redis->get($key);
-        }
+        return $this->redis->get($key);
     }
 
     /**
@@ -323,9 +313,13 @@ final class Redis implements KeyValue
      * @return mixed
      * @throws \Exception
      */
-    public function keys(string $keys = '*')
+    public function keys(string $keys = null)
     {
-        return $this->redis->keys($keys);
+        $iterator = null;
+        $value = [];
+        if ($keys === '*') $keys = null;
+        while ($val = $this->redis->scan($iterator, $keys)) array_push($value, ...$val);
+        return $value;
     }
 
     /**
