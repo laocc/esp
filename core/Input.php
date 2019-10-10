@@ -115,7 +115,7 @@ final class Input
                 if ($autoValue === '') {
                     $value = preg_replace('/[\"\'\%\&\^\$\#\(\)\[\]\{\}\?]/', '', trim($value));
 
-                } elseif ($autoValue === 'post') {
+                } elseif ($autoValue === 'real') {
 
                 } elseif ($autoValue === 'array') {
 //                    $value
