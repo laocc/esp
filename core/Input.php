@@ -114,12 +114,17 @@ final class Input
             case is_string($autoValue):
                 if ($autoValue === '') {
                     $value = preg_replace('/[\"\'\%\&\^\$\#\(\)\[\]\{\}\?]/', '', trim($value));
+
+                } elseif ($autoValue === 'post') {
+
                 } elseif ($autoValue === 'array') {
 //                    $value
+
                 } elseif ($autoValue === 'json') {
                     $value = json_encode(array_map(function ($v) {
                         return trim($v);
                     }, $value), 256);
+
                 } else if ($autoValue === 'date_time') {
                     $date = trim($value);
                     if (!!$date) {
@@ -129,6 +134,11 @@ final class Input
                     } else {
                         $value = 0;
                     }
+
+                } else if (is_match($autoValue)) {
+                    //autoValue是一个正则表达式，常用的如：/^\w+$/
+                    if (!preg_match($autoValue, $value)) $value = null;
+
                 }
                 break;
 
@@ -155,12 +165,8 @@ final class Input
             default:
                 if (is_array($value)) $value = json_encode($value, 256);
 
-                //autoValue是一个正则表达式，常用的如：/^\w+$/
-                if ($autoValue and is_match($autoValue)) {
-                    if (!preg_match($autoValue, $value)) $value = null;
-                } elseif (self::_XSS_CLEAN) {
-                    Xss::clear($value);
-                }
+                if (self::_XSS_CLEAN) Xss::clear($value);
+
         }
         return $value;
     }

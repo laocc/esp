@@ -141,6 +141,14 @@ class Controller
     }
 
     /**
+     * @return Resources
+     */
+    final public function getResource()
+    {
+        return $this->_response->getResource();
+    }
+
+    /**
      * @param string $name
      * @return null|Plugin
      */

@@ -9,11 +9,11 @@ final class Response
 {
     private $_display_value = Array();
     private $_request;
+    private $_resource;
     private $_display_type;
     public $_display_Result;//最终的打印结果
     public $_Content_Type;
     private $_save_cache = false;
-    private $_concat;
 
     private $_view_val = Array();
     private $_layout_val = [
@@ -40,10 +40,17 @@ final class Response
     public function __construct(Request $request)
     {
         $this->_request = $request;
+        $this->_resource = new Resources();
         $this->_autoRun = !_CLI;
-        $this->_concat = Config::get('resource.default.concat');
     }
 
+    /**
+     * @return Resources
+     */
+    public function getResource()
+    {
+        return $this->_resource;
+    }
 
     /**
      * 接受控制器设置页面特殊显示内容
@@ -158,7 +165,7 @@ final class Response
 
     public function concat(bool $run): Response
     {
-        $this->_concat = $run;
+        $this->_resource->concat($run);
         return $this;
     }
 
@@ -311,23 +318,12 @@ final class Response
             header("Content-type: {$this->_Content_Type}; charset=UTF-8", true, 200);
         }
 
-        $res_domain = Config::get('resource.default.host');
-        if (!$res_domain) {
-            $res_domain = '';
-        } else {
-            if (!($res_domain[0] === '/' or substr($res_domain, 0, 4) === 'http')) {
-                $res_domain = _HTTP_ . $res_domain;
-            }
-        }
-
-        $res_rand = Config::Redis()->get('resourceRand');
-        if (!$res_rand) $res_rand = Config::get('resource.' . _MODULE . '.rand');
-        if (!$res_rand) $res_rand = Config::get('resource.default.rand');
-
-        $res_prev = Config::get('resource.default.path');
+        $res_domain = $this->_resource->host();
+        $res_rand = $this->_resource->rand();
+        $res_prev = $this->_resource->path();
 
         //合并js/css
-        if ($this->_concat) {
+        if ($this->_resource->concat()) {
             preg_match_all("/<link.*?href=['\"](.+?)['\"].*?\>/is", $html, $css, PREG_PATTERN_ORDER);
             $html = str_replace($css[0], '', $html);
             foreach ($css[1] as $i => $mch) {
@@ -336,7 +332,7 @@ final class Response
                 }
                 if (strpos($css[1][$i], $res_prev) === 0) $css[1][$i] = substr($css[1][$i], strlen($res_prev));
             }
-            $import = Config::get('resource.default.importCss');
+            $import = $this->_resource->get('importcss');
             if ($import) array_push($css[1], ...$import);
 
             preg_match_all("/<script.*?src=['\"](.+?)['\"]\><\/script>/i", $html, $jss, PREG_PATTERN_ORDER);
@@ -365,8 +361,7 @@ final class Response
             $html = str_replace("</head>", "{$cssTag}\n\t{$jssTag}\n</head>", $html);
         }
 
-        $html = str_replace([$res_prev, '__RAND__'], [$res_domain, $res_rand], $html);
-        return $html;
+        return $this->_resource->replace($html);
     }
 
 
@@ -406,29 +401,25 @@ final class Response
      */
     private function cleared_layout_val(): void
     {
-        $resource = Config::get('resource.default');
-        $module = Config::get('resource.' . _MODULE);
-        if (is_array($module)) $resource = $module + $resource;
+        $dom = $this->_resource->host();
 
-        $dom = rtrim($resource['domain'] ?? '', '/');
-
-        $domain = function ($item) use ($dom, $resource) {
+        $domain = function ($item) use ($dom) {
             if (substr($item, 0, 4) === 'http') return $item;
             if (substr($item, 0, 1) === '.') return $item;
             if (substr($item, 0, 1) === '/') return $item;
             if (substr($item, 0, 2) === '//') return substr($item, 1);
-            if ($item === 'jquery') $item = $resource['jquery'];
+            if ($item === 'jquery') $item = $this->_resource->get('jquery');
             return $dom . '/' . ltrim($item, '/');
         };
 
-        if (0 and $resource['concat'] ?? false) {
+        if (0 and $this->_resource->concat()) {
             foreach (['foot', 'head', 'body', 'defer'] as $pos) {
                 if (!empty($this->_layout_val["_js_{$pos}"])) {
                     $defer = ($pos === 'defer') ? ' defer="defer"' : null;
                     $conJS = Array();
                     $http = Array();
                     foreach ($this->_layout_val["_js_{$pos}"] as &$js) {
-                        if ($js === 'jquery') $js = $resource['jquery'] ?? '';
+                        if ($js === 'jquery') $js = $this->_resource->get('jquery');
                         if (substr($js, 0, 4) === 'http') {
                             $http[] = "<script type=\"text/javascript\" src=\"{$js}\" charset=\"utf-8\" {$defer} ></script>";
                         } else {
@@ -475,8 +466,8 @@ final class Response
             $this->_layout_val['_css'] = implode("\n", $this->_layout_val['_css']) . "\n";
         }
 
-        $this->_layout_val['_meta']['keywords'] = $this->_layout_val['_meta']['keywords'] ?: $resource['keywords'] ?? '';
-        $this->_layout_val['_meta']['description'] = $this->_layout_val['_meta']['description'] ?: $resource['description'] ?? '';
+        $this->_layout_val['_meta']['keywords'] = $this->_layout_val['_meta']['keywords'] ?: $this->_resource->keywords();
+        $this->_layout_val['_meta']['description'] = $this->_layout_val['_meta']['description'] ?: $this->_resource->description();
 
         foreach ($this->_layout_val['_meta'] as $i => &$meta) {
             $this->_layout_val['_meta'][$i] = "<meta name=\"{$i}\" content=\"{$meta}\" />";
@@ -484,9 +475,10 @@ final class Response
         $this->_layout_val['_meta'] = implode("\n    ", $this->_layout_val['_meta']) . "\n";
 
         if (is_null($this->_layout_val['_title'])) {
-            $this->_layout_val['_title'] = $resource['title'] ?? '';
-        } elseif ($this->_layout_val['_title_default']) {
-            $this->_layout_val['_title'] .= ' - ' . $resource['title'] ?? '';
+            $this->_layout_val['_title'] = $this->_resource->title();
+        }
+        if ($this->_layout_val['_title_default']) {
+            $this->_layout_val['_title'] .= ' - ' . $this->_layout_val['_title'];
         }
         unset($this->_layout_val['_title_default']);
     }
