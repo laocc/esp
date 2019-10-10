@@ -51,7 +51,7 @@ final class Resources
         return $this->conf[$key] ?? null;
     }
 
-    public function rand(): string
+    public function rand()
     {
         $res_rand = Config::Redis()->get('resourceRand');
         if (!$res_rand) $res_rand = $this->conf['rand'] ?? '';
