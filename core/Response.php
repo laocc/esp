@@ -476,9 +476,8 @@ final class Response
 
         if (is_null($this->_layout_val['_title'])) {
             $this->_layout_val['_title'] = $this->_resource->title();
-        }
-        if ($this->_layout_val['_title_default']) {
-            $this->_layout_val['_title'] .= ' - ' . $this->_layout_val['_title'];
+        } else if ($this->_layout_val['_title_default']) {
+            $this->_layout_val['_title'] .= ' - ' . $this->_resource->title();
         }
         unset($this->_layout_val['_title_default']);
     }
