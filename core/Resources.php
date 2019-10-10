@@ -51,11 +51,11 @@ final class Resources
         return $this->conf[$key] ?? null;
     }
 
-    public function rand()
+    public function rand(): string
     {
         $res_rand = Config::Redis()->get('resourceRand');
         if (!$res_rand) $res_rand = $this->conf['rand'] ?? '';
-        return $res_rand;
+        return strval($res_rand);
     }
 
     public function title(string $title = null): string
