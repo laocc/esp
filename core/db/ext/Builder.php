@@ -1111,7 +1111,7 @@ final class Builder
      * @return bool|Result|null
      * @throws \Exception
      */
-    public function update(array $data, $add_identifier = true)
+    public function update(array $data, bool $add_identifier = true, &$sql = '', $pre = null)
     {
         if (empty($data)) {
             $Exception = 'DB_ERROR: 不能 update 空数据';
@@ -1157,7 +1157,14 @@ final class Builder
         //如果有抛错，则不执行，由后面记录sQL内容
         if (isset($Exception)) goto err;
 
-        return $this->_MySQL->query_exec($sql, $this->option('update'));
+        $exe = $this->_MySQL->query_exec($sql, $this->option('update'), null, $pre);
+
+        if (is_string($exe)) {
+            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+            $exe = json_decode($exe, true);
+            throw new \ErrorException($exe[2], $exe[1], 1, $pre['file'], $pre['line']);
+        }
+        return $exe;
 
         err:
         $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];

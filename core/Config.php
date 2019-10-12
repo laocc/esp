@@ -94,6 +94,10 @@ final class Config
             }
             if (!empty($_config)) self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
         }
+
+
+
+
         self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
         if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) self::$_Redis->set(self::$_token . '_CONFIG_', self::$_CONFIG_);
 

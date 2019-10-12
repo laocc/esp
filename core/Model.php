@@ -234,27 +234,24 @@ class Model
      * @return bool|db\ext\Result|null
      * @throws \Exception
      */
-    final public function update($where, array $data)
+    final public function update($where, array $data, &$sql = '', $pre = null)
     {
-        try {
-            $table = $this->table();
-            if (!$table) throw new Exception('Unable to get table name');
-            if (is_numeric($where)) {
-                $where = [$this->PRI() => intval($where)];
-            }
-            if (empty($where)) throw new Exception('Update Where 禁止为空');
-            $mysql = $this->Mysql();
-
-            if ($this->__cache === true) {
-                $kID = md5(serialize($where));
-                $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
-            }
-
-            $val = $mysql->table($table)->where($where)->update($data);
-            return $this->checkRunData('update', $val) ?: $val;
-        } catch (Exception $e) {
-            $e->display();
+        $table = $this->table();
+        if (!$table) throw new Exception('Unable to get table name');
+        if (is_numeric($where)) {
+            $where = [$this->PRI() => intval($where)];
         }
+        if (empty($where)) throw new Exception('Update Where 禁止为空');
+        $mysql = $this->Mysql();
+
+        if ($this->__cache === true) {
+            $kID = md5(serialize($where));
+            $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
+        }
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+
+        $val = $mysql->table($table)->where($where)->update($data, true, $sql, $pre);
+        return $this->checkRunData('update', $val) ?: $val;
     }
 
 

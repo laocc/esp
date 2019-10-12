@@ -26,7 +26,10 @@ final class Debug
         $this->_star = [$_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true), memory_get_usage()];
 
         $conf = $config['default'];
-        if (isset($config[_MODULE])) $conf = $config[_MODULE] + $conf;
+        if (isset($config[_MODULE])) {
+            $conf = $config[_MODULE] + $conf;
+//            $conf = array_replace_recursive($conf, $config[_MODULE]);
+        }
 
         if (defined('_RPC') and ($conf['api'] ?? '') === 'rpc' and !in_array(getenv('SERVER_ADDR'), $conf['server'] ?? [_RPC['ip']]))
             $this->_save_RPC = true;
