@@ -57,7 +57,7 @@ class Code2
         $option['level'] = 'Q';    //可选LMQH
         $option['size'] = 10;    //每条线像素点,一般不需要动，若要固定尺寸，用width限制
         $option['margin'] = 1;    //二维码外框空白，指1个size单位，不是指像素
-        $option['save'] = 0;    //0：只显示，1：只保存，2：即显示也保存，3：返回GD数据流
+        $option['save'] = 0;    //0：只显示，1：只保存，2：即显示也保存，3：返回GD数据流，
         $option['width'] = 0;     //生成的二维码宽高，若不指定则以像素点计算
         $option['color'] = '#000000';   //二维码本色，也可以是图片
         $option['background'] = '#ffffff';  //二维码背景色

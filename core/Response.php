@@ -310,6 +310,8 @@ final class Response
             default:
                 $html = $this->display_response();
         }
+        if (is_null($html)) return '';
+
         if (is_null($this->_display_type)) $this->_display_type = 'html';
 
         $this->_Content_Type = Config::mime($this->_display_type);

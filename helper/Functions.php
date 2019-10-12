@@ -209,6 +209,19 @@ function string_ord(string $string): array
 }
 
 /**
+ * 十进制转换二进制，不足4位的前面补0
+ * @param int $num
+ * @param bool $space 是否分割每4位一节
+ * @return string
+ */
+function dec_bin(int $num, bool $space = true): string
+{
+    if ($len = strlen($bin = decbin($num)) % 4) $bin = str_repeat('0', 4 - $len) . $bin;
+    if (!$space) return $bin;
+    return implode(' ', str_split($bin, 4));
+}
+
+/**
  * 清除BOM
  * @param $loadStr
  */
