@@ -183,11 +183,13 @@ trait Mysql
      * 根据数据库中的表，创建相应的模型
      * @param string $path
      * @param string $baseModel
-     * @return string
+     * @return string|array
      */
     final public function createModel(string $path, string $baseModel = 'BaseModel')
     {
         $root = root($path);
+        if (!is_dir($root)) return "请先创建[{$root}]目录";
+
         $mysql = $this->Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.TABLES')
             ->select('TABLE_NAME')
@@ -206,7 +208,7 @@ trait Mysql
                 file_put_contents("{$root}/{$tab}.php", sprintf($php, $tab, $baseModel, $table['TABLE_NAME'], $keyID['COLUMN_NAME']));
             }
         }
-        return implode(',', $tables);
+        return $tables;
     }
 
     /**

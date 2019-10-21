@@ -65,7 +65,7 @@ final class Session
         if (_CLI) return false;
         $config = $session['default'];
         if (isset($session[_MODULE])) $config = $session[_MODULE] + $config;
-        if (isset($config['run']) and !$config['run']) return false;
+        if (!isset($config['run']) or !$config['run']) return false;
 
         $option = [];
         if (!isset($config['expire']) or !$config['expire']) $config['expire'] = 1200;
@@ -149,7 +149,9 @@ final class Session
      */
     public static function set($key, $value = null)
     {
-        if (is_null(self::$SessionHandler)) return;
+        if (is_null(self::$SessionHandler)) {
+            throw new \Exception("系统未开启Session", 500);
+        }
         if (is_array($key)) {
             foreach ($key as $k => $v) {
                 $_SESSION[$k] = $v;
@@ -157,7 +159,7 @@ final class Session
         } else {
             $_SESSION[$key] = $value;
         }
-        self::$SessionHandler->update(true);
+        return self::$SessionHandler->update(true);
     }
 
 
@@ -168,6 +170,9 @@ final class Session
      */
     public static function get($key = null, $autoValue = null)
     {
+        if (is_null(self::$SessionHandler)) {
+            throw new \Exception("系统未开启Session", 500);
+        }
         if ($key === null) return $_SESSION;
         if (empty($_SESSION)) return null;
         $value = $_SESSION[$key] ?? $autoValue;

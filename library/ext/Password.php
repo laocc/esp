@@ -237,7 +237,7 @@ class Password
      * @param $str
      * @return string
      */
-    public static function str_en($str)
+    public static function str_en(string $str): string
     {
         $Hex = 36;//采用多少进制加密，不得小于16进制
         $Len = 4;//加密结果每字节长度，这要根据进制度计算，进制越小，每节长度就越长，36位时4位长正好，16进制时要5位，
@@ -253,7 +253,7 @@ class Password
      * @param $str
      * @return string
      */
-    public static function str_de($str)
+    public static function str_de(string $str): string
     {
         $Hex = 36;//采用多少进制加密，不得小于16进制
         $Len = 4;//加密结果每字节长度，这要根据进制度计算

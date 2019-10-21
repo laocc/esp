@@ -141,6 +141,7 @@ final class Redis implements KeyValue
     {
         if ($ttl) {
             return $this->redis->setex($key, $ttl, $value);
+//            return $this->redis->setex($key, $value, "EX {$ttl}");
         } else {
             return $this->redis->set($key, $value);
         }

@@ -9,7 +9,9 @@ final class Client
     /**
      * 客户端唯一标识
      * @param string $key
-     * @return mixed|null|string
+     * @param bool $number
+     * @return int|mixed|null|string
+     * @throws \Exception
      */
     public static function id(string $key = '_SSI', bool $number = false)
     {

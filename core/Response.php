@@ -14,6 +14,7 @@ final class Response
     public $_display_Result;//最终的打印结果
     public $_Content_Type;
     private $_save_cache = false;
+    private $_header = [];
 
     private $_view_val = Array();
     private $_layout_val = [
@@ -105,6 +106,12 @@ final class Response
     }
 
 
+    final public function header(...$kv): void
+    {
+        if (is_array($kv[0])) $kv = $kv[0];
+        $this->_header[] = $kv;
+    }
+
     /**
      * 渲染视图并返回
      * @param void $value 控制器返回的值
@@ -114,6 +121,12 @@ final class Response
     {
         if ($this->_autoRun === false) return;
 //        if (!headers_sent()) header('sid: ' . ip2long(getenv('SERVER_ADDR')));
+        if (!empty($this->_header)) {
+            foreach ($this->_header as $kv) {
+                header("{$kv[0]}: {$kv[1]}");
+            }
+        }
+
         if (is_null($value)) goto display;
 
         if (is_array($value)) {//直接显示为json/jsonP

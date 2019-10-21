@@ -219,6 +219,11 @@ class Controller
         return $this->_buffer->flush();
     }
 
+    final protected function header(...$kv): void
+    {
+        $this->_response->header(...$kv);
+    }
+
     /**
      * 网页跳转
      * @param string $url
