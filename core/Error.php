@@ -81,7 +81,7 @@ class Error
                     exit;
                 } else if ($option['run'] === 1) {
                     unset($err['text']);
-                    pre($err);
+                    print_r($err);
                     exit;
                 } else if ($option['run'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, 200);
@@ -172,7 +172,6 @@ class Error
         $err['code'] = $exception->getCode();
         $err['file'] = $exception->getFile();
         $err['line'] = $exception->getLine();
-//        pre($err);
 
         echo "<pre style='background:#fff;display:block;'>";
         if (_DEBUG) {
