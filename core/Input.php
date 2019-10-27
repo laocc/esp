@@ -157,9 +157,9 @@ final class Input
             case is_array($autoValue):
                 if (!is_array($value)) $value = json_decode(trim($value), true);
                 $int = (isset($autoValue[0]) and is_int($autoValue[0]));
-                $value = json_encode(array_map(function ($v) use ($int) {
+                $value = array_map(function ($v) use ($int) {
                     return $int ? intval($v) : trim($v);
-                }, $value), 256);
+                }, $value);
                 break;
 
             default:

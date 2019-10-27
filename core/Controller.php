@@ -334,13 +334,22 @@ class Controller
 
     final protected function markdown(string $mdFile = null, string $mdCss = '/css/markdown.css?2')
     {
-        return $this->md($mdFile, $mdCss);
+        $this->css($mdCss);
+        if ($mdFile) {
+            $this->_response->setView($mdFile);
+        } else {
+            $this->_response->set_value('md', $mdFile);
+        }
     }
 
     final protected function md(string $mdFile = null, string $mdCss = '/css/markdown.css?1')
     {
         $this->css($mdCss);
-        return $this->_response->set_value('md', $mdFile);
+        if ($mdFile) {
+            $this->_response->setView($mdFile);
+        } else {
+            $this->_response->set_value('md', $mdFile);
+        }
     }
 
     final protected function html(string $value = null)
