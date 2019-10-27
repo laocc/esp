@@ -583,6 +583,11 @@ function is_ip(string $ip, string $which = 'ipv4'): bool
     return (bool)filter_var($ip, FILTER_VALIDATE_IP, $which);
 }
 
+function is_domain(string $domain): bool
+{
+    return preg_match('/^[a-z0-9](([a-z0-9-]){1,62}\.)+[a-z]{2,20}$/i', $domain);
+}
+
 /**
  * 身份证号码检测，区分闰年，较验最后识别码
  * @param $number

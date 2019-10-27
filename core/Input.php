@@ -113,9 +113,11 @@ final class Input
 
             case is_string($autoValue):
                 if ($autoValue === '') {
-                    $value = preg_replace('/[\"\'\%\&\^\$\#\(\)\[\]\{\}\?]/', '', trim($value));
+                    //\%\&\^\$\#\(\)\[\]\{\}\?
+                    $value = preg_replace('/[\"\']/', '', trim($value));
 
                 } elseif ($autoValue === 'real') {
+                } elseif ($autoValue === 'html') {
 
                 } elseif ($autoValue === 'array') {
 //                    $value
