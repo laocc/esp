@@ -326,22 +326,22 @@ class Markdown
         }, $text);
 
         // 加载文件
-        $text = preg_replace_callback("/<(?:file|include|load)\:(.+)>/i", function ($matches) {
+        $text = preg_replace_callback("/<(?:file|include|load)\:(.+?)>/i", function ($matches) {
             $file = _ROOT . '/' . trim($matches[1], '/"\'');
             if (!is_file($file)) return $file;
             return self::makeHolder(file_get_contents($file));
         }, $text);
 
-        // 加载文件
-        $text = preg_replace_callback("/<([a-z]{2,10})\:(.+)>/i", function ($matches) {
-            $file = _ROOT . '/' . trim($matches[2], '/"\'');
-            if (!is_file($file)) return $file;
-            return self::makeHolder("<p>{$file}:</p><pre class='{$matches[1]}'>" . file_get_contents($file) . "</pre>");
-        }, $text);
-
         // [tag] => <tag>
         $text = preg_replace_callback("/\[([a-z]+)\]/i", function ($matches) {
             return "<{$matches[1]}>";
+        }, $text);
+
+        // link
+        $text = preg_replace_callback("/<(?:href)\:(.+?)>/i", function ($matches) {
+            $url = str_replace(['_HTTP', '_DOMAIN'], [_HTTP_, _DOMAIN], $matches[1]);
+//            return ("<a href=\"{$url}\" data-typ='349' target='_blank'>{$url}</a>");
+            return self::makeHolder("<a href=\"{$url}\" data-typ='349' target='_blank'>{$url}</a>");
         }, $text);
 
         // link
@@ -357,6 +357,13 @@ class Markdown
                 $cod = str_replace('\\\\', '\\', $matches[0]);
                 return htmlspecialchars($matches[0]);
             }
+        }, $text);
+
+        // 加载文件
+        $text = preg_replace_callback("/<([a-z]{2,10})\:(.+)>/i", function ($matches) {
+            $file = _ROOT . '/' . trim($matches[2], '/"\'');
+            if (!is_file($file)) return $file;
+            return self::makeHolder("<p>{$file}:</p><pre class='{$matches[1]}'>" . file_get_contents($file) . "</pre>");
         }, $text);
 
         $text = str_replace(['<', '>'], ['&lt;', '&gt;'], $text);
