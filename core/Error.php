@@ -124,7 +124,7 @@ class Error
                     exit;
                 } else if ($option['throw'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, 200);
-                    echo json_encode(['success' => 0, 'messages' => $err['error'], 'level' => 'Throw'], 256);
+                    echo json_encode(['success' => 0, 'message' => $err['error'], 'level' => 'Throw'], 256);
                     exit;
                 } else if ($option['throw'] === 2) {
                     $this->displayError('Throw', $err, $error->getTrace());
