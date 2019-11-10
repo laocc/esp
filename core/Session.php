@@ -2,6 +2,7 @@
 
 namespace esp\core;
 
+use esp\core\ext\SessionFiles;
 use esp\core\ext\SessionRedis;
 
 
@@ -69,23 +70,29 @@ final class Session
 
         $option = [];
         if (!isset($config['expire']) or !$config['expire']) $config['expire'] = 1200;
-        $option['save_handler'] = $config['driver'];
+//        $option['save_handler'] = $config['driver'];
 
-        if ($config['driver'] === 'files') goto start;
+        if ($config['driver'] === 'files') {
+            self::$SessionHandler = new SessionFiles($config['delay'], $config['prefix']);
+            $option['save_path'] = $config['path'];
 
-        if (!in_array($config['driver'], ['redis', 'hash'])) return false;
+        } else if ($config['driver'] === 'redis') {
+            self::$SessionHandler = new SessionRedis($config['delay'], $config['prefix']);
+            $option['save_path'] = serialize(['host' => $config['host'], 'port' => $config['port'], 'db' => $config['db'], 'password' => $config['password'] ?? '']);
 
-        self::$SessionHandler = new SessionRedis($config);
+        } else {
+            throw new \Exception("未知session.driver：{$config['driver']}", 500);
+        }
 
         session_set_save_handler(self::$SessionHandler, true);
 //        session_set_save_handler(self::$SessionHandler, false);
-        $option['save_path'] = $config['driver'];
-        unset($option['save_handler']);
+//        session_register_shutdown();
+
+//        unset($option['save_handler']);
 
         start:
         if (headers_sent($file, $line)) throw new \Exception("在{$file}[{$line}]行已有数据输出，Session无法启动");
 
-        $option['name'] = $config['key'];//指定会话名以用做 cookie 的名字。只能由字母数字组成，默认为 PHPSESSID
         $option['cache_expire'] = intval($config['ttl']);//session内容生命期
         $option['serialize_handler'] = 'php_serialize';//用PHP序列化存储数据
 
@@ -93,6 +100,7 @@ final class Session
         $option['use_only_cookies'] = 1;//指定是否在客户端仅仅使用 cookie 来存放会话 ID。。启用此设定可以防止有关通过 URL 传递会话 ID 的攻击
         $option['use_cookies'] = 1;//指定是否在客户端用 cookie 来存放会话 ID
 
+        $option['name'] = $config['key'];//指定会话名以用做 cookie 的名字。只能由字母数字组成，默认为 PHPSESSID
         $option['cookie_lifetime'] = intval($config['ttl']);//以秒数指定了发送到浏览器的 cookie 的生命周期。值为 0 表示"直到关闭浏览器"。
         $option['cookie_path'] = '/';//指定了要设定会话 cookie 的路径。默认为 /。
         $option['cookie_secure'] = _HTTPS;//指定是否仅通过安全连接发送 cookie。默认为 off。如果启用了https则要启用
@@ -145,7 +153,9 @@ final class Session
     /**
      * 设置某值，同时重新设置有效时间
      * @param $key
-     * @param $value
+     * @param null $value
+     * @return bool
+     * @throws \Exception
      */
     public static function set($key, $value = null)
     {
@@ -166,7 +176,8 @@ final class Session
     /**
      * @param null $key
      * @param null $autoValue
-     * @return array|null|string
+     * @return bool|float|int|mixed|null|string
+     * @throws \Exception
      */
     public static function get($key = null, $autoValue = null)
     {

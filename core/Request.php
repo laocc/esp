@@ -37,6 +37,11 @@ final class Request
             parse_url(getenv('REQUEST_URI'), PHP_URL_PATH);
     }
 
+    public function id()
+    {
+        return getenv('REQUEST_ID') ?: md5(mt_rand() . print_r($_SERVER, true));
+    }
+
     /**
      * 用于缓存组KEY用
      * @return string

@@ -89,6 +89,7 @@ class Markdown
      */
     private static $href = Array();
 
+    private static $addNav = false;
 
     /**
      * makeHtml
@@ -96,7 +97,7 @@ class Markdown
      * @param mixed $text
      * @return string
      */
-    public static function html(string $text, bool $addNav = false)
+    public static function html(string $text, bool $addNav = false, bool $addBoth = true)
     {
         self::$_footnotes = Array();
         self::$_definitions = Array();
@@ -109,7 +110,10 @@ class Markdown
         $html = self::parse($text);
         $html = self::makeFootnotes($html);
         self::joinHtml($html);
-        return (($addNav and !Client::is_wap()) ? self::makeNav() : '') . "<article class='markdown'><div class='markdown'>{$html}</div></article>" . '<div style="display: block;width:100%;height:100px;clear: both;"></div>';
+        self::$addNav = $addNav and !Client::is_wap();
+        return (self::$addNav ? self::makeNav() : '') .
+            "<article class='markdown'>{$html}</article>" .
+            ($addBoth ? '<div style="display: block;width:100%;height:100px;clear: both;"></div>' : '');
     }
 
     private static $_html = Array();
@@ -856,29 +860,28 @@ class Markdown
     }
 
     /**
-     * parseSh
-     *
      * @param array $lines
      * @param int $num
      * @return string
      */
     private static function parseSh(array $lines, $num)
     {
+//        pre(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]);
         $line = self::parseInline(trim($lines[0], '# '));
+        if (!self::$addNav) return "<h{$num}>{$line}</h{$num}>";
         $name = md5($line);
         self::$href[] = ['lv' => $num, 'name' => $name, 'title' => $line];
         return preg_match("/^\s*$/", $line) ? '' : "<a name='{$name}' href='#top'></a><h{$num}>{$line}</h{$num}>";
     }
 
     /**
-     * parseMh
-     *
      * @param array $lines
      * @param int $num
      * @return string
      */
     private static function parseMh(array $lines, $num)
     {
+//        var_dump(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]);
         return self::parseSh($lines, $num);
     }
 

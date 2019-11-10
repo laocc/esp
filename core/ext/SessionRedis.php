@@ -8,18 +8,20 @@ class SessionRedis implements \SessionHandlerInterface
     private $_Redis;
     private $_conf;
     private $_update = false;
+    private $_delay = false;
+    private $_prefix = '';
 
 
     /**
      * SessionRedis constructor.
      * @param array|null $config
      */
-    public function __construct(array $config = null)
+    public function __construct(bool $delay = false, string $prefix = '')
     {
-        $this->_conf = $config;
+        $this->_delay = $delay;
+        $this->_prefix = $prefix;
         $this->_Redis = new \Redis();
     }
-
 
     public function update(bool $update)
     {
@@ -27,19 +29,6 @@ class SessionRedis implements \SessionHandlerInterface
         return true;
     }
 
-    /**
-     * 设置或读取过期时间
-     * @param int|null $ttl
-     * @return bool|int
-     */
-    public function ttl(int $ttl = null)
-    {
-        if ($ttl) {
-            return $this->_Redis->expire(session_id(), $ttl);
-        } else {
-            return $this->_Redis->ttl(session_id());
-        }
-    }
 
     /**
      * 第一个被调用
@@ -47,14 +36,13 @@ class SessionRedis implements \SessionHandlerInterface
      * 这是自动开始会话或者通过调用 session_start() 手动开始会话之后第一个被调用的回调函数。
      * 此回调函数操作成功返回 TRUE，反之返回 FALSE。
      * @param string $save_path
-     * @param string $session_name
+     * @param string $session_name 此值是cookies name，在这里没鸟用
      * @return bool
      * @throws \Exception
      */
     public function open($save_path, $session_name)
     {
-        $conf = $this->_conf;
-//        pre(['open', $save_path, $session_name, $conf]);
+        $conf = unserialize($save_path);
         if (!isset($conf['port']) or intval($conf['port']) === 0) {
             if (!$this->_Redis->connect($conf['host'])) {
                 throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
@@ -95,8 +83,9 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function read($session_id)
     {
+//        pre(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
         $dataString = $this->_Redis->get($session_id);
-//        var_dump(['read' => $session_id, 'value' => $dataString]);
+//        var_dump([$session_id => $dataString]);
         return (!$dataString) ? 'a:0:{}' : $dataString;
     }
 
@@ -107,10 +96,7 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function create_sid()
     {
-//        var_dump(['create_sid' => time()]);
-//        return str_rand(10);
-        $id = session_create_id($this->_conf['prefix']);
-        return $id;
+        return session_create_id($this->_prefix);
     }
 
     /**
@@ -123,7 +109,6 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function destroy($session_id)
     {
-//        var_dump(['destroy' => $session_id]);
         $this->_Redis->del($session_id);
         return true;
     }
@@ -138,12 +123,26 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function gc($maxLifetime)
     {
-//        var_dump(['gc' => $maxLifetime]);
         return true;
     }
 
+
     /**
-     * 基本上是倒数第二个被调用,即session_write_close()之后
+     * 设置或读取过期时间
+     * @param int|null $ttl
+     * @return bool|int
+     */
+    public function ttl(int $ttl = null)
+    {
+        if ($ttl) {
+            return $this->_Redis->expire(session_id(), $ttl);
+        } else {
+            return $this->_Redis->ttl(session_id());
+        }
+    }
+
+    /**
+     * 基本上是倒数第二个被调用
      * 如果session_abort()被调用过，则不会调用此方法
      * @param string $session_id
      * @param string $session_data
@@ -156,25 +155,26 @@ class SessionRedis implements \SessionHandlerInterface
      * 序列化后的数据将和会话 ID 关联在一起进行保存。
      * 当调用 read 回调函数获取数据时，所返回的数据必须要和传入 write 回调函数的数据完全保持一致。
      *
-     * PHP 会在脚本执行完毕或调用 session_write_close() 函数之后调用此回调函数。
+     * PHP 会在脚本执行完毕调用 session_write_close() 时调用此回调函数。
      * 注意，在调用完此回调函数之后，PHP 内部会调用 close 回调函数。
      *
      */
+    /**
+     * @param string $session_id
+     * @param string $session_data
+     * @return bool
+     * @throws \Exception
+     */
     public function write($session_id, $session_data)
     {
-        if ($session_data === 'a:0:{}' or empty($session_data)) return true;
-
-        if (!$this->_update and $this->_conf['delay'] < 2) return true;
-
-        if ($this->_conf['delay']) {
+        if (!$this->_update or $session_data === 'a:0:{}' or empty($session_data)) return true;
+        if ($this->_delay) {
             $ttl = session_cache_expire();
         } else {
             $ttl = $this->_Redis->ttl($session_id);
             if ($ttl < 0) $ttl = session_cache_expire();
         }
-
-        $write = $this->_Redis->set($session_id, $session_data, $ttl);
-        return true;
+        return $this->_Redis->set($session_id, $session_data, $ttl);
     }
 
 
@@ -182,8 +182,7 @@ class SessionRedis implements \SessionHandlerInterface
      * 最后一个被调用
      * @return bool
      * close 回调函数类似于类的析构函数。
-     * 在 write 回调函数调用之后调用。
-     * 当调用 session_write_close() 函数之后，也会调用 close 回调函数。
+     * 当调用 session_write_close() 并执行 write 回调函数调用之后调用close。
      * 此回调函数操作成功返回 TRUE，反之返回 FALSE。
      */
     public function close()
