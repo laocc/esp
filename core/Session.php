@@ -69,7 +69,7 @@ final class Session
         if (!isset($config['run']) or !$config['run']) return false;
 
         $option = [];
-        $config += ['expire' => 1200, 'driver' => 'file', 'delay' => 1, 'prefix' => '', 'ttl' => 86400];
+        $config += ['driver' => 'file', 'delay' => 1, 'prefix' => '', 'ttl' => 86400];
 
         if ($config['driver'] === 'files') {
             self::$SessionHandler = new SessionFiles($config['delay'], $config['prefix']);
@@ -77,7 +77,7 @@ final class Session
 
         } else if ($config['driver'] === 'redis') {
             self::$SessionHandler = new SessionRedis($config['delay'], $config['prefix'] ?? '');
-            $option['save_path'] = serialize(['host' => $config['host'] ?? '127.0.0.1', 'port' => $config['port'] ?? 3306, 'db' => $config['db'] ?? 0, 'password' => $config['password'] ?? '']);
+            $option['save_path'] = serialize(['host' => $config['host'] ?? '127.0.0.1', 'port' => $config['port'] ?? 6379, 'db' => $config['db'] ?? 0, 'password' => $config['password'] ?? '']);
 
         } else {
             throw new \Exception("未知session.driver：{$config['driver']}", 500);
