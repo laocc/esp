@@ -31,7 +31,7 @@ trait Page
      * @param int $index
      * @return $this
      */
-    final public function pageSet(int $size = 10, int $index = 1, int $lftRit = 5)
+    final public function pageSet(int $size = 10, int $index = 0, int $lftRit = 5)
     {
         $this->pageIndex = $index ?: Input::get($this->_page_key, 1);
         if ($this->pageIndex < 1) $this->pageIndex = 1;
