@@ -69,16 +69,15 @@ final class Session
         if (!isset($config['run']) or !$config['run']) return false;
 
         $option = [];
-        if (!isset($config['expire']) or !$config['expire']) $config['expire'] = 1200;
-//        $option['save_handler'] = $config['driver'];
+        $config += ['expire' => 1200, 'driver' => 'file', 'delay' => 1, 'prefix' => '', 'ttl' => 86400];
 
         if ($config['driver'] === 'files') {
             self::$SessionHandler = new SessionFiles($config['delay'], $config['prefix']);
-            $option['save_path'] = $config['path'];
+            $option['save_path'] = $config['path'] ?? '/tmp';
 
         } else if ($config['driver'] === 'redis') {
-            self::$SessionHandler = new SessionRedis($config['delay'], $config['prefix']);
-            $option['save_path'] = serialize(['host' => $config['host'], 'port' => $config['port'], 'db' => $config['db'], 'password' => $config['password'] ?? '']);
+            self::$SessionHandler = new SessionRedis($config['delay'], $config['prefix'] ?? '');
+            $option['save_path'] = serialize(['host' => $config['host'] ?? '127.0.0.1', 'port' => $config['port'] ?? 3306, 'db' => $config['db'] ?? 0, 'password' => $config['password'] ?? '']);
 
         } else {
             throw new \Exception("未知session.driver：{$config['driver']}", 500);
@@ -100,7 +99,7 @@ final class Session
         $option['use_only_cookies'] = 1;//指定是否在客户端仅仅使用 cookie 来存放会话 ID。。启用此设定可以防止有关通过 URL 传递会话 ID 的攻击
         $option['use_cookies'] = 1;//指定是否在客户端用 cookie 来存放会话 ID
 
-        $option['name'] = $config['key'];//指定会话名以用做 cookie 的名字。只能由字母数字组成，默认为 PHPSESSID
+        $option['name'] = $config['key'] ?? 'PHPSESSID';//指定会话名以用做 cookie 的名字。只能由字母数字组成，默认为 PHPSESSID
         $option['cookie_lifetime'] = intval($config['ttl']);//以秒数指定了发送到浏览器的 cookie 的生命周期。值为 0 表示"直到关闭浏览器"。
         $option['cookie_path'] = '/';//指定了要设定会话 cookie 的路径。默认为 /。
         $option['cookie_secure'] = _HTTPS;//指定是否仅通过安全连接发送 cookie。默认为 off。如果启用了https则要启用
