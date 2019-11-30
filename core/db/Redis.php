@@ -23,9 +23,9 @@ final class Redis implements KeyValue
      * @param int $db
      * @throws \Exception
      */
-    public function __construct(array $conf = null, int $db = null)
+    public function __construct(array $conf = [], int $db = null)
     {
-        $conf += ['host' => '/tmp/redis.sock', 'port' => 0];
+        $conf += ['host' => '/tmp/redis.sock', 'port' => 0, 'db' => 1];
         if (is_null($db)) $db = intval($conf['db'] ?? 1);
         if (!($db >= 0 and $db <= 16)) {
             throw new \Exception('Redis库ID选择错误，0库为系统库不可直接调用，暂不支持大于16的库');

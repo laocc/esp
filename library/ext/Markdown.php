@@ -301,7 +301,7 @@ class Markdown
 
         // 单行`#000;#fff;value`注释,颜色分别为字体色、背景色，背景色可直接省略，但若省略字体色，必须有分号。
         $cp = '\#(?:[a-f0-9]{3}|[a-f0-9]{6})';//颜色的正则表达式
-        $text = preg_replace_callback("/(?<hd>^|[^\\\])([\`\~]{1})(?<color>{$cp})?(?<fh>\;?)(?<bg>{$cp})?(?:\;?)(?<imp>\!?)(?<val>.+?)\\2/i", function ($matches) {
+        $text = preg_replace_callback("/(?<hd>^|[^\\\])(`)(?<color>{$cp})?(?<fh>\;?)(?<bg>{$cp})?(?:\;?)(?<imp>\!?)(?<val>.+?)\\2/i", function ($matches) {
             $color = !!$matches['color'] ? "color:{$matches['color']};" : null;
             $bgcolor = !!$matches['bg'] ? "background:{$matches['bg']};" : null;
             $style = (!!$color or !!$bgcolor) ?
@@ -421,6 +421,17 @@ class Markdown
             return self::makeHolder(htmlspecialchars($matches[1]));
         }, $text);
 
+        // 连续---
+        $text = preg_replace_callback("#(-{3,20})#", function ($matches) {
+            $l = strlen($matches[1]);
+            return $l === 3 ? '<hr>' : "<hr style='border-width:{$l}px'>";
+        }, $text);
+
+        // 连续//为换行
+        $text = preg_replace_callback("#(///)#", function ($matches) {
+            return '<br>';
+        }, $text);
+
         // strong and em and some fuck
         $text = self::parseInlineCallback($text);
         $text = preg_replace("/<([_a-z0-9-\.\+]+@[^@]+\.[a-z]{2,})>/i", "<a href=\"mailto:\\1\">\\1</a>", $text);
@@ -504,7 +515,8 @@ class Markdown
             $block = self::getBlock();
 
             // 获取代码块开头：```或~~~
-            if (preg_match("/^(\s*)(~|`){3,}([^`~]*)$/i", $line, $matches)) {
+//            if (preg_match("/^(\s*)(~|`){3,}([^`~]*)$/i", $line, $matches)) {
+            if (preg_match("/^(\s*)(`{3}|~{3})([^`]*)$/i", $line, $matches)) {
                 if (self::isBlock('code')) {
                     $isAfterList = $block[3][2];
                     if ($isAfterList) {
