@@ -739,8 +739,8 @@ function unicode_decode(string $code): string
 function text(string $html, int $star = null, int $stop = null): string
 {
     if ($stop === null) list($star, $stop) = [0, $star];
-    $v = preg_replace(['/\&lt\;(.*?)\&gt\;/is', '/<(.*?)>/is', '/[\s\x20\xa\xd\'\"\`]/is'], '', trim($html));
-    $v = str_ireplace(["\a", "\b", "\f", "\s", "\t", "\n", "\v", "\0", "\h", " ", "　", "	"], '', $v);
+    $v = preg_replace(['/\&lt\;(.*?)\&gt\;/is','/&[a-z]+?\;/', '/<(.*?)>/is', '/[\s\x20\xa\xd\'\"\`]/is'], '', trim($html));
+    $v = str_ireplace(["\a", "\b", "\f", "\s", "\t", "\n", "\r", "\v", "\0", "\h", " ", "　", "	"], '', $v);
     return htmlentities(mb_substr($v, $star, $stop, 'utf-8'));
 }
 

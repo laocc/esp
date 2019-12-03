@@ -202,7 +202,7 @@ final class Dispatcher
         $file = $this->_request->directory . "/{$module}/controllers/{$controller}.php";
         if (is_readable($base)) load($base);//加载控制器公共类，有可能不存在
         if (!load($file)) {
-            return $this->err404("[{$module}/controllers/{$controller}.php] not exists.");
+            return $this->err404("[/{$module}/controllers/{$controller}.php] not exists.");
         }
 
         $controller = '\\' . $module . '\\' . $controller . 'Controller';
