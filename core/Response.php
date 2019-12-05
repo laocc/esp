@@ -339,13 +339,9 @@ final class Response
 
         //合并js/css
         if ($this->_resource->concat()) {
-            preg_match_all("/<link.*?href=['\"](.+?)['\"].*?\>/is", $html, $css, PREG_PATTERN_ORDER);
+            preg_match_all("/<link.*?href=['\"](\/\w.+?)['\"].*?\>/is", $html, $css, PREG_PATTERN_ORDER);
             $html = str_replace($css[0], '', $html);
             foreach ($css[1] as $i => $mch) {
-//                if (substr($mch, 0, 4) === 'http' or substr($mch, 0, 2) === '//') {
-//                    unset($css[1][$i]);
-//                    continue;
-//                }
                 if (($w = strpos($mch, '?')) > 0) {
                     $css[1][$i] = substr($mch, 0, $w);
                 }
