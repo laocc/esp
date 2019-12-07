@@ -25,8 +25,9 @@ final class Client
                 throw new \Exception("Header be Send:{$file}[{$line}]", 505);
             }
             $time = time() + 86400 * 365;
-            _HTTPS && setcookie($key, $unique, $time, '/', Cookies::domain(), true, true);
-            setcookie($key, $unique, $time, '/', Cookies::domain(), false, true);
+            $dom = Cookies::domain();
+            _HTTPS && setcookie($key, $unique, $time, '/', $dom, true, true);
+            setcookie($key, $unique, $time, '/', $dom, false, true);
         }
         return $unique;
     }
