@@ -406,6 +406,8 @@ final class Builder
             throw new Exception("DB_ERROR: where 条件异常:" . var_export($field, true));
         }
 
+        $findType = $field[-1];
+
         /**
          * 未指定条件值，则其本身就是一个表达式，直接应用当前Where子句
          * @NOTE 尽量不要使用这种方式（难以处理安全性）
@@ -413,7 +415,7 @@ final class Builder
         if ($value === null) {
             $_where = $field;
 
-        } elseif ($field[-1] === '~') {//组合 like
+        } elseif ($findType === '~') {//组合 like
 
             if (!empty($value)) {
                 if ($value[0] === '^') $value = substr($value, 1);
@@ -433,7 +435,7 @@ final class Builder
                 $_where = $this->protect_identifier($field) . " like " . $this->quote($value);
             }
 
-        } elseif ($field[-1] === '^') {//组合 locate "locate('{$key}',keyWord)";
+        } elseif ($findType === '^') {//组合 locate "locate('{$key}',keyWord)";
             $field = substr($field, 0, -1);
 
             if ($this->_param) {//采用占位符后置内容方式
@@ -444,7 +446,7 @@ final class Builder
                 $_where = "locate('" . $this->quote($value) . "'," . $this->protect_identifier($field) . ')';
             }
 
-        } elseif ($field[-1] === '!') {//等同于 !=
+        } elseif ($findType === '!') {//等同于 !=
             $field = substr($field, 0, -1);
 
             if ($this->_param) {//采用占位符后置内容方式
@@ -455,7 +457,18 @@ final class Builder
                 $_where = "`{$field}` != " . $this->quote($value) . "";
             }
 
-        } elseif ($field[-1] === '#') {//组合 between;
+        } elseif ($findType === '&') {//位运算
+            $field = substr($field, 0, -1);
+
+            if ($this->_param) {//采用占位符后置内容方式
+                $key = $this->paramKey($field);
+                $this->_param_data[$key] = $value;
+                $_where = "`{$field}` & {$key}";
+            } else {
+                $_where = "`{$field}` & " . $this->quote($value) . "";
+            }
+
+        } elseif ($findType === '#') {//组合 between;
             $field = substr($field, 0, -1);
             if (empty($value)) $value = [0, 0];
 
@@ -469,7 +482,7 @@ final class Builder
                 $_where = "`{$field}` between({$value[0]} and {$value[1]})";
             }
 
-        } elseif ($field[-1] === '@') {//组合 in 和 not in
+        } elseif ($findType === '@') {//组合 in 和 not in
             if (!is_array($value)) {
                 throw new Exception("where in 的值必须为数组形式");
             }
@@ -491,7 +504,7 @@ final class Builder
                 $_where = "`{$field}` ({$value})";
             }
 
-        } elseif ($field[-1] === '%') {//mod
+        } elseif ($findType === '%') {//mod
             if (!is_array($value)) {
                 throw new Exception("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]");
             }
@@ -516,12 +529,12 @@ final class Builder
                 if (stripos('<>=', $protectFiled[-1]) !== false) {
                     if (stripos('<>!', $protectFiled[-2]) !== false) {
                         ////  <= >= <> !=
-                        $field = $this->protect_identifier(substr($field, 0, -2)) . " {$field[-2]}{$field[-1]}";
+                        $field = $this->protect_identifier(substr($field, 0, -2)) . " {$field[-2]}{$findType}";
                     } else if ($protectFiled[-2] === '=') {
                         // <=>
-                        $field = $this->protect_identifier(substr($field, 0, -3)) . " {$field[-3]}{$field[-2]}{$field[-1]}";
+                        $field = $this->protect_identifier(substr($field, 0, -3)) . " {$field[-3]}{$field[-2]}{$findType}";
                     } else {
-                        $field = $this->protect_identifier(substr($field, 0, -1)) . " {$field[-1]}";
+                        $field = $this->protect_identifier(substr($field, 0, -1)) . " {$findType}";
                     }
                 } else {
                     $field = $this->protect_identifier($field) . ' = ';
