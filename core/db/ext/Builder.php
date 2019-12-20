@@ -463,9 +463,9 @@ final class Builder
             if ($this->_param) {//采用占位符后置内容方式
                 $key = $this->paramKey($field);
                 $this->_param_data[$key] = $value;
-                $_where = "`{$field}` & {$key}";
+                $_where = "`{$field}` >0 and {$field}` & {$key}";
             } else {
-                $_where = "`{$field}` & " . $this->quote($value) . "";
+                $_where = "`{$field}` >0 and `{$field}` & " . $this->quote($value) . "";
             }
 
         } elseif ($findType === '#') {//组合 between;
@@ -1090,8 +1090,7 @@ final class Builder
             } else {
                 $values = array_values($item);
                 foreach ($values as $v => $val) if (is_array($val)) $values[$v] = json_encode($val, 256);
-                $value = $this->quote($values);
-                $values[] = '(' . implode(', ', $value) . ')';
+                $values[] = '(' . implode(', ', $this->quote($values)) . ')';
             }
         }
         $value = $param ?: implode(', ', $values);
