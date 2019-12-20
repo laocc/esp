@@ -463,7 +463,7 @@ final class Builder
             if ($this->_param) {//采用占位符后置内容方式
                 $key = $this->paramKey($field);
                 $this->_param_data[$key] = $value;
-                $_where = "`{$field}` >0 and {$field}` & {$key}";
+                $_where = "`{$field}` >0 and `{$field}` & {$key}";
             } else {
                 $_where = "`{$field}` >0 and `{$field}` & " . $this->quote($value) . "";
             }
