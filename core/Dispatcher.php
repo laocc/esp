@@ -189,7 +189,7 @@ final class Dispatcher
         elseif ((strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest') and ($p = $suffix['ajax'])) $actionExt = $p;
         LOOP:
         $module = strtolower($this->_request->module);
-        $controller = ucfirst(strtolower($this->_request->controller));
+        $controller = ucfirst($this->_request->controller);
         $action = strtolower($this->_request->action) . ucfirst($actionExt);
 
         if ($controller === 'Base') throw new \Exception('控制器名不可以为base，这是系统保留公共控制器名', 404);

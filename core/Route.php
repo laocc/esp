@@ -155,7 +155,7 @@ final class Route
         }
 
         auto:
-        return [$module, $controller, strtolower($action), $param];
+        return [$module, strtolower($controller), strtolower($action), $param];
     }
 
     /**
