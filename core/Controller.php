@@ -424,6 +424,12 @@ class Controller
         return $this;
     }
 
+    final protected function render(bool $run)
+    {
+        $this->_response->autoRun($run);
+        return $this;
+    }
+
 
     /**
      * 设置网页meta项
