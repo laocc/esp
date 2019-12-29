@@ -155,7 +155,7 @@ final class Debug
         }
 
         if ($this->_conf['print']['html'] ?? 0) {
-            $data[] = "\n## 页面实际响应： \nExit:\n```\n" . ob_get_contents() . "\n```\n";
+            $data[] = "\n## 页面实际响应： \nEcho:\n```\n" . ob_get_contents() . "\n```\n";
             $display = $response->_display_Result;
             if (empty($display)) $display = var_export($display, true);
             $data[] = "\nContent-Type:{$response->_Content_Type}\n```\n" . $display . "\n```\n";

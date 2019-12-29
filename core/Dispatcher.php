@@ -245,7 +245,7 @@ final class Dispatcher
         //运行结束方法
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
             $clo = call_user_func_array([$cont, '_close'], [$action, $val]);
-            if (!is_null($clo) and is_null($val)) $val = $clo;
+            if (!is_null($clo)) $val = $clo;// and is_null($val)
         }
 
         unset($cont, $GLOBALS['_Controller']);
