@@ -284,7 +284,7 @@ final class Client
         } elseif (preg_match("/({$auto})/i", $ua, $mua)) {
             return strtolower($mua[1]);
 
-        } else if (preg_match('/; (.+?) Build\/\w+/i', $ua, $mua)) {
+        } else if (preg_match('/; ([\w|\020]+?) Build\/\w+/i', $ua, $mua)) {
             return strtolower(trim($mua[1]));
         }
         return 'unknown';
