@@ -251,4 +251,44 @@ final class Client
         return implode($arr);
     }
 
+
+    public static function brand($ua = null)
+    {
+        if (is_null($ua)) $ua = self::ua();
+
+        $OPPO_MOBILE_UA = ['oppo', "PAAM00", "PAAT00", "PACM00", "PACT00", "PADM00", "PADT00", "PAFM00", "PAFT00", "PAHM00",
+            "PAHM00", "PAFT10", "PBAT00", "PBAM00", "PBAM00", "PBBM30", "PBBT30", "PBEM00", "PBET00", "PBBM00",
+            "PBBT00", "PBCM10", "PBCT10", "PBCM30", "PBDM00", "PBDT00", "PBFM00", "PBFT00", "PCDM00", "PCDT00",
+            "PCAM00", "PCAT00", "PCDM10", "PCDM10", "PCGM00", "PCGT00", "PCCM00", "PCCT00", "PCCT30", "PCCT40",
+            "PCAM10", "PCAT10", "PCEM00", "PCET00", "PCKM00", "PCKT00", "PCHM00", "PCHT00", "PCHM10", "PCHT10",
+            "PCHM30", "PCHT30", "PCLM10", "PCNM00", "PCKM00", "PCKM00", "RMX1901", "RMX1851", "RMX1971", "RMX1901",
+            "RMX1851", "RMX1901", "RMX1991", "RMX1971", "RMX1931"];
+        $xiaoMi = ['xiaomi', 'MI 5X', 'redmi'];
+        $huaEei = ['huawei', 'honor'];
+
+        $op = implode('|', $OPPO_MOBILE_UA);
+        $xm = implode('|', $xiaoMi);
+        $hw = implode('|', $huaEei);
+
+        $auto = 'vivo|gionee|meizu|lenovo|meitu|iPad|iPhone|MicroMessenger';
+
+        if (preg_match("/({$op})/i", $ua, $mua)) {
+            return 'oppo';
+
+        } else if (preg_match("/({$hw})/i", $ua, $mua)) {
+            return 'huawei';
+
+        } else if (preg_match("/({$xm})/i", $ua, $mua)) {
+            return 'xiaomi';
+
+        } elseif (preg_match("/({$auto})/i", $ua, $mua)) {
+            return strtolower($mua[1]);
+
+        } else if (preg_match('/; (.+?) Build\/\w+/i', $ua, $mua)) {
+            return strtolower(trim($mua[1]));
+        }
+        return 'unknown';
+    }
+
+
 }
