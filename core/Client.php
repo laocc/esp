@@ -263,7 +263,7 @@ final class Client
             "PCAM10", "PCAT10", "PCEM00", "PCET00", "PCKM00", "PCKT00", "PCHM00", "PCHT00", "PCHM10", "PCHT10",
             "PCHM30", "PCHT30", "PCLM10", "PCNM00", "PCKM00", "PCKM00", "RMX1901", "RMX1851", "RMX1971", "RMX1901",
             "RMX1851", "RMX1901", "RMX1991", "RMX1971", "RMX1931"];
-        $xiaoMi = ['xiaomi', 'MI 5X', 'redmi', 'MIX 2', 'MI 8 Lite'];
+        $xiaoMi = ['xiaomi', 'redmi', 'MIX 2', 'MI CC'];
         $huaEei = ['huawei', 'honor'];
 
         $op = implode('|', $OPPO_MOBILE_UA);
@@ -278,7 +278,7 @@ final class Client
         } else if (preg_match("/({$hw})/i", $ua, $mua)) {
             return 'huawei';
 
-        } else if (preg_match("/({$xm})/i", $ua, $mua)) {
+        } else if (preg_match("/({$xm}|mi \d)/i", $ua, $mua)) {
             return 'xiaomi';
 
         } elseif (preg_match("/({$auto})/i", $ua, $mua)) {
