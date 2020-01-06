@@ -284,6 +284,9 @@ final class Client
         } elseif (preg_match("/({$auto})/i", $ua, $mua)) {
             return strtolower($mua[1]);
 
+        } else if (preg_match('/; ([a-z]\d{4}[a-z]);? Build\/\w+/i', $ua, $mua)) {
+            return 'vivo';
+
         } else if (preg_match('/; ([\w|\020]+?);? Build\/\w+/i', $ua, $mua)) {
             return strtolower(trim($mua[1]));
         }
