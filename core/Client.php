@@ -265,18 +265,23 @@ final class Client
             "RMX1851", "RMX1901", "RMX1991", "RMX1971", "RMX1931"];
         $xiaoMi = ['xiaomi', 'redmi', 'MIX 2', 'MI CC'];
         $huaEei = ['huawei', 'honor'];
+        $smartisan = ['smartisan', 'OD103'];//锤子手机
 
         $op = implode('|', $OPPO_MOBILE_UA);
         $xm = implode('|', $xiaoMi);
         $hw = implode('|', $huaEei);
+        $cz = implode('|', $smartisan);
 
-        $auto = 'vivo|gionee|meizu|lenovo|meitu|iPad|iPhone|MicroMessenger';
+        $auto = 'vivo|gionee|meizu|lenovo|meitu|iPad|iPhone|MicroMessenger|okhttp';
 
         if (preg_match("/({$op})/i", $ua, $mua)) {
             return 'oppo';
 
         } else if (preg_match("/({$hw})/i", $ua, $mua)) {
             return 'huawei';
+
+        } else if (preg_match("/({$cz})/i", $ua, $mua)) {
+            return 'smartisan';
 
         } else if (preg_match("/({$xm}|mi \d)/i", $ua, $mua)) {
             return 'xiaomi';
