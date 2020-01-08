@@ -416,7 +416,13 @@ function week_last(int $year): int
     return $week;
 }
 
-function time_diff(int $a, int $b)
+/**
+ * 相差天数，a>b时为负数
+ * @param int $a
+ * @param int $b
+ * @return int
+ */
+function diff_day(int $a, int $b)
 {
     $interval = date_diff(date_create(date('Ymd', $a)), date_create(date('Ymd', $b)));
     return intval($interval->format('%R%a'));
