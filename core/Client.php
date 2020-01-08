@@ -263,22 +263,27 @@ final class Client
             "PCAM10", "PCAT10", "PCEM00", "PCET00", "PCKM00", "PCKT00", "PCHM00", "PCHT00", "PCHM10", "PCHT10",
             "PCHM30", "PCHT30", "PCLM10", "PCNM00", "PCKM00", "PCKM00", "RMX1901", "RMX1851", "RMX1971", "RMX1901",
             "RMX1851", "RMX1901", "RMX1991", "RMX1971", "RMX1931"];
-        $xiaoMi = ['xiaomi', 'redmi', 'MIX 2', 'MI CC'];
+        $xiaoMi = ['xiaomi', 'redmi', 'MIX 2', 'MIX 3', 'MI CC', 'AWM-A0', 'Mi Note', 'MI PLAY'];
         $huaEei = ['huawei', 'honor'];
         $smartisan = ['smartisan', 'OD103'];//锤子手机
+        $meizu = ['meizu', 'MX4 Pro'];//魅族
 
         $op = implode('|', $OPPO_MOBILE_UA);
         $xm = implode('|', $xiaoMi);
         $hw = implode('|', $huaEei);
         $cz = implode('|', $smartisan);
+        $mz = implode('|', $meizu);
 
-        $auto = 'vivo|gionee|meizu|lenovo|meitu|iPad|iPhone|MicroMessenger|okhttp';
+        $auto = 'vivo|gionee|lenovo|meitu|iPad|iPhone|MicroMessenger|okhttp|ONEPLUS';
 
         if (preg_match("/({$op})/i", $ua, $mua)) {
             return 'oppo';
 
         } else if (preg_match("/({$hw})/i", $ua, $mua)) {
             return 'huawei';
+
+        } else if (preg_match("/({$mz})/i", $ua, $mua)) {
+            return 'meizu';
 
         } else if (preg_match("/({$cz})/i", $ua, $mua)) {
             return 'smartisan';
