@@ -416,6 +416,13 @@ function week_last(int $year): int
     return $week;
 }
 
+function time_diff(int $a, int $b)
+{
+    $interval = date_diff(date_create(date('Ymd', $a)), date_create(date('Ymd', $b)));
+    return intval($interval->format('%R%a'));
+}
+
+
 /**
  * 生成唯一GUID，基于当前时间微秒数的唯一ID
  * @param null $fh 连接符号
