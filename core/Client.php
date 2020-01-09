@@ -263,7 +263,7 @@ final class Client
             "PCAM10", "PCAT10", "PCEM00", "PCET00", "PCKM00", "PCKT00", "PCHM00", "PCHT00", "PCHM10", "PCHT10",
             "PCHM30", "PCHT30", "PCLM10", "PCNM00", "PCKM00", "PCKM00", "RMX1901", "RMX1851", "RMX1971", "RMX1901",
             "RMX1851", "RMX1901", "RMX1991", "RMX1971", "RMX1931"];
-        $xiaoMi = ['xiaomi', 'redmi', 'MIX 2', 'MIX 3', 'MI CC', 'AWM-A0', 'Mi Note', 'MI PLAY'];
+        $xiaoMi = ['xiaomi', 'redmi', 'MIX 2', 'MIX 3', 'MI CC', 'AWM-A0', 'Mi Note', 'MI PLAY', 'MI MAX'];
         $huaEei = ['huawei', 'honor'];
         $smartisan = ['smartisan', 'OD103'];//锤子手机
         $meizu = ['meizu', 'MX4 Pro'];//魅族
