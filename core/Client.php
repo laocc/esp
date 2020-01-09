@@ -256,7 +256,7 @@ final class Client
     {
         if (is_null($ua)) $ua = self::ua();
 
-        if (strpos($ua, 'Android') === false and strpos($ua, 'Windows') > 0) return 'windows';
+        if (stripos($ua, 'Android') === false and stripos($ua, 'Windows') > 0) return 'windows';
 
         $OPPO_MOBILE_UA = ['oppo', "PAAM00", "PAAT00", "PACM00", "PACT00", "PADM00", "PADT00", "PAFM00", "PAFT00", "PAHM00",
             "PAHM00", "PAFT10", "PBAT00", "PBAM00", "PBAM00", "PBBM30", "PBBT30", "PBEM00", "PBET00", "PBBM00",
