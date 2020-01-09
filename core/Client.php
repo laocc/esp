@@ -269,14 +269,16 @@ final class Client
         $huaEei = ['huawei', 'emui', 'honor'];
         $smartisan = ['smartisan', 'OD103'];//锤子手机
         $meizu = ['meizu', 'MX4 Pro'];//魅族
+        $vivo = ['vivo'];
 
         $op = implode('|', $OPPO_MOBILE_UA);
         $xm = implode('|', $xiaoMi);
         $hw = implode('|', $huaEei);
         $cz = implode('|', $smartisan);
         $mz = implode('|', $meizu);
+        $vv = implode('|', $vivo);
 
-        $auto = 'vivo|gionee|lenovo|meitu|iPad|iPhone|MicroMessenger|okhttp|ONEPLUS';
+        $auto = 'Dalvik|gionee|lenovo|meitu|iPad|iPhone|MicroMessenger|okhttp|ONEPLUS';
 
         if (preg_match("/({$op})/i", $ua, $mua)) {
             return 'oppo';
@@ -286,6 +288,9 @@ final class Client
 
         } else if (preg_match("/({$mz})/i", $ua, $mua)) {
             return 'meizu';
+
+        } else if (preg_match("/({$vv})/i", $ua, $mua)) {
+            return 'vivo';
 
         } else if (preg_match("/({$cz})/i", $ua, $mua)) {
             return 'smartisan';
