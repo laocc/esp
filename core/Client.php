@@ -278,9 +278,12 @@ final class Client
         $mz = implode('|', $meizu);
         $vv = implode('|', $vivo);
 
-        $auto = 'Dalvik|gionee|lenovo|meitu|iPad|iPhone|MicroMessenger|okhttp|ONEPLUS';
+        $auto = 'ONEPLUS|gionee|lenovo|meitu|iPad|iPhone|MicroMessenger';
 
-        if (preg_match("/({$op})/i", $ua, $mua)) {
+        if (preg_match("/(Dalvik|okhttp)/i", $ua, $mua)) {
+            return 'robot';
+
+        } else if (preg_match("/({$op})/i", $ua, $mua)) {
             return 'oppo';
 
         } else if (preg_match("/({$hw})/i", $ua, $mua)) {
