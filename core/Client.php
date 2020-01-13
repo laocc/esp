@@ -270,6 +270,7 @@ final class Client
         $smartisan = ['smartisan', 'OD103'];//锤子手机
         $meizu = ['meizu', 'MX4 Pro'];//魅族
         $vivo = ['vivo'];
+        $apple = ['Mac OS', 'iPad', 'iPhone', 'AppleWebKit'];
 
         $op = implode('|', $OPPO_MOBILE_UA);
         $xm = implode('|', $xiaoMi);
@@ -277,11 +278,15 @@ final class Client
         $cz = implode('|', $smartisan);
         $mz = implode('|', $meizu);
         $vv = implode('|', $vivo);
+        $ap = implode('|', $apple);
 
-        $auto = 'ONEPLUS|gionee|lenovo|meitu|iPad|iPhone|MicroMessenger';
+        $auto = 'ONEPLUS|gionee|lenovo|meitu|MicroMessenger';
 
         if (preg_match("/(Dalvik|okhttp)/i", $ua, $mua)) {
             return 'robot';
+
+        } else if (preg_match("/({$ap})/i", $ua, $mua)) {
+            return 'apple';
 
         } else if (preg_match("/({$op})/i", $ua, $mua)) {
             return 'oppo';
