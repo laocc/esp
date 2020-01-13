@@ -158,10 +158,15 @@ final class Input
 
             case is_array($autoValue):
                 if (!is_array($value)) $value = json_decode(trim($value), true);
-                $int = (isset($autoValue[0]) and is_int($autoValue[0]));
-                $value = array_map(function ($v) use ($int) {
-                    return $int ? intval($v) : trim($v);
-                }, $value);
+                if (isset($autoValue[1]) and ($autoValue[1] === 'bit')) {
+                    $sum = 0;
+                    foreach ($value as $v) $sum = $sum | intval($v);
+                    $value = $sum;
+                } else if (isset($autoValue[0]) and is_int($autoValue[0])) {
+                    $value = array_map(function ($v) {
+                        return intval($v);
+                    }, $value);
+                }
                 break;
 
             default:
