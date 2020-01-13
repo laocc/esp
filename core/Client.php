@@ -270,7 +270,7 @@ final class Client
         $smartisan = ['smartisan', 'OD103'];//锤子手机
         $meizu = ['meizu', 'MX4 Pro'];//魅族
         $vivo = ['vivo'];
-        $apple = ['Mac OS', 'iPad', 'iPhone', 'AppleWebKit'];
+        $apple = ['Mac OS', 'iPad', 'iPhone'];//AppleWebKit
 
         $op = implode('|', $OPPO_MOBILE_UA);
         $xm = implode('|', $xiaoMi);
