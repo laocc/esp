@@ -195,6 +195,7 @@ trait Mysql
             ->select('TABLE_NAME')
             ->where(['TABLE_SCHEMA' => $mysql->dbName])->get()->rows();
         $tables = [];
+        $rn = "\r\n";
         foreach ($val as $table) {
             $tab = ucfirst(substr($table['TABLE_NAME'], 3));
             if (!is_readable("{$root}/{$tab}.php")) {
@@ -203,7 +204,7 @@ trait Mysql
                     ->where(['table_schema' => $mysql->dbName, 'table_name' => $table['TABLE_NAME'], 'EXTRA' => 'auto_increment'])
                     ->get()->row();
                 $namespace = str_replace('/', '\\', trim($path, '/'));
-                $php = "<?php\n\nnamespace {$namespace};\n\nclass %sModel extends %s\n{\n    public \$_table = '%s';\n    public \$_id = '%s';\n\n}";
+                $php = "<?php{$rn}{$rn}namespace {$namespace};{$rn}{$rn}class %sModel extends %s{$rn}{{$rn}    public \$_table = '%s';{$rn}    public \$_id = '%s';{$rn}{$rn}}";
                 $tables[] = $tab;
                 file_put_contents("{$root}/{$tab}.php", sprintf($php, $tab, $baseModel, $table['TABLE_NAME'], $keyID['COLUMN_NAME']));
             }

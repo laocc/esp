@@ -1140,13 +1140,12 @@ final class Builder
                 $Exception = "DB_ERROR: [{$key}]键值不可同时带有符号";
             }
 
-            //值以+-开头
-            if (0 and in_array($value[0], ['+', '-'])) {
+
+            if (0 and in_array($value[0], ['+', '-'])) { //值以+-开头
                 $val = substr($value, 1);
                 $value = $this->protect_identifier($key) . " {$value[0]} {$val}";
 
-                //键以+-结束
-            } elseif (in_array($kFH, ['+', '-'])) {
+            } elseif (in_array($kFH, ['+', '-', '|'])) { //键以+-结束，或以|结束的位运算
                 $key = substr($key, 0, -1);
                 if (!is_numeric($value)) {
                     $Exception = "DB_ERROR: [{$key}]加减操作时，其值必须为数字";
