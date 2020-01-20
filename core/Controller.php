@@ -300,11 +300,11 @@ class Controller
 
     /**
      * 向视图送变量
-     * @param string $name
+     * @param $name
      * @param null $value
      * @return $this
      */
-    final protected function assign(string $name, $value = null)
+    final protected function assign($name, $value = null)
     {
         $this->_response->assign($name, $value);
         return $this;

@@ -504,10 +504,10 @@ final class Response
 
     /**
      * 向视图送变量
-     * @param string $name
+     * @param $name
      * @param null $value
      */
-    public function assign(string $name, $value = null)
+    public function assign($name, $value = null)
     {
         if (is_array($name)) {
             foreach ($name as $k => $v) {
