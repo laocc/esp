@@ -96,8 +96,6 @@ final class Config
         }
 
 
-
-
         self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
         if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) self::$_Redis->set(self::$_token . '_CONFIG_', self::$_CONFIG_);
 
@@ -111,6 +109,7 @@ final class Config
         if ($lev === 0) {
             //清空config本身
             $rds->set(self::$_token . '_CONFIG_', null);
+            $rds->set(self::$_token . '_ROUTES_' . _MODULE, null);
 
         } else {
             //清空整个redis表
