@@ -109,7 +109,6 @@ final class Config
         if ($lev === 0) {
             //清空config本身
             $rds->set(self::$_token . '_CONFIG_', null);
-            $rds->set(self::$_token . '_ROUTES_' . _MODULE, null);
 
         } else {
             //清空整个redis表

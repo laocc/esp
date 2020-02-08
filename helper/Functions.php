@@ -656,6 +656,24 @@ function array_rank(array $array, string $key, bool $returnValue = false)
 }
 
 /**
+ * 数组，按某个字段排序
+ * @param $array
+ * @param string $key
+ * @param string $order
+ */
+function array_sort(&$array, string $key, string $order = 'desc')
+{
+    $order = strtolower($order);
+    usort($array, function ($a, $b) use ($key, $order) {
+        if (is_int($b[$key]) or is_float($b[$key])) {
+            return ($order === 'asc') ? ($b[$key] - $a[$key]) : ($a[$key] - $a[$key]);
+        } else {
+            return ($order === 'asc') ? strnatcmp($a[$key], $b[$key]) : strnatcmp($b[$key], $a[$key]);
+        }
+    });
+}
+
+/**
  * 将字符串分割成1个字的数组，主要用于中英文混合时，将中英文安全的分割开
  * @param $str
  * @return array
