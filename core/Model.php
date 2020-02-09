@@ -498,7 +498,7 @@ class Model
     protected $tableJoin = Array();
     protected $tableJoinCount = 0;
     protected $forceIndex = '';
-    protected $groupKey = '';
+    protected $groupKey;
     protected $selectKey = [];
     protected $columnKey = null;
 
@@ -512,7 +512,7 @@ class Model
         return $this;
     }
 
-    final public function group(string $groupKey, bool $only = false)
+    final public function group($groupKey, bool $only = false)
     {
         if ($only) $this->columnKey = 0;
         $this->groupKey = $groupKey;

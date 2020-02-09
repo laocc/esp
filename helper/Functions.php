@@ -665,6 +665,7 @@ function array_sort(&$array, string $key, string $order = 'desc')
 {
     $order = strtolower($order);
     usort($array, function ($a, $b) use ($key, $order) {
+        if (!isset($b[$key])) return 0;
         if (is_int($b[$key]) or is_float($b[$key])) {
             return ($order === 'asc') ? ($b[$key] - $a[$key]) : ($a[$key] - $a[$key]);
         } else {

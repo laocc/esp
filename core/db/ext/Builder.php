@@ -28,7 +28,7 @@ final class Builder
 
     private $_order_by = '';//保存已经解析的排序字符串
 
-    private $_group = '';
+    private $_group;
     private $_forceIndex = '';
     private $_having = '';
 
@@ -63,7 +63,7 @@ final class Builder
      */
     private function clean_builder($clean_all = true)
     {
-        $this->_table = $this->_where = $this->_limit = $this->_group = $this->_having = $this->_order_by = '';
+        $this->_table = $this->_where = $this->_limit = $this->_having = $this->_order_by = '';
         $this->_select = $this->_join = Array();
         $this->_where_group_in = false;
 
@@ -71,6 +71,7 @@ final class Builder
         $this->_fetch_type = 1;
         $this->_object = null;
         $this->_count = false;
+        $this->_group = null;
 
         $this->_prepare = $this->_param = $this->_dim_param;
         $this->_bindKV = $this->_param_data = Array();
@@ -893,7 +894,7 @@ final class Builder
      *
      * $sql="select orgGoodsID,count(*) as orgCount from tabs group by orgGoodsID having orgCount>1";
      */
-    public function group(string $field)
+    public function group($field)
     {
         $this->_group = $field;
         return $this;
@@ -933,7 +934,12 @@ final class Builder
 
         if (!empty($where = $this->_build_where())) $sql[] = "WHERE {$where}";
 
-        if (!empty($this->_group)) $sql[] = "GROUP BY {$this->_group}";
+        if (!empty($this->_group)) {
+            if (is_array($this->_group)) {
+                $this->_group = implode(',', $this->_group);
+            }
+            $sql[] = "GROUP BY {$this->_group}";
+        }
 
         if (!empty($this->_having)) $sql[] = "HAVING {$this->_having}";
 
