@@ -437,13 +437,16 @@ function diff_day(int $a, int $b)
 function diff_time(int $a, int $b)
 {
     $interval = date_diff(date_create(date('YmdHis', $a)), date_create(date('YmdHis', $b)));
-    $d = $interval->format('%a');
-    $h = $interval->format('%H');
-    $i = $interval->format('%I');
-    $s = $interval->format('%S');
-    return "{$d}D{$h}H{$i}I{$s}S";
+    $d = $interval->format('%a') * 1;
+    $h = $interval->format('%h') * 1;
+    $i = $interval->format('%i') * 1;
+    $s = $interval->format('%s') * 1;
+    $d = $d > 0 ? "{$d}天" : '';
+    $h = $h > 0 ? "{$h}小时" : '';
+    $i = $i > 0 ? "{$i}分" : '';
+    $s = $s > 0 ? "{$s}秒" : '';
+    return "{$d}{$h}{$i}{$s}";
 }
-
 
 /**
  * 生成唯一GUID，基于当前时间微秒数的唯一ID
