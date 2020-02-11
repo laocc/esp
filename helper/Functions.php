@@ -428,6 +428,22 @@ function diff_day(int $a, int $b)
     return intval($interval->format('%R%a'));
 }
 
+/**
+ * 相差天数，a>b时为负数
+ * @param int $a
+ * @param int $b
+ * @return int
+ */
+function diff_time(int $a, int $b)
+{
+    $interval = date_diff(date_create(date('YmdHis', $a)), date_create(date('YmdHis', $b)));
+    $d = $interval->format('%a');
+    $h = $interval->format('%H');
+    $i = $interval->format('%I');
+    $s = $interval->format('%S');
+    return "{$d}D{$h}H{$i}I{$s}S";
+}
+
 
 /**
  * 生成唯一GUID，基于当前时间微秒数的唯一ID
@@ -1009,4 +1025,20 @@ function date_since($time, $original, $extended = 0, $text = '前')
     }
 
     return $amount . ' ' . $unit . ' ' . $text;
+}
+
+function date_diffs($timeA, $timeB)
+{
+    $time = $timeA - $timeB;
+    if ($time < 86400) {
+        if ($time < 60) {
+            return "{$time}秒";
+        } elseif ($time < 3600) {
+            return intval($time / 60) . '分' . ($time % 60) . '秒';
+        } else {
+            return intval($time / 3660) . '小时' . intval(($time % 3600) / 60) . '分';
+        }
+    } else {
+        return intval($time / 86400) . '天' . intval(($time % 86400) / 3600) . '小时';
+    }
 }
