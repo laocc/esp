@@ -445,7 +445,10 @@ function diff_time(int $a, int $b)
     $h = $h > 0 ? "{$h}小时" : '';
     $i = $i > 0 ? "{$i}分" : '';
     $s = $s > 0 ? "{$s}秒" : '';
-    return "{$d}{$h}{$i}{$s}";
+    if ($d) return "{$d}{$h}";
+    if ($h) return "{$h}{$i}";
+    if ($i) return "{$i}{$s}";
+    return $s;
 }
 
 /**
