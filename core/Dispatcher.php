@@ -17,12 +17,10 @@ final class Dispatcher
     {
 //        try {
         if (!defined('_ROOT')) exit("网站入口处须定义 _ROOT 项，指向系统根目录");
-
         define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
         if (!defined('_MODULE')) define('_MODULE', $module);
-
         if (_CLI) {
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
@@ -30,7 +28,6 @@ final class Dispatcher
             if (_URI === '/favicon.ico') exit();
         }
         if (isset($option['callback'])) $option['callback']($option);
-
         $option += ['error' => [], 'config' => []];
         //以下三项必须在`chdir()`之前，且三项顺序不可变
         if (!_CLI) $err = new Error($this, $option['error']);
@@ -56,8 +53,8 @@ final class Dispatcher
         }
 
         if (isset($option['attack'])) $option['attack']($option);
-
         unset($GLOBALS['option']);
+
 //        } catch (\Exception $exception) {
 //            pre($exception);
 //        }

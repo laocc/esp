@@ -87,6 +87,7 @@ class Gd
             header("{$option['version']} 200", true, 200);
             header('Content-type:' . image_type_to_mime_type($option['type']), true);
             header('Create-by: GD', true);
+            header('Save-by: ' . $option['save'], true);
 
             //没有明确是否缓存，或明确了不缓存
             if (!isset($option['cache']) or !$option['cache']) {
