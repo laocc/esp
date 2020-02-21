@@ -182,8 +182,11 @@ final class Dispatcher
     {
         $suffix = &$this->_request->suffix;
         $actionExt = $suffix['get'];
-        if ((strtoupper(getenv('REQUEST_METHOD') ?: '') === 'POST') and ($p = $suffix['post'])) $actionExt = $p;
-        elseif ((strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest') and ($p = $suffix['ajax'])) $actionExt = $p;
+        $isPost = $this->_request->isPost();
+        $isAjax = $this->_request->isAjax();
+        if ($isPost and ($p = $suffix['post'])) $actionExt = $p;
+        elseif ($isAjax and ($p = $suffix['ajax'])) $actionExt = $p;
+
         LOOP:
         $module = strtolower($this->_request->module);
         $controller = ucfirst($this->_request->controller);
@@ -245,8 +248,37 @@ final class Dispatcher
             if (!is_null($clo)) $val = $clo;// and is_null($val)
         }
 
+        if ($isPost or $isAjax) {
+            $rest = $cont->result ?? [];
+            $val = $this->_close($rest, $val);
+        }
+
         unset($cont, $GLOBALS['_Controller']);
         return $val;
+    }
+
+    final private function _close(array $result, $return)
+    {
+        if (is_string($return)) {
+            $result += ['success' => 0, 'message' => $return];
+
+        } else if (is_bool($return)) {
+            //不处理，不渲染
+            return $return;
+
+        } else if (is_array($return)) {
+            $result = $return + $result + ['success' => 1, 'message' => 'OK'];
+
+        } else if (is_int($return)) {
+            $result += ['success' => $return, 'message' => $return];
+
+        } else if (is_float($return)) {
+            $result += ['success' => 1, 'message' => $return];
+
+        } else {
+            $result += ['success' => 1, 'message' => 'OK'];
+        }
+        return $result;
     }
 
     final private function err404(string $msg)
