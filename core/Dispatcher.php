@@ -259,26 +259,19 @@ final class Dispatcher
 
     final private function _close(array $result, $return)
     {
+        //所有数组
+        if (is_array($return)) return $return + $result + ['success' => 1, 'message' => 'OK'];
+
+        //指定了$result
+        if (!empty($result)) return $result + ['success' => 1, 'message' => $return ?: 'OK'];
+
         if (is_string($return)) {
-            $result += ['success' => 0, 'message' => $return];
-
-        } else if (is_bool($return)) {
-            //不处理，不渲染
-            return $return;
-
-        } else if (is_array($return)) {
-            $result = $return + $result + ['success' => 1, 'message' => 'OK'];
-
-        } else if (is_int($return)) {
-            $result += ['success' => $return, 'message' => $return];
-
-        } else if (is_float($return)) {
-            $result += ['success' => 1, 'message' => $return];
-
-        } else {
-            $result += ['success' => 1, 'message' => 'OK'];
+            if (substr($return, 0, 4) === 'err:') return ['success' => 0, 'message' => substr($return, 4)];
+            if (substr($return, 0, 6) === 'error:') return ['success' => 0, 'message' => substr($return, 6)];
         }
-        return $result;
+
+        //其他情况原样返回
+        return $return;
     }
 
     final private function err404(string $msg)
