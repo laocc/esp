@@ -268,6 +268,8 @@ final class Dispatcher
         if (is_string($return)) {
             if (substr($return, 0, 4) === 'err:') return ['success' => 0, 'message' => substr($return, 4)];
             if (substr($return, 0, 6) === 'error:') return ['success' => 0, 'message' => substr($return, 6)];
+
+            if (_MODULE !== 'api') $this->_debug->error($return);
         }
 
         //其他情况原样返回
