@@ -407,148 +407,176 @@ final class Builder
             throw new Exception("DB_ERROR: where 条件异常:" . var_export($field, true));
         }
 
-        $findType = $field[-1];
 
-        /**
-         * 未指定条件值，则其本身就是一个表达式，直接应用当前Where子句
-         * @NOTE 尽量不要使用这种方式（难以处理安全性）
-         */
         if ($value === null) {
+            /**
+             * 未指定条件值，则其本身就是一个表达式，直接应用当前Where子句
+             * @NOTE 尽量不要使用这种方式（难以处理安全性）
+             */
+
             $_where = $field;
-
-        } elseif ($findType === '~') {//组合 like
-
-            if (!empty($value)) {
-                if ($value[0] === '^') $value = substr($value, 1);
-                else if ($value[0] !== '%') $value = "%{$value}";
-                if (!empty($value)) {
-                    if ($value[-1] === '$') $value = substr($value, 0, -1);
-                    else if ($value[-1] !== '%') $value = "{$value}%";
-                }
-            }
-            $field = substr($field, 0, -1);
-
-            if ($this->_param) {//采用占位符后置内容方式
-                $key = $this->paramKey($field);
-                $this->_param_data[$key] = $value;
-                $_where = $this->protect_identifier($field) . " like {$key}";
-            } else {
-                $_where = $this->protect_identifier($field) . " like " . $this->quote($value);
-            }
-
-        } elseif ($findType === '^') {//组合 locate "locate('{$key}',keyWord)";
-            $field = substr($field, 0, -1);
-
-            if ($this->_param) {//采用占位符后置内容方式
-                $key = $this->paramKey($field);
-                $this->_param_data[$key] = $value;
-                $_where = "locate(" . $key . "," . $this->protect_identifier($field) . ')';
-            } else {
-                $_where = "locate('" . $this->quote($value) . "'," . $this->protect_identifier($field) . ')';
-            }
-
-        } elseif ($findType === '!') {//等同于 !=
-            $field = substr($field, 0, -1);
-
-            if ($this->_param) {//采用占位符后置内容方式
-                $key = $this->paramKey($field);
-                $this->_param_data[$key] = $value;
-                $_where = "`{$field}` != {$key}";
-            } else {
-                $_where = "`{$field}` != " . $this->quote($value) . "";
-            }
-
-        } elseif ($findType === '&') {//位运算
-            $field = substr($field, 0, -1);
-
-            if ($this->_param) {//采用占位符后置内容方式
-                $key = $this->paramKey($field);
-                $this->_param_data[$key] = $value;
-                $_where = "`{$field}` >0 and `{$field}` & {$key}";
-            } else {
-                $_where = "`{$field}` >0 and `{$field}` & " . $this->quote($value) . "";
-            }
-
-        } elseif ($findType === '#') {//组合 between;
-            $field = substr($field, 0, -1);
-            if (empty($value)) $value = [0, 0];
-
-            if ($this->_param) {//采用占位符后置内容方式
-                $key1 = $this->paramKey($field);
-                $key2 = $this->paramKey($field);
-                $this->_param_data[$key1] = $value[0];
-                $this->_param_data[$key2] = $value[1];
-                $_where = "`{$field}` between {$key1} and {$key2}";
-            } else {
-                $_where = "`{$field}` between({$value[0]} and {$value[1]})";
-            }
-
-        } elseif ($findType === '@') {//组合 in 和 not in
-            if (!is_array($value)) {
-                throw new Exception("where in 的值必须为数组形式");
-            }
-            if (empty($value)) $value = [0, 0];
-            $in = $field[-2] === '!' ? 'not in' : 'in';
-            $len = $field[-2] === '!' ? -2 : -1;
-            $field = substr($field, 0, $len);
-
-            if ($this->_param) {//采用占位符后置内容方式
-                //用字段组合一个只有\w的字符，也就是剔除所有非\w的字符，用于预置占位符
-                $keys = [];
-                foreach ($value as $i => $val) {
-                    $keys[$i] = $this->paramKey($field . $i);
-                    $this->_param_data[$keys[$i]] = $val;
-                }
-                $key = implode(',', $keys);
-                $_where = "`{$field}` {$in} ({$key})";
-            } else {
-                $_where = "`{$field}` ({$value})";
-            }
-
-        } elseif ($findType === '%') {//mod
-            if (!is_array($value)) {
-                throw new Exception("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]");
-            }
-            if (empty($value)) $value = [2, 1];
-            $field = substr($field, 0, -1);
-
-            if ($this->_param) {//采用占位符后置内容方式
-                $key = $this->paramKey($field);
-                $this->_param_data[$key] = $value[1];
-                $_where = "mod(`{$field}`,{$value[0]}) = {$key} ";
-            } else {
-                $_where = "mod(`{$field}`,{$value[0]}) = {$value[1]} ";
-            }
-
         } else {
-            //所有以[-.`\w]开头的，加保护符
-            $protectFiled = trim($field);
-            if (stripos('abcdefghijklmnopqrstuvwxyz', $protectFiled[0]) === false) {
-                throw new Exception("DB_ERROR: where 非法 Key 值:【{$field}】");
-            } else {
-                // 以数学运算符结尾的，加空格
-                if (stripos('<>=', $protectFiled[-1]) !== false) {
-                    if (stripos('<>!', $protectFiled[-2]) !== false) {
-                        ////  <= >= <> !=
-                        $field = $this->protect_identifier(substr($field, 0, -2)) . " {$field[-2]}{$findType}";
-                    } else if ($protectFiled[-2] === '=') {
-                        // <=>
-                        $field = $this->protect_identifier(substr($field, 0, -3)) . " {$field[-3]}{$field[-2]}{$findType}";
-                    } else {
-                        $field = $this->protect_identifier(substr($field, 0, -1)) . " {$findType}";
-                    }
-                } else {
-                    $field = $this->protect_identifier($field) . ' = ';
-                }
-            }
-            if ($this->_param) {//采用占位符后置内容方式
-                $key = $this->paramKey($protectFiled);
-                $this->_param_data[$key] = $value;
-                $_where = $field . $key;
-            } else {
-                $_where = $field . $this->quote($value);// 对 $value 进行安全转义
-            }
 
+            /**
+             *
+             * ~    like
+             * ^    locate
+             * !    !=
+             * &    位运算
+             * #    between
+             * @    in
+             * %    mod
+             * *    正则
+             *
+             *
+             */
+            switch ($findType = strtolower($field[-1])) {
+                case '~'://组合 like
+
+                    if (!empty($value)) {
+                        if ($value[0] === '^') $value = substr($value, 1);
+                        else if ($value[0] !== '%') $value = "%{$value}";
+                        if (!empty($value)) {
+                            if ($value[-1] === '$') $value = substr($value, 0, -1);
+                            else if ($value[-1] !== '%') $value = "{$value}%";
+                        }
+                    }
+                    $field = substr($field, 0, -1);
+
+                    if ($this->_param) {//采用占位符后置内容方式
+                        $key = $this->paramKey($field);
+                        $this->_param_data[$key] = $value;
+                        $_where = $this->protect_identifier($field) . " like {$key}";
+                    } else {
+                        $_where = $this->protect_identifier($field) . " like " . $this->quote($value);
+                    }
+
+                    break;
+                case '^'://组合 locate "locate('{$key}',keyWord)";
+                    $field = substr($field, 0, -1);
+
+                    if ($this->_param) {//采用占位符后置内容方式
+                        $key = $this->paramKey($field);
+                        $this->_param_data[$key] = $value;
+                        $_where = "locate(" . $key . "," . $this->protect_identifier($field) . ')';
+                    } else {
+                        $_where = "locate('" . $this->quote($value) . "'," . $this->protect_identifier($field) . ')';
+                    }
+                    break;
+                case '!'://等同于 !=
+                    $field = substr($field, 0, -1);
+
+                    if ($this->_param) {//采用占位符后置内容方式
+                        $key = $this->paramKey($field);
+                        $this->_param_data[$key] = $value;
+                        $_where = "`{$field}` != {$key}";
+                    } else {
+                        $_where = "`{$field}` != " . $this->quote($value) . "";
+                    }
+                    break;
+                case '&'://位运算
+                    $field = substr($field, 0, -1);
+
+                    if ($this->_param) {//采用占位符后置内容方式
+                        $key = $this->paramKey($field);
+                        $this->_param_data[$key] = $value;
+                        $_where = "`{$field}` >0 and `{$field}` & {$key}";
+                    } else {
+                        $_where = "`{$field}` >0 and `{$field}` & " . $this->quote($value) . "";
+                    }
+                    break;
+                case '*'://正则表达式
+                    $field = substr($field, 0, -1);
+
+                    if ($this->_param) {//采用占位符后置内容方式
+                        $key = $this->paramKey($field);
+                        $this->_param_data[$key] = $value;
+                        $_where = $this->protect_identifier($field) . " REGEXP {$key}";
+                    } else {
+                        $_where = $this->protect_identifier($field) . " REGEXP " . $this->quote($value);
+                    }
+                    break;
+                case '#'://组合 between;
+                    $field = substr($field, 0, -1);
+                    if (empty($value)) $value = [0, 0];
+
+                    if ($this->_param) {//采用占位符后置内容方式
+                        $key1 = $this->paramKey($field);
+                        $key2 = $this->paramKey($field);
+                        $this->_param_data[$key1] = $value[0];
+                        $this->_param_data[$key2] = $value[1];
+                        $_where = "`{$field}` between {$key1} and {$key2}";
+                    } else {
+                        $_where = "`{$field}` between({$value[0]} and {$value[1]})";
+                    }
+                    break;
+                case '@'://组合 in 和 not in
+                    if (!is_array($value)) {
+                        throw new Exception("where in 的值必须为数组形式");
+                    }
+                    if (empty($value)) $value = [0, 0];
+                    $in = $field[-2] === '!' ? 'not in' : 'in';
+                    $len = $field[-2] === '!' ? -2 : -1;
+                    $field = substr($field, 0, $len);
+
+                    if ($this->_param) {//采用占位符后置内容方式
+                        //用字段组合一个只有\w的字符，也就是剔除所有非\w的字符，用于预置占位符
+                        $keys = [];
+                        foreach ($value as $i => $val) {
+                            $keys[$i] = $this->paramKey($field . $i);
+                            $this->_param_data[$keys[$i]] = $val;
+                        }
+                        $key = implode(',', $keys);
+                        $_where = "`{$field}` {$in} ({$key})";
+                    } else {
+                        $_where = "`{$field}` ({$value})";
+                    }
+                    break;
+                case '%'://mod
+                    if (!is_array($value)) {
+                        throw new Exception("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]");
+                    }
+                    if (empty($value)) $value = [2, 1];
+                    $field = substr($field, 0, -1);
+
+                    if ($this->_param) {//采用占位符后置内容方式
+                        $key = $this->paramKey($field);
+                        $this->_param_data[$key] = $value[1];
+                        $_where = "mod(`{$field}`,{$value[0]}) = {$key} ";
+                    } else {
+                        $_where = "mod(`{$field}`,{$value[0]}) = {$value[1]} ";
+                    }
+                    break;
+                default:
+                    //所有以[-.`\w]开头的，加保护符
+                    $protectFiled = trim($field);
+                    if (stripos('abcdefghijklmnopqrstuvwxyz', $protectFiled[0]) === false) {
+                        throw new Exception("DB_ERROR: where 非法 Key 值:【{$field}】");
+                    } else {
+                        // 以数学运算符结尾的，加空格
+                        if (stripos('<>=', $protectFiled[-1]) !== false) {
+                            if (stripos('<>!', $protectFiled[-2]) !== false) {
+                                ////  <= >= <> !=
+                                $field = $this->protect_identifier(substr($field, 0, -2)) . " {$field[-2]}{$findType}";
+                            } else if ($protectFiled[-2] === '=') {
+                                // <=>
+                                $field = $this->protect_identifier(substr($field, 0, -3)) . " {$field[-3]}{$field[-2]}{$findType}";
+                            } else {
+                                $field = $this->protect_identifier(substr($field, 0, -1)) . " {$findType}";
+                            }
+                        } else {
+                            $field = $this->protect_identifier($field) . ' = ';
+                        }
+                    }
+                    if ($this->_param) {//采用占位符后置内容方式
+                        $key = $this->paramKey($protectFiled);
+                        $this->_param_data[$key] = $value;
+                        $_where = $field . $key;
+                    } else {
+                        $_where = $field . $this->quote($value);// 对 $value 进行安全转义
+                    }
+
+            }
         }
         $this->_where_insert($_where, ($is_OR ? ' OR ' : ' AND '));
         return $this;
