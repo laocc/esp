@@ -290,15 +290,15 @@ class Model
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
 
-        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
-        if ($orderBy) {
-            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
-            $obj->order($orderBy, $sort);
-        }
         if (!empty($this->_order)) {
             foreach ($this->_order as $k => $a) {
                 $obj->order($a['key'], $a['sort'], $a['pro']);
             }
+        }
+        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
+        if ($orderBy) {
+            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
+            $obj->order($orderBy, $sort);
         }
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $data = $obj->get(0, $sql, $pre);
