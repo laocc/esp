@@ -120,12 +120,13 @@ final class Input
                 } elseif ($autoValue === 'html') {
 
                 } elseif ($autoValue === 'array') {
-//                    $value
-
-                } elseif ($autoValue === 'json') {
                     $value = json_encode(array_map(function ($v) {
                         return trim($v);
                     }, $value), 256);
+
+                } elseif ($autoValue === 'json') {
+                    $value = json_decode($value, true);
+                    if (empty($value)) $value = [];
 
                 } else if ($autoValue === 'date_time') {
                     $date = trim($value);
