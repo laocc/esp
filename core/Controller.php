@@ -5,6 +5,7 @@ namespace esp\core;
 
 use esp\core\db\Redis;
 use esp\core\face\Adapter;
+use models\main\DebugModel;
 
 class Controller
 {
@@ -28,6 +29,11 @@ class Controller
         $this->_debug = &$dispatcher->_debug;
         $this->_buffer = Config::Redis();
         $this->_system = defined('_SYSTEM') ? _SYSTEM : 'auto';
+
+        if (!_CLI) {
+            $modDebug = new DebugModel();
+            $modDebug->recodeDebug($this->_request);
+        }
     }
 
     /**
