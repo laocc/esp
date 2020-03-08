@@ -2,7 +2,6 @@
 
 namespace esp\core;
 
-
 class Error
 {
     private $dispatcher;
@@ -38,17 +37,14 @@ class Error
         if (_CLI) {
             $default['run'] = 1;
             $default['throw'] = 1;
-        } else if (_DEBUG) {
-//            $default['run'] = 2;
-//            $default['throw'] = 2;
         }
         //ajax方式下，都只显示简单信息
-        if (strtolower(getenv('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest') {
+        if (strtolower(getenv('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest' or strtolower(getenv('REQUEST_METHOD')) === 'post') {
             $default['run'] = 9;
             $default['throw'] = 9;
         }
 
-        $option = $default + $option;
+        $option += $default;
         /**
          * 一般警告错误
          * @param $errNo
@@ -88,7 +84,7 @@ class Error
                     unset($err['text']);
                     $text = $err['error'];
                     if (isset($errcontext['errorTitle'])) $text = "{$errcontext['errorTitle']}：{$err['error']}";
-                    echo json_encode(['success' => 0, 'message' => $text, 'level' => 'Error', 'file' => "{$errFile}({$errLine})"], 256);
+                    echo json_encode(['success' => 0, 'message' => $text, 'level' => 'Error'], 256);
                     exit;
                 } else if ($option['run'] === 2) {
                     $this->displayError('Error', $err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
@@ -160,8 +156,7 @@ class Error
          * 2，函数参数不对；
          * 3，throw new \Exception('抛出的异常');
          */
-        $seh = set_exception_handler($handler_exception);
-//        var_export($seh);
+        set_exception_handler($handler_exception);
     }
 
     public static function exception(\Exception $exception)
