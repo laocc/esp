@@ -31,7 +31,7 @@ class Controller
 
         if (!_CLI) {
             register_shutdown_function(function (Request $request) {
-                //发送debug记录到redis管道中，后面由cli任务写入队列后再写入数据库
+                //发送debug记录到redis队列管道中，后面由cli任务写入数据库
                 $debug = [];
                 $debug['time'] = time();
                 $debug['controller'] = $request->controller;
@@ -39,7 +39,7 @@ class Controller
                 $debug['method'] = $request->method;
                 $debug['module'] = _MODULE;
                 $debug['system'] = _SYSTEM;
-                $this->_buffer->publish('debug', 'debug', $debug);
+                $this->_buffer->push(_DEBUG_PUSH_KEY, $debug);
             }, $this->_request);
         }
     }
