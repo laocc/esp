@@ -5,7 +5,6 @@ namespace esp\core;
 
 use esp\core\db\Redis;
 use esp\core\face\Adapter;
-use models\main\DebugModel;
 
 class Controller
 {
@@ -31,8 +30,17 @@ class Controller
         $this->_system = defined('_SYSTEM') ? _SYSTEM : 'auto';
 
         if (!_CLI) {
-            $modDebug = new DebugModel();
-            $modDebug->recodeDebug($this->_request);
+            register_shutdown_function(function (Request $request) {
+                //发送debug记录到redis管道中，后面由cli任务写入队列后再写入数据库
+                $debug = [];
+                $debug['time'] = time();
+                $debug['controller'] = $request->controller;
+                $debug['action'] = $request->action;
+                $debug['method'] = $request->method;
+                $debug['module'] = _MODULE;
+                $debug['system'] = _SYSTEM;
+                $this->_buffer->publish('debug', 'debug', $debug);
+            }, $this->_request);
         }
     }
 
