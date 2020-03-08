@@ -28,7 +28,6 @@ class Controller
         $this->_debug = &$dispatcher->_debug;
         $this->_buffer = Config::Redis();
         $this->_system = defined('_SYSTEM') ? _SYSTEM : 'auto';
-
         if (!_CLI) {
             register_shutdown_function(function (Request $request) {
                 //发送debug记录到redis队列管道中，后面由cli任务写入数据库
