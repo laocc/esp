@@ -545,6 +545,12 @@ function is_uri(string $string): bool
     return (bool)filter_var($string, FILTER_VALIDATE_REGEXP, ['options' => ['regexp' => '/^(\/[\w\-\.\~]*)?(\/.+)*$/i']]);
 }
 
+function is_datetime(string $time): bool
+{
+    $tmp = explode(' ', trim($time), 2);
+    if (!isset($tmp[1])) return false;
+    return is_date($tmp[0]) and is_time($tmp[1]);
+}
 
 /**
  * 日期格式：2015-02-05 或 20150205
