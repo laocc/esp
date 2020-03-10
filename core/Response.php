@@ -197,8 +197,10 @@ final class Response
      * @return View
      * @throws \Exception
      */
-    public function registerAdapter(Adapter $adapter): View
+    public function registerAdapter(Adapter $adapter)
     {
+        if (!$this->_view_set['view_use']) return null;
+
         if (!$this->_request->module) {
             throw new \Exception("registerAdapter要在routeAfter之后执行", 500);
         }
