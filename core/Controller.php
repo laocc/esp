@@ -204,11 +204,12 @@ class Controller
      * @param null $pre
      * @return Debug|EmptyClass|null|bool
      */
-    final public function debug($data = null, $pre = null)
+    final public function debug($data = '_R_DEBUG_', $pre = null)
     {
         if (_CLI) return false;
         if (is_null($this->_debug)) return new EmptyClass();
-        if (is_null($data)) return $this->_debug;
+//        if (is_null($data)) return $this->_debug;
+        if ($data === '_R_DEBUG_') return $this->_debug;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $this->_debug->relay($data, $pre);
         return $this->_debug;

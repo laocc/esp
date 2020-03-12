@@ -391,11 +391,11 @@ final class Builder
          * 每数组中的每个元素应用where子句
          */
         if (is_array($field) and !empty($field)) {
-            foreach ($field as $key => &$val) {
+            foreach ($field as $key => $val) {
                 if (is_int($key)) {
                     $this->where($val, null, $is_OR);
-                } else if (is_null($val)) {
-                    $this->where($key, 0, $is_OR);
+//                } else if (is_null($val)) {
+//                    $this->where($key, 0, $is_OR);
                 } else {
                     $this->where($key, $val, $is_OR);
                 }
@@ -409,12 +409,15 @@ final class Builder
 
 
         if ($value === null) {
-            /**
-             * 未指定条件值，则其本身就是一个表达式，直接应用当前Where子句
-             * @NOTE 尽量不要使用这种方式（难以处理安全性）
-             */
-
-            $_where = $field;
+            if (preg_match('/^[a-z0-9]+$/i', $field)) {
+                $_where = "isnull({$field})";
+            } else {
+                /**
+                 * 未指定条件值，则其本身就是一个表达式，直接应用当前Where子句
+                 * @NOTE 尽量不要使用这种方式（难以处理安全性）
+                 */
+                $_where = $field;
+            }
         } else {
 
             /**
@@ -992,7 +995,6 @@ final class Builder
         $this->replace_tempTable($_build_sql);
         $option = $this->option('select');
         $get = $this->_MySQL->query_exec($_build_sql, $option, null, $pre);
-
         if (is_null($sql)) {
             $sql = $_build_sql;
             if (!empty($option['param'])) {

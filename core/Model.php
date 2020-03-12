@@ -462,7 +462,6 @@ class Model
         $obj->count($this->_count);
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $data = $obj->limit($this->pageSize, $this->pageSkip)->get(0, $sql, $pre);
-
         $v = $this->checkRunData('list', $data);
         if ($v) return $v;
         $this->dataCount = $data->count();
