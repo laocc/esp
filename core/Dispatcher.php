@@ -163,13 +163,18 @@ final class Dispatcher
         }
         $this->_plugs_count and $this->plugsHook('displayAfter');
 
-//        $this->_debug->save_logs($this->_request, $this->_response);
-
         if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
         if (!_CLI and !is_null($this->_cache)) $this->_cache->Save();
 
         end:
         $this->_plugs_count and $this->plugsHook('mainEnd');
+
+        if (!is_null($this->_debug)) {
+            register_shutdown_function(function (Request $request, Response $response) {
+                $this->_debug->save_logs($request, $response);
+            }, $this->_request, $this->_response);
+        }
+
     }
 
 
@@ -222,11 +227,13 @@ final class Dispatcher
 
         //运行初始化方法
         if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
+            if (!is_null($this->_debug)) $this->_debug->relay('[blue;Controller Init============================]', []);
             $val = call_user_func_array([$cont, '_init'], [$action]);
             if (!is_null($val)) return $val;
         }
 
         if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
+            if (!is_null($this->_debug)) $this->_debug->relay('[blue;Controller Main=============================]', []);
             $val = call_user_func_array([$cont, '_main'], [$action]);
             if (!is_null($val)) return $val;
         }
@@ -234,9 +241,9 @@ final class Dispatcher
         /**
          * 正式请求到控制器
          */
-        if (!is_null($this->_debug)) $this->_debug->relay('ControllerStar', []);
+        if (!is_null($this->_debug)) $this->_debug->relay('[green;ControllerStar==============================]', []);
         $val = call_user_func_array([$cont, $action], $this->_request->params);
-        if (!is_null($this->_debug)) $this->_debug->relay('ControllerStop', []);
+        if (!is_null($this->_debug)) $this->_debug->relay('[red;ControllerStop==============================]', []);
         if ($this->_request->loop === true) {
             $this->_request->loop = false;
             goto LOOP;
@@ -246,6 +253,7 @@ final class Dispatcher
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
             $clo = call_user_func_array([$cont, '_close'], [$action, $val]);
             if (!is_null($clo)) $val = $clo;// and is_null($val)
+            if (!is_null($this->_debug)) $this->_debug->relay('Controller Closed==================================', []);
         }
 
         if ($isPost or $isAjax) {

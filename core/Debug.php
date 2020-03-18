@@ -48,11 +48,6 @@ final class Debug
         $this->prevTime = microtime(true);
         $this->relay('START', []);
         $this->_request = $request;
-
-        //将最后保存数据部分注册为关门动作
-        register_shutdown_function(function (Request $request, Response $response) {
-            $this->save_logs($request, $response);
-        }, $request, $response);
     }
 
     /**

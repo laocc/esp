@@ -792,7 +792,6 @@ final class Builder
     public function skip(int $n)
     {
         $this->_skip = $n;
-//        $this->_count = true;
         return $this;
     }
 
@@ -823,7 +822,6 @@ final class Builder
         } else {
             $this->_limit = intval($skip) . ',' . intval($size);
         }
-//        $this->_count = true;
         return $this;
     }
 
