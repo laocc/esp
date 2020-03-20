@@ -393,6 +393,11 @@ class Controller
         return $this->_response->set_value('text', $value);
     }
 
+    final protected function image(string $value)
+    {
+        return $this->_response->set_value('image', $value);
+    }
+
     final protected function xml($root, $value = null)
     {
         if (is_array($root)) list($root, $value) = [$value ?: 'xml', $root];

@@ -7,7 +7,7 @@ use esp\library\ext\Xml;
 
 final class Response
 {
-    private $_display_value = Array();
+    private $_display_value;
     private $_request;
     private $_resource;
     private $_display_type;
@@ -75,6 +75,11 @@ final class Response
 
             case 'php':
                 $this->_display_type = 'php';
+                $this->_display_value = $value;
+                break;
+
+            case 'image':
+                $this->_display_type = 'png';
                 $this->_display_value = $value;
                 break;
 
@@ -307,6 +312,11 @@ final class Response
 
             case 'html':
                 $html = print_r($this->_display_value, true);
+                break;
+
+            case 'png':
+                $this->_display_value = preg_replace('/data:image\/[a-z0-9]+?;base64,/i', '', $this->_display_value);
+                $html = base64_decode($this->_display_value);
                 break;
 
             case 'text':
