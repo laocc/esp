@@ -16,6 +16,7 @@ final class Debug
     private $_mysql = Array();
     private $_conf;
     private $_request;
+    private $_response;
     private $_errorText;
     private $_save_RPC = false;
     private $_ROOT_len = 0;
@@ -48,6 +49,7 @@ final class Debug
         $this->prevTime = microtime(true);
         $this->relay('START', []);
         $this->_request = $request;
+        $this->_response = $response;
     }
 
     /**
@@ -79,13 +81,14 @@ final class Debug
     /**
      * 保存记录到的数据
      */
-    public function save_logs(Request $request, Response $response)
+    public function save_logs()
     {
         if (empty($this->_node) or $this->_run === false) return 0;
         $filename = $this->filename();
         if (is_null($filename)) return 0;
         $this->relay('END:save_logs', []);
-        $method = $request->getMethod();
+        $rq = $this->_request;
+        $method = $rq->getMethod();
         $data = Array();
         $data[] = "## 请求数据\n```\n";
         $data[] = " - METHOD:\t{$method}\n";
@@ -96,10 +99,10 @@ final class Debug
         $data[] = " - DATETIME:\t" . date('Y-m-d H:i:s', $this->_time) . "\n";
         $data[] = " - AGENT:\t" . ($_SERVER['HTTP_USER_AGENT'] ?? '') . "\n";
         $data[] = " - ROOT:\t" . _ROOT . "\n";
-        $data[] = " - Router:\t/{$request->module}/{$request->controller}/{$request->action}\t({$request->router})\n";
+        $data[] = " - Router:\t/{$rq->module}/{$rq->controller}/{$rq->action}\t({$rq->router})\n";
 
         //一些路由结果，路由结果参数
-        $Params = implode(',', $request->getParams());
+        $Params = implode(',', $rq->getParams());
         $data[] = " - Params:\t({$Params})\n```\n";
 
         if (!empty($this->_value)) {
@@ -151,9 +154,9 @@ final class Debug
 
         if ($this->_conf['print']['html'] ?? 0) {
             $data[] = "\n## 页面实际响应： \nEcho:\n```\n" . ob_get_contents() . "\n```\n";
-            $display = $response->_display_Result;
+            $display = $this->_response->_display_Result;
             if (empty($display)) $display = var_export($display, true);
-            $data[] = "\nContent-Type:{$response->_Content_Type}\n```\n" . $display . "\n```\n";
+            $data[] = "\nContent-Type:{$this->_response->_Content_Type}\n```\n" . $display . "\n```\n";
         }
 
         if ($this->_conf['print']['server'] ?? 0) {

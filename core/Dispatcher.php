@@ -60,11 +60,6 @@ final class Dispatcher
 //        }
     }
 
-    public function __destruct()
-    {
-
-    }
-
 
     /**
      * @return Request
@@ -170,9 +165,9 @@ final class Dispatcher
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-            register_shutdown_function(function (Request $request, Response $response) {
-                $this->_debug->save_logs($request, $response);
-            }, $this->_request, $this->_response);
+            register_shutdown_function(function () {
+                $this->_debug->save_logs();
+            });
         }
 
     }
@@ -253,7 +248,7 @@ final class Dispatcher
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
             $clo = call_user_func_array([$cont, '_close'], [$action, $val]);
             if (!is_null($clo)) $val = $clo;// and is_null($val)
-            if (!is_null($this->_debug)) $this->_debug->relay('Controller Closed==================================', []);
+            if (!is_null($this->_debug)) $this->_debug->relay('[red;Controller Closed==================================]', []);
         }
 
         if ($isPost or $isAjax) {

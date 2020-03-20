@@ -52,7 +52,8 @@ class Error
          * @param $errFile
          * @param $errLine
          */
-        $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $errcontext = null) use ($option) {
+        $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $errcontext = null)
+        use ($option) {
             Session::reset();
 
             $err = Array();
@@ -73,29 +74,24 @@ class Error
             }
 
             if (is_int($option['run'])) {
-                if ($option['run'] === 0) {
-                    exit;
-                } else if ($option['run'] === 1) {
+                if ($option['run'] === 1) {
                     unset($err['text']);
                     print_r($err);
-                    exit;
                 } else if ($option['run'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, 200);
                     unset($err['text']);
                     $text = $err['error'];
                     if (isset($errcontext['errorTitle'])) $text = "{$errcontext['errorTitle']}：{$err['error']}";
                     echo json_encode(['success' => 0, 'message' => $text, 'level' => 'Error'], 256);
-                    exit;
                 } else if ($option['run'] === 2) {
                     $this->displayError('Error', $err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
                 } else {
                     echo $this->displayState($option['run']);
-                    exit;
                 }
             } else {
                 echo($option['run']);
-                exit();
             }
+            exit();
         };
 
         /**
@@ -112,30 +108,25 @@ class Error
             $err['file'] = $error->getFile();
             $err['line'] = $error->getLine();
             $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+
             if (is_int($option['throw'])) {
-                if ($option['throw'] === 0) {
-                    exit;
-                } else if ($option['throw'] === 1) {
+                if ($option['throw'] === 1) {
                     print_r($err);
-                    exit;
                 } else if ($option['throw'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, 200);
                     echo json_encode(['success' => 0, 'message' => $err['error'], 'level' => 'Throw'], 256);
-                    exit;
                 } else if ($option['throw'] === 2) {
                     $this->displayError('Throw', $err, $error->getTrace());
                 } else if ($option['throw'] === 3) {
                     if (!$err['code']) $err['code'] = $option['run'];
                     echo $this->displayState($err['code']);
-                    exit;
                 } else {
                     echo $this->displayState($option['throw']);
-                    exit;
                 }
             } else {
                 echo($option['throw']);
-                exit();
             }
+            exit();
         };
 
         /**
@@ -194,6 +185,12 @@ class Error
             'Post' => file_get_contents("php://input"),
         ];
         if (strlen($info['Post']) > 1000) $info['Post'] = substr($info['Post'], 0, 1000);
+
+        if (!is_null($debug)) {
+            register_shutdown_function(function (Debug $debug) {
+                $debug->save_logs();
+            }, $debug);
+        }
 
         $filename = $path . "/" . date($filename) . mt_rand() . '.md';
         if (defined('_RPC') and RPC::post('/debug', ['filename' => $filename, 'data' => json_encode($info, 256 | 128 | 64)])) return;
