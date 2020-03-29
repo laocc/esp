@@ -388,6 +388,13 @@ class Model
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
         $obj = $this->Mysql()->table($table)->prepare();
+        if ($orderBy === 'PRI') {
+            $orderBy = $this->PRI($table);
+            if (isset($where['PRI'])) {
+                $where[$orderBy] = $where['PRI'];
+                unset($where['PRI']);
+            }
+        }
 
         if (!empty($this->selectKey)) $obj->select(...$this->selectKey);
         if (!empty($this->tableJoin)) {
@@ -402,7 +409,6 @@ class Model
                 $obj->order($a['key'], $a['sort'], $a['pro']);
             }
         }
-        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
         if ($orderBy) {
             if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
             $obj->order($orderBy, $sort);
