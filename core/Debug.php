@@ -267,10 +267,13 @@ final class Debug
     }
 
     /**
-     * 禁止
+     * 禁用debug
+     * @param int $mt 禁用几率，100，即为1%的机会会启用
+     * @return $this
      */
-    public function disable()
+    public function disable(int $mt = 0)
     {
+        if ($mt > 1 && mt_rand(0, $mt) === 1) return $this;
         $this->_run = false;
     }
 
