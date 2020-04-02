@@ -281,19 +281,11 @@ final class Dispatcher
 
     final private function err404(string $msg)
     {
+        $this->_debug->folder('error');
+        if (_DEBUG) return $msg;
         $empty = Config::get('frame.request.empty');
-        if (is_int($empty)) {
-            if (_DEBUG) {
-                throw new \Exception($msg, 404);
-            }
-//        $this->_debug->disable();
-            return $msg;
-        }
-
-        if (is_null($empty) or empty($empty)) return $msg;
-
-//        return $msg;
-        return $empty;
+        if (!empty($empty)) return $empty;
+        return $msg;
     }
 
 }
