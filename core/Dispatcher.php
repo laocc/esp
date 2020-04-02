@@ -25,7 +25,7 @@ final class Dispatcher
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
             define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
-            if (_URI === '/favicon.ico') exit();
+            if (_URI === '/favicon.ico') exit;
         }
         if (isset($option['callback'])) $option['callback']($option);
         $option += ['error' => [], 'config' => []];

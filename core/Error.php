@@ -91,7 +91,7 @@ class Error
             } else {
                 echo($option['run']);
             }
-            exit();
+            exit;
         };
 
         /**
@@ -126,7 +126,7 @@ class Error
             } else {
                 echo($option['throw']);
             }
-            exit();
+            exit;
         };
 
         /**
@@ -299,7 +299,7 @@ class Error
         $content = ob_get_contents();
         ob_end_clean();
         echo $content;
-        exit();
+        exit;
     }
 
     private function filter_root($str)

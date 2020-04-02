@@ -255,7 +255,7 @@ class Controller
         header("Cache-Control: no-cache");
         header("Pragma: no-cache");
         header("Location: {$url}", true, $code);
-        exit;
+        return true;
     }
 
     final protected function jump($route)

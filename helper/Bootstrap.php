@@ -19,7 +19,7 @@ final class Bootstrap
         $pattern = '/^\/(.+?)\.(jpg|gif|png|bmp|jpeg)\_(\d{1,4})(x|v|z)(\d{1,4})\.\2(?:[\?\#].*)?$/i';
         if (preg_match($pattern, getenv('REQUEST_URI'))) {
             echo Image::thumbs();
-            exit();
+            exit;
         }
     }
 
