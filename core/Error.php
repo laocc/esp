@@ -91,6 +91,7 @@ class Error
             } else {
                 echo($option['run']);
             }
+            fastcgi_finish_request();
             exit;
         };
 
@@ -126,6 +127,7 @@ class Error
             } else {
                 echo($option['throw']);
             }
+            fastcgi_finish_request();
             exit;
         };
 
