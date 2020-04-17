@@ -734,4 +734,13 @@ class Model
     }
 
 
+    /**
+     * 注册关门后操作
+     * @param callable $fun
+     */
+    final public function shutdown(callable $fun, ...$parameter)
+    {
+        register_shutdown_function($fun, ...$parameter);
+    }
+
 }
