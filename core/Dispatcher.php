@@ -165,26 +165,27 @@ final class Dispatcher
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
+            if (getenv('HTTP_DEBUG')) $this->check_debug('star_');
             register_shutdown_function(function () {
                 $save = $this->_debug->save_logs();
                 $this->check_debug($save);
             });
         } else {
-            if (getenv('HTTP_DEBUG')) $this->check_debug('debug null');
+            if (getenv('HTTP_DEBUG')) $this->check_debug('null_');
         }
 
     }
 
-    private function check_debug($save)
+    private function check_debug($save, $file = null)
     {
         if (!getenv('HTTP_DEBUG')) return;
         $testDebug = [];
-        $n = $this->_request->controller . '_' . $this->_request->action;
+        $file .= $this->_request->controller . '_' . $this->_request->action;
         $testDebug['ua'] = getenv('HTTP_USER_AGENT');
         $testDebug['ver'] = getenv('HTTP_DEBUG');
         $testDebug['file'] = $this->_debug->filename();
         $testDebug['save'] = $save;
-        file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . $n . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
+        file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . $file . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
     }
 
 
