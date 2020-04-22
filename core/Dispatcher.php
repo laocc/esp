@@ -169,10 +169,10 @@ final class Dispatcher
             register_shutdown_function(function () {
                 $save = $this->_debug->save_logs();
 
-                if (getenv('HTTP_MOBILE')) {
+                if (getenv('HTTP_DEBUG')) {
                     $n = $this->_request->controller . '_' . $this->_request->action;
                     $testDebug['ua'] = getenv('HTTP_USER_AGENT');
-                    $testDebug['mob'] = getenv('HTTP_MOBILE');
+                    $testDebug['ver'] = getenv('HTTP_DEBUG');
                     $testDebug['file'] = $this->_debug->filename();
                     $testDebug['save'] = $save;
                     file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . $n . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
