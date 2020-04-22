@@ -200,14 +200,14 @@ final class Dispatcher
         $actionExt = $suffix['auto'];
         $isPost = $this->_request->isPost();
         $isAjax = $this->_request->isAjax();
-        if ($this->_request->isGet() and ($p = $suffix['get'])) $actionExt = $p;
-        elseif ($isAjax and ($p = $suffix['ajax'])) $actionExt = $p;
+//        if ($this->_request->isGet() and ($p = $suffix['get'])) $actionExt = $p;
+        if ($isAjax and ($p = $suffix['ajax'])) $actionExt = $p;
         elseif ($isPost and ($p = $suffix['post'])) $actionExt = $p;
         elseif (_CLI and ($p = $suffix['auto'])) $actionExt = $p;
         else {
 //            print_r($suffix);
 //            var_dump([$this->_request->isGet(), $this->_request->isCli(), $isAjax, $isPost]);
-            return 'Unknown method=' . $this->_request->method;
+//            return 'Unknown method=' . $this->_request->method;
         }
 
         LOOP:
