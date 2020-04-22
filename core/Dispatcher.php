@@ -137,7 +137,6 @@ final class Dispatcher
      */
     public function run(callable $callable = null): void
     {
-        $testDebug = [];
         if ($callable and call_user_func($callable)) return;
 
         if ($this->run === false) return;
@@ -168,19 +167,24 @@ final class Dispatcher
         if (!is_null($this->_debug)) {
             register_shutdown_function(function () {
                 $save = $this->_debug->save_logs();
-
-                if (getenv('HTTP_DEBUG')) {
-                    $n = $this->_request->controller . '_' . $this->_request->action;
-                    $testDebug['ua'] = getenv('HTTP_USER_AGENT');
-                    $testDebug['ver'] = getenv('HTTP_DEBUG');
-                    $testDebug['file'] = $this->_debug->filename();
-                    $testDebug['save'] = $save;
-                    file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . $n . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
-                }
-
+                $this->check_debug($save);
             });
+        } else {
+            if (getenv('HTTP_DEBUG')) $this->check_debug('debug null');
         }
 
+    }
+
+    private function check_debug($save)
+    {
+        if (!getenv('HTTP_DEBUG')) return;
+        $testDebug = [];
+        $n = $this->_request->controller . '_' . $this->_request->action;
+        $testDebug['ua'] = getenv('HTTP_USER_AGENT');
+        $testDebug['ver'] = getenv('HTTP_DEBUG');
+        $testDebug['file'] = $this->_debug->filename();
+        $testDebug['save'] = $save;
+        file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . $n . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
     }
 
 
