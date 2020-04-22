@@ -95,7 +95,7 @@ final class Request
 
     public function isGet()
     {
-        return $this->method === 'GET';// && strtolower(getenv('HTTP_X_REQUESTED_WITH')) !== 'xmlhttprequest';
+        return $this->method === 'GET' && strtolower(getenv('HTTP_X_REQUESTED_WITH')) !== 'xmlhttprequest';
     }
 
     public function isPost()
