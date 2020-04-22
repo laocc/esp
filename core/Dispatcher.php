@@ -165,13 +165,13 @@ final class Dispatcher
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-            if (getenv('HTTP_DEBUG')) $this->check_debug('star_');
+            if (getenv('HTTP_DEBUG')) $this->check_debug('', 'star_');
             register_shutdown_function(function () {
                 $save = $this->_debug->save_logs();
                 $this->check_debug($save);
             });
         } else {
-            if (getenv('HTTP_DEBUG')) $this->check_debug('null_');
+            if (getenv('HTTP_DEBUG')) $this->check_debug('', 'null_');
         }
 
     }
