@@ -85,7 +85,7 @@ final class Resources
         $path = $this->path();
         if (empty($host)) $host = $path;
         $face = substr(getenv('DOCUMENT_ROOT'), strlen(_ROOT));
-        return str_replace([$path, '__RAND__', $face], [$host, $this->rand()], $html);
+        return str_replace([$path, '__RAND__', $face], [$host, $this->rand(), ''], $html);
     }
 
 }

@@ -30,7 +30,7 @@ final class Request
         $this->directory = root($conf['directory'] ?? '/directory');
         $this->router_path = root($conf['router'] ?? '/config/routes');
         if (!isset($conf['suffix'])) $conf['suffix'] = array();
-        $this->suffix = $conf['suffix'] + ['get' => 'Action', 'ajax' => 'Ajax', 'post' => 'Post'];
+        $this->suffix = $conf['suffix'] + ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post'];
         $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
         $this->uri = _CLI ? //CLI模式下 取参数作为路由
             ('/' . trim(implode('/', array_slice($GLOBALS["argv"], 1)), '/')) :
@@ -95,7 +95,7 @@ final class Request
 
     public function isGet()
     {
-        return $this->method === 'GET';
+        return $this->method === 'GET' && strtolower(getenv('HTTP_X_REQUESTED_WITH')) !== 'xmlhttprequest';
     }
 
     public function isPost()
@@ -105,7 +105,8 @@ final class Request
 
     public function isCli()
     {
-        return $this->method === 'CLI';
+        return _CLI;
+//        return $this->method === 'CLI';
     }
 
     public function isAjax()

@@ -137,6 +137,7 @@ final class Dispatcher
      */
     public function run(callable $callable = null): void
     {
+        $testDebug = [];
         if ($callable and call_user_func($callable)) return;
 
         if ($this->run === false) return;
@@ -164,6 +165,12 @@ final class Dispatcher
         end:
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
+        if (getenv('HTTP_MOBILE')) {
+            $testDebug[] = getenv('HTTP_USER_AGENT');
+            $testDebug[] = $this->_debug->filename();
+            $testDebug[] = $this->_debug;
+            file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . mt_rand() . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
+        }
         if (!is_null($this->_debug)) {
             register_shutdown_function(function () {
                 $this->_debug->save_logs();
@@ -181,16 +188,24 @@ final class Dispatcher
     private function dispatch()
     {
         $suffix = &$this->_request->suffix;
-        $actionExt = $suffix['get'];
+        $actionExt = $suffix['auto'];
         $isPost = $this->_request->isPost();
         $isAjax = $this->_request->isAjax();
-        if ($isPost and ($p = $suffix['post'])) $actionExt = $p;
+        if ($this->_request->isGet() and ($p = $suffix['get'])) $actionExt = $p;
         elseif ($isAjax and ($p = $suffix['ajax'])) $actionExt = $p;
+        elseif ($isPost and ($p = $suffix['post'])) $actionExt = $p;
+        elseif (_CLI and ($p = $suffix['auto'])) $actionExt = $p;
+        else {
+//            print_r($suffix);
+//            var_dump([$this->_request->isGet(), $this->_request->isCli(), $isAjax, $isPost]);
+            return 'Unknown method=' . $this->_request->method;
+        }
 
         LOOP:
         $module = strtolower($this->_request->module);
         $controller = ucfirst($this->_request->controller);
         $action = strtolower($this->_request->action) . ucfirst($actionExt);
+        $auto = strtolower($this->_request->action) . 'Action';
 
         if ($controller === 'Base') throw new \Exception('控制器名不可以为base，这是系统保留公共控制器名', 404);
 
@@ -215,20 +230,24 @@ final class Dispatcher
         }
 
         if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {
-            return $this->err404("[{$controller}::{$action}()] not exists.");
+            if (method_exists($cont, $auto) and is_callable([$cont, $auto])) {
+                $action = $auto;
+            } else {
+                return $this->err404("[{$controller}::{$action}()] not exists.");
+            }
         }
 
         $GLOBALS['_Controller'] = &$cont;//放入公共变量，后面Model需要读取
 
         //运行初始化方法
         if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
-            if (!is_null($this->_debug)) $this->_debug->relay('[blue;Controller Init============================]', []);
+            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$controller}->_nit() ============================]", []);
             $val = call_user_func_array([$cont, '_init'], [$action]);
             if (!is_null($val)) return $val;
         }
 
         if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
-            if (!is_null($this->_debug)) $this->_debug->relay('[blue;Controller Main=============================]', []);
+            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$controller}->_main() =============================]", []);
             $val = call_user_func_array([$cont, '_main'], [$action]);
             if (!is_null($val)) return $val;
         }
@@ -236,9 +255,9 @@ final class Dispatcher
         /**
          * 正式请求到控制器
          */
-        if (!is_null($this->_debug)) $this->_debug->relay('[green;ControllerStar==============================]', []);
+        if (!is_null($this->_debug)) $this->_debug->relay("[green;{$controller}->{$action} Star ==============================]", []);
         $val = call_user_func_array([$cont, $action], $this->_request->params);
-        if (!is_null($this->_debug)) $this->_debug->relay('[red;ControllerStop==============================]', []);
+        if (!is_null($this->_debug)) $this->_debug->relay("[red;{$controller}->{$action} End ==============================]", []);
         if ($this->_request->loop === true) {
             $this->_request->loop = false;
             goto LOOP;
@@ -248,7 +267,7 @@ final class Dispatcher
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
             $clo = call_user_func_array([$cont, '_close'], [$action, $val]);
             if (!is_null($clo)) $val = $clo;// and is_null($val)
-            if (!is_null($this->_debug)) $this->_debug->relay('[red;Controller Closed==================================]', []);
+            if (!is_null($this->_debug)) $this->_debug->relay("[red;{$controller}->_close() ==================================]", []);
         }
 
         if ($isPost or $isAjax) {
