@@ -83,9 +83,10 @@ final class Debug
      */
     public function save_logs()
     {
-        if (empty($this->_node) or $this->_run === false) return 0;
+        if (empty($this->_node)) return 'empty node';
+        else if ($this->_run === false) return 'run false';
         $filename = $this->filename();
-        if (is_null($filename)) return 0;
+        if (is_null($filename)) return 'null filename';
         $this->relay('END:save_logs', []);
         $rq = $this->_request;
         $method = $rq->getMethod();
@@ -169,22 +170,25 @@ final class Debug
             $p = dirname($filename);
             if (!is_dir($p)) @mkdir($p, 0740, true);
             $s = file_put_contents($filename, $data, LOCK_EX);
-            return $s;
+            return "_SELF_DEBUG={$s}";
         }
 
         if ($this->_save_RPC) {
-            return RPC::post('/debug', ['filename' => $filename, 'data' => implode($data)]);
+            $post = RPC::post('/debug', ['filename' => $filename, 'data' => implode($data)]);
+            if (is_array($post)) $post = json_encode($post, 256);
+            return "RPC::post={$post}";
         }
 
         if (is_dir(_RUNTIME . '/debug/move/')) {
             $s = file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), implode($data), LOCK_EX);
-            if ($s) return $s;
+            if ($s) return "/debug/move/={$s}";
         }
 
         $p = dirname($filename);
         if (!is_dir($p)) @mkdir($p, 0740, true);
 
-        return file_put_contents($filename, $data, LOCK_EX);
+        $fp = file_put_contents($filename, $data, LOCK_EX);
+        return "file_put_contents={$fp}";
     }
 
     public static function move(bool $show = false)

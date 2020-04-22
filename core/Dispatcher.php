@@ -165,15 +165,17 @@ final class Dispatcher
         end:
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
-        if (getenv('HTTP_MOBILE')) {
-            $testDebug[] = getenv('HTTP_USER_AGENT');
-            $testDebug[] = $this->_debug->filename();
-            $testDebug[] = $this->_debug;
-            file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . mt_rand() . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
-        }
         if (!is_null($this->_debug)) {
             register_shutdown_function(function () {
-                $this->_debug->save_logs();
+                $save = $this->_debug->save_logs();
+
+                if (getenv('HTTP_MOBILE')) {
+                    $testDebug['ua'] = getenv('HTTP_USER_AGENT');
+                    $testDebug['file'] = $this->_debug->filename();
+                    $testDebug['save'] = $save;
+                    file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . mt_rand() . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
+                }
+
             });
         }
 
