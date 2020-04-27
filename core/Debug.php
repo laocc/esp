@@ -382,7 +382,10 @@ final class Debug
     {
         if (is_null($path)) {
             if (is_null($this->_root))
-                return $this->_root = str_replace(['{DOMAIN}', '{DATE}'], [_DOMAIN, date('Y_m_d')], $this->_conf['path']);
+                return $this->_root = str_replace(
+                    ['{SYSTEM}', '{MODULE}', '{DOMAIN}', '{DATE}'],
+                    [_SYSTEM, _MODULE, _DOMAIN, date('Y_m_d')],
+                    $this->_conf['path']);
             return $this->_root;
         }
         $this->_root = '/' . trim($path, '/');
