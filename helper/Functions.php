@@ -47,7 +47,7 @@ function _echo($text, string $bgColor = null, string $ftColor = null)
     echo chr(27) . $color . $text . chr(27) . "[0m\n";
 }
 
-
+ 
 /**
  * 过滤用于sql的敏感字符，建议用Xss::clear()处理
  * @param string $str
