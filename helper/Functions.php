@@ -509,6 +509,13 @@ function is_mob(string $mobNumber): bool
     return preg_match('/^1[3456789]\d{9}$/', $mobNumber);
 }
 
+function is_username(string $name, bool $canEmpty = false): bool
+{
+    if ($canEmpty and empty($name)) return true;
+    if (empty($name)) return false;
+    return preg_match('/^1[3456789]\d{9}$/', $name) or preg_match('/^\w{3,11}$/', $name);
+}
+
 /**
  * 电子邮箱地址格式
  * @param string $eMail
