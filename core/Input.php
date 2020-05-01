@@ -119,13 +119,14 @@ final class Input
                 } elseif ($autoValue === 'real') {
                 } elseif ($autoValue === 'html') {
 
-                } elseif ($autoValue === 'array') {
+                } elseif ($autoValue === 'json') {
+                    if (is_string($value)) $value = json_decode($value, true);
                     $value = json_encode(array_map(function ($v) {
                         return trim($v);
                     }, $value), 256);
 
-                } elseif ($autoValue === 'json') {
-                    $value = json_decode($value, true);
+                } elseif ($autoValue === 'array') {
+                    if (is_string($value)) $value = json_decode($value, true);
                     if (empty($value)) $value = [];
 
                 } else if ($autoValue === 'date_time') {
