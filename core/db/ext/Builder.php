@@ -504,11 +504,24 @@ final class Builder
                     if (empty($value)) $value = [0, 0];
 
                     if ($this->_param) {//采用占位符后置内容方式
-                        $key1 = $this->paramKey($field);
-                        $key2 = $this->paramKey($field);
-                        $this->_param_data[$key1] = $value[0];
-                        $this->_param_data[$key2] = $value[1];
-                        $_where = "`{$field}` between {$key1} and {$key2}";
+                        if (is_array($value[0])) {
+                            $_wbt = [];
+                            foreach ($value as $vi => $val) {
+                                $key1 = $this->paramKey($field . $vi);
+                                $key2 = $this->paramKey($field . $vi);
+                                $this->_param_data[$key1] = $val[0];
+                                $this->_param_data[$key2] = $val[1];
+                                $_wbt[] = "(`{$field}` between {$key1} and {$key2})";
+                            }
+                            $_where = '(' . implode(' or ', $_wbt) . ')';
+
+                        } else {
+                            $key1 = $this->paramKey($field);
+                            $key2 = $this->paramKey($field);
+                            $this->_param_data[$key1] = $value[0];
+                            $this->_param_data[$key2] = $value[1];
+                            $_where = "`{$field}` between {$key1} and {$key2}";
+                        }
                     } else {
                         $_where = "`{$field}` between({$value[0]} and {$value[1]})";
                     }
