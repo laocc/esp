@@ -30,8 +30,8 @@ function pre(...$str)
 /**
  * CLI环境中打印彩色字
  * @param $text
- * @param null $bgColor
- * @param null $ftColor
+ * @param string|null $bgColor
+ * @param string|null $ftColor
  */
 function _echo($text, string $bgColor = null, string $ftColor = null)
 {

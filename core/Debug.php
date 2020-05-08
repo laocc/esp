@@ -191,6 +191,10 @@ final class Debug
         return "file_put_contents={$fp}";
     }
 
+    /**
+     * 将move里的临时文件移入真实目录
+     * @param bool $show
+     */
     public static function move(bool $show = false)
     {
         if ($show) echo "moveDebug:\t" . _RUNTIME . "/debug/move\n";
