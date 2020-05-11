@@ -38,8 +38,9 @@ class Model
     }
 
     /**
-     * @param array ...$action
-     * @return Debug|bool
+     * @param $value
+     * @param array|null $pre
+     * @return bool|Debug
      */
     final public function debug($value, array $pre = null)
     {

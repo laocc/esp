@@ -85,6 +85,28 @@ final class Debug
         file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
     }
 
+    public function save_file(string $filename, $data)
+    {
+        if ($this->_save_type === 'rpc') {
+            //发到RPC，写入move专用目录，然后由后台移到实际目录
+            RPC::post('/debug', ['filename' => $filename, 'data' => $data]);
+
+        } else if ($this->_save_type === 'redis') {
+            //发送到队列，由后台写入实际文件
+            $debug = [];
+            $debug['time'] = time();
+            $debug['filename'] = $filename;
+            $debug['data'] = $data;
+            Config::Redis()->push(_DEBUG_PUSH_KEY, $debug);
+        }
+
+        $p = dirname($filename);
+        if (!is_dir($p)) @mkdir($p, 0740, true);
+
+        $fp = file_put_contents($filename, $data, LOCK_EX);
+
+        return true;
+    }
 
     /**
      * 保存记录到的数据

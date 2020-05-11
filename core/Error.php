@@ -172,7 +172,10 @@ class Error
 
     /**
      * 仅记录错误，但不阻止程序继续运行
-     * @param $error
+     * @param array $error
+     * @param array $prev
+     * @param string $path
+     * @param string $filename
      */
     private function error(array $error, array $prev, string $path, string $filename)
     {
@@ -195,29 +198,10 @@ class Error
         }
 
         $filename = $path . "/" . date($filename) . mt_rand() . '.md';
-        if (defined('_RPC') and RPC::post('/debug', ['filename' => $filename, 'data' => json_encode($info, 256 | 128 | 64)])) return;
+        if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
 
         if (!is_dir($path)) mkdir($path, 0740, true);
         if (is_readable($path)) file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
-        if (1) return;
-
-        $info = Array();
-        $info['time'] = date('Y-m-d H:i:s');
-        $info['url'] = _URI;
-        $info['referer'] = getenv("HTTP_REFERER");
-        if (!empty($this->dispatcher->_request)) {
-            $request = $this->dispatcher->_request;
-        } else {
-            $request = null;
-        }
-
-        file_put_contents($filename, print_r([
-            'info' => $info,
-            'error' => $error,
-            'prev' => $prev,
-            'request' => $request,
-            'server' => $_SERVER,
-        ], true), LOCK_EX);
     }
 
     /**
