@@ -87,7 +87,7 @@ class Model
 
     /**
      * 发送通知信息
-     * @param string $key
+     * @param string $action
      * @param array $value
      * @return int
      */

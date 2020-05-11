@@ -18,7 +18,7 @@ final class Debug
     private $_request;
     private $_response;
     private $_errorText;
-    private $_save_RPC = false;
+    private $_save_type = 'file';
     private $_ROOT_len = 0;
     private static $_object;
 
@@ -31,9 +31,17 @@ final class Debug
             $conf = $config[_MODULE] + $conf;
 //            $conf = array_replace_recursive($conf, $config[_MODULE]);
         }
-
-        if (defined('_RPC') and ($conf['api'] ?? '') === 'rpc' and !in_array(getenv('SERVER_ADDR'), $conf['server'] ?? [_RPC['ip']]))
-            $this->_save_RPC = true;
+        switch ($conf['api'] ?? '') {
+            case 'rpc':
+                if (defined('_RPC')
+                    and !in_array(getenv('SERVER_ADDR'), $conf['server'] ?? [_RPC['ip']])) {
+                    $this->_save_type = 'rpc';
+                }
+                break;
+            case 'redis':
+                $this->_save_type = 'redis';
+                break;
+        }
 
         $this->_conf = $conf;
         $this->_ROOT_len = strlen(_ROOT);
@@ -173,10 +181,19 @@ final class Debug
             return "_SELF_DEBUG={$s}";
         }
 
-        if ($this->_save_RPC) {
+        if ($this->_save_type === 'rpc') {
+            //发到RPC，写入move专用目录，然后由后台移到实际目录
             $post = RPC::post('/debug', ['filename' => $filename, 'data' => implode($data)]);
             if (is_array($post)) $post = json_encode($post, 256);
             return "RPC::post={$post}";
+
+        } else if ($this->_save_type === 'redis') {
+            //发送到队列，由后台写入实际文件
+            $debug = [];
+            $debug['time'] = time();
+            $debug['filename'] = $filename;
+            $debug['data'] = $data;
+            Config::Redis()->push(_DEBUG_PUSH_KEY, $debug);
         }
 
         if (is_dir(_RUNTIME . '/debug/move/')) {
@@ -207,7 +224,7 @@ final class Debug
             if ($f->isFile()) $array[] = $f->getFilename();
         }
         if (!empty($array)) {
-            if ($show) print_r($array);
+            if ($show) echo "DEBUG:\t" . json_encode($array, 256 | 64) . "\n";
 
             foreach ($array as $file) {
                 try {
