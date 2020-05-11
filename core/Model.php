@@ -114,7 +114,8 @@ class Model
 
     /**
      * 当前模型对应的表名
-     * @return Model|string
+     * @param string|null $table
+     * @return $this|null|string
      */
     final public function table(string $table = null)
     {
@@ -653,12 +654,11 @@ class Model
     }
 
     /**
-     * @param int $dbID
      * @param array $_conf
      * @return Redis
      * @throws \Exception
      */
-    final public function Redis(array $_conf = [])
+    final public function Redis(array $_conf = []): Redis
     {
         $conf = Config::get('database.redis');
         $conf = $_conf + $conf;
@@ -673,9 +673,10 @@ class Model
 
     /**
      * 缓存哈希
-     * @param string $key
+     * @param string $table
+     * @param string|null $key
      * @param string|null $value
-     * @return int|string|RedisHash
+     * @return mixed
      * @throws \Exception
      */
     final public function Hash(string $table, string $key = null, string $value = null)
@@ -690,9 +691,9 @@ class Model
 
 
     /**
+     * @param string $hashTable
      * @param mixed ...$key
      * @return int
-     * @throws \Exception
      */
     final public function cache_delete(string $hashTable, ...$key)
     {

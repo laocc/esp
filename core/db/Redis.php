@@ -19,8 +19,8 @@ final class Redis implements KeyValue
 
     /**
      * Redis constructor.
-     * @param null $conf
-     * @param int $db
+     * @param array $conf
+     * @param int|null $db
      * @throws \Exception
      */
     public function __construct(array $conf = [], int $db = null)
@@ -291,6 +291,7 @@ final class Redis implements KeyValue
     /**
      * 查询某键是否存在
      * @param $key
+     * @return bool
      */
     public function exists($key)
     {

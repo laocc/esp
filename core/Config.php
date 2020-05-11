@@ -16,7 +16,7 @@ final class Config
     static public $_token;
 
     /**
-     * @param array $config
+     * @param array $conf
      * @throws \Exception
      */
     public static function _init(array $conf)
@@ -98,8 +98,6 @@ final class Config
 
         self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
         if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) self::$_Redis->set(self::$_token . '_CONFIG_', self::$_CONFIG_);
-
-//        pre(self::$_CONFIG_);
     }
 
     public static function flush(int $lev = 0)
@@ -160,7 +158,7 @@ final class Config
     /**
      * @return Redis
      */
-    public static function Redis()
+    public static function Redis(): Redis
     {
         return self::$_Redis;
     }

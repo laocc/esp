@@ -38,9 +38,8 @@ final class Debug
                     $this->_save_type = 'rpc';
                 }
                 break;
-            case 'redis':
-                $this->_save_type = 'redis';
-                break;
+            default:
+                $this->_save_type = $conf['api'];
         }
 
         $this->_conf = $conf;
@@ -85,27 +84,41 @@ final class Debug
         file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
     }
 
-    public function save_file(string $filename, $data)
+    public function save_file(string $filename, string $data)
     {
-        if ($this->_save_type === 'rpc') {
-            //发到RPC，写入move专用目录，然后由后台移到实际目录
-            RPC::post('/debug', ['filename' => $filename, 'data' => $data]);
-
-        } else if ($this->_save_type === 'redis') {
+        $send = null;
+        if ($this->_save_type === 'redis') {
             //发送到队列，由后台写入实际文件
             $debug = [];
-            $debug['time'] = time();
             $debug['filename'] = $filename;
             $debug['data'] = $data;
-            Config::Redis()->push(_DEBUG_PUSH_KEY, $debug);
+            $send = Config::Redis()->push(_DEBUG_PUSH_KEY, $debug);
+
+        } else if ($this->_save_type === 'task') {
+            //发送到异步task任务，由后台写入实际文件
+            $debug = [];
+            $debug['filename'] = $filename;
+            $debug['data'] = $data;
+            $send = Config::Redis()->publish('order', 'saveDebug', $debug);
         }
+        if ($send) return $send;
+
+        if ($this->_save_type === 'rpc' or !is_null($send)) {
+            //如果当前服务器是主服务器，则直接写入
+            if (is_dir(_RUNTIME . '/debug/move/')) {
+                return file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), $data, LOCK_EX);
+            }
+
+            //发到RPC，写入move专用目录，然后由后台移到实际目录
+            $send = RPC::post('/debug', ['filename' => $filename, 'data' => $data]);
+            if ($send) return $send;
+        }
+
 
         $p = dirname($filename);
         if (!is_dir($p)) @mkdir($p, 0740, true);
 
-        $fp = file_put_contents($filename, $data, LOCK_EX);
-
-        return true;
+        return file_put_contents($filename, $data, LOCK_EX);
     }
 
     /**
@@ -203,31 +216,7 @@ final class Debug
             return "_SELF_DEBUG={$s}";
         }
 
-        if ($this->_save_type === 'rpc') {
-            //发到RPC，写入move专用目录，然后由后台移到实际目录
-            $post = RPC::post('/debug', ['filename' => $filename, 'data' => implode($data)]);
-            if (is_array($post)) $post = json_encode($post, 256);
-            return "RPC::post={$post}";
-
-        } else if ($this->_save_type === 'redis') {
-            //发送到队列，由后台写入实际文件
-            $debug = [];
-            $debug['time'] = time();
-            $debug['filename'] = $filename;
-            $debug['data'] = $data;
-            Config::Redis()->push(_DEBUG_PUSH_KEY, $debug);
-        }
-
-        if (is_dir(_RUNTIME . '/debug/move/')) {
-            $s = file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), implode($data), LOCK_EX);
-            if ($s) return "/debug/move/={$s}";
-        }
-
-        $p = dirname($filename);
-        if (!is_dir($p)) @mkdir($p, 0740, true);
-
-        $fp = file_put_contents($filename, $data, LOCK_EX);
-        return "file_put_contents={$fp}";
+        return $this->save_file($filename, implode($data));
     }
 
     /**
@@ -236,7 +225,7 @@ final class Debug
      */
     public static function move(bool $show = false)
     {
-        if ($show) echo "moveDebug:\t" . _RUNTIME . "/debug/move\n";
+//        if ($show) echo "moveDebug:\t" . _RUNTIME . "/debug/move\n";
 
         $array = Array();
         $dir = new \DirectoryIterator(_RUNTIME . '/debug/move');
