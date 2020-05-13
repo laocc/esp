@@ -59,15 +59,16 @@ final class Session
 
     /**
      * @param array $session
+     * @param array $option
      * @return bool
      * @throws \Exception
      */
-    public static function _init(array $session): bool
+    public static function _init(array &$session, array &$option = []): bool
     {
-        if (_CLI) return false;
+        if (_CLI) return 'cli disabled';
         $config = $session['default'];
         if (isset($session[_MODULE])) $config = $session[_MODULE] + $config;
-        if (!isset($config['run']) or !$config['run']) return false;
+        if (!isset($config['run']) or !$config['run']) return 'not run in ' . _MODULE;
 
         $option = [];
         $config += ['driver' => 'file', 'delay' => 1, 'prefix' => '', 'ttl' => 86400];
@@ -83,7 +84,7 @@ final class Session
         } else {
             throw new \Exception("未知session.driver：{$config['driver']}", 500);
         }
-
+        $session = $config;
         session_set_save_handler(self::$SessionHandler, true);
 //        session_set_save_handler(self::$SessionHandler, false);
 //        session_register_shutdown();

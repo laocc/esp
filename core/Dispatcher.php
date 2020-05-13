@@ -1,5 +1,5 @@
 <?php
-//declare(strict_types=1);
+declare(strict_types=1);
 
 namespace esp\core;
 
@@ -43,9 +43,10 @@ final class Dispatcher
             $GLOBALS['_Debug'] = &$this->_debug;
         }
         if ($session = Config::get('session')) {
-//            $this->_debug->relay($session);
-            $save = Session::_init($session);
-            $this->_debug->relay(['session' => $save]);
+            $save = Session::_init($session, $option);
+            if ((($session['debug'] ?? 0) or !$save) and !is_null($this->_debug)) {
+                $this->_debug->relay(['session' => $save, 'option' => $option, 'config' => $session]);
+            }
         }
 
         if ($cache = Config::get('cache')) {
