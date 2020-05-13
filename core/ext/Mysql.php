@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core\ext;
 
@@ -34,7 +35,12 @@ trait Mysql
      * COLUMN_COMMENT: ID
      * GENERATION_EXPRESSION:
      */
-    final public function PRI($table = null)
+    /**
+     * @param string|null $table
+     * @return null
+     * @throws \Exception
+     */
+    final public function PRI(string $table = null)
     {
         if (isset($this->_id) and !empty($this->_id)) return $this->_id;
         if (!is_null($this->__pri)) return $this->__pri;

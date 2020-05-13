@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace esp\core;
 
@@ -20,7 +21,6 @@ final class Debug
     private $_errorText;
     private $_save_type = 'file';
     private $_ROOT_len = 0;
-    private static $_object;
 
     public function __construct(Request $request, Response $response, array &$config)
     {
@@ -39,7 +39,7 @@ final class Debug
                 }
                 break;
             default:
-                $this->_save_type = $conf['api'];
+                $this->_save_type = $conf['api'] ?? 'file';
         }
 
         $this->_conf = $conf;
@@ -364,18 +364,15 @@ final class Debug
 
     /**
      * 创建一个debug点
-     * @param $msg
-     * @param null $prev 调用的位置，若是通过中间件调用，请在调用此函数时提供下面的内容：
      *
-     * $pre=debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
      * @param $msg
-     * @param array|null $prev
+     * @param array|null $prev 调用的位置，若是通过中间件调用，请在调用此函数时提供下面的内容：
      * @return $this|bool
+     * $pre=debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
      */
-    public function relay($msg, array $prev = null)
+    public function relay($msg, array $prev = null): Debug
     {
-        if (_CLI) return false;
-        if (!$this->_run) return $this;
+        if (_CLI || !$this->_run) return $this;
         $prev = is_null($prev) ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0] : $prev;
         if (isset($prev['file'])) {
             $file = substr($prev['file'], $this->_ROOT_len) . " [{$prev['line']}]";
@@ -407,7 +404,6 @@ final class Debug
     /**
      * 设置或读取debug文件保存的根目录
      * @param $path
-     * @param bool|null $right
      * @return $this|string
      */
     public function root(string $path = null)
@@ -415,8 +411,8 @@ final class Debug
         if (is_null($path)) {
             if (is_null($this->_root))
                 return $this->_root = str_replace(
-                    ['{SYSTEM}', '{MODULE}', '{DOMAIN}', '{DATE}'],
-                    [_SYSTEM, _MODULE, _DOMAIN, date('Y_m_d')],
+                    ['{RUNTIME}', '{ROOT}', '{SYSTEM}', '{MODULE}', '{DOMAIN}', '{DATE}'],
+                    [_RUNTIME, _ROOT, _SYSTEM, _MODULE, _DOMAIN, date('Y_m_d')],
                     $this->_conf['path']);
             return $this->_root;
         }
@@ -463,7 +459,7 @@ final class Debug
         if (is_null($file)) {
             if (is_null($this->_file)) {
                 list($s, $c) = explode('.', microtime(true) . '.0');
-                return $this->_file = date($this->_conf['rules']['filename'], $s) . "_{$c}_" . mt_rand(100, 999);
+                return $this->_file = date($this->_conf['rules']['filename'], intval($s)) . "_{$c}_" . mt_rand(100, 999);
             }
             return $this->_file;
         }
@@ -477,9 +473,9 @@ final class Debug
      * @param string|null $file
      * @return null|string
      */
-    public function filename(string $file = null)
+    public function filename(string $file = null): string
     {
-        if (empty($this->_request->controller)) return null;
+        if (empty($this->_request->controller)) return '';
         if ($file) return $this->file($file);
 
         if (is_null($this->_filename)) {

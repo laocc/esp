@@ -1,8 +1,8 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core\db\ext;
 
-use esp\core\Config;
 use esp\core\db\Mysql;
 use esp\core\Exception;
 
@@ -600,7 +600,7 @@ final class Builder
 
     private function paramKey($field)
     {
-        $key = ':' . preg_replace('/[^\w]/i', '', $field) . uniqid(true);
+        $key = ':' . preg_replace('/[^\w]/i', '', $field) . uniqid();
         return $key;
     }
 
@@ -963,7 +963,7 @@ final class Builder
      * @return string
      * @throws \Exception
      */
-    private function _build_get()
+    public function _build_get()
     {
         $sql = Array();
         $sql[] = "SELECT {$this->_build_select()} FROM {$this->_table}";
@@ -993,9 +993,11 @@ final class Builder
 
     /**
      * 获取查询结果
-     * @param bool|false $returnSQL
-     * @return Result
-     * @throws \Exception
+     * @param int $row
+     * @param string $sql
+     * @param null $pre
+     * @return bool|Result|mixed|null
+     * @throws \ErrorException
      */
     public function get(int $row = 0, &$sql = '', $pre = null)
     {
@@ -1036,7 +1038,7 @@ final class Builder
      */
     public function temp()
     {
-        $tmpID = uniqid(true);
+        $tmpID = uniqid();
         $this->_temp_table[$tmpID] = $this->_build_get();
         return $tmpID;
     }

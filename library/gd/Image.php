@@ -473,6 +473,11 @@ class Image
      * 1:v=以最大边不够补白
      * 2:x=以最小边多的裁掉
      */
+    /**
+     * @param string $file
+     * @param array $option
+     * @return bool|string
+     */
     public static function thumbs_create(string $file, array $option = [])
     {
         $option += [
@@ -610,6 +615,11 @@ class Image
      * 1，其中的两个后缀必须相同；
      * 2，最后两个数字是缩略图的尺寸；
      * 3，数字中间为x|v|z，x=以最小边多余部分裁掉，v=最大边不够补白,z=拉伸
+     */
+    /**
+     * @param null $path
+     * @param null $option
+     * @return bool|string
      */
     public static function thumbs_old($path = null, $option = null)
     {

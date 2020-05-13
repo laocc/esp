@@ -1,16 +1,13 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core;
-
-
-use esp\core\db\Redis;
 
 final class Route
 {
     /**
      * 路由中心
      * Route constructor.
-     * @param Redis $redis
      * @param Request $request
      * @throws \Exception
      */
@@ -119,7 +116,7 @@ final class Route
      */
     private function fill_route(string $directory, array $matches, array $route): array
     {
-        $module = $controller = $action = null;
+        $module = $controller = $action = '';
         $param = Array();
 
         //正则结果中没有指定结果集

@@ -1,9 +1,9 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core;
 
-
-class RPC
+final class RPC
 {
 
     public static function post(string $uri, $data)

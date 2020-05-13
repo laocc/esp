@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core\ext;
 
@@ -14,7 +15,8 @@ class SessionRedis implements \SessionHandlerInterface
 
     /**
      * SessionRedis constructor.
-     * @param array|null $config
+     * @param bool $delay
+     * @param string $prefix
      */
     public function __construct(bool $delay = false, string $prefix = '')
     {

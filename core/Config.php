@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core;
 
@@ -262,9 +263,9 @@ final class Config
         $val = Array();
         foreach ($array as $k => $arr) {
             if (is_array($arr)) {
-                $val[strtolower($k)] = self::re_arr($arr);
+                $val[strtolower(strval($k))] = self::re_arr($arr);
             } else {
-                $val[strtolower($k)] = self::re_key($arr);
+                $val[strtolower(strval($k))] = self::re_key($arr);
             }
         }
         return $val;

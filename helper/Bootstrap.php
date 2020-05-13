@@ -26,6 +26,7 @@ final class Bootstrap
     /**
      * 引入注册插件示例
      * @param Dispatcher $dispatcher
+     * @throws Exception
      */
     public function _initRegPlugs(Dispatcher $dispatcher)
     {

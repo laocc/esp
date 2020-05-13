@@ -1,7 +1,7 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core\db\ext;
-
 
 use \Redis;
 
@@ -91,6 +91,7 @@ class RedisList
     /**
      * 删除
      * @param $key
+     * @param int $count
      * @return int
      */
     public function del($key, int $count = 0)

@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 /**
  * @param array ...$str
@@ -86,7 +87,7 @@ function host(string $domain): string
 /**
  * 提取URL中的域名
  * @param $url
- * @return null
+ * @return string
  */
 function domain(string $url): string
 {
@@ -115,7 +116,8 @@ function load(string $file)
 /**
  * 修正为_ROOT开头
  * @param string $path
- * @return string|array
+ * @param bool $real
+ * @return string
  */
 function root(string $path, bool $real = false): string
 {
@@ -160,8 +162,9 @@ function mk_dir(string $path, int $mode = 0740): bool
 
 /**
  * 储存文件
- * @param $file
- * @param $content
+ * @param string $file
+ * @param string $content
+ * @param bool $append
  * @return int
  */
 function save_file(string $file, string $content, bool $append = false): int
@@ -174,7 +177,7 @@ function save_file(string $file, string $content, bool $append = false): int
 /**
  * 设置HTTP响应头
  * @param int $code
- * @param null $text
+ * @param string|null $text
  * @throws Exception
  */
 function header_state(int $code = 200, string $text = null)
@@ -233,8 +236,9 @@ function clearBom(&$loadStr)
 
 /**
  * XML解析成数组或对象
- * @param $str
- * @return bool|mixed
+ * @param string $str
+ * @param bool $toArray
+ * @return mixed|null
  */
 function xml_decode(string $str, bool $toArray = true)
 {
@@ -264,8 +268,9 @@ function xml_encode($root, array $array, bool $outHead = true)
 
 /**
  * 格式化小数
- * @param $amount
+ * @param float $amount
  * @param int $len
+ * @param bool $zero
  * @return string
  */
 function rnd(float $amount, int $len = 2, bool $zero = true): string
@@ -329,7 +334,7 @@ function full(string $number, int $len = 2, string $add = '0', string $lr = 'lef
 
 
 /**
- * 随机字符，如果只需要唯一值则用：uniqid(true)
+ * 随机字符，如果只需要唯一值则用：uniqid()
  * @param int $min 最小长度
  * @param int|null $max 最大长度，若不填，则以$min为固定长度
  * @param bool $hex 是否只取16进制内
@@ -506,14 +511,19 @@ function gid($fh = null, $format = 0)
 function is_mob(string $mobNumber): bool
 {
     if (empty($mobNumber)) return false;
-    return preg_match('/^1[3456789]\d{9}$/', $mobNumber);
+    return (boolean)preg_match('/^1[3456789]\d{9}$/', $mobNumber);
 }
 
+/**
+ * @param string $name
+ * @param bool $canEmpty
+ * @return bool
+ */
 function is_username(string $name, bool $canEmpty = false): bool
 {
     if ($canEmpty and empty($name)) return true;
     if (empty($name)) return false;
-    return preg_match('/^1[3456789]\d{9}$/', $name) or preg_match('/^\w{3,11}$/', $name);
+    return (boolean)preg_match('/^1[3456789]\d{9}$/', $name) or preg_match('/^\w{3,11}$/', $name);
 }
 
 /**
@@ -576,7 +586,7 @@ function is_date(string $day): bool
             return false;
         }
     } else {
-        return preg_match('/^(?:(?:1[789]\d{2}|2[012]\d{2})[-\/](?:(?:0?2[-\/](?:0?1\d|2[0-8]))|(?:0?[13578]|10|12)[-\/](?:[012]?\d|3[01]))|(?:(?:0?[469]|11)[-\/](?:[012]?\d|30)))|(?:(?:1[789]|2[012])(?:[02468][048]|[13579][26])[-\/](?:0?2[-\/]29))$/', $day);
+        return (boolean)preg_match('/^(?:(?:1[789]\d{2}|2[012]\d{2})[-\/](?:(?:0?2[-\/](?:0?1\d|2[0-8]))|(?:0?[13578]|10|12)[-\/](?:[012]?\d|3[01]))|(?:(?:0?[469]|11)[-\/](?:[012]?\d|30)))|(?:(?:1[789]|2[012])(?:[02468][048]|[13579][26])[-\/](?:0?2[-\/]29))$/', $day);
     }
 }
 
@@ -588,7 +598,7 @@ function is_date(string $day): bool
 function is_time(string $time): bool
 {
     if (empty($time)) return false;
-    return preg_match('/^([0-1]\d|2[0-3])(\:[0-5]\d){2}$/', $time);
+    return (boolean)preg_match('/^([0-1]\d|2[0-3])(\:[0-5]\d){2}$/', $time);
 }
 
 /**
@@ -637,7 +647,7 @@ function is_ip(string $ip, string $which = 'ipv4'): bool
 
 function is_domain(string $domain): bool
 {
-    return preg_match('/^[a-z0-9](([a-z0-9-]){1,62}\.)+[a-z]{2,20}$/i', $domain);
+    return (boolean)preg_match('/^[a-z0-9](([a-z0-9-]){1,62}\.)+[a-z]{2,20}$/i', $domain);
 }
 
 /**
@@ -908,7 +918,7 @@ function format(string $str): string
             case 'D':       //从2015-8-3算起的天数
                 return ceil((time() - 1438531200) / 86400);
             case 'u':       //唯一性值
-                return uniqid(true);
+                return uniqid();
             case 'r':       //随机数
                 return mt_rand(1000, 9999);
             default:        //用data
@@ -932,9 +942,9 @@ function replace_kv(string $str, array $arr): string
 
 /**
  * 对IMG转码，返回值可以直接用于<img src="***">
- * @param $file
- * @return null|string
- * chunk_split
+ * @param string $file
+ * @param bool $split
+ * @return string
  */
 function img_base64(string $file, bool $split = false): string
 {

@@ -1,12 +1,11 @@
 <?php
-declare(strict_types=1);
+//declare(strict_types=1);
 
 namespace esp\core;
 
 use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
-use esp\core\db\ext\RedisHash;
 use esp\core\db\Yac;
 use esp\core\ext\Mysql as MysqlExt;
 use esp\core\ext\Page as PageExt;
@@ -17,7 +16,7 @@ use esp\core\ext\Page as PageExt;
  *
  * func_get_args()
  */
-class Model
+abstract class Model
 {
     private $_table_fix = 'tab';    //表前缀
     private $__table = null;        //创建对象时，或明确指定当前模型的对应表名
@@ -156,7 +155,7 @@ class Model
             return $json[2];
         }
 
-        throw new \Exception($json[2]);
+        throw new \Exception($data);
     }
 
     /**
@@ -262,7 +261,9 @@ class Model
      * @param $where
      * @param string|null $orderBy
      * @param string $sort
-     * @return array|bool
+     * @param string $sql
+     * @param null $pre
+     * @return mixed|null
      * @throws \Exception
      */
     final public function get($where, string $orderBy = null, string $sort = 'asc', &$sql = '', $pre = null)
@@ -321,8 +322,12 @@ class Model
      * id in
      * @param array $ids
      * @param null $where
-     * @return array
-     * @throws \Exception
+     * @param null $orderBy
+     * @param string $sort
+     * @param string $sql
+     * @param null $pre
+     * @return array|mixed
+     * @throws \ErrorException
      */
     final public function in(array $ids, $where = null, $orderBy = null, $sort = 'asc', &$sql = '', $pre = null)
     {

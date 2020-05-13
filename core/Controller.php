@@ -1,12 +1,12 @@
 <?php
-declare(strict_types=1);
+//declare(strict_types=1);
 
 namespace esp\core;
 
 use esp\core\db\Redis;
 use esp\core\face\Adapter;
 
-class Controller
+abstract class Controller
 {
     protected $_request;
     protected $_response;
@@ -102,7 +102,6 @@ class Controller
 
     /**
      * 标签解析器
-     * @param null $bool
      * @return bool|View|Adapter
      */
     final protected function getAdapter()
@@ -117,7 +116,6 @@ class Controller
 
     /**
      * 关闭，或获取layout对象，可同时指定框架文件
-     * @param null $file
      * @return bool|View
      */
     final protected function getLayout()
@@ -174,8 +172,8 @@ class Controller
 
     /**
      * @param string $modName
-     * @param bool|null $cache
-     * @return Model
+     * @param mixed ...$param
+     * @return mixed
      * @throws \Exception
      */
     final public function Model(string $modName, ...$param)
@@ -200,9 +198,9 @@ class Controller
     }
 
     /**
-     * @param null $data
+     * @param string $data
      * @param null $pre
-     * @return Debug|EmptyClass|null|bool
+     * @return bool|Debug|EmptyClass
      */
     final public function debug($data = '_R_DEBUG_', $pre = null)
     {
@@ -217,8 +215,7 @@ class Controller
 
     /**
      * @param null $data
-     * @param null $pre
-     * @return Debug|EmptyClass|null|bool
+     * @return bool|Debug|EmptyClass
      */
     final public function debug_mysql($data = null)
     {
@@ -242,6 +239,8 @@ class Controller
     /**
      * 网页跳转
      * @param string $url
+     * @param int $code
+     * @return bool
      */
     final protected function redirect(string $url, int $code = 302)
     {
@@ -358,6 +357,11 @@ class Controller
         }
     }
 
+    /**
+     * @param string|null $mdFile
+     * @param string $mdCss
+     * @throws \Exception
+     */
     final protected function md(string $mdFile = null, string $mdCss = '/css/markdown.css?1')
     {
         $this->css($mdCss);
@@ -368,16 +372,31 @@ class Controller
         }
     }
 
+    /**
+     * @param string|null $value
+     * @return bool
+     * @throws \Exception
+     */
     final protected function html(string $value = null)
     {
         return $this->_response->set_value('html', $value);
     }
 
+    /**
+     * @param array $value
+     * @return bool
+     * @throws \Exception
+     */
     final protected function json(array $value)
     {
         return $this->_response->set_value('json', $value);
     }
 
+    /**
+     * @param string $title
+     * @param bool $default
+     * @return $this
+     */
     final protected function title(string $title, bool $default = false)
     {
         $this->_response->title($title, $default);
@@ -496,7 +515,9 @@ class Controller
 
     /**
      * 注册关门后操作
+     * 先注册的先执行，后注册的后执和，框架最后还有debug保存
      * @param callable $fun
+     * @param mixed ...$parameter
      */
     final public function shutdown(callable $fun, ...$parameter)
     {

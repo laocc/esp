@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core\db;
 
@@ -44,7 +45,7 @@ final class Redis implements KeyValue
                     if (!$this->redis->pconnect($conf['host'])) {
                         throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
                     }
-                } else if (!$this->redis->pconnect($conf['host'], $conf['port'])) {
+                } else if (!$this->redis->pconnect($conf['host'], intval($conf['port']))) {
                     throw new \Exception("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
                 }
             } else {
@@ -52,7 +53,7 @@ final class Redis implements KeyValue
                     if (!$this->redis->connect($conf['host'])) {
                         throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
                     }
-                } else if (!$this->redis->connect($conf['host'], $conf['port'])) {
+                } else if (!$this->redis->connect($conf['host'], intval($conf['port']))) {
                     throw new \Exception("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
                 }
             }

@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core\db\ext;
 
@@ -14,7 +15,6 @@ interface KeyValue
 
     /**
      * 读取【指定表】的所有行键
-     * @param $table
      * @return array
      */
     public function keys();
@@ -22,7 +22,6 @@ interface KeyValue
 
     /**
      * 存入【指定表】【行键】【行值】
-     * @param $table
      * @param $key
      * @param $array
      * @param int $ttl 生存期
@@ -58,7 +57,7 @@ interface KeyValue
      * >0   加
      * <0   减
      * =0   获取值
-     * @param string $TabKey 表名.键名，但这儿的键名要是预先定好义的
+     * @param string $key 表名.键名，但这儿的键名要是预先定好义的
      * @param int $incrby 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */

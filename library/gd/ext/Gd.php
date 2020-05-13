@@ -28,6 +28,11 @@ class Gd
      * @param resource $im
      * @param null $filename
      */
+    /**
+     * @param $im
+     * @param array $option
+     * @return bool
+     */
     public static function draw($im, array $option)
     {
         $option += [

@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core;
 
@@ -57,7 +58,7 @@ final class Session
     }
 
     /**
-     * @param array $config
+     * @param array $session
      * @return bool
      * @throws \Exception
      */
@@ -71,13 +72,13 @@ final class Session
         $option = [];
         $config += ['driver' => 'file', 'delay' => 1, 'prefix' => '', 'ttl' => 86400];
 
-        if ($config['driver'] === 'files') {
-            self::$SessionHandler = new SessionFiles($config['delay'], $config['prefix']);
-            $option['save_path'] = $config['path'] ?? '/tmp';
-
-        } else if ($config['driver'] === 'redis') {
-            self::$SessionHandler = new SessionRedis($config['delay'], $config['prefix'] ?? '');
+        if ($config['driver'] === 'redis') {
+            self::$SessionHandler = new SessionRedis(boolval($config['delay']), $config['prefix'] ?? '');
             $option['save_path'] = serialize(['host' => $config['host'] ?? '127.0.0.1', 'port' => $config['port'] ?? 6379, 'db' => $config['db'] ?? 0, 'password' => $config['password'] ?? '']);
+
+        } else if ($config['driver'] === 'files') {
+            self::$SessionHandler = new SessionFiles(boolval($config['delay']), $config['prefix']);
+            $option['save_path'] = $config['path'] ?? '/tmp';
 
         } else {
             throw new \Exception("未知session.driver：{$config['driver']}", 500);
@@ -205,7 +206,7 @@ final class Session
 
     /**
      * 删除某项
-     * @param string $key
+     * @param string ...$keys
      */
     public static function del(string ...$keys)
     {

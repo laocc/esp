@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core;
 
@@ -39,7 +40,8 @@ class Error
             $default['throw'] = 1;
         }
         //ajax方式下，都只显示简单信息
-        if (strtolower(getenv('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest' or strtolower(getenv('REQUEST_METHOD')) === 'post') {
+        if (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest' or
+            strtolower(getenv('REQUEST_METHOD') ?: '') === 'post') {
             $default['run'] = 9;
             $default['throw'] = 9;
         }
@@ -108,14 +110,15 @@ class Error
             $err['code'] = $error->getCode();
             $err['file'] = $error->getFile();
             $err['line'] = $error->getLine();
-            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+            $this->error($err + ['trace' => $error->getTrace()], debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
 
+            $trace = str_replace(_ROOT, '', $error->getTraceAsString());
             if (is_int($option['throw'])) {
                 if ($option['throw'] === 1) {
-                    print_r($err);
+                    print_r([$err, $trace]);
                 } else if ($option['throw'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, 200);
-                    echo json_encode(['success' => 0, 'message' => $err['error'], 'level' => 'Throw'], 256);
+                    echo json_encode(['success' => 0, 'message' => $err['error'], 'trace' => $trace, 'level' => 'Throw'], 256 | 128 | 64);
                 } else if ($option['throw'] === 2) {
                     $this->displayError('Throw', $err, $error->getTrace());
                 } else if ($option['throw'] === 3) {
@@ -188,17 +191,18 @@ class Error
             'Error' => $error,
             'Server' => $_SERVER,
             'Post' => file_get_contents("php://input"),
+            'prev' => $prev
         ];
         if (strlen($info['Post']) > 1000) $info['Post'] = substr($info['Post'], 0, 1000);
+        $filename = $path . "/" . date($filename) . mt_rand() . '.md';
 
         if (!is_null($debug)) {
             register_shutdown_function(function (Debug $debug) {
                 $debug->save_logs();
             }, $debug);
-        }
 
-        $filename = $path . "/" . date($filename) . mt_rand() . '.md';
-        if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
+            if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
+        }
 
         if (!is_dir($path)) mkdir($path, 0740, true);
         if (is_readable($path)) file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);

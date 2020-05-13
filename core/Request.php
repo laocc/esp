@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core;
 
@@ -22,7 +23,7 @@ final class Request
 
     public function __construct(array $conf = null)
     {
-        $this->method = strtoupper(getenv('REQUEST_METHOD'));
+        $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
         if ($this->isAjax() and !$this->isPost()) $this->method = 'AJAX';
         if (!is_array($conf)) $conf = [];
         $conf += ['directory' => '/application'];
@@ -95,7 +96,7 @@ final class Request
 
     public function isGet()
     {
-        return $this->method === 'GET' && strtolower(getenv('HTTP_X_REQUESTED_WITH')) !== 'xmlhttprequest';
+        return $this->method === 'GET' && strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') !== 'xmlhttprequest';
     }
 
     public function isPost()
@@ -111,7 +112,7 @@ final class Request
 
     public function isAjax()
     {
-        return _CLI ? false : strtolower(getenv('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest';
+        return _CLI ? false : strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest';
     }
 
     public function agent()

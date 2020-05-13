@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+//declare(strict_types=1);
 
 namespace esp\core;
 
@@ -42,7 +42,11 @@ final class Dispatcher
             $this->_debug = new Debug($this->_request, $this->_response, $debug);
             $GLOBALS['_Debug'] = &$this->_debug;
         }
-        if ($session = Config::get('session')) Session::_init($session);
+        if ($session = Config::get('session')) {
+//            $this->_debug->relay($session);
+            $save = Session::_init($session);
+            $this->_debug->relay(['session' => $save]);
+        }
 
         if ($cache = Config::get('cache')) {
             $setting = $cache['setting'];
@@ -133,6 +137,7 @@ final class Dispatcher
 
     /**
      * 系统运行调度中心
+     * @param callable|null $callable
      * @throws \Exception
      */
     public function run(callable $callable = null): void
@@ -165,15 +170,11 @@ final class Dispatcher
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-//            if (getenv('HTTP_DEBUG')) $this->check_debug('', 'star_');
             register_shutdown_function(function () {
                 $save = $this->_debug->save_logs();
 //                $this->check_debug($save);
             });
-//        } else {
-//            if (getenv('HTTP_DEBUG')) $this->check_debug('', 'null_');
         }
-
     }
 
     private function check_debug($save, $file = null)
@@ -310,7 +311,7 @@ final class Dispatcher
 
     final private function err404(string $msg)
     {
-        $this->_debug->folder('error');
+        if (!is_null($this->_debug)) $this->_debug->folder('error');
         if (_DEBUG) return $msg;
         $empty = Config::get('frame.request.empty');
         if (!empty($empty)) return $empty;

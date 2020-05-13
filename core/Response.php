@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core;
 
@@ -10,7 +11,7 @@ final class Response
     private $_display_value;
     private $_request;
     private $_resource;
-    private $_display_type;
+    private $_display_type = '';
     public $_display_Result;//最终的打印结果
     public $_Content_Type;
     private $_save_cache = false;
@@ -95,7 +96,7 @@ final class Response
 
             case 'html':
                 if (is_null($value)) {
-                    $this->_display_type = null;
+                    $this->_display_type = '';
                     $this->_display_value = null;
                 } else {
                     $this->_display_type = 'html';
@@ -232,7 +233,6 @@ final class Response
      * 设置是否启用视图
      * 设置视图文件名
      * 获取视图对象
-     * @param $file
      * @return bool|View
      */
     public function getView(): View
@@ -337,7 +337,7 @@ final class Response
         }
         if (is_null($html)) return '';
 
-        if (is_null($this->_display_type)) $this->_display_type = 'html';
+        if (empty($this->_display_type)) $this->_display_type = 'html';
 
         $this->_Content_Type = Config::mime($this->_display_type);
 
@@ -532,7 +532,7 @@ final class Response
 
     public function get(string $name)
     {
-        return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
+        return $this->_view_val[$name] ?? null;
     }
 
     public function set(string $name, $value)

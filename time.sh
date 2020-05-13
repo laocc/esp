@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 function sync_time(){
     get=$(/usr/sbin/ntpdate -u $1 | grep "offset");
     getday=$(echo $get | awk '{print $1}');

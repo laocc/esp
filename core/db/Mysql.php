@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core\db;
 
@@ -28,7 +29,6 @@ class Mysql
      * Mysql constructor.
      * @param int $tranID
      * @param array|null $conf
-     * @param Model|null $model
      * @throws \Exception
      */
     public function __construct($tranID = 0, array $conf = null)
@@ -63,7 +63,8 @@ class Mysql
             if (!is_string($tabName) || empty($tabName)) {
                 throw new Exception('PDO_Error :  数据表名错误');
             }
-            return (new Builder($this, $this->_CONF['prefix'], $this->_CONF['param'] ?? false, $this->transID))->table($tabName);
+            return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? false), $this->transID))
+                ->table($tabName);
         } catch (Exception $e) {
             $e->display();
         }

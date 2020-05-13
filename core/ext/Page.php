@@ -1,4 +1,5 @@
 <?php
+//declare(strict_types=1);
 
 namespace esp\core\ext;
 
@@ -27,8 +28,9 @@ trait Page
     }
 
     /**
-     * @param int $size >=2
+     * @param int $size  >=2
      * @param int $index
+     * @param int $lftRit
      * @return $this
      */
     final public function pageSet(int $size = 10, int $index = 0, int $lftRit = 5)
