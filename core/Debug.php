@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+//declare(strict_types=1);
 
 namespace esp\core;
 
@@ -382,6 +382,7 @@ final class Debug
         if (is_array($msg)) $msg = "\n" . print_r($msg, true);
         elseif (is_object($msg)) $msg = "\n" . print_r($msg, true);
         elseif (is_null($msg)) $msg = "\n" . var_export($msg, true);
+        elseif (!is_string($msg)) $msg = strval($msg);
 
         $this->_node_len = max(iconv_strlen($msg), $this->_node_len);
         $nowMemo = memory_get_usage();

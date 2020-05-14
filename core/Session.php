@@ -71,7 +71,7 @@ final class Session
         if (!isset($config['run']) or !$config['run']) return 'not run in ' . _MODULE;
 
         $option = [];
-        $config += ['driver' => 'file', 'delay' => 1, 'prefix' => '', 'ttl' => 86400];
+        $config += ['driver' => 'file', 'delay' => 0, 'prefix' => '', 'ttl' => 86400];
 
         if ($config['driver'] === 'redis') {
             self::$SessionHandler = new SessionRedis(boolval($config['delay']), $config['prefix'] ?? '');
@@ -94,7 +94,7 @@ final class Session
         start:
         if (headers_sent($file, $line)) throw new \Exception("在{$file}[{$line}]行已有数据输出，Session无法启动");
 
-        $option['cache_expire'] = intval($config['ttl']);//session内容生命期
+        $option['cache_expire'] = intval($config['expire']);//session内容生命期
         $option['serialize_handler'] = 'php_serialize';//用PHP序列化存储数据
 
         $option['use_trans_sid'] = 0;//指定是否启用透明 SID 支持。默认为 0（禁用）。
@@ -146,7 +146,7 @@ final class Session
     /**
      * @return SessionRedis
      */
-    public static function Handler()
+    public static function Handler(): SessionRedis
     {
         return self::$SessionHandler;
     }
