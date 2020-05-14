@@ -94,7 +94,7 @@ final class Session
         start:
         if (headers_sent($file, $line)) throw new \Exception("在{$file}[{$line}]行已有数据输出，Session无法启动");
 
-        $option['cache_expire'] = intval($config['expire']);//session内容生命期
+        $option['cache_expire'] = intval($config['expire']??86400);//session内容生命期
         $option['serialize_handler'] = 'php_serialize';//用PHP序列化存储数据
 
         $option['use_trans_sid'] = 0;//指定是否启用透明 SID 支持。默认为 0（禁用）。
