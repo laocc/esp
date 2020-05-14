@@ -312,16 +312,24 @@ final class Redis implements KeyValue
 
     /**
      * 返回所有键，这个可以用通配符'user*'
-     * @param string $keys
-     * @return mixed
-     * @throws \Exception
+     * 不过，D_2020_05_1* 匹配不到数据，暂不清楚什么原因，所以加$filter进行过滤
+     * @param string|null $keys
+     * @param string|null $filter
+     * @return array
      */
-    public function keys(string $keys = null)
+    public function keys(string $keys = null, string $filter = null)
     {
         $iterator = null;
         $value = [];
         if ($keys === '*') $keys = null;
-        while ($val = $this->redis->scan($iterator, $keys)) array_push($value, ...$val);
+        while ($val = $this->redis->scan($iterator, $keys)) {
+            array_push($value, ...$val);
+        }
+        if ($filter) {
+            $value = array_filter($value, function ($v) use ($filter) {
+                return (strpos($v, $filter) === 0);
+            });
+        }
         return $value;
     }
 

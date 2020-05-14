@@ -71,7 +71,7 @@ final class Session
         if (!isset($config['run']) or !$config['run']) return 'not run in ' . _MODULE;
 
         $option = [];
-        $config += ['driver' => 'file', 'delay' => 0, 'prefix' => '', 'ttl' => 86400];
+        $config += ['key' => 'PHPSESSID', 'driver' => 'file', 'delay' => 0, 'prefix' => '', 'expire' => 86400, 'ttl' => 86400];
 
         if ($config['driver'] === 'redis') {
             self::$SessionHandler = new SessionRedis(boolval($config['delay']), $config['prefix'] ?? '');
@@ -85,16 +85,12 @@ final class Session
             throw new \Exception("未知session.driver：{$config['driver']}", 500);
         }
         $session = $config;
-        session_set_save_handler(self::$SessionHandler, true);
-//        session_set_save_handler(self::$SessionHandler, false);
-//        session_register_shutdown();
-
-//        unset($option['save_handler']);
+        session_set_save_handler(self::$SessionHandler, !_DEBUG);
 
         start:
         if (headers_sent($file, $line)) throw new \Exception("在{$file}[{$line}]行已有数据输出，Session无法启动");
 
-        $option['cache_expire'] = intval($config['expire']??86400);//session内容生命期
+        $option['cache_expire'] = intval($config['expire']);//session内容生命期
         $option['serialize_handler'] = 'php_serialize';//用PHP序列化存储数据
 
         $option['use_trans_sid'] = 0;//指定是否启用透明 SID 支持。默认为 0（禁用）。
