@@ -42,6 +42,7 @@ final class Dispatcher
             $this->_debug = new Debug($this->_request, $this->_response, $debug);
             $GLOBALS['_Debug'] = &$this->_debug;
         }
+        
         if ($session = Config::get('session')) {
             $save = Session::_init($session, $option);
             //(($session['debug'] ?? 0) or !$save) and
