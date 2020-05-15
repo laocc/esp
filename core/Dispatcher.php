@@ -50,7 +50,7 @@ final class Dispatcher
                     'save' => $save,
                     'option' => $option,
                     'config' => $session,
-                    'session' => Session::get()
+//                    'session' => Session::get()
                 ]);
             }
         }
