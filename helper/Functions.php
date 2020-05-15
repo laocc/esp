@@ -21,7 +21,7 @@ function pre(...$str)
         foreach ($str as $i => &$v) {
             if (is_array($v)) print_r($v);
             elseif (is_string($v) and !empty($v) and ($v[0] === '[' or $v[0] === '{')) echo($v);
-            else var_dump($v);
+            else echo var_export($v, true);
         }
         echo "</pre>";
     }
