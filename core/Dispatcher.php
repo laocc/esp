@@ -45,7 +45,9 @@ final class Dispatcher
         }
 
         if (($session = Config::get('session')) and !_CLI) {
-            $this->_session = new Session($session, $this->_debug);
+            if (!(isset($session[_MODULE]) and !($session[_MODULE]['run'] ?? 1))) {
+                $this->_session = new Session($session, $this->_debug);
+            }
         }
 
         if ($cache = Config::get('cache')) {
