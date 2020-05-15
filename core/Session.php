@@ -107,8 +107,7 @@ final class Session
         session_start($option);
 
         if (!is_null($debug)) {
-            $debug->relay($config);
-            $debug->relay($option);
+            $debug->relay(['id' => session_id(), 'config' => $config, 'option' => $option]);
         }
     }
 
