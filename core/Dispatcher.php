@@ -44,8 +44,14 @@ final class Dispatcher
         }
         if ($session = Config::get('session')) {
             $save = Session::_init($session, $option);
-            if ((($session['debug'] ?? 0) or !$save) and !is_null($this->_debug)) {
-                $this->_debug->relay(['session' => $save, 'option' => $option, 'config' => $session]);
+            //(($session['debug'] ?? 0) or !$save) and
+            if (!is_null($this->_debug)) {
+                $this->_debug->relay([
+                    'save' => $save,
+                    'option' => $option,
+                    'config' => $session,
+                    'session' => Session::get()
+                ]);
             }
         }
 
