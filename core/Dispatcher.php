@@ -9,6 +9,7 @@ final class Dispatcher
     private $_plugs_count = 0;
     public $_request;
     public $_response;
+    public $_session;
     public $_debug;
     public $_cache;
     private $run = true;
@@ -43,19 +44,10 @@ final class Dispatcher
             $GLOBALS['_Debug'] = &$this->_debug;
         }
 
-        if ($session = Config::get('session')) {
-            $save = Session::_init($session, $option);
-            //(($session['debug'] ?? 0) or !$save) and
-            if (!is_null($this->_debug)) {
-                $this->_debug->relay([
-                    'save' => $save,
-                    'option' => $option,
-                    'config' => $session,
-//                    'session' => Session::get()
-                ]);
-            }
+        if (($session = Config::get('session')) and !_CLI) {
+            $this->_session = new Session($session, $this->_debug);
         }
- 
+
         if ($cache = Config::get('cache')) {
             $setting = $cache['setting'];
             if (isset($cache[_MODULE])) $setting = $cache[_MODULE] + $setting;
@@ -66,6 +58,10 @@ final class Dispatcher
 
         if (isset($option['attack'])) $option['attack']($option);
         unset($GLOBALS['option']);
+
+        if (headers_sent($file, $line)) {
+            throw new \Exception("在{$file}[{$line}]行已有数据输出，系统无法启动");
+        }
 
 //        } catch (\Exception $exception) {
 //            pre($exception);

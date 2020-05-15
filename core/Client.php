@@ -16,9 +16,7 @@ final class Client
      */
     public static function id(string $key = '_SSI', bool $number = false)
     {
-        $unique = Session::id();
-
-        if (empty($unique)) $unique = $_COOKIE[$key] ?? null;
+        $unique = $_COOKIE[$key] ?? null;
 
         if (!$unique) {
             $unique = $number ? mt_rand() : self::str_rand(20);

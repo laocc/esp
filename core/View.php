@@ -107,7 +107,6 @@ final class View
     }
 
     /**
-     * @param null $object
      * @return Adapter
      */
     public function getAdapter(): Adapter
@@ -183,6 +182,9 @@ final class View
 
     /**
      * 显示解析视图结果
+     * @param $file
+     * @param $value
+     * @throws \Exception
      */
     public function display($file, $value): void
     {
@@ -205,7 +207,7 @@ final class View
         }
         ob_start();
         extract($__value__);
-        include($__file__);
+        include $__file__;
         $content = ob_get_contents();
         ob_end_clean();
         return $content;

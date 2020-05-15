@@ -3,11 +3,9 @@
 
 namespace esp\core\ext;
 
-
 class SessionRedis implements \SessionHandlerInterface
 {
     private $_Redis;
-    private $_conf;
     private $_update = false;
     private $_delay = false;
     private $_prefix = '';
@@ -25,6 +23,10 @@ class SessionRedis implements \SessionHandlerInterface
         $this->_Redis = new \Redis();
     }
 
+    /**
+     * @param bool $update
+     * @return bool
+     */
     public function update(bool $update)
     {
         $this->_update = $update;
@@ -85,9 +87,7 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function read($session_id)
     {
-//        pre(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
         $dataString = $this->_Redis->get($session_id);
-//        var_dump([$session_id => $dataString]);
         return (!$dataString) ? 'a:0:{}' : $dataString;
     }
 

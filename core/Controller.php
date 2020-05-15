@@ -10,6 +10,7 @@ abstract class Controller
 {
     protected $_request;
     protected $_response;
+    protected $_session;
     protected $_plugs;
     protected $_system;
     public $_debug;
@@ -25,6 +26,7 @@ abstract class Controller
         $this->_plugs = &$dispatcher->_plugs;
         $this->_request = &$dispatcher->_request;
         $this->_response = &$dispatcher->_response;
+        $this->_session = &$dispatcher->_session;
         $this->_debug = &$dispatcher->_debug;
         $this->_buffer = Config::Redis();
         $this->_system = defined('_SYSTEM') ? _SYSTEM : 'auto';
@@ -134,6 +136,16 @@ abstract class Controller
     final public function getBuffer()
     {
         return $this->_buffer;
+    }
+
+    /**
+     * @return Session
+     * @throws \Exception
+     */
+    final public function getSession()
+    {
+        if (is_null($this->_session)) throw new \Exception('当前站点未开启session', 401);
+        return $this->_session;
     }
 
     /**
