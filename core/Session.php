@@ -75,7 +75,7 @@ final class Session
         ];
 
         $this->SessionHandler = new SessionRedis(boolval($config['delay']), $config['prefix']);
-        session_set_save_handler($this->SessionHandler, !_DEBUG);
+        $handler = session_set_save_handler($this->SessionHandler, !_DEBUG);
 
         $option = [];
         $option['save_path'] = serialize(['host' => $config['host'], 'port' => $config['port'], 'db' => $config['db'], 'password' => $config['password']]);
@@ -104,10 +104,16 @@ final class Session
             }
         }
 
-        session_start($option);
+        $star = session_start($option);
 
         if (!is_null($debug)) {
-            $debug->relay(['id' => session_id(), 'config' => $config, 'option' => $option]);
+            $debug->relay([
+                'id' => session_id(),
+                'star' => $star,
+                'handler' => $handler,
+                'config' => $config,
+                'option' => $option
+            ]);
         }
     }
 

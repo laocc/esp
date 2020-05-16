@@ -47,7 +47,9 @@ final class Dispatcher
         if (($session = Config::get('session')) and !_CLI) {
             if (!(isset($session[_MODULE]) and !($session[_MODULE]['run'] ?? 1))) {
                 $this->_session = new Session($session, $this->_debug);
-                if (!is_null($this->_debug)) $this->_debug->relay($_SESSION);
+                if (!is_null($this->_debug)) {
+                    $this->_debug->relay(['cookies' => $_COOKIE, 'session' => $_SESSION]);
+                }
             }
         }
 
