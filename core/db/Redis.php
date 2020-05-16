@@ -65,7 +65,7 @@ final class Redis implements KeyValue
             usleep(10000);
             goto tryCont;
         }
-        $this->host = [$conf['host'], $conf['port']];
+        $this->host = [$conf['host'], intval($conf['port'])];
 
         //用密码登录
         if (isset($conf['password']) and !empty($conf['password']) and !$this->redis->auth($conf['password'])) {
