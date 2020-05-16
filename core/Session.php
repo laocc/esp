@@ -77,6 +77,8 @@ final class Session
         $this->SessionHandler = new SessionRedis(boolval($config['delay']), $config['prefix']);
         $handler = session_set_save_handler($this->SessionHandler, true);//!_DEBUG
 
+        $domain = getenv('HTTP_HOST');
+
         $option = [];
         $option['save_path'] = serialize(['host' => $config['host'], 'port' => $config['port'], 'db' => $config['db'], 'password' => $config['password']]);
         $option['cache_expire'] = intval($config['expire']);//session内容生命期
@@ -91,7 +93,7 @@ final class Session
         $option['cookie_path'] = '/';//指定了要设定会话 cookie 的路径。默认为 /。
         $option['cookie_secure'] = _HTTPS;//指定是否仅通过安全连接发送 cookie。默认为 off。如果启用了https则要启用
         $option['cookie_httponly'] = ($config['httponly'] === 1);//只能PHP读取，JS禁止
-        $option['cookie_domain'] = (isset($config['domain'])) ? getenv('HTTP_HOST') : ('.' . _HOST);
+        $option['cookie_domain'] = (isset($config['domain'])) ? $domain : host($domain);
 
         //允许从URL或POST中读取session值
         if ($option['use_trans_sid']) {
