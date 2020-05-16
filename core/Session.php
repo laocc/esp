@@ -50,15 +50,15 @@ final class Session
     private $debug;
     private $run = true;
 
-    public function __construct(array $session, Debug $debug)
+    public function __construct(array $config, Debug $debug)
     {
-        $config = $session['default'];
-        if (isset($session[_MODULE])) $config = $session[_MODULE] + $config;
-        if (!isset($config['run']) or !$config['run']) {
-            if (!is_null($debug)) $debug->relay($config);
-            $this->run = 'not run in ' . _MODULE;
-            return;
-        }
+//        $config = $session['default'];
+//        if (isset($session[_MODULE])) $config = $session[_MODULE] + $config;
+//        if (!isset($config['run']) or !$config['run']) {
+//            if (!is_null($debug)) $debug->relay($config);
+//            $this->run = 'not run in ' . _MODULE;
+//            return;
+//        }
         $this->debug = $debug;
 
         $config += [
@@ -75,7 +75,7 @@ final class Session
         ];
 
         $this->SessionHandler = new SessionRedis(boolval($config['delay']), $config['prefix']);
-        $handler = session_set_save_handler($this->SessionHandler, !_DEBUG);
+        $handler = session_set_save_handler($this->SessionHandler, true);//!_DEBUG
 
         $option = [];
         $option['save_path'] = serialize(['host' => $config['host'], 'port' => $config['port'], 'db' => $config['db'], 'password' => $config['password']]);

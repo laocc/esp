@@ -130,6 +130,7 @@ final class Debug
         else if ($this->_run === false) return 'run false';
         $filename = $this->filename();
         if (is_null($filename)) return 'null filename';
+        if (isset($GLOBALS['_relay'])) $this->relay($GLOBALS['_relay'], []);
         $this->relay('END:save_logs', []);
         $rq = $this->_request;
         $method = $rq->getMethod();

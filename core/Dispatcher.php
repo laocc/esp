@@ -45,8 +45,10 @@ final class Dispatcher
         }
 
         if (($session = Config::get('session')) and !_CLI) {
-            if (!(isset($session[_MODULE]) and !($session[_MODULE]['run'] ?? 1))) {
-                $this->_session = new Session($session, $this->_debug);
+            $config = $session['default'] + ['run' => 1];
+            if (isset($session[_MODULE])) $config = $session[_MODULE] + $config;
+            if ($config['run']) {
+                $this->_session = new Session($config, $this->_debug);
                 if (!is_null($this->_debug)) {
                     $this->_debug->relay(['cookies' => $_COOKIE, 'session' => $_SESSION]);
                 }
@@ -261,7 +263,7 @@ final class Dispatcher
 
         //运行初始化方法
         if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
-            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$controller}->_nit() ============================]", []);
+            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$controller}->_init() ============================]", []);
             $val = call_user_func_array([$cont, '_init'], [$action]);
             if (!is_null($val)) return $val;
         }

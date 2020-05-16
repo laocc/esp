@@ -23,16 +23,6 @@ class SessionRedis implements \SessionHandlerInterface
         $this->_Redis = new \Redis();
     }
 
-    /**
-     * @param bool $update
-     * @return bool
-     */
-    public function update(bool $update)
-    {
-        $this->_update = $update;
-        return true;
-    }
-
 
     /**
      * 第一个被调用
@@ -69,14 +59,6 @@ class SessionRedis implements \SessionHandlerInterface
     }
 
     /**
-     * @return \Redis
-     */
-    public function Redis()
-    {
-        return $this->_Redis;
-    }
-
-    /**
      * 第二个被调用
      * @param string $session_id
      * @return string
@@ -88,6 +70,7 @@ class SessionRedis implements \SessionHandlerInterface
     public function read($session_id)
     {
         $dataString = $this->_Redis->get($session_id);
+        $GLOBALS['_relay']['read_session'] = ['id' => $session_id, 'value' => $dataString, 'time' => microtime(true)];
         return (!$dataString) ? 'a:0:{}' : $dataString;
     }
 
@@ -194,6 +177,24 @@ class SessionRedis implements \SessionHandlerInterface
         } catch (\Exception $e) {
         }
         return true;
+    }
+
+    /**
+     * @param bool $update
+     * @return bool
+     */
+    public function update(bool $update)
+    {
+        $this->_update = $update;
+        return true;
+    }
+
+    /**
+     * @return \Redis
+     */
+    public function Redis()
+    {
+        return $this->_Redis;
     }
 
 }
