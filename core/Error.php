@@ -56,7 +56,7 @@ class Error
          */
         $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $errcontext = null)
         use ($option) {
-            Session::reset();
+//            Session::reset();
 
             $err = Array();
             $err['level'] = 'Error';
@@ -102,7 +102,7 @@ class Error
          * @param $error
          */
         $handler_exception = function (\Throwable $error) use ($option) {
-            Session::reset();
+//            Session::reset();
 
             $err = Array();
             $err['level'] = 'Throw';
