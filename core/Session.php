@@ -108,11 +108,11 @@ final class Session
 
         if (!is_null($debug)) {
             $debug->relay([
-                'id' => session_id(),
-                'star' => $star,
-                'handler' => $handler,
                 'config' => $config,
-                'option' => $option
+                'option' => $option,
+                'id' => session_id(),
+                'star' => var_export($star, true),
+                'handler' => var_export($handler, true),
             ]);
         }
     }
