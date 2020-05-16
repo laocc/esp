@@ -47,6 +47,8 @@ final class Dispatcher
         if (($session = Config::get('session')) and !_CLI) {
             $config = $session['default'] + ['run' => 1];
             if (isset($session[_MODULE])) $config = $session[_MODULE] + $config;
+            if (isset($session[_HOST])) $config = $session[_HOST] + $config;
+            if (isset($session[_DOMAIN])) $config = $session[_DOMAIN] + $config;
             if ($config['run']) {
                 $this->_session = new Session($config, $this->_debug);
                 if (!is_null($this->_debug)) {
