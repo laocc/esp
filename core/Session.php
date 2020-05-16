@@ -52,13 +52,6 @@ final class Session
 
     public function __construct(array $config, Debug $debug)
     {
-//        $config = $session['default'];
-//        if (isset($session[_MODULE])) $config = $session[_MODULE] + $config;
-//        if (!isset($config['run']) or !$config['run']) {
-//            if (!is_null($debug)) $debug->relay($config);
-//            $this->run = 'not run in ' . _MODULE;
-//            return;
-//        }
         $this->debug = $debug;
 
         $config += [

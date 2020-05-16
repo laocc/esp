@@ -49,7 +49,7 @@ final class Client
      */
     public static function agent(string $agent = null)
     {
-        $u_agent = $agent ?: isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+        $u_agent = $agent ?: ($_SERVER['HTTP_USER_AGENT'] ?? '');
         if (!$u_agent) return ['agent' => '', 'browser' => '', 'version' => '', 'os' => ''];
 
         //操作系统
