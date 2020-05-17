@@ -267,9 +267,6 @@ abstract class Controller
      */
     final protected function redirect(string $url, int $code = 302)
     {
-        if ($this->_session->update) {
-
-        }
         $this->_response->redirect("Location: {$url} {$code}");
 
         if (headers_sent($filename, $line)) {
