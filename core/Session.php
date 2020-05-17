@@ -49,6 +49,7 @@ final class Session
     private $SessionHandler;
     private $debug;
     private $run = true;
+    public $update = false;
 
     public function __construct(array $config, Debug $debug)
     {
@@ -67,7 +68,7 @@ final class Session
             'ttl' => 86400
         ];
 
-        $this->SessionHandler = new SessionRedis(boolval($config['delay']), $config['prefix']);
+        $this->SessionHandler = new SessionRedis($debug, boolval($config['delay']), $config['prefix']);
         $handler = session_set_save_handler($this->SessionHandler, true);//!_DEBUG
 
         $domain = getenv('HTTP_HOST');
@@ -157,6 +158,7 @@ final class Session
         } else {
             $_SESSION[$key] = $value;
         }
+        $this->update = true;
         return $this->SessionHandler->update(true);
     }
 
@@ -184,11 +186,14 @@ final class Session
 
     /**
      * @param string ...$keys
+     * @return $this
      */
     public function del(string ...$keys)
     {
         foreach ($keys as $key) $_SESSION[$key] = null;
         $this->SessionHandler->update(true);
+        $this->update = true;
+        return $this;
     }
 
 
@@ -216,6 +221,7 @@ final class Session
             $value['time'] = time();
             $_SESSION[$key] = $value;
         }
+        $this->update = true;
         return $this->SessionHandler->update(true);
     }
 
@@ -226,6 +232,7 @@ final class Session
     {
         $_SESSION = null;
         $this->SessionHandler->update(true);
+        $this->update = true;
         session_destroy();
     }
 

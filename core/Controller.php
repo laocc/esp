@@ -33,7 +33,7 @@ abstract class Controller
 
         if (!_CLI && defined('_DEBUG_PUSH_KEY')) {
             register_shutdown_function(function (Request $request) {
-                //发送debug记录到redis队列管道中，后面由cli任务写入数据库
+                //发送访问记录到redis队列管道中，后面由cli任务写入数据库
                 $debug = [];
                 $debug['time'] = time();
                 $debug['system'] = _SYSTEM;
@@ -249,6 +249,17 @@ abstract class Controller
     }
 
     /**
+     * 冲刷(flush)所有响应的数据给客户端
+     * 此函数冲刷(flush)所有响应的数据给客户端并结束请求。这使得客户端结束连接后，需要大量时间运行的任务能够继续运行。
+     * @return bool
+     */
+    final protected function finish()
+    {
+        $this->debug('fastcgi_finish_request');
+        return fastcgi_finish_request();
+    }
+
+    /**
      * 网页跳转
      * @param string $url
      * @param int $code
@@ -256,6 +267,9 @@ abstract class Controller
      */
     final protected function redirect(string $url, int $code = 302)
     {
+        if ($this->_session->update) {
+
+        }
         $this->_response->redirect("Location: {$url} {$code}");
 
         if (headers_sent($filename, $line)) {

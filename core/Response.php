@@ -174,6 +174,7 @@ final class Response
     public function redirect($val): void
     {
         $this->_display_Result = $val;
+        $this->_autoRun = false;
     }
 
     public function autoRun(bool $run): Response

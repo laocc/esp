@@ -3,21 +3,26 @@
 
 namespace esp\core\ext;
 
+use esp\core\Debug;
+
 class SessionRedis implements \SessionHandlerInterface
 {
     private $_Redis;
     private $_update = false;
     private $_delay = false;
     private $_prefix = '';
+    private $_debug;
 
 
     /**
      * SessionRedis constructor.
+     * @param Debug $debug
      * @param bool $delay
      * @param string $prefix
      */
-    public function __construct(bool $delay = false, string $prefix = '')
+    public function __construct(Debug $debug, bool $delay = false, string $prefix = '')
     {
+        $this->_debug = $debug;
         $this->_delay = $delay;
         $this->_prefix = $prefix;
         $this->_Redis = new \Redis();
@@ -70,7 +75,7 @@ class SessionRedis implements \SessionHandlerInterface
     public function read($session_id)
     {
         $dataString = $this->_Redis->get($session_id);
-        $GLOBALS['_relay']['read_session'] = ['id' => $session_id, 'value' => $dataString, 'time' => microtime(true)];
+        $this->_debug->relay(['read_session' => ['id' => $session_id, 'value' => $dataString, 'time' => microtime(true)]]);
         return (!$dataString) ? 'a:0:{}' : $dataString;
     }
 
@@ -159,15 +164,23 @@ class SessionRedis implements \SessionHandlerInterface
             $ttl = $this->_Redis->ttl($session_id);
             if ($ttl < 0) $ttl = session_cache_expire();
         }
-        return $this->_Redis->set($session_id, $session_data, $ttl);
+        $save = $this->_Redis->set($session_id, $session_data, $ttl);
+        $this->_debug->relay(['write_session' => [
+            'id' => $session_id,
+            'value' => $session_data,
+            'ttl' => $ttl,
+            'time' => microtime(true),
+            'save' => var_export($save, true)
+        ]]);
+        return $save;
     }
 
 
     /**
-     * 最后一个被调用
+     * 最后一个被调用     * 或当执行session_abort时就立即执行
+     * 当调用 session_write_close() 并执行 write 回调函数调用之后调用close。
      * @return bool
      * close 回调函数类似于类的析构函数。
-     * 当调用 session_write_close() 并执行 write 回调函数调用之后调用close。
      * 此回调函数操作成功返回 TRUE，反之返回 FALSE。
      */
     public function close()

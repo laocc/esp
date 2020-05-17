@@ -49,10 +49,11 @@ class Error
         $option += $default;
         /**
          * 一般警告错误
-         * @param $errNo
-         * @param $errStr
-         * @param $errFile
-         * @param $errLine
+         * @param int $errNo
+         * @param string $errStr
+         * @param string $errFile
+         * @param int $errLine
+         * @param array|null $errcontext
          */
         $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $errcontext = null)
         use ($option) {
@@ -186,7 +187,7 @@ class Error
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('SERVER_ADDR'),
-            'Url' => _HTTP_ . _DOMAIN . _URI,
+            'Url' => _HTTP_ . _DOMAIN . _URI . getenv('REQUEST_URI'),
             'Debug' => !is_null($debug) ? $debug->filename() : '',
             'Error' => $error,
             'Server' => $_SERVER,
@@ -198,7 +199,7 @@ class Error
 
         if (!is_null($debug)) {
             register_shutdown_function(function (Debug $debug) {
-                $debug->save_logs();
+                $debug->save_logs('Error Saved');
             }, $debug);
 
             if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;

@@ -172,6 +172,10 @@ final class Dispatcher
         if (_CLI) {
             print_r($value);
         } else {
+            if (!is_null($this->_session)) {
+                $this->_debug->relay(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
+                session_write_close();//立即保存并结束
+            }
             $this->_response->display($value);
         }
         $this->_plugs_count and $this->plugsHook('displayAfter');
@@ -183,14 +187,13 @@ final class Dispatcher
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-            if (_DEBUG) {
-                $this->_debug->save_logs();
-            } else {
-                register_shutdown_function(function () {
-                    $save = $this->_debug->save_logs();
-////                $this->check_debug($save);
-                });
-            }
+//            if (_DEBUG) {
+//                $this->_debug->save_logs('Dispatcher Debug');
+//            }
+            register_shutdown_function(function () {
+                $save = $this->_debug->save_logs('Dispatcher');
+//                $this->check_debug($save);
+            });
         }
     }
 
@@ -285,7 +288,9 @@ final class Dispatcher
          */
         if (!is_null($this->_debug)) $this->_debug->relay("[green;{$controller}->{$action} Star ==============================]", []);
         $val = call_user_func_array([$cont, $action], $this->_request->params);
-        if (!is_null($this->_debug)) $this->_debug->relay("[red;{$controller}->{$action} End ==============================]", []);
+        if (!is_null($this->_debug)) {
+            $this->_debug->relay("[red;{$controller}->{$action} End ==============================]", []);
+        }
         if ($this->_request->loop === true) {
             $this->_request->loop = false;
             goto LOOP;

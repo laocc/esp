@@ -101,6 +101,7 @@ final class Debug
             $debug['data'] = $data;
             $send = Config::Redis()->publish('order', 'saveDebug', $debug);
         }
+        $this->_run = false;//防止重复保存
         if ($send) return $send;
 
         if ($this->_save_type === 'rpc' or !is_null($send)) {
@@ -123,19 +124,22 @@ final class Debug
 
     /**
      * 保存记录到的数据
+     * @param string $pre
+     * @return bool|int|null|string
      */
-    public function save_logs()
+    public function save_logs(string $pre = '')
     {
         if (empty($this->_node)) return 'empty node';
         else if ($this->_run === false) return 'run false';
         $filename = $this->filename();
         if (is_null($filename)) return 'null filename';
-        if (isset($GLOBALS['_relay'])) $this->relay($GLOBALS['_relay'], []);
+        if (isset($GLOBALS['_relay'])) $this->relay(['GLOBALS_relay' => $GLOBALS['_relay']], []);
         $this->relay('END:save_logs', []);
         $rq = $this->_request;
         $method = $rq->getMethod();
         $data = Array();
         $data[] = "## 请求数据\n```\n";
+        $data[] = " - CallBy:\t{$pre}\n";
         $data[] = " - METHOD:\t{$method}\n";
         $data[] = " - GET_URL:\t" . (defined('_URL') ? _URL : '') . "\n";
         $data[] = " - SERV_IP:\t" . ($_SERVER['SERVER_ADDR'] ?? '') . "\n";
@@ -209,7 +213,7 @@ final class Debug
             $data['_SERVER'] = "\n## _SERVER\n```\n" . print_r($_SERVER, true) . "\n```\n";
         }
 
-        $data[] = "\n";
+        $data[] = microtime(true) . "\n";
 
         if (defined('_SELF_DEBUG')) {
             $p = dirname($filename);
@@ -363,6 +367,12 @@ final class Debug
 
         $this->relay("Mysql[" . (++$count) . '] = ' . print_r($val, true) . str_repeat('-', 10) . '>', $pre);
     }
+
+    public static function recode($data)
+    {
+        $GLOBALS['_relay'][] = $data;
+    }
+
 
     /**
      * 创建一个debug点
