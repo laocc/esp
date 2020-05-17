@@ -363,9 +363,10 @@ class qr_Spec
 
     /** --------------------------------------------------------------------
      * Put an alignment marker.
-     * @param frame
-     * @param width
-     * @param ox ,oy center coordinate of the pattern
+     * @param array $frame
+     * @param $ox
+     * @param $oy
+     * center coordinate of the pattern
      */
     public static function putAlignmentMarker(array &$frame, $ox, $oy)
     {
@@ -2343,55 +2344,55 @@ class qr_Image
         }
 
         if (preg_match('/^([a-z]+)|(\#[a-f0-9]{3})|(\#[a-f0-9]{6})$/i', $option['background'])) {
-            $resource_im = imagecreate($imgW, $imgH);
+            $resource_im = \imagecreate($imgW, $imgH);
             $bgColor = Gd::createColor($resource_im, $option['background']);//二维码的背景色
-            imagefill($resource_im, 0, 0, $bgColor);//填充背景色
+            \imagefill($resource_im, 0, 0, $bgColor);//填充背景色
         } else {
             $resource_im = Gd::createIM($option['background']);
         }
 
         //最成最终二维码的尺寸：每点为1像素时的宽度，乘设定的每个像素的实际宽度
         //不要用imagecreatetruecolor，否则后面抽除颜色时有问题
-        $base_im = imagecreate($width, $height);
+        $base_im = \imagecreate($width, $height);
 
         //二维码的主色，若主色是图片，则这儿得到的是#000的黑色
         $qrColor = Gd::createColor($resource_im, $option['color']);
         for ($y = 0; $y < $h; $y++) {
             for ($x = 0; $x < $w; $x++) {
                 if ($frame[$y][$x] == '1') {
-                    imagesetpixel($resource_im, $x + $option['margin'], $y + $option['margin'], $qrColor);
+                    \imagesetpixel($resource_im, $x + $option['margin'], $y + $option['margin'], $qrColor);
                 }
             }
         }
 
         //把刚才生成的二维码放大，并放到实际大小的二维码上去
-        imagecopyresampled($base_im, $resource_im, 0, 0, 0, 0, $width, $height, $imgW, $imgH);
-        imagedestroy($resource_im);
+        \imagecopyresampled($base_im, $resource_im, 0, 0, 0, 0, $width, $height, $imgW, $imgH);
+        \imagedestroy($resource_im);
 
 
         //用图片做前景色
         if (is_file($option['color'])) {
             //先把图片复制到空白容器里去
-            $IM = imagecreatetruecolor($width, $height);//用真彩色
-            $info = getimagesize($option['color']);
+            $IM = \imagecreatetruecolor($width, $height);//用真彩色
+            $info = \getimagesize($option['color']);
             $PM = Gd::createIM($option['color'], $info[2]);
 
             //原图写入临时容器，缩放
-            imagecopyresampled($IM, $PM, 0, 0, 0, 0, $width, $height, $info[0], $info[1]);
-            imagedestroy($PM);
+            \imagecopyresampled($IM, $PM, 0, 0, 0, 0, $width, $height, $info[0], $info[1]);
+            \imagedestroy($PM);
 
             //然后把前面生成的二维码，前景色部分扣掉
-            imagecolortransparent($base_im, $qrColor);
+            \imagecolortransparent($base_im, $qrColor);
 
             //最后把扣掉的二维码合并到图片的容器里
-            imagecopyresampled($IM, $base_im, 0, 0, 0, 0, $width, $height, $width, $height);
-            imagedestroy($base_im);
+            \imagecopyresampled($IM, $base_im, 0, 0, 0, 0, $width, $height, $width, $height);
+            \imagedestroy($base_im);
             $base_im = $IM;
         }
 
         //加LOGO
         if (!!$option['logo'] and $option['level'] > 0 and is_file($option['logo'])) {
-            $info = getimagesize($option['logo']);
+            $info = \getimagesize($option['logo']);
             if ($info[0] > $info[1]) {//长方形
                 $logoWidth = $info[1];
             } else {
@@ -2412,27 +2413,27 @@ class qr_Image
             $bgIM = Gd::createRectangle($bgWidth, $bgWidth, $option['logo_border'], $radius);
 
             //将背景写到图片上
-            imagecopyresampled($base_im, $bgIM, $logoXY - $lgBorder, $logoXY - $lgBorder, 0, 0, $logoWH + $lgBorder * 2, $logoWH + $lgBorder * 2, $bgWidth, $bgWidth);
+            \imagecopyresampled($base_im, $bgIM, $logoXY - $lgBorder, $logoXY - $lgBorder, 0, 0, $logoWH + $lgBorder * 2, $logoWH + $lgBorder * 2, $bgWidth, $bgWidth);
 
             //创建一个圆角遮罩层
             $filter = Gd::createCircle($logoWidth, $logoWidth, $option['logo_border'], $radius * 0.5);
 
             //将圆角遮罩层合并到LOGO上
             $logoIM = Gd::createIM($option['logo'], $info[2]);
-            imagecopyresampled($logoIM, $filter, 0, 0, 0, 0, $logoWidth, $logoWidth, $logoWidth, $logoWidth);
+            \imagecopyresampled($logoIM, $filter, 0, 0, 0, 0, $logoWidth, $logoWidth, $logoWidth, $logoWidth);
 
             //将LOGO写到图上
-            imagecopyresampled($base_im, $logoIM, $logoXY, $logoXY, 0, 0, $logoWH, $logoWH, $logoWidth, $logoWidth);
+            \imagecopyresampled($base_im, $logoIM, $logoXY, $logoXY, 0, 0, $logoWH, $logoWH, $logoWidth, $logoWidth);
 
 
-            imagedestroy($logoIM);
-            imagedestroy($filter);
-            imagedestroy($bgIM);
+            \imagedestroy($logoIM);
+            \imagedestroy($filter);
+            \imagedestroy($bgIM);
         }
 
         //加底图
         if (!!$option['parent'] and is_file($option['parent'])) {
-            $sInfo = getimagesize($option['parent']);
+            $sInfo = \getimagesize($option['parent']);
             $shIM = Gd::createIM($option['parent'], $sInfo[2]);
 
             if ($option['width'] === 0) {
@@ -2447,15 +2448,15 @@ class qr_Image
 
             //加阴影
             if (!!$option['shadow']) {
-                $shadow_im = imagecreate($width, $height);
+                $shadow_im = \imagecreate($width, $height);
                 $shadow_color = Gd::createColor($shadow_im, $option['shadow'], $option['shadow_alpha']);
-                imagefill($shadow_im, 0, 0, $shadow_color);
-                $shadow_x = intval($option['shadow_x']);
-                $shadow_y = intval($option['shadow_y']);
-                imagecopyresampled($shIM, $shadow_im, $x + $shadow_x, $y + $shadow_y, 0, 0, $width, $height, $width, $height);
+                \imagefill($shadow_im, 0, 0, $shadow_color);
+                $shadow_x = \intval($option['shadow_x']);
+                $shadow_y = \intval($option['shadow_y']);
+                \imagecopyresampled($shIM, $shadow_im, $x + $shadow_x, $y + $shadow_y, 0, 0, $width, $height, $width, $height);
             }
 
-            imagecopyresampled($shIM, $base_im, $x, $y, 0, 0, $width, $height, $width, $height);
+            \imagecopyresampled($shIM, $base_im, $x, $y, 0, 0, $width, $height, $width, $height);
             $base_im = $shIM;
 
 
