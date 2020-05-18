@@ -276,7 +276,9 @@ abstract class Controller
         $this->_response->redirect("Location: {$url} {$code}");
 
         if (headers_sent($filename, $line)) {
-            $this->_debug->relay(["header Has Send:{$filename}({$line})", 'headers' => headers_list()]);
+            $this->_debug->relay(["header Has Send:{$filename}({$line})", 'headers' => headers_list()])
+                ->error("页面已经输出过");
+            return false;
         }
 
         header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1) . ' GMT');
