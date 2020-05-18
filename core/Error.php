@@ -94,6 +94,7 @@ class Error
             } else {
                 echo($option['run']);
             }
+
             fastcgi_finish_request();
             exit;
         };
@@ -198,11 +199,14 @@ class Error
         $filename = $path . "/" . date($filename) . mt_rand() . '.md';
 
         if (!is_null($debug)) {
-            register_shutdown_function(function (Debug $debug) {
-                $debug->save_logs('Error Saved');
-            }, $debug);
-
-            if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
+            register_shutdown_function(function (Debug $debug, $filename, $info) {
+                $debug->relay($info['Error']);
+                $sl = $debug->save_logs('Error Saved');
+                $info['save_logs'] = $sl;
+                if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
+            }, $debug, $filename, $info);
+            if (1) return;
+//            if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
         }
 
         if (!is_dir($path)) mkdir($path, 0740, true);

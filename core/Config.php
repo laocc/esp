@@ -289,12 +289,6 @@ final class Config
         return $conf;
     }
 
-//
-//    public static function set($key, $value)
-//    {
-//        self::$_CONFIG_[$key] = $value;
-//    }
-//
 
     /**
      * @param $type

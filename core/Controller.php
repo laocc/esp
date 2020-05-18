@@ -8,6 +8,7 @@ use esp\core\face\Adapter;
 
 abstract class Controller
 {
+    protected $_config;
     protected $_request;
     protected $_response;
     protected $_session;
@@ -30,8 +31,13 @@ abstract class Controller
         $this->_debug = &$dispatcher->_debug;
         $this->_buffer = Config::Redis();
         $this->_system = defined('_SYSTEM') ? _SYSTEM : 'auto';
+        if (_CLI) return;
 
-        if (!_CLI && defined('_DEBUG_PUSH_KEY')) {
+        $this->_response->assign('_config', function (string $key) {
+//            $this->_config->get();
+        });
+
+        if (defined('_DEBUG_PUSH_KEY')) {
             register_shutdown_function(function (Request $request) {
                 //发送访问记录到redis队列管道中，后面由cli任务写入数据库
                 $debug = [];
