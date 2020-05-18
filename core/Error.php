@@ -200,7 +200,13 @@ class Error
 
         if (!is_null($debug)) {
             register_shutdown_function(function (Debug $debug, $filename, $info) {
-                $debug->relay($info['Error']);
+                $err = $info['Error'];
+                if ($err['trace']) {
+                    foreach ($err['trace'] as $i => $ii) {
+                        if ($i > 1) unset($err['trace'][$i]);
+                    }
+                }
+                $debug->relay($err);
                 $sl = $debug->save_logs('Error Saved');
                 $info['save_logs'] = $sl;
                 if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
