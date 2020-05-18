@@ -16,11 +16,13 @@ final class View
     private $_layout;//框架对象
     private $_adapter;//标签解析器对象
     private $_adapter_use;
+    private $_controller;
 
-    public function __construct(string $dir, $file)
+    public function __construct(string $dir, string $controller, $file)
     {
         $this->_path['dir'] = $dir;
         $this->_path['file'] = $file;
+        $this->_controller = $controller;
     }
 
     /**
@@ -155,10 +157,10 @@ final class View
     {
         $dir = root($this->dir());
         $fileV = $this->file() ?: $file;//以之前设置的优先
-        if ($fileV[0] === '/') {
+        if (strpos($fileV[0], '/') === 0) {
             $fileV = root($fileV);
         } else {
-            $fileV = $dir . '/' . ltrim($fileV, '/');
+            $fileV = "{$dir}/{$fileV}";
         }
 
         if (!is_readable($fileV)) {

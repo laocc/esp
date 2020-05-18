@@ -241,7 +241,7 @@ final class Response
         static $obj;
         if (!is_null($obj)) return $obj;
         $this->_view_set['view_use'] = true;
-        return $obj = new View($this->viewPath(), $this->_view_set['view_file']);
+        return $obj = new View($this->viewPath(), $this->_request->controller, $this->_view_set['view_file']);
     }
 
     public function setView($value): Response
@@ -249,6 +249,9 @@ final class Response
         if (is_bool($value)) {
             $this->_view_set['view_use'] = $value;
         } elseif (is_string($value)) {
+            if (strpos($value, '/') === false) {
+                $value = "{$this->_request->controller}/{$value}";
+            }
             $this->_view_set['view_use'] = true;
             $this->_view_set['view_file'] = $value;
             $this->getView()->file($value);
@@ -265,7 +268,7 @@ final class Response
         static $obj;
         if (!is_null($obj)) return $obj;
         $this->_view_set['layout_use'] = true;
-        return $obj = new View($this->viewPath(), $this->_view_set['layout_file']);
+        return $obj = new View($this->viewPath(), $this->_request->controller, $this->_view_set['layout_file']);
     }
 
     public function setLayout($value): Response
