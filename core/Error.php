@@ -201,7 +201,7 @@ class Error
         if (!is_null($debug)) {
             register_shutdown_function(function (Debug $debug, $filename, $info) {
                 $err = $info['Error'];
-                if ($err['trace']) {
+                if ($err['trace'] ?? []) {
                     foreach ($err['trace'] as $i => $ii) {
                         if ($i > 1) unset($err['trace'][$i]);
                     }
