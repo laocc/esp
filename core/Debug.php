@@ -72,7 +72,7 @@ final class Debug
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('SERVER_ADDR'),
-            'Url' => _HTTP_ . _DOMAIN . _URI,
+            'Url' => _HTTP_ . _DOMAIN . _URI . getenv('REQUEST_URI'),
             'Referer' => getenv("HTTP_REFERER"),
             'Debug' => $this->filename(),
             'Trace' => $tract ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
@@ -80,8 +80,7 @@ final class Debug
         ];
         $conf = ['filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
         $filename = $conf['path'] . "/" . date($conf['filename']) . mt_rand() . '.md';
-        !is_dir($conf['path']) and mkdir($conf['path'], 0740, true);
-        file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
+        return $this->save_file($filename, json_encode($info, 64 | 128 | 256));
     }
 
     public function save_file(string $filename, string $data)
