@@ -62,6 +62,11 @@ abstract class Model
         return substr($file, strlen(_ROOT));
     }
 
+    final protected function config(...$key)
+    {
+        return Config::get(...$key);
+    }
+
 
     /**
      * @return Controller

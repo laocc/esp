@@ -35,6 +35,7 @@ abstract class Controller
 
         $this->_response->assign('_config', function (string $key) {
 //            $this->_config->get();
+            return Config::get($key);
         });
 
         if (defined('_DEBUG_PUSH_KEY')) {
@@ -66,6 +67,11 @@ abstract class Controller
         if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
             throw new \Exception('禁止接入', 401);
         }
+    }
+
+    final protected function config(...$key)
+    {
+        return Config::get(...$key);
     }
 
     /**
