@@ -205,7 +205,7 @@ final class Session
         if (is_null($val)) {
             $value = $_SESSION[$key] ?? '';
             if (empty($value) or !is_array($value)) return null;
-            if ($value['cid'] !== Client::id()) return null;
+//            if ($value['cid'] !== Client::id()) return null;
             return $value['val'] ?? null;
 
         } else if ($val === false) {
