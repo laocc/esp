@@ -77,6 +77,7 @@ final class Debug
             'Debug' => $this->filename(),
             'Trace' => $tract ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
             'Error' => $error,
+            'Server' => $_SERVER,
         ];
         $conf = ['filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
         $filename = $conf['path'] . "/" . date($conf['filename']) . mt_rand() . '.md';

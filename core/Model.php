@@ -27,10 +27,21 @@ abstract class Model
     private $_debug;
     private $_print_sql;
 
+    //=========数据相关===========
+    private $_Yac = array();
+    private $_Mysql = array();
+    private $_Mongodb = array();
+    private $_Redis = array();
+
     use MysqlExt, PageExt;
 
     public function __construct(...$param)
     {
+        $this->_Yac = &$GLOBALS['_Yac'] ?? [];
+        $this->_Mysql = &$GLOBALS['_Mysql'] ?? [];
+        $this->_Mongodb = &$GLOBALS['_Mongodb'] ?? [];
+        $this->_Redis = &$GLOBALS['_Redis'] ?? [];
+
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $param);
         }
@@ -587,13 +598,6 @@ abstract class Model
         return $this;
     }
 
-
-    //=========数据相关===========
-
-    private $_Yac = array();
-    private $_Mysql = array();
-    private $_Mongodb = array();
-    private $_Redis = array();
 
     /**
      * @param string $tab

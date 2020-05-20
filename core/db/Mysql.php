@@ -9,21 +9,20 @@ use esp\core\db\ext\Builder;
 use esp\core\db\ext\Result;
 use esp\core\Debug;
 use esp\core\Exception;
-use esp\core\Model;
 
 class Mysql
 {
     private $_CONF;//配置定义
     private $_trans_run = Array();//事务状态
-    public $slave = Array();//从库连接
-    public $master = Array();//主库连接
     private $connect_time = Array();//连接时间
-    public $_error = Array();//每个连接的错误信息
-    public $dbName;
     private $transID = 0;
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
     private $_debug;
+    public $slave = Array();//从库连接
+    public $master = Array();//主库连接
+    public $_error = Array();//每个连接的错误信息
+    public $dbName;
 
     /**
      * Mysql constructor.
@@ -169,9 +168,10 @@ class Mysql
 
     /**
      * 直接执行SQL
-     * @param $sql
+     * @param string $sql
      * @param array $param
      * @return bool|Result|null
+     * @throws \Exception
      */
     public function query(string $sql, array $param = [])
     {
@@ -213,7 +213,8 @@ class Mysql
      * @param string $sql
      * @param array $option
      * @param \PDO|null $CONN
-     * @return null|bool|Result
+     * @param null $pre
+     * @return false|string
      * @throws \Exception
      */
     public function query_exec(string $sql, array $option, \PDO $CONN = null, $pre = null)
@@ -308,7 +309,7 @@ class Mysql
             $errState = intval($error[1]);
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
-            if ($try++ < 2 and ($errState === 2006 or $errState === 2013)) {
+            if ($try++ < 2 and in_array($errState, [2002, 2006, 2013])) {
                 if (_CLI) {
                     print_r($debugVal);
                     print_r([
