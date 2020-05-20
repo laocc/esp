@@ -279,20 +279,37 @@ abstract class Controller
      */
     final protected function redirect(string $url, int $code = 302)
     {
-        $this->_response->redirect("Location: {$url} {$code}");
-
         if (headers_sent($filename, $line)) {
-            $this->_debug->relay(["header Has Send:{$filename}({$line})", 'headers' => headers_list()])
-                ->error("页面已经输出过");
+            $this->_debug->relay([
+                    "header Has Send:{$filename}({$line})",
+                    'headers' => headers_list()]
+            )->error("页面已经输出过");
             return false;
         }
-
+        $this->_response->redirect("Location: {$url} {$code}");
         header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1) . ' GMT');
         header("Cache-Control: no-cache");
         header("Pragma: no-cache");
         header("Location: {$url}", true, $code);
         fastcgi_finish_request();
-        return true;
+        if (!is_null($this->_debug)) {
+            register_shutdown_function(function () {
+                $this->_debug->save_logs('Controller Redirect');
+            });
+        }
+        exit;
+    }
+
+    final protected function exit(string $route = '')
+    {
+        echo $route;
+        fastcgi_finish_request();
+        if (!is_null($this->_debug)) {
+            register_shutdown_function(function () {
+                $this->_debug->save_logs('Controller Exit');
+            });
+        }
+        exit;
     }
 
     final protected function jump($route)

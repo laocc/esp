@@ -172,7 +172,7 @@ final class Dispatcher
         if (_CLI) {
             print_r($value);
         } else {
-            if (!is_null($this->_session)) {
+            if (!is_null($this->_session) and !is_null($this->_debug)) {
                 $this->_debug->relay(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
                 session_write_close();//立即保存并结束
             }
