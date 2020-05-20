@@ -3,6 +3,7 @@
 
 namespace esp\core\ext;
 
+use esp\core\Cookies;
 use esp\core\Debug;
 
 class SessionRedis implements \SessionHandlerInterface
@@ -35,7 +36,7 @@ class SessionRedis implements \SessionHandlerInterface
      * 这是自动开始会话或者通过调用 session_start() 手动开始会话之后第一个被调用的回调函数。
      * 此回调函数操作成功返回 TRUE，反之返回 FALSE。
      * @param string $save_path
-     * @param string $session_name 此值是cookies name，在这里没鸟用
+     * @param string $session_name 此值是cookies name
      * @return bool
      * @throws \Exception
      */
@@ -59,8 +60,7 @@ class SessionRedis implements \SessionHandlerInterface
         if (!$select) {
             throw new \Exception("Redis选择库【{$conf['db']}】失败。");
         }
-
-        return $select;
+        return $this->realValue($select);
     }
 
     /**
@@ -74,7 +74,18 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function read($session_id)
     {
+        $ssID = Cookies::get('SID');
+
         $dataString = $this->_Redis->get($session_id);
+
+        if (!$dataString and $ssID) {
+            $dataString = $this->_Redis->get($ssID);
+        }
+        if (!$ssID) {
+            Cookies::set('SID', $session_id, '3y');
+        }
+
+
         $this->_debug->relay(['read_session' => ['id' => $session_id, 'value' => $dataString, 'time' => microtime(true)]]);
         return (!$dataString) ? 'a:0:{}' : $dataString;
     }
@@ -99,8 +110,8 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function destroy($session_id)
     {
-        $this->_Redis->del($session_id);
-        return true;
+        $d = $this->_Redis->del($session_id);
+        return $this->realValue($d);
     }
 
     /**
@@ -113,7 +124,7 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function gc($maxLifetime)
     {
-        return true;
+        return 1;
     }
 
 
@@ -129,6 +140,12 @@ class SessionRedis implements \SessionHandlerInterface
         } else {
             return $this->_Redis->ttl(session_id());
         }
+    }
+
+    private function realValue($val)
+    {
+        return boolval($val);
+//        return !boolval($val);
     }
 
     /**
@@ -172,7 +189,7 @@ class SessionRedis implements \SessionHandlerInterface
             'time' => microtime(true),
             'save' => var_export($save, true)
         ]]);
-        return $save;
+        return $this->realValue($save);
     }
 
 
@@ -189,7 +206,7 @@ class SessionRedis implements \SessionHandlerInterface
             $this->_Redis->close();
         } catch (\Exception $e) {
         }
-        return true;
+        return $this->realValue(1);
     }
 
     /**
