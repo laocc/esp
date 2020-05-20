@@ -73,7 +73,7 @@ final class Debug
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('SERVER_ADDR'),
-            'Url' => _HTTP_ . _DOMAIN . _URI . getenv('REQUEST_URI'),
+            'Url' => _HTTP_ . _DOMAIN . getenv('REQUEST_URI'),
             'Referer' => getenv("HTTP_REFERER"),
             'Debug' => $this->filename(),
             'Trace' => $tract ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
@@ -90,7 +90,7 @@ final class Debug
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('SERVER_ADDR'),
-            'Url' => _HTTP_ . _DOMAIN . _URI . getenv('REQUEST_URI'),
+            'Url' => _HTTP_ . _DOMAIN . getenv('REQUEST_URI'),
             'Referer' => getenv("HTTP_REFERER"),
             'Debug' => $this->filename(),
             'Trace' => $tract ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
