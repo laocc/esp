@@ -249,6 +249,9 @@ final class Response
         if (is_bool($value)) {
             $this->_view_set['view_use'] = $value;
         } elseif (is_string($value)) {
+            if (strpos($value, '.') === false) {
+                $value = "{$value}.php";
+            }
             if (strpos($value, '/') === false) {
                 $value = "{$this->_request->controller}/{$value}";
             }

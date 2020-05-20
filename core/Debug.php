@@ -85,6 +85,23 @@ final class Debug
         return $this->save_file($filename, json_encode($info, 64 | 128 | 256));
     }
 
+    public function warn($error, $tract = null)
+    {
+        $info = [
+            'time' => date('Y-m-d H:i:s'),
+            'HOST' => getenv('SERVER_ADDR'),
+            'Url' => _HTTP_ . _DOMAIN . _URI . getenv('REQUEST_URI'),
+            'Referer' => getenv("HTTP_REFERER"),
+            'Debug' => $this->filename(),
+            'Trace' => $tract ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
+            'Error' => $error,
+            'Server' => $_SERVER,
+        ];
+        $conf = ['filename' => 'YmdHis', 'path' => _RUNTIME . "/warn"];
+        $filename = $conf['path'] . "/" . date($conf['filename']) . mt_rand() . '.md';
+        return $this->save_file($filename, json_encode($info, 64 | 128 | 256));
+    }
+
     public function key(string $key)
     {
         $this->_key = $key;
