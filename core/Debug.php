@@ -101,7 +101,7 @@ final class Debug
             $debug['data'] = $data;
             $send = Config::Redis()->publish('order', 'saveDebug', $debug);
         }
-        $this->_run = false;//防止重复保存
+//        $this->_run = false;//防止重复保存
         if ($send) return $send;
 
         if ($this->_save_type === 'rpc' or !is_null($send)) {
