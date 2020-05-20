@@ -274,13 +274,19 @@ final class Dispatcher
         if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
             if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$controller}->_init() ============================]", []);
             $val = call_user_func_array([$cont, '_init'], [$action]);
-            if (!is_null($val)) return $val;
+            if (!is_null($val)) {
+                if (!is_null($this->_debug)) $this->_debug->relay(['_init' => 'return', 'return' => $val], []);
+                return $val;
+            }
         }
 
         if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
             if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$controller}->_main() =============================]", []);
             $val = call_user_func_array([$cont, '_main'], [$action]);
-            if (!is_null($val)) return $val;
+            if (!is_null($val)) {
+                if (!is_null($this->_debug)) $this->_debug->relay(['_main' => 'return', 'return' => $val], []);
+                return $val;
+            }
         }
 
         /**
