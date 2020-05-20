@@ -37,10 +37,10 @@ abstract class Model
 
     public function __construct(...$param)
     {
-        $this->_Yac = &$GLOBALS['_Yac'] ?? [];
-        $this->_Mysql = &$GLOBALS['_Mysql'] ?? [];
-        $this->_Mongodb = &$GLOBALS['_Mongodb'] ?? [];
-        $this->_Redis = &$GLOBALS['_Redis'] ?? [];
+//        $this->_Yac = &$GLOBALS['_Yac'] ?? [];
+//        $this->_Mysql = &$GLOBALS['_Mysql'] ?? [];
+//        $this->_Mongodb = &$GLOBALS['_Mongodb'] ?? [];
+//        $this->_Redis = &$GLOBALS['_Redis'] ?? [];
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $param);
