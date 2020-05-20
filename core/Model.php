@@ -37,10 +37,10 @@ abstract class Model
 
     public function __construct(...$param)
     {
-//        $this->_Yac = &$GLOBALS['_Yac'] ?? [];
-//        $this->_Mysql = &$GLOBALS['_Mysql'] ?? [];
-//        $this->_Mongodb = &$GLOBALS['_Mongodb'] ?? [];
-//        $this->_Redis = &$GLOBALS['_Redis'] ?? [];
+        $this->_Yac = &$GLOBALS['_Yac'] ?? [];
+        $this->_Mysql = &$GLOBALS['_Mysql'] ?? [];
+        $this->_Mongodb = &$GLOBALS['_Mongodb'] ?? [];
+        $this->_Redis = &$GLOBALS['_Redis'] ?? [];
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $param);
@@ -623,26 +623,28 @@ abstract class Model
      */
     final public function Mysql(int $tranID = 0, array $_conf = []): Mysql
     {
-        if (!isset($this->_Mysql[$tranID])) {
-            $conf = Config::get('database.mysql');
-            if (isset($this->_branch) and !empty($this->_branch)) {
-                $_branch = Config::get($this->_branch);
-                if (empty($_branch) or !is_array($_branch)) {
-                    throw new \Exception("Model中`_branch`指向内容非Mysql配置信息", 501);
-                }
-                $conf = $_branch + $conf;
+        $branchName = $this->_branch ?? 'auto';
+        if (isset($this->_Mysql[$branchName][$tranID])) {
+            return $this->_Mysql[$branchName][$tranID];
+        }
+
+        $conf = Config::get('database.mysql');
+        if (isset($this->_branch) and !empty($this->_branch)) {
+            $_branch = Config::get($this->_branch);
+            if (empty($_branch) or !is_array($_branch)) {
+                throw new \Exception("Model中`_branch`指向内容非Mysql配置信息", 501);
             }
-            if (empty($conf) or !is_array($conf)) {
-                throw new \Exception("`Database.Mysql`配置信息错误", 501);
-            }
+            $conf = $_branch + $conf;
+        }
+        if (empty($conf) or !is_array($conf)) {
+            throw new \Exception("`Database.Mysql`配置信息错误", 501);
+        }
 //            if (defined('_DISABLED_PARAM') and _DISABLED_PARAM) $_conf['param'] = false;
 
-            $this->_Mysql[$tranID] = new Mysql($tranID, ($_conf + $conf));
-            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-
-            $this->debug("New Mysql({$tranID});", $pre);
-        }
-        return $this->_Mysql[$tranID];
+        $this->_Mysql[$branchName][$tranID] = new Mysql($tranID, ($_conf + $conf));
+        $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $this->debug("New Mysql({$branchName}-{$tranID});", $pre);
+        return $this->_Mysql[$branchName][$tranID];
     }
 
 
