@@ -297,6 +297,7 @@ abstract class Controller
                 $this->_debug->save_logs('Controller Redirect');
             });
         }
+//        return true;
         exit;
     }
 

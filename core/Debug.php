@@ -21,6 +21,7 @@ final class Debug
     private $_errorText;
     private $_save_type = 'file';
     private $_ROOT_len = 0;
+    private $_key;//保存记录的Key,要在控制器中->key($key)
 
     public function __construct(Request $request, Response $response, array &$config)
     {
@@ -84,6 +85,12 @@ final class Debug
         return $this->save_file($filename, json_encode($info, 64 | 128 | 256));
     }
 
+    public function key(string $key)
+    {
+        $this->_key = $key;
+        return $this;
+    }
+
     public function save_file(string $filename, string $data)
     {
         $send = null;
@@ -91,6 +98,7 @@ final class Debug
             //发送到队列，由后台写入实际文件
             $debug = [];
             $debug['filename'] = $filename;
+            $debug['recode'] = $this->_key;
             $debug['data'] = $data;
             $send = Config::Redis()->push(_DEBUG_PUSH_KEY, $debug);
 
@@ -98,6 +106,7 @@ final class Debug
             //发送到异步task任务，由后台写入实际文件
             $debug = [];
             $debug['filename'] = $filename;
+            $debug['recode'] = $this->_key;
             $debug['data'] = $data;
             $send = Config::Redis()->publish('order', 'saveDebug', $debug);
         }
