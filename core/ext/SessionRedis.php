@@ -85,8 +85,13 @@ class SessionRedis implements \SessionHandlerInterface
             Cookies::set('SID', $session_id, '3y');
         }
 
-
-        $this->_debug->relay(['read_session' => ['id' => $session_id, 'value' => $dataString, 'time' => microtime(true)]]);
+        $this->_debug->relay([
+            'read_session' => [
+                'id' => $session_id,
+                'sid' => $ssID,
+                'value' => $dataString,
+                'time' => microtime(true)]
+        ]);
         return (!$dataString) ? 'a:0:{}' : $dataString;
     }
 

@@ -229,7 +229,12 @@ final class Debug
         }
 
         if ($this->_conf['print']['html'] ?? 0) {
-            $data[] = "\n## 页面实际响应： \nEcho:\n```\n" . ob_get_contents() . "\n```\n";
+            $data[] = "\n## 页面实际响应： \n";
+            $headers = headers_list();
+            headers_sent($hFile, $hLin);
+            $headers[] = "Filename: {$hFile}($hLin)";
+            $data[] = "\n## _Headers\n```\n" . json_encode($headers, 256 | 128 | 64) . "\n```\n";
+            $data[] = "\n## Echo:\n```\n" . ob_get_contents() . "\n```\n";
             $display = $this->_response->_display_Result;
             if (empty($display)) $display = var_export($display, true);
             $data[] = "\nContent-Type:{$this->_response->_Content_Type}\n```\n" . $display . "\n```\n";

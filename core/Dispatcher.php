@@ -67,7 +67,6 @@ final class Dispatcher
 
         if (isset($option['attack'])) $option['attack']($option);
         unset($GLOBALS['option']);
-
         if (headers_sent($file, $line)) {
             throw new \Exception("在{$file}[{$line}]行已有数据输出，系统无法启动");
         }
@@ -187,9 +186,8 @@ final class Dispatcher
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-//            if (_DEBUG) {
-//                $this->_debug->save_logs('Dispatcher Debug');
-//            }
+//            if (_DEBUG) $this->_debug->save_logs('Dispatcher Debug');
+
             register_shutdown_function(function () {
                 $save = $this->_debug->save_logs('Dispatcher');
 //                $this->check_debug($save);

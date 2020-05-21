@@ -19,10 +19,13 @@ final class Cookies
 
     public static function domain()
     {
-        $host = _HOST;
-        $dom = Config::get("frame.cookies.domain");
-        if ($dom and in_array(_MODULE, $dom)) $host = getenv('HTTP_HOST');
-        return $host;
+        $cookies = Config::get("cookies");
+        $config = $cookies['default'] + ['run' => 1, 'domain' => 'host'];
+        if (isset($cookies[_MODULE])) $config = $cookies[_MODULE] + $config;
+        if (isset($cookies[_HOST])) $config = $cookies[_HOST] + $config;
+        if (isset($cookies[_DOMAIN])) $config = $cookies[_DOMAIN] + $config;
+        $domain = getenv('HTTP_HOST');
+        return $config['domain'] === 'host' ? host($domain) : getenv('HTTP_HOST');
     }
 
     public static function del($key)
