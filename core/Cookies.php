@@ -14,7 +14,7 @@ final class Cookies
             $ttl = (intval($mat[1]) * $s) + time();
         }
         if (is_array($value)) $value = json_encode($value, 256);
-        return setcookie($key, $value, $ttl, '/', self::domain(), _HTTPS, true);
+        return setcookie(strtolower($key), $value, $ttl, '/', self::domain(), _HTTPS, true);
     }
 
     public static function domain()
@@ -31,14 +31,14 @@ final class Cookies
     public static function del($key)
     {
         if (_CLI) return null;
-        return setcookie($key, null, -1, '/', self::domain(), _HTTPS, true);
+        return setcookie(strtolower($key), null, -1, '/', self::domain(), _HTTPS, true);
     }
 
     public static function get($key = null, $autoValue = null)
     {
         if (_CLI) return null;
         if (is_null($key)) return $_COOKIE;
-        return $_COOKIE[$key] ?? $autoValue;
+        return $_COOKIE[strtolower($key)] ?? $autoValue;
     }
 
     public static function disable()

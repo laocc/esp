@@ -139,7 +139,7 @@ class Code
             $enCode = password_hash($addContent, PASSWORD_DEFAULT);
             //输出之前先保存Cookies
 //            setcookie($opt['key'] . $option['source'], $enCode, 0, '/', '.' . self::host(), _HTTPS, true);
-            setcookie($opt['key'] . $option['source'], $enCode, 0, '/', _DOMAIN, _HTTPS, true);
+            setcookie(strtolower($opt['key']) . $option['source'], $enCode, 0, '/', _DOMAIN, _HTTPS, true);
         }
         $option = [
             'save' => 0,//0：只显示，1：只保存，2：即显示也保存
@@ -162,7 +162,7 @@ class Code
         $ck['attach'] .= date($ck['date']);
         if (!$cookies = $_COOKIE["{$ck['key']}{$option['source']}"] ?? null) return false;
         $addContent = strtoupper("{$ck['attach']}{$input}");
-        setcookie("{$ck['key']}{$option['source']}", null, -1, '/', '.' . self::host(), _HTTPS, true);
+        setcookie(strtolower("{$ck['key']}{$option['source']}"), null, -1, '/', '.' . self::host(), _HTTPS, true);
         return password_verify($addContent, $cookies);
     }
 

@@ -17,7 +17,7 @@ final class Client
     public static function id(string $key = '_SSI', bool $number = false)
     {
         $unique = $_COOKIE[$key] ?? null;
-
+        $key = strtolower($key);
         if (!$unique) {
             $unique = $number ? mt_rand() : self::str_rand(20);
             if (headers_sent($file, $line)) {
