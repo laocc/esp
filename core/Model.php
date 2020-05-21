@@ -23,6 +23,8 @@ abstract class Model
     private $__pri = null;          //同上，对应主键名
     private $__cache = false;       //是否缓存，若此值被设置，则覆盖子对象的相关设置
 
+    protected $_buffer;
+
     private $_controller;
     private $_debug;
     private $_print_sql;
@@ -41,6 +43,7 @@ abstract class Model
         $this->_Mysql = &$GLOBALS['_Mysql'] ?? [];
         $this->_Mongodb = &$GLOBALS['_Mongodb'] ?? [];
         $this->_Redis = &$GLOBALS['_Redis'] ?? [];
+        $this->_buffer = Config::Redis();
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $param);
@@ -93,15 +96,6 @@ abstract class Model
 
 
     /**
-     * 系统入口时创建的buffer，也就是一个redis实例
-     * @return Redis
-     */
-    final public function Buffer()
-    {
-        return Config::Redis();
-    }
-
-    /**
      * 发送通知信息
      * @param string $action
      * @param array $value
@@ -111,7 +105,7 @@ abstract class Model
     {
         $channel = Config::get('app.dim.channel');
         if (!$channel) $channel = 'order';
-        return Config::Redis()->publish($channel, $action, $value);
+        return $this->_buffer->publish($channel, $action, $value);
     }
 
     /**
@@ -177,10 +171,11 @@ abstract class Model
     /**
      * 增
      * @param array $data
-     * @param bool $full 传入的数据是否已经是全部字段，如果不是，则要从表中拉取所有字段
-     * @param bool $returnID 返回新ID,false时返回刚刚添加的数据
-     * @return int|array
-     * @throws \Exception
+     * @param bool $full  传入的数据是否已经是全部字段，如果不是，则要从表中拉取所有字段
+     * @param bool $returnID  返回新ID,false时返回刚刚添加的数据
+     * @param null $pre
+     * @return array|int
+     * @throws \ErrorException
      */
     final public function insert(array $data, bool $full = false, bool $returnID = true, $pre = null)
     {
@@ -713,7 +708,7 @@ abstract class Model
      */
     final public function cache_delete(string $hashTable, ...$key)
     {
-        return Config::Redis()->hash($hashTable)->del(...$key);
+        return $this->_buffer->hash($hashTable)->del(...$key);
     }
 
     /**
@@ -724,7 +719,7 @@ abstract class Model
      */
     final public function cache_del(string $hashTable, ...$key)
     {
-        return Config::Redis()->hash($hashTable)->del(...$key);
+        return $this->_buffer->hash($hashTable)->del(...$key);
     }
 
 
@@ -737,7 +732,7 @@ abstract class Model
      */
     final public function cache_set(string $hashTable, string $key, array $value)
     {
-        return Config::Redis()->hash($hashTable)->set($key, $value);
+        return $this->_buffer->hash($hashTable)->set($key, $value);
     }
 
     /**
@@ -748,7 +743,7 @@ abstract class Model
      */
     final public function cache_get(string $hashTable, string $key)
     {
-        return Config::Redis()->hash($hashTable)->get($key);
+        return $this->_buffer->hash($hashTable)->get($key);
     }
 
 
