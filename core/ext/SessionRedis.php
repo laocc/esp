@@ -83,6 +83,7 @@ class SessionRedis implements \SessionHandlerInterface
         }
         if (!$ssID) {
             Cookies::set('SID', $session_id, '10d');
+            Cookies::set('xyz', time(), '1d');
         }
 
         $this->_debug->relay([
