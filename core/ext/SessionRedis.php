@@ -74,16 +74,16 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function read($session_id)
     {
-        $ssID = Cookies::get('sid');
+//        $ssID = Cookies::get('sid');
 
         $dataString = $this->_Redis->get($session_id);
 
-        if (!$dataString and $ssID) {
-            $dataString = $this->_Redis->get($ssID);
-        }
-        if (!$ssID) {
-            Cookies::set('sid', $session_id, '10d');
-        }
+//        if (!$dataString and $ssID) {
+//            $dataString = $this->_Redis->get($ssID);
+//        }
+//        if (!$ssID) {
+//            Cookies::set('sid', $session_id, '10d');
+//        }
 
 //        Cookies::set('xyz', time(), '1d');
 //        Cookies::set('day', $session_id, '1d');
@@ -94,7 +94,7 @@ class SessionRedis implements \SessionHandlerInterface
         $this->_debug->relay([
             'read_session' => [
                 'id' => $session_id,
-                'sid' => $ssID,
+//                'sid' => $ssID,
                 'value' => $dataString,
                 'time' => microtime(true)]
         ]);
