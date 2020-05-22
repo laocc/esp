@@ -65,7 +65,7 @@ class Code
         'angle' => [-30, 30],   //角度范围，建议不要超过±45
         'line' => [4, 6],       //产生的线条数
         'point' => [80, 100],   //产生的雪花点数
-        'source' => '',
+        'source' => '',         //站点内位置标识符，同一个站可能多个地方需要验证码，加此标识加以区分
 
         //分别是中英文字体，要确保这些文件真实存在，相对于根目录
         'en_font' => ['/esp/library/fonts/arial.ttf', '/esp/library/fonts/ariblk.ttf'],
@@ -92,29 +92,11 @@ class Code
         'num' => '0123456789'
     ];
 
-    private static function host()
-    {
-        static $host;
-        if (!is_null($host)) return $host;
-        $domain = getenv('HTTP_HOST');
-        if (empty($domain)) return null;
-        $domain = explode(':', $domain . ':')[0];
-        if (strpos('/', $domain)) $domain = explode('/', $domain . '//')[2];
-        $dm1 = 'cn|cm|my|ph|tw|uk|hk';
-        $dm2 = 'com|net|org|gov|idv|co|name';
-
-        if (preg_match("/^(?:[\w\.\-]+\.)?([a-z0-9]+)\.({$dm2})\.({$dm1})$/i", $domain, $match)) {
-            return "{$match[1]}.{$match[2]}.{$match[3]}";
-        } elseif (preg_match("/^(?:[\w\.\-]+\.)?([a-z0-9]+)\.([a-z]+)$/i", $domain, $match)) {
-            return "{$match[1]}.{$match[2]}";
-        } else {
-            return null;
-        }
-    }
-
 
     /**
      * 生成验证码
+     * @param array $option
+     * @return bool|null
      */
     public static function create(array $option = [])
     {
@@ -132,31 +114,26 @@ class Code
 
         self::createCode1($img, $code, $option);
 
-        if (!isset($option['code']) or !$option['code']) {//没指定code，则保存到cookies中
+        //没指定code，则保存到cookies中，反之则只显示，不保存
+        if (!($option['code'] ?? 0)) {
             $opt = $option['cookies'];
             $opt['attach'] .= date($opt['date']);
             $addContent = strtoupper($opt['attach'] . implode($code));//附加串，有效期最长1小时
             $enCode = password_hash($addContent, PASSWORD_DEFAULT);
             //输出之前先保存Cookies
-//            setcookie($opt['key'] . $option['source'], $enCode, 0, '/', '.' . self::host(), _HTTPS, true);
-            setcookie(strtolower($opt['key']) . $option['source'], $enCode, 0, '/', _DOMAIN, _HTTPS, true);
+            setcookie(strtolower($opt['key'] . $option['source']), $enCode, 0, '/', _DOMAIN, _HTTPS, true);
         }
-        $option = [
-            'save' => 0,//0：只显示，1：只保存，2：即显示也保存
-            'type' => IMAGETYPE_PNG,//文件类型
-        ];
-        Gd::draw($img, $option);
-        return true;
+        return Gd::draw($img, []);
     }
 
     /**
      * 验证 create 产生的验证码
-     * @param $input
+     * @param array $option
+     * @param string $input
      * @return bool
      */
     public static function check(array $option, string $input)
     {
-        if (1) return true;
         if (!$input) return false;
         $option += self::$option;
         $ck = $option['cookies'];
@@ -164,7 +141,7 @@ class Code
         $key = strtolower("{$ck['key']}{$option['source']}");
         if (!$cookies = $_COOKIE[$key] ?? null) return false;
         $addContent = strtoupper("{$ck['attach']}{$input}");
-        setcookie($key, null, -1, '/', '.' . self::host(), _HTTPS, true);
+        setcookie($key, null, -1, '/', _DOMAIN, _HTTPS, true);
         return password_verify($addContent, $cookies);
     }
 

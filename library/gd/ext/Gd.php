@@ -38,7 +38,7 @@ class Gd
         $option += [
             'save' => 0,//0：只显示，1：只保存，2：即显示也保存，3：返回GD数据流
             'filename' => null,
-            'type' => 0,//文件类型
+            'type' => IMAGETYPE_PNG,//文件类型
             'quality' => 80,
             'version' => isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : '',
         ];
