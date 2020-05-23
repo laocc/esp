@@ -28,10 +28,25 @@ final class Dispatcher
             define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
             if (_URI === '/favicon.ico') exit;
         }
+
+        $ip = '127.0.0.1';
+        if (!_CLI) {
+            foreach (['X-REAL-IP', 'X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'REMOTE_ADDR'] as $k) {
+                if (!empty($ip = ($_SERVER[$k] ?? null))) {
+                    if (strpos($ip, ',')) $ip = explode(',', $ip)[0];
+                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) break;
+                }
+            }
+        }
+        define('_CIP', $ip);
+
+
         if (isset($option['callback'])) $option['callback']($option);
         $option += ['error' => [], 'config' => []];
-        //以下三项必须在`chdir()`之前，且三项顺序不可变
-        if (!_CLI) $err = new Error($this, $option['error']);
+        //以下2项必须在`chdir()`之前，且顺序不可变
+        if (!_CLI) {
+            $err = new Error($this, $option['error']);
+        }
         Config::_init($option['config']);
         chdir(_ROOT);
 
