@@ -205,7 +205,6 @@ final class Session
         if (is_null($val)) {
             $value = $_SESSION[$key] ?? '';
             if (empty($value) or !is_array($value)) return null;
-//            if ($value['cid'] !== Client::id()) return null;
             return $value['val'] ?? null;
 
         } else if ($val === false) {
@@ -217,7 +216,6 @@ final class Session
         } else {
             $value = [];
             $value['val'] = $val;
-            $value['cid'] = Client::id();
             $value['time'] = time();
             $_SESSION[$key] = $value;
         }

@@ -96,7 +96,7 @@ class Mysql
 
             //不是更新操作时，选择从库，需选择一个点
             if (is_array($host)) {
-                $host = $host[ip2long(Client::ip()) % count($host)];
+                $host = $host[ip2long(_CIP) % count($host)];
             }
         } else {
             $host = $cnf['master'];
