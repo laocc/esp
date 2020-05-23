@@ -171,8 +171,8 @@ abstract class Model
     /**
      * 增
      * @param array $data
-     * @param bool $full  传入的数据是否已经是全部字段，如果不是，则要从表中拉取所有字段
-     * @param bool $returnID  返回新ID,false时返回刚刚添加的数据
+     * @param bool $full 传入的数据是否已经是全部字段，如果不是，则要从表中拉取所有字段
+     * @param bool $returnID 返回新ID,false时返回刚刚添加的数据
      * @param null $pre
      * @return array|int
      * @throws \ErrorException
@@ -243,8 +243,10 @@ abstract class Model
      * 改
      * @param $where
      * @param array $data
+     * @param string $sql
+     * @param null $pre
      * @return bool|db\ext\Result|null
-     * @throws \Exception
+     * @throws Exception
      */
     final public function update($where, array $data, &$sql = '', $pre = null)
     {
@@ -454,9 +456,12 @@ abstract class Model
 
     /**
      * @param null $where
-     * @param string $ascDesc
-     * @return array
-     * @throws \Exception
+     * @param null $orderBy
+     * @param string $sort
+     * @param string $sql
+     * @param null $pre
+     * @return array|mixed
+     * @throws \ErrorException
      */
     final public function list($where = null, $orderBy = null, string $sort = 'desc', &$sql = '', $pre = null)
     {
@@ -672,7 +677,7 @@ abstract class Model
     final public function Redis(array $_conf = []): Redis
     {
         $conf = Config::get('database.redis');
-        $conf = $_conf + $conf;
+        $conf = $_conf + $conf + ['db' => 1];
         if (!isset($this->_Redis[$conf['db']])) {
             $this->_Redis[$conf['db']] = new Redis($conf);
             $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];

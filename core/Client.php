@@ -117,6 +117,10 @@ final class Client
             'os' => $os];
     }
 
+    public static function key()
+    {
+        return md5(self::ip() . getenv('HTTP_USER_AGENT'));
+    }
 
     /**
      * 客户端IP

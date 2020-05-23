@@ -88,7 +88,6 @@ final class Redis implements KeyValue
         if (isset($conf['flush']) and $conf['flush']) $this->redis->flushDB();
     }
 
-
     /**
      * 创建一个LIST集合
      * @param string|null $tabName
@@ -160,6 +159,7 @@ final class Redis implements KeyValue
 
     /**
      * 清空
+     * @param bool $flushAll
      * @return bool|mixed
      */
     public function flush(bool $flushAll = false)
@@ -171,8 +171,9 @@ final class Redis implements KeyValue
 
     /**
      * 发送订阅，需要在swoole\redis中接收
+     * @param string $channel
      * @param string $action
-     * @param array $value
+     * @param $message
      * @return int
      */
     public function publish(string $channel, string $action, $message)
@@ -232,8 +233,10 @@ final class Redis implements KeyValue
 
     /**
      * 最近一次持久化保存的时间
+     * @param bool $date
+     * @return false|int|string
      */
-    public function lastSave($date = true)
+    public function lastSave(bool $date = true)
     {
         $time = (int)$this->redis->lastSave();
         return $date ? date('Y-m-d H:i:s', $time) : $time;
