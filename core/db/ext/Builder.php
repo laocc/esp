@@ -60,6 +60,7 @@ final class Builder
 
     /**
      * 清除所有现有的`Query_builder`设置内容
+     * @param bool $clean_all
      */
     private function clean_builder($clean_all = true)
     {

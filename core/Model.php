@@ -190,15 +190,15 @@ abstract class Model
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
         $pri = $this->PRI();
-        $obj = $obj->param(false)->prepare(false);
         if (is_array($val)) {
             $value = [];
             foreach ($val as $id) {
-                $value[] = $obj->where($pri, $id)->get(1, $sql, $pre)->row();
+                $sql = null;
+                $value[] = $mysql->table($table)->param(false)->prepare(false)->where($pri, $id)->get(1, $sql, $pre)->row();
             }
             return $value;
         } else {
-            return $obj->where($pri, $val)->get(1, $sql, $pre)->row();
+            return $mysql->table($table)->param(false)->prepare(false)->where($pri, $val)->get(1, $sql, $pre)->row();
         }
     }
 
