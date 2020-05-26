@@ -91,6 +91,7 @@ class Gd
             ob_end_clean();//清空所有缓存
             header("{$option['version']} 200", true, 200);
             header('Content-type:' . image_type_to_mime_type($option['type']), true);
+            header('Access-Control-Allow-Origin: *', true);
             header('Create-by: GD', true);
             header('Save-by: ' . $option['save'], true);
 
