@@ -226,7 +226,7 @@ final class Request
 
     public function key()
     {
-        return md5($this->ip() . getenv('HTTP_USER_AGENT'));
+        return md5($this->ip() . getenv('HTTP_USER_AGENT') . _DOMAIN);
     }
 
     /**
