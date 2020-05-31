@@ -47,13 +47,16 @@ final class Router
         if (empty($modRoute) or !is_array($modRoute)) $modRoute = Array();
 
         foreach (array_merge($modRoute, $default) as $key => &$route) {
+            $matches = [];
             if ((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0) or
                 (isset($route['match']) and preg_match($route['match'], $request->uri, $matches))) {
+//                var_dump((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0));
+//                var_dump(isset($route['match']) and preg_match($route['match'], $request->uri, $matches));
 
                 if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax()))
                     throw new \Exception('非法Method请求', 404);
 
-                $matches = [];
+//                $matches = [];
                 if ($key === '_default') {
                     $matches = explode('/', $request->uri);
                     $matches[0] = $request->uri;
@@ -99,6 +102,7 @@ final class Router
                 if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
 
                 unset($modRoute, $default);
+//                pre($request);
                 return;
             }
         }
@@ -126,7 +130,6 @@ final class Router
 
         //未指定MCA
         if (empty($route)) {
-
             if (($matches[1] ?? '') and is_dir("{$directory}/" . _VIRTUAL . "/{$matches[1]}")) {
                 $module = strtolower($matches[1]);
                 $controller = ($matches[2] ?? 'index');
@@ -145,7 +148,7 @@ final class Router
         } else {
             if (!isset($route['module'])) $route['module'] = '';
             foreach (['module', 'controller', 'action'] as $key) {
-                ${$key} = isset($route[$key]) ? $route[$key] : null;
+                ${$key} = $route[$key] ?? null;
                 if (is_numeric(${$key})) {
                     if (!isset($matches[${$key}])) throw new \Exception("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。", 500);
                     ${$key} = $matches[${$key}];

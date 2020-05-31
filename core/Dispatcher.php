@@ -23,6 +23,7 @@ final class Dispatcher
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
+        if (!defined('_SYSTEM')) define('_SYSTEM', 'auto');
         if (_CLI) {
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
