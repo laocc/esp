@@ -210,14 +210,14 @@ final class Dispatcher
 
             register_shutdown_function(function () {
                 $save = $this->_debug->save_logs('Dispatcher');
-//                $this->check_debug($save);
+                $this->check_debug($save);
             });
         }
     }
 
     private function check_debug($save, $file = null)
     {
-        if (!getenv('HTTP_DEBUG')) return;
+//        if (!getenv('HTTP_DEBUG')) return;
         $testDebug = [];
         $file .= $this->_request->controller . '_' . $this->_request->action;
         $testDebug['ua'] = getenv('HTTP_USER_AGENT');
