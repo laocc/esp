@@ -11,13 +11,15 @@ namespace esp\core;
 final class Resources
 {
     private $conf;
+    private $config;
 
-    public function __construct()
+    public function __construct(Configure $configure)
     {
-        $_config = Config::get('resource');
+        $this->config = $configure;
+        $_config = $configure->get('resource');
         $this->conf = $_config['default'];
-        if (isset($_config[_MODULE])) {
-            $this->conf = array_replace_recursive($this->conf, $_config[_MODULE]);
+        if (isset($_config[_VIRTUAL])) {
+            $this->conf = array_replace_recursive($this->conf, $_config[_VIRTUAL]);
         }
 
         if (isset($this->conf['host'])) {
@@ -53,7 +55,7 @@ final class Resources
 
     public function rand(): string
     {
-        $res_rand = Config::Redis()->get('resourceRand');
+        $res_rand = $this->config->Redis()->get('resourceRand');
         if (!$res_rand) $res_rand = $this->conf['rand'] ?? '';
         return strval($res_rand);
     }

@@ -24,8 +24,9 @@ abstract class Model
     private $__cache = false;       //是否缓存，若此值被设置，则覆盖子对象的相关设置
 
     protected $_buffer;
+    protected $_config;
 
-    private $_controller;
+    protected $_controller;
     private $_debug;
     private $_print_sql;
 
@@ -43,11 +44,28 @@ abstract class Model
         $this->_Mysql = &$GLOBALS['_Mysql'] ?? [];
         $this->_Mongodb = &$GLOBALS['_Mongodb'] ?? [];
         $this->_Redis = &$GLOBALS['_Redis'] ?? [];
-        $this->_buffer = Config::Redis();
+        $this->_controller = &$GLOBALS['_Controller'];
+        if (0) {
+            $this->_Yac instanceof Yac and 1;
+            $this->_Mysql instanceof Mysql and 1;
+            $this->_Mongodb instanceof Mongodb and 1;
+            $this->_Redis instanceof Redis and 1;
+            $this->_controller instanceof Controller and 1;
+        }
+        $this->_config = $this->_controller->getConfig();
+        $this->_buffer = $this->_controller->_buffer;
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $param);
         }
+    }
+
+    /**
+     * @return Controller
+     */
+    final public function Controller()
+    {
+        return $this->_controller;
     }
 
     /**
@@ -78,20 +96,7 @@ abstract class Model
 
     final protected function config(...$key)
     {
-        return Config::get(...$key);
-    }
-
-
-    /**
-     * @return Controller
-     */
-    final public function Controller()
-    {
-        if (is_null($this->_controller)) {
-            $this->_controller = $GLOBALS['_Controller'];
-            false and $this->_controller instanceof Controller;
-        }
-        return $this->_controller;
+        return $this->_config->get(...$key);
     }
 
 
@@ -103,7 +108,7 @@ abstract class Model
      */
     final public function publish(string $action, array $value)
     {
-        $channel = Config::get('app.dim.channel');
+        $channel = $this->_config->get('app.dim.channel');
         if (!$channel) $channel = 'order';
         return $this->_buffer->publish($channel, $action, $value);
     }
@@ -628,9 +633,9 @@ abstract class Model
             return $this->_Mysql[$branchName][$tranID];
         }
 
-        $conf = Config::get('database.mysql');
+        $conf = $this->_config->get('database.mysql');
         if (isset($this->_branch) and !empty($this->_branch)) {
-            $_branch = Config::get($this->_branch);
+            $_branch = $this->_config->get($this->_branch);
             if (empty($_branch) or !is_array($_branch)) {
                 throw new \Exception("Model中`_branch`指向内容非Mysql配置信息", 501);
             }
@@ -657,7 +662,7 @@ abstract class Model
     final public function Mongodb(string $db = 'temp', array $_conf = [])
     {
         if (!isset($this->_Mongodb[$db])) {
-            $conf = Config::get('database.mongodb');
+            $conf = $this->_config->get('database.mongodb');
             if (empty($conf)) {
                 throw new \Exception('无法读取mongodb配置信息', 501);
             }
@@ -676,7 +681,7 @@ abstract class Model
      */
     final public function Redis(array $_conf = []): Redis
     {
-        $conf = Config::get('database.redis');
+        $conf = $this->_config->get('database.redis');
         $conf = $_conf + $conf + ['db' => 1];
         if (!isset($this->_Redis[$conf['db']])) {
             $this->_Redis[$conf['db']] = new Redis($conf);
@@ -755,6 +760,7 @@ abstract class Model
     /**
      * 注册关门后操作
      * @param callable $fun
+     * @param mixed ...$parameter
      */
     final public function shutdown(callable $fun, ...$parameter)
     {

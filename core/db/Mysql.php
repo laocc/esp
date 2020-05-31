@@ -3,8 +3,6 @@
 
 namespace esp\core\db;
 
-use esp\core\Client;
-use esp\core\Config;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\Result;
 use esp\core\Debug;
@@ -275,7 +273,7 @@ class Mysql
             }
         }
 
-        $debug = (_DEBUG || Config::get('debug.print.mysql') || Config::get('debug.default.print.mysql'));
+        $debug = true;
 
         //数据操作时，若当前`trans_run`=false，则说明刚才被back过了或已经commit，后面的数据不再执行
         if ($upData and //更新操作

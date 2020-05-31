@@ -193,14 +193,7 @@ final class Output
             $cOption[CURLOPT_ENCODING] = "gzip, deflate";
         }
         if (!empty($option['headers'])) $cOption[CURLOPT_HTTPHEADER] = $option['headers'];     //头信息
-        if (isset($option['ua'])) {//客户端UA
-            $agent = Config::get('ua', $option['agent']);
-            if ($agent) {
-                $option['agent'] = $agent;
-            } else {
-                $option['agent'] = $option['ua'];
-            }
-        }
+        if (isset($option['ua'])) $option['agent'] = $option['ua'];
         if (isset($option['agent'])) {
             $cOption[CURLOPT_USERAGENT] = $option['agent'];
         }

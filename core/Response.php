@@ -9,6 +9,7 @@ use esp\library\ext\Xml;
 final class Response
 {
     private $_display_value;
+    private $_config;
     private $_request;
     private $_resource;
     private $_display_type = '';
@@ -39,10 +40,11 @@ final class Response
 
     private $_autoRun = true;
 
-    public function __construct(Request $request)
+    public function __construct(Configure $configure, Request $request)
     {
+        $this->_config = $configure;
         $this->_request = $request;
-        $this->_resource = new Resources();
+        $this->_resource = new Resources($configure);
         $this->_autoRun = !_CLI;
     }
 
@@ -208,7 +210,7 @@ final class Response
     {
         if (!$this->_view_set['view_use']) return null;
 
-        if (!$this->_request->module) {
+        if (!$this->_request->virtual) {
             throw new \Exception("registerAdapter要在routeAfter之后执行", 500);
         }
         return $this->getView()->registerAdapter($adapter);
@@ -217,14 +219,20 @@ final class Response
 
     public function viewPath(string $path = null)
     {
+        $vmp = $this->_request->virtual;
+        if ($this->_request->module) $vmp = "{$vmp}/{$this->_request->module}";
         if (is_null($path) or empty($path)) {
             if (is_null($this->_view_set['view_path'])) {
-                return $this->_request->directory . '/' . $this->_request->module . '/views/';
+                return "{$this->_request->directory}/{$vmp}/views/";
             } else {
                 return $this->_view_set['view_path'];
             }
         } else {
-            if ($path[0] !== '/') $path = $this->_request->directory . '/' . $this->_request->module . "/{$path}/";
+            if (substr($path, 0, 1) === '/') {
+                $path = "{$this->_request->directory}{$path}";
+            } else {
+                $path = "{$this->_request->directory}/{$vmp}/{$path}";
+            }
             $this->_view_set['view_path'] = $path;
             return $this;
         }
@@ -279,6 +287,7 @@ final class Response
         if (is_bool($value)) {
             $this->_view_set['layout_use'] = $value;
         } elseif (is_string($value)) {
+            if (!strpos($value, '.')) $value = "{$value}.php";
             $this->_view_set['layout_use'] = true;
             $this->_view_set['layout_file'] = $value;
             $this->getLayout()->file($value);
@@ -346,7 +355,7 @@ final class Response
 
         if (empty($this->_display_type)) $this->_display_type = 'html';
 
-        $this->_Content_Type = Config::mime($this->_display_type);
+        $this->_Content_Type = $this->_config->mime($this->_display_type);
 
         if (!headers_sent()) {
             header("Content-type: {$this->_Content_Type}; charset=UTF-8", true, 200);

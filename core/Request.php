@@ -11,6 +11,7 @@ final class Request
     public $router = null;//实际生效的路由器名称
     public $params = Array();
 
+    public $virtual;
     public $module;
     public $controller;//控制器名
     public $action;
@@ -28,6 +29,8 @@ final class Request
         if (!is_array($conf)) $conf = [];
         $conf += ['directory' => '/application'];
 
+        $this->virtual = _VIRTUAL;
+        $this->module = '';
         $this->directory = root($conf['directory'] ?? '/directory');
         $this->router_path = root($conf['router'] ?? '/config/routes');
         if (!isset($conf['suffix'])) $conf['suffix'] = array();
@@ -49,7 +52,7 @@ final class Request
      */
     public function getControllerKey()
     {
-        return $this->directory . $this->module . $this->controller . $this->action . json_encode($this->params);
+        return $this->virtual . $this->directory . $this->module . $this->controller . $this->action . json_encode($this->params);
     }
 
     public function __get(string $name)

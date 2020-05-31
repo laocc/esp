@@ -24,18 +24,18 @@ abstract class Controller
      */
     public function __construct(Dispatcher $dispatcher)
     {
+        $this->_config = &$dispatcher->_config;
         $this->_plugs = &$dispatcher->_plugs;
         $this->_request = &$dispatcher->_request;
         $this->_response = &$dispatcher->_response;
         $this->_session = &$dispatcher->_session;
         $this->_debug = &$dispatcher->_debug;
-        $this->_buffer = Config::Redis();
+        $this->_buffer = $this->_config->Redis();
         $this->_system = defined('_SYSTEM') ? _SYSTEM : 'auto';
         if (_CLI) return;
 
         $this->_response->assign('_config', function (string $key) {
-//            $this->_config->get();
-            return Config::get($key);
+            return $this->_config->get($key);
         });
 
         if (defined('_DEBUG_PUSH_KEY')) {
@@ -44,7 +44,8 @@ abstract class Controller
                 $debug = [];
                 $debug['time'] = time();
                 $debug['system'] = _SYSTEM;
-                $debug['module'] = _MODULE;
+                $debug['virtual'] = _VIRTUAL;
+                $debug['module'] = $request->module;
                 $debug['controller'] = $request->controller;
                 $debug['action'] = $request->action;
                 $debug['method'] = $request->method;
@@ -71,7 +72,7 @@ abstract class Controller
 
     final protected function config(...$key)
     {
-        return Config::get(...$key);
+        return $this->_config->get(...$key);
     }
 
     /**
@@ -82,7 +83,7 @@ abstract class Controller
      */
     final public function publish(string $action, $value)
     {
-        $channel = Config::get('app.dim.channel');
+        $channel = $this->_config->get('app.dim.channel');
         if (!$channel) $channel = 'order';
         return $this->_buffer->publish($channel, $action, $value);
     }
@@ -169,11 +170,44 @@ abstract class Controller
     }
 
     /**
+     * @return Configure
+     */
+    final public function getConfig()
+    {
+        return $this->_config;
+    }
+
+    /**
      * @return Response
      */
     final public function getResponse()
     {
         return $this->_response;
+    }
+
+    /**
+     * @param $type
+     * @param $val
+     * @param null $color
+     * @return string|array
+     * $color 可以直接指定为一个数组
+     * $color=true 时，无论是否有预定义的颜色，都返回全部内容
+     * $color=false 时，不返回预定义的颜色
+     */
+    final public function state($type, $val, $color = null)
+    {
+        if ($val === '' or is_null($val)) return '';
+        $value = $this->_config->get("app.state.{$type}.{$val}") ?: $val;
+        if ($color === true) return $value;
+        if (strpos($value, ':')) {
+            $pieces = explode(':', $value);
+            if (is_array($color)) return $pieces;
+            if ($color === false) return $pieces[0];
+            return "<span class='v{$val}' style='color:{$pieces[1]}'>{$pieces[0]}</span>";
+        }
+        if (empty($color)) return $value;
+        if (!isset($color[$val])) return $value;
+        return "<span class='v{$val}' style='color:{$color[$val]}'>{$value}</span>";
     }
 
     /**

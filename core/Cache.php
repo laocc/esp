@@ -18,7 +18,7 @@ final class Cache
     {
         $this->request = &$dispatcher->_request;
         $this->response = &$dispatcher->_response;
-        $this->redis = Config::Redis();
+        $this->redis = &$dispatcher->_config->Redis();
         $this->_option = &$option;
     }
 

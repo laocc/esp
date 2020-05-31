@@ -10,19 +10,19 @@ use esp\core\db\Redis;
  * Class Config
  * @package esp\core
  */
-final class Config
+final class Configure
 {
-    static private $_CONFIG_ = null;
-    static private $_Redis;
-    static public $_token;
+    private $_CONFIG_ = null;
+    private $_Redis;
+    public $_token;
 
     /**
      * @param array $conf
      * @throws \Exception
      */
-    public static function _init(array $conf)
+    public function __construct(array $conf)
     {
-        self::$_token = md5(_ROOT);
+        $this->_token = md5(_ROOT);
         $conf += ['path' => '/common/config'];
         $conf['path'] = root($conf['path']);
 
@@ -34,9 +34,9 @@ final class Config
         }
 
         if (($_bufferConf['medium'] ?? 'redis') === 'file') {
-            self::$_Redis = new File($_bufferConf);
+            $this->_Redis = new File($_bufferConf);
         } else {
-            self::$_Redis = new Redis($_bufferConf);
+            $this->_Redis = new Redis($_bufferConf);
         }
         $tryCount = 0;
         tryGet:
@@ -47,8 +47,8 @@ final class Config
             and (!isset($_bufferConf['cache']) or $_bufferConf['cache'])
             and (!isset($conf['cache']) or $conf['cache'])
         ) {
-            self::$_CONFIG_ = self::$_Redis->get(self::$_token . '_CONFIG_');
-            if (!empty(self::$_CONFIG_)) return;
+            $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
+            if (!empty($this->_CONFIG_)) return;
         }
 
         if (!_DEBUG and !_CLI and
@@ -79,10 +79,10 @@ final class Config
         $config[] = __DIR__ . '/config/state.ini';
 //        $config[] = __DIR__ . '/config/ua.ini';
 
-        self::$_CONFIG_ = Array();
-        self::$_CONFIG_[] = date('Y-m-d H:i:s');
+        $this->_CONFIG_ = Array();
+        $this->_CONFIG_[] = date('Y-m-d H:i:s');
         foreach ($config as $i => $file) {
-            $_config = self::loadFile($file, $i);
+            $_config = $this->loadFile($file, $i);
             //查找子目录下相同文件，如果存在，则覆盖相关值
             if (isset($conf['folder']) or _DEBUG) {
                 if (!isset($conf['folder'])) $conf['folder'] = 'debug';
@@ -90,24 +90,24 @@ final class Config
                 $tmp[count($tmp) - 1] = $conf['folder'] . '/' . $tmp[count($tmp) - 1];
                 $tmp = implode('/', $tmp);
                 if (is_readable($tmp)) {
-                    $_config = array_replace_recursive($_config, self::loadFile($tmp, $i));
+                    $_config = array_replace_recursive($_config, $this->loadFile($tmp, $i));
                 }
             }
-            if (!empty($_config)) self::$_CONFIG_ = array_merge(self::$_CONFIG_, $_config);
+            if (!empty($_config)) $this->_CONFIG_ = array_merge($this->_CONFIG_, $_config);
         }
 
 
-        self::$_CONFIG_ = self::re_arr(self::$_CONFIG_);
-        if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) self::$_Redis->set(self::$_token . '_CONFIG_', self::$_CONFIG_);
+        $this->_CONFIG_ = $this->re_arr($this->_CONFIG_);
+        if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
     }
 
-    public static function flush(int $lev = 0)
+    public function flush(int $lev = 0)
     {
-        $rds = self::Redis();
+        $rds = $this->Redis();
 
         if ($lev === 0) {
             //清空config本身
-            $rds->set(self::$_token . '_CONFIG_', null);
+            $rds->set($this->_token . '_CONFIG_', null);
 
         } else {
             //清空整个redis表
@@ -117,14 +117,14 @@ final class Config
         }
     }
 
-    public static function all(bool $showAll = false)
+    public function all(bool $showAll = false)
     {
-        $rds = self::Redis();
+        $rds = $this->Redis();
         $config = $rds->keys('*');
         $db1Value = [];
         $v = ['NULL', 'STRING', 'SET', 'LIST', 'ZSET', 'HASH'];
         foreach ($config as $key) {
-            if ($key === (self::$_token . '_CONFIG_')) continue;
+            if ($key === ($this->_token . '_CONFIG_')) continue;
             $type = $rds->type($key);
             if ($showAll) {
                 switch ($type) {
@@ -158,9 +158,9 @@ final class Config
     /**
      * @return Redis
      */
-    public static function Redis(): Redis
+    public function Redis(): Redis
     {
-        return self::$_Redis;
+        return $this->_Redis;
     }
 
     /**
@@ -169,7 +169,7 @@ final class Config
      * @return array
      * @throws \Exception
      */
-    public static function loadFile(string $file, $byKey = null): array
+    public function loadFile(string $file, $byKey = null): array
     {
         if (!is_readable($file)) {
 //            throw new \Exception("配置文件{$fullName}不存在", 404);
@@ -198,11 +198,11 @@ final class Config
                 if (is_array($fil)) {
                     $_config[$key] = Array();
                     foreach ($fil as $l => $f) {
-                        $_inc = self::loadFile(root($f), $l);
+                        $_inc = $this->loadFile(root($f), $l);
                         if (!empty($_inc)) $_config[$key] = $_inc + $_config[$key];
                     }
                 } else {
-                    $_inc = self::loadFile(root($fil), $key);
+                    $_inc = $this->loadFile(root($fil), $key);
                     if (!empty($_inc)) $_config = $_inc + $_config;
                 }
             }
@@ -219,10 +219,10 @@ final class Config
      * @param null $auto
      * @return array|bool|mixed|null
      */
-    public static function load($file, $key = null, $auto = null)
+    public function load($file, $key = null, $auto = null)
     {
         $conf = parse_ini_file(root($file), true);
-        $conf = self::re_arr($conf);
+        $conf = $this->re_arr($conf);
         if (is_null($key)) return $conf;
 
         $key = preg_replace('/[\.\,\/]+/', '.', strtolower($key));
@@ -239,7 +239,7 @@ final class Config
     }
 
 
-    private static function re_key($value)
+    private function re_key($value)
     {
         $value = preg_replace_callback('/\{(_[A-Z_]+)\}/', function ($matches) {
             $search = array('_TIME', '_DATE', '_NOW');
@@ -258,14 +258,14 @@ final class Config
         return $value;
     }
 
-    private static function re_arr($array)
+    private function re_arr($array)
     {
         $val = Array();
         foreach ($array as $k => $arr) {
             if (is_array($arr)) {
-                $val[strtolower(strval($k))] = self::re_arr($arr);
+                $val[strtolower(strval($k))] = $this->re_arr($arr);
             } else {
-                $val[strtolower(strval($k))] = self::re_key($arr);
+                $val[strtolower(strval($k))] = $this->re_key($arr);
             }
         }
         return $val;
@@ -276,11 +276,11 @@ final class Config
      * @param array ...$key
      * @return null|array|string
      */
-    public static function get(...$key)
+    public function get(...$key)
     {
         if (empty($key)) return null;
-        if ($key === ['*']) return self::$_CONFIG_;
-        $conf = self::$_CONFIG_;
+        if ($key === ['*']) return $this->_CONFIG_;
+        $conf = $this->_CONFIG_;
         foreach (explode('.', strtolower(implode('.', $key))) as $k) {
             if ($k === '' or $k === '*') return null;
             if (!isset($conf[$k])) return null;
@@ -294,9 +294,9 @@ final class Config
      * @param $type
      * @return string
      */
-    public static function mime(string $type): string
+    public function mime(string $type): string
     {
-        $mime = self::get('mime', $type);
+        $mime = $this->get('mime', $type);
         if (!$mime) $mime = 'text/html';
         return $mime;
     }
@@ -305,9 +305,9 @@ final class Config
      * @param $code
      * @return null|string
      */
-    public static function states(int $code): string
+    public function states(int $code): string
     {
-        $state = self::get('state', $code);
+        $state = $this->get('state', $code);
         if (!$state) $state = 'Unexpected';
         return $state;
     }

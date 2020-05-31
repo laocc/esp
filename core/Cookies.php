@@ -19,9 +19,9 @@ final class Cookies
 
     public static function domain()
     {
-        $cookies = Config::get("cookies");
-        $config = $cookies['default'] + ['run' => 1, 'domain' => 'host'];
-        if (isset($cookies[_MODULE])) $config = $cookies[_MODULE] + $config;
+        $cookies = $GLOBALS['cookies'] ?? [];
+        $config = ($cookies['default'] ?? []) + ['run' => 1, 'domain' => 'host'];
+        if (isset($cookies[_VIRTUAL])) $config = $cookies[_VIRTUAL] + $config;
         if (isset($cookies[_HOST])) $config = $cookies[_HOST] + $config;
         if (isset($cookies[_DOMAIN])) $config = $cookies[_DOMAIN] + $config;
         $domain = getenv('HTTP_HOST');

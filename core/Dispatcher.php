@@ -10,18 +10,19 @@ final class Dispatcher
     public $_request;
     public $_response;
     public $_session;
+    public $_config;
     public $_debug;
     public $_cache;
     private $run = true;
 
-    public function __construct(array $option, string $module = 'www')
+    public function __construct(array $option, string $virtual = 'www')
     {
 //        try {
         if (!defined('_ROOT')) exit("网站入口处须定义 _ROOT 项，指向系统根目录");
         define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
-        define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
-        if (!defined('_MODULE')) define('_MODULE', $module);
+        if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
+        if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
         if (_CLI) {
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
@@ -40,28 +41,27 @@ final class Dispatcher
         }
         define('_CIP', $ip);
 
-
         if (isset($option['callback'])) $option['callback']($option);
         $option += ['error' => [], 'config' => []];
         //以下2项必须在`chdir()`之前，且顺序不可变
         if (!_CLI) {
             $err = new Error($this, $option['error']);
         }
-        Config::_init($option['config']);
+        $this->_config = new Configure($option['config']);
         chdir(_ROOT);
 
-        $this->_request = new Request(Config::get('frame.request'));
+        $this->_request = new Request($this->_config->get('frame.request'));
         if (_CLI) return;
-        $this->_response = new Response($this->_request);
+        $this->_response = new Response($this->_config, $this->_request);
 
-        if ($debug = Config::get('debug')) {
-            $this->_debug = new Debug($this->_request, $this->_response, $debug);
+        if ($debug = $this->_config->get('debug')) {
+            $this->_debug = new Debug($this->_request, $this->_response, $this->_config->Redis(), $debug);
             $GLOBALS['_Debug'] = &$this->_debug;
         }
 
-        if (($session = Config::get('session')) and !_CLI) {
+        if (($session = $this->_config->get('session')) and !_CLI) {
             $config = $session['default'] + ['run' => 1];
-            if (isset($session[_MODULE])) $config = $session[_MODULE] + $config;
+            if (isset($session[_VIRTUAL])) $config = $session[_VIRTUAL] + $config;
             if (isset($session[_HOST])) $config = $session[_HOST] + $config;
             if (isset($session[_DOMAIN])) $config = $session[_DOMAIN] + $config;
             if ($config['run']) {
@@ -72,15 +72,17 @@ final class Dispatcher
             }
         }
 
-        if ($cache = Config::get('cache')) {
+        if ($cache = $this->_config->get('cache')) {
             $setting = $cache['setting'];
-            if (isset($cache[_MODULE])) $setting = $cache[_MODULE] + $setting;
+            if (isset($cache[_VIRTUAL])) $setting = $cache[_VIRTUAL] + $setting;
             if (isset($setting['run']) and $setting['run']) {
                 $this->_cache = new Cache($this, $setting);
             }
         }
 
         if (isset($option['attack'])) $option['attack']($option);
+
+        $GLOBALS['cookies'] = $this->_config->get('cookies');
         unset($GLOBALS['option']);
         if (headers_sent($file, $line)) {
             throw new \Exception("在{$file}[{$line}]行已有数据输出，系统无法启动");
@@ -174,7 +176,7 @@ final class Dispatcher
         if ($this->run === false) return;
 
         $this->_plugs_count and $this->plugsHook('routeBefore');
-        (new Route($this->_request));
+        (new Router($this->_config, $this->_request));
         $this->_plugs_count and $this->plugsHook('routeAfter');
 
         if (!_CLI and !is_null($this->_cache)) if ($this->_cache->Display()) goto end;
@@ -246,7 +248,13 @@ final class Dispatcher
         }
 
         LOOP:
-        $module = strtolower($this->_request->module);
+        if (empty($this->_request->module)) {
+            $virtual = $this->_request->virtual;
+            $module = $this->_request->virtual;
+        } else {
+            $virtual = "{$this->_request->virtual}/{$this->_request->module}";
+            $module = $this->_request->virtual . '\\' . $this->_request->module;
+        }
         $controller = ucfirst($this->_request->controller);
         $action = strtolower($this->_request->action) . ucfirst($actionExt);
         $auto = strtolower($this->_request->action) . 'Action';
@@ -257,11 +265,11 @@ final class Dispatcher
          * 加载控制器，也可以在composer中预加载
          * "admin\\": "application/admin/controllers/",
          */
-        $base = $this->_request->directory . "/{$module}/controllers/Base.php";
-        $file = $this->_request->directory . "/{$module}/controllers/{$controller}.php";
+        $base = $this->_request->directory . "/{$virtual}/controllers/Base.php";
+        $file = $this->_request->directory . "/{$virtual}/controllers/{$controller}.php";
         if (is_readable($base)) load($base);//加载控制器公共类，有可能不存在
         if (!load($file)) {
-            return $this->err404("[/{$module}/controllers/{$controller}.php] not exists.");
+            return $this->err404("[/{$virtual}/controllers/{$controller}.php] not exists.");
         }
 
         $controller = '\\' . $module . '\\' . $controller . 'Controller';
@@ -343,7 +351,7 @@ final class Dispatcher
             if (substr($return, 0, 4) === 'err:') return ['success' => 0, 'message' => substr($return, 4)];
             if (substr($return, 0, 6) === 'error:') return ['success' => 0, 'message' => substr($return, 6)];
 
-            if (_MODULE !== 'api') $this->_debug->error($return);
+            if (_VIRTUAL !== 'api') $this->_debug->error($return);
         }
 
         //其他情况原样返回
@@ -354,7 +362,7 @@ final class Dispatcher
     {
         if (!is_null($this->_debug)) $this->_debug->folder('error');
         if (_DEBUG) return $msg;
-        $empty = Config::get('frame.request.empty');
+        $empty = $this->_config->get('frame.request.empty');
         if (!empty($empty)) return $empty;
         return $msg;
     }

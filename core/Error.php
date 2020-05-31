@@ -188,7 +188,7 @@ class Error
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('SERVER_ADDR'),
-            'Url' => _HTTP_ . _DOMAIN . _URI . getenv('REQUEST_URI'),
+            'Url' => _HTTP_ . _DOMAIN . _URI,
             'Debug' => !is_null($debug) ? $debug->filename() : '',
             'Error' => $error,
             'Server' => $_SERVER,
@@ -226,7 +226,8 @@ class Error
      */
     public static function displayState(int $code)
     {
-        $state = Config::states($code);
+        $conf = parse_ini_file(root('/esp/core/config/state.ini'), true);
+        $state = $conf[$code] ?? '';
         if (_CLI) return "[{$code}]:{$state}\n";
 
         $server = isset($_SERVER['SERVER_SOFTWARE']) ? ucfirst($_SERVER['SERVER_SOFTWARE']) : null;

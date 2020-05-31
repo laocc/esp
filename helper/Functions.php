@@ -180,13 +180,10 @@ function save_file(string $file, string $content, bool $append = false): int
  * @param string|null $text
  * @throws Exception
  */
-function header_state(int $code = 200, string $text = null)
+function header_state(int $code = 200, string $text = '')
 {
     if (empty($code) OR !is_numeric($code)) {
         throw new \Exception('状态码必须为数字');
-    }
-    if (empty($text)) {
-        $text = \esp\core\Config::states($code);
     }
     if (!stripos(PHP_SAPI, 'cgi')) {
         header("Status: {$code} {$text}", true);

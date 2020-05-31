@@ -35,11 +35,11 @@ use esp\library\gd\Image;
 
 final class Upload
 {
-    private $config = null;
+    private $option = null;
 
     public function __construct(array $option = [])
     {
-        $this->config = $option + Config::get('upload.upload');
+        $this->option = $option;
     }
 
     private function logSave($img)
@@ -255,8 +255,8 @@ final class Upload
                 ] + $save;
             $ext = 'png';
         }
-        $conf = $this->config;
-        $mark = Config::get('upload.mark');
+        $conf = $this->option;
+        $mark = $this->option['mark'] ?? [];
 
         //修正大小
         if ((!!$conf['limit']['width'] and $size[0] > $conf['limit']['width']) or
@@ -292,7 +292,7 @@ final class Upload
      */
     private function filename($ext)
     {
-        $option = $this->config;
+        $option = $this->option;
         $ext = trim(strtolower($ext), '.');
 
         $root = root(rtrim($option['save']['root'], '/') . '/');
@@ -324,7 +324,7 @@ final class Upload
      * */
     private function checkRatio($picRatio)
     {
-        $ratio = json_decode($this->config['allow']['ratio'], true);
+        $ratio = json_decode($this->option['allow']['ratio'], true);
         if (!$ratio or empty($ratio)) return true;
         $i = 10000;     //精确度，至少大于100
         $iniRatio = (int)($picRatio * $i);
@@ -352,8 +352,8 @@ final class Upload
      * */
     private function checkLimit($width, $height)
     {
-        $limitWidth = json_decode($this->config['allow']['width'], true);
-        $limitHeight = json_decode($this->config['allow']['height'], true);
+        $limitWidth = json_decode($this->option['allow']['width'], true);
+        $limitHeight = json_decode($this->option['allow']['height'], true);
 
         if (is_array($limitWidth) and ($limitWidth[0] > $width or ($limitWidth[1] > 0 and $limitWidth[1] < $width))) {
             if ($limitWidth[0] == 0)
@@ -386,7 +386,7 @@ final class Upload
      */
     private function checkSize($size)
     {
-        $conf = $this->config['allow']['size'];
+        $conf = $this->option['allow']['size'];
         $limitSize = json_decode($conf, true);
         if (is_array($limitSize)) {
             $limitSize[0] = re_size($limitSize[0]);

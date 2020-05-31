@@ -3,6 +3,8 @@
 
 namespace esp\core;
 
+use esp\core\db\Redis;
+
 final class Debug
 {
     private $prevTime;
@@ -18,19 +20,19 @@ final class Debug
     private $_conf;
     private $_request;
     private $_response;
+    private $_redis;
     private $_errorText;
     private $_save_type = 'file';
     private $_ROOT_len = 0;
     private $_key;//保存记录的Key,要在控制器中->key($key)
 
-    public function __construct(Request $request, Response $response, array &$config)
+    public function __construct(Request $request, Response $response, Redis $redis, array &$config)
     {
         $this->_star = [$_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true), memory_get_usage()];
 
         $conf = $config['default'];
-        if (isset($config[_MODULE])) {
-            $conf = $config[_MODULE] + $conf;
-//            $conf = array_replace_recursive($conf, $config[_MODULE]);
+        if (isset($config[_VIRTUAL])) {
+            $conf = $config[_VIRTUAL] + $conf;
         }
         switch ($conf['api'] ?? '') {
             case 'rpc':
@@ -44,6 +46,7 @@ final class Debug
         }
 
         $this->_conf = $conf;
+        $this->_redis = $redis;
         $this->_ROOT_len = strlen(_ROOT);
         $this->_run = boolval($conf['run'] ?? false);
         $this->_time = time();
@@ -73,7 +76,7 @@ final class Debug
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('SERVER_ADDR'),
-            'Url' => _HTTP_ . _DOMAIN . getenv('REQUEST_URI'),
+            'Url' => _HTTP_ . _DOMAIN . _URI,
             'Referer' => getenv("HTTP_REFERER"),
             'Debug' => $this->filename(),
             'Trace' => $tract ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
@@ -90,7 +93,7 @@ final class Debug
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('SERVER_ADDR'),
-            'Url' => _HTTP_ . _DOMAIN . getenv('REQUEST_URI'),
+            'Url' => _HTTP_ . _DOMAIN . _URI,
             'Referer' => getenv("HTTP_REFERER"),
             'Debug' => $this->filename(),
             'Trace' => $tract ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
@@ -117,7 +120,7 @@ final class Debug
             $debug['filename'] = $filename;
             $debug['recode'] = $this->_key;
             $debug['data'] = $data;
-            $send = Config::Redis()->push(_DEBUG_PUSH_KEY, $debug);
+            $send = $this->_redis->push(_DEBUG_PUSH_KEY, $debug);
 
         } else if ($this->_save_type === 'task') {
             //发送到异步task任务，由后台写入实际文件
@@ -125,7 +128,7 @@ final class Debug
             $debug['filename'] = $filename;
             $debug['recode'] = $this->_key;
             $debug['data'] = $data;
-            $send = Config::Redis()->publish('order', 'saveDebug', $debug);
+            $send = $this->_redis->publish('order', 'saveDebug', $debug);
         }
 //        $this->_run = false;//防止重复保存
         if ($send) return $send;
@@ -175,7 +178,7 @@ final class Debug
         $data[] = " - PHP_VER:\t" . phpversion() . "\n";
         $data[] = " - AGENT:\t" . ($_SERVER['HTTP_USER_AGENT'] ?? '') . "\n";
         $data[] = " - ROOT:\t" . _ROOT . "\n";
-        $data[] = " - Router:\t/{$rq->module}/{$rq->controller}/{$rq->action}\t({$rq->router})\n";
+        $data[] = " - Router:\t/{$rq->virtual}/{$rq->module}/{$rq->controller}/{$rq->action}\t({$rq->router})\n";
 
         //一些路由结果，路由结果参数
         $Params = implode(',', $rq->getParams());
@@ -455,8 +458,8 @@ final class Debug
         if (is_null($path)) {
             if (is_null($this->_root))
                 return $this->_root = str_replace(
-                    ['{RUNTIME}', '{ROOT}', '{SYSTEM}', '{MODULE}', '{DOMAIN}', '{DATE}'],
-                    [_RUNTIME, _ROOT, _SYSTEM, _MODULE, _DOMAIN, date('Y_m_d')],
+                    ['{RUNTIME}', '{ROOT}', '{SYSTEM}', '{VIRTUAL}', '{DOMAIN}', '{DATE}'],
+                    [_RUNTIME, _ROOT, _SYSTEM, _VIRTUAL, _DOMAIN, date('Y_m_d')],
                     $this->_conf['path']);
             return $this->_root;
         }
@@ -471,13 +474,16 @@ final class Debug
      */
     public function folder(string $path = null)
     {
+        $m = $this->_request->module;
+        if (!empty($m)) $m = strtoupper($m) . "/";
         if (is_null($path)) {
-            if (is_null($this->_folder))
-                return $this->_folder = "/{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
+            if (is_null($this->_folder)) {
+                return $this->_folder = "/{$m}{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
+            }
             return $this->_folder;
         }
         $path = trim($path, '/');
-        $this->_folder = "/{$path}/{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
+        $this->_folder = "/{$path}/{$m}{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
         return $this;
     }
 

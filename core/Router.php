@@ -3,25 +3,26 @@
 
 namespace esp\core;
 
-final class Route
+final class Router
 {
     /**
      * 路由中心
-     * Route constructor.
+     * Router constructor.
+     * @param Configure $configure
      * @param Request $request
      * @throws \Exception
      */
-    public function __construct(Request $request)
+    public function __construct(Configure $configure, Request $request)
     {
         $default = [
             '_default' => ['match' => '/^\/(?:[a-z][a-z0-9\-]+\/?)*/i', 'route' => []],
         ];
-        $rdsKey = Config::$_token . '_ROUTES_' . _MODULE;
-        $redis = Config::Redis();
+        $rdsKey = $configure->_token . '_ROUTES_' . _VIRTUAL;
+        $redis = $configure->Redis();
         $modRoute = (!_CLI and !defined('_CONFIG_LOAD') and $redis) ? $redis->get($rdsKey) : null;
 
         if (empty($modRoute) or $modRoute === 'null') {
-            $file = $request->router_path . '/' . _MODULE . '.php';
+            $file = $request->router_path . '/' . _VIRTUAL . '.php';
             if (is_readable($file)) {
                 $modRoute = load($file);
                 if (!empty($modRoute)) {
@@ -52,6 +53,7 @@ final class Route
                 if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax()))
                     throw new \Exception('非法Method请求', 404);
 
+                $matches = [];
                 if ($key === '_default') {
                     $matches = explode('/', $request->uri);
                     $matches[0] = $request->uri;
@@ -63,8 +65,6 @@ final class Route
                 //分别获取模块、控制器、动作的实际值
                 list($module, $controller, $action, $param) = $this->fill_route($request->directory, $matches, $route['route']);
 
-                if (!$controller) $controller = 'index';
-                if (!$action) $action = 'index';
                 //分别获取各个指定参数
                 $params = Array();
                 if (isset($route['map'])) {
@@ -76,9 +76,9 @@ final class Route
                 }
 
                 $request->router = $key;
-                $request->module = ($module ?: _MODULE);
-                $request->controller = $controller;
-                $request->action = $action;
+                $request->module = $module ?: '';
+                $request->controller = $controller ?: 'index';
+                $request->action = $action ?: 'index';
                 $request->params = $params + array_fill(0, 10, null);
                 if (isset($route['static'])) {
                     $request->set('_disable_static', !$route['static']);
@@ -89,7 +89,7 @@ final class Route
                 if (isset($route['cache'])) {
                     $request->set('_cache_set', $route['cache']);
                 } else {
-                    $cacheSet = Config::get("cache.{$request->module}.{$request->controller}.{$request->action}");
+                    $cacheSet = $configure->get("cache.{$request->module}.{$request->controller}.{$request->action}");
                     if ($cacheSet) {
                         $request->set('_cache_set', $cacheSet);
                     }
@@ -114,7 +114,7 @@ final class Route
      * @return array
      * @throws \Exception
      */
-    private function fill_route(string $directory, array $matches, array $route): array
+    private function fill_route(string &$directory, array $matches, array $route): array
     {
         $module = $controller = $action = '';
         $param = Array();
@@ -122,26 +122,28 @@ final class Route
         //正则结果中没有指定结果集
         if (empty($matches) or !isset($matches[0])) return [null, null, null, null];
 
+//        pre([$directory, $matches]);
+
         //未指定MCA
         if (empty($route)) {
-            //在有三个以上匹配的情况下，第一个是模块名称，且不存在该名称的控制器文件
-            if (isset($matches[3]) and
-                is_dir($directory . $matches[1]) and
-                !is_file($directory . $matches[1] . '/controllers/' . ucfirst($matches[1]) . '.php')) {
-                $module = strval($matches[1]);
-                $controller = strval($matches[2]);
-                $action = strval($matches[3]);
-                $param = array_slice($matches, 4);
+
+            if (($matches[1] ?? '') and is_dir("{$directory}/" . _VIRTUAL . "/{$matches[1]}")) {
+                $module = strtolower($matches[1]);
+                $controller = ($matches[2] ?? 'index');
+                $action = ($matches[3] ?? 'index');
+                if (isset($matches[4])) {
+                    $param = array_slice($matches, 4);
+                }
             } else {//否则第一模块指的就是控制器
                 $module = null;
-                $controller = strval($matches[1]);
-                if (isset($matches[2])) {
-                    $action = strval($matches[2]);
+                $controller = ($matches[1] ?? 'index');
+                $action = ($matches[2] ?? 'index');
+                if (isset($matches[3])) {
                     $param = array_slice($matches, 3);
                 }
             }
         } else {
-            if (!isset($route['module'])) $route['module'] = _MODULE;
+            if (!isset($route['module'])) $route['module'] = '';
             foreach (['module', 'controller', 'action'] as $key) {
                 ${$key} = isset($route[$key]) ? $route[$key] : null;
                 if (is_numeric(${$key})) {

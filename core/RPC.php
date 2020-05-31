@@ -8,7 +8,7 @@ final class RPC
 
     public static function post(string $uri, $data)
     {
-        if ((_MODULE === 'rpc') or (!_DEBUG and _RPC['ip'] === getenv('SERVER_ADDR'))) {
+        if ((_VIRTUAL === 'rpc') or (!_DEBUG and _RPC['ip'] === getenv('SERVER_ADDR'))) {
             if (isset($data['self'])) return $data['self']($data);
             return null;
         }
@@ -26,7 +26,7 @@ final class RPC
 
     public static function get(string $uri, bool $json = false)
     {
-        if (_MODULE === 'rpc') return null;
+        if (_VIRTUAL === 'rpc') return null;
 
         $opt = [];
         $opt['type'] = 'get';
