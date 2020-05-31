@@ -121,6 +121,7 @@ final class Debug
             $debug['recode'] = $this->_key;
             $debug['data'] = $data;
             $send = $this->_redis->push(_DEBUG_PUSH_KEY, $debug);
+            if ($send) return "redis:{$send}";
 
         } else if ($this->_save_type === 'task') {
             //发送到异步task任务，由后台写入实际文件
@@ -129,26 +130,25 @@ final class Debug
             $debug['recode'] = $this->_key;
             $debug['data'] = $data;
             $send = $this->_redis->publish('order', 'saveDebug', $debug);
+            if ($send) return "task:{$send}";
         }
 //        $this->_run = false;//防止重复保存
-        if ($send) return $send;
 
         if ($this->_save_type === 'rpc' or !is_null($send)) {
             //如果当前服务器是主服务器，则直接写入
             if (is_dir(_RUNTIME . '/debug/move/')) {
-                return file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), $data, LOCK_EX);
+                return 'Move:' . file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), $data, LOCK_EX);
             }
 
             //发到RPC，写入move专用目录，然后由后台移到实际目录
             $send = RPC::post('/debug', ['filename' => $filename, 'data' => $data]);
-            if ($send) return $send;
+            if ($send) return "Rpc:{$send}";
         }
-
 
         $p = dirname($filename);
         if (!is_dir($p)) @mkdir($p, 0740, true);
 
-        return file_put_contents($filename, $data, LOCK_EX);
+        return 'Self Save:' . file_put_contents($filename, $data, LOCK_EX);
     }
 
     /**
