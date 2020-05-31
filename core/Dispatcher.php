@@ -341,7 +341,7 @@ final class Dispatcher
             $val = $this->_close($rest, $val);
         }
 
-        unset($cont, $GLOBALS['_Controller']);
+//        unset($cont);
         return $val;
     }
 
