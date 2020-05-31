@@ -203,14 +203,14 @@ final class Dispatcher
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-            if (1) {
+            if (0) {
                 $save = $this->_debug->save_logs('Dispatcher Debug');
                 $this->check_debug($save);
                 if (!$this->_request->isAjax()) var_dump($save);
             }
 
             register_shutdown_function(function () {
-//                $save = $this->_debug->save_logs('Dispatcher');
+                $save = $this->_debug->save_logs('Dispatcher');
 //                $this->check_debug($save);
             });
         } else {
