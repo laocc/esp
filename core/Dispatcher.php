@@ -203,7 +203,10 @@ final class Dispatcher
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-//            if (_DEBUG) $this->_debug->save_logs('Dispatcher Debug');
+//            if (_DEBUG) {
+//                $save = $this->_debug->save_logs('Dispatcher Debug');
+//                var_dump($save);
+//            }
 
             register_shutdown_function(function () {
                 $save = $this->_debug->save_logs('Dispatcher');
