@@ -196,22 +196,25 @@ final class Dispatcher
         }
         $this->_plugs_count and $this->plugsHook('displayAfter');
 
-        if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
+//        if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
         if (!_CLI and !is_null($this->_cache)) $this->_cache->Save();
 
         end:
         $this->_plugs_count and $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-//            if (_DEBUG) {
-//                $save = $this->_debug->save_logs('Dispatcher Debug');
-//                var_dump($save);
-//            }
+            if (1) {
+                $save = $this->_debug->save_logs('Dispatcher Debug');
+                $this->check_debug($save);
+                if (!$this->_request->isAjax()) var_dump($save);
+            }
 
             register_shutdown_function(function () {
-                $save = $this->_debug->save_logs('Dispatcher');
-                $this->check_debug($save);
+//                $save = $this->_debug->save_logs('Dispatcher');
+//                $this->check_debug($save);
             });
+        } else {
+            if (!$this->_request->isAjax()) echo 'empty debug';
         }
     }
 
