@@ -197,7 +197,7 @@ final class Dispatcher
         }
         $this->_plugs_count and $this->plugsHook('displayAfter');
 
-//        if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
+        if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
         if (!_CLI and !is_null($this->_cache)) $this->_cache->Save();
 
         end:
@@ -215,7 +215,9 @@ final class Dispatcher
 //                $this->check_debug($save);
             });
         } else {
-            if (!$this->_request->isAjax()) echo 'empty debug';
+            if (!$this->_request->isAjax() and !_CLI) {
+                echo 'empty debug';
+            }
         }
     }
 
