@@ -88,12 +88,6 @@ abstract class Model
         return $this->_debug->relay($value, $pre);
     }
 
-    final public function request(string $url, $data = null, array $option = [])
-    {
-        if (0) $this->_controller instanceof Controller and 1;
-        return $this->_controller->output($url, $data, $option);
-    }
-
     /**
      * 设置并返回debug文件名
      * @param string|null $filename

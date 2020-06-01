@@ -5,6 +5,198 @@ namespace esp\core;
 
 final class Output
 {
+    private $option;
+    private $url;
+    private $data;
+    private $value;
+
+    public function __construct(array $option = [])
+    {
+        $this->option = $option;
+    }
+
+    public function url(string $url)
+    {
+        $this->url = $url;
+        return $this;
+    }
+
+    public function data($data)
+    {
+        if (is_array($data)) $data = http_build_query($data);
+        $this->data = $data;
+        return $this;
+    }
+
+    public function get(string $encode = '')
+    {
+        if (!in_array($encode, ['json', 'xml'])) $encode = '';
+        $this->option['encode'] = $encode;
+        $this->option['type'] = 'get';
+        $this->value = $this->request($this->url, null, $this->option);
+        if (!$encode) return $this->value;
+        return $this->value['array'] ?? [];
+    }
+
+    public function post(string $encode = '')
+    {
+        if (!in_array($encode, ['json', 'xml'])) $encode = '';
+        $this->option['encode'] = $encode;
+        $this->option['type'] = 'post';
+        $this->value = $this->request($this->url, null, $this->option);
+        if (!$encode) return $this->value;
+        return $this->value['array'] ?? [];
+    }
+
+    public function upload(string $encode = '')
+    {
+        if (!in_array($encode, ['json', 'xml'])) $encode = '';
+        $this->option['encode'] = $encode;
+        $this->option['type'] = 'upload';
+        $this->value = $this->request($this->url, null, $this->option);
+        if (!$encode) return $this->value;
+        return $this->value['array'] ?? [];
+    }
+
+    public function host(string $host)
+    {
+        $this->option['host'] = $host;
+        return $this;
+    }
+
+    public function port(string $port)
+    {
+        $this->option['port'] = $port;
+        return $this;
+    }
+
+    public function lang(string $lang = 'cn')
+    {
+        $this->option['lang'] = $lang;
+        return $this;
+    }
+
+    public function referer(string $referer)
+    {
+        $this->option['referer'] = $referer;
+        return $this;
+    }
+
+    public function ip(string $ip)
+    {
+        $this->option['ip'] = $ip;
+        return $this;
+    }
+
+    public function password(string $pwd)
+    {
+        $this->option['auth'] = $pwd;
+        return $this;
+    }
+
+    public function redirect(int $num)
+    {
+        $this->option['redirect'] = $num;
+        return $this;
+    }
+
+    public function wait(int $scd = 10)
+    {
+        $this->option['wait'] = $scd;
+        return $this;
+    }
+
+    public function timeout(int $scd = 10)
+    {
+        $this->option['timeout'] = $scd;
+        return $this;
+    }
+
+    public function headers(string $header)
+    {
+        $this->option['headers'][] = $header;
+        return $this;
+    }
+
+    public function proxy(string $proxy)
+    {
+        $this->option['proxy'] = $proxy;
+        return $this;
+    }
+
+    public function charset(string $charset = 'utf8')
+    {
+        $this->option['charset'] = $charset;
+        return $this;
+    }
+
+    public function cookies(string $cookies = null)
+    {
+        if (is_null($cookies)) {
+            if (substr($this->option['cookies'] ?? '', 0, 1) === '/') {
+                $text = file_get_contents($this->option['cookies']);
+                return $text;
+            } else {
+                return $this->option['cookies'];
+            }
+        }
+        if ($cookies === 'temp' or $cookies = 'rand') {
+            $cookies = "/tmp/ck_" . microtime(true) . mt_rand();
+        }
+        $this->option['cookies'] = $cookies;
+        return $this;
+    }
+
+    public function ua(string $ua)
+    {
+        $this->option['agent'] = $ua;
+        return $this;
+    }
+
+    public function human()
+    {
+        $this->option['human'] = true;
+        return $this;
+    }
+
+    public function gzip()
+    {
+        $this->option['gzip'] = true;
+        return $this;
+    }
+
+    public function transfer(bool $transfer = true)
+    {
+        $this->option['transfer'] = $transfer;
+        return $this;
+    }
+
+
+    public function cert($key, $value = null)
+    {
+        if (is_array($key)) {
+            $this->option['cert'] = $key;
+        } else {
+            //cert,key,ca
+            $this->option['cert'][$key] = $value;
+        }
+        return $this;
+    }
+
+
+    public function files(string $filename, $filepath)
+    {
+        $this->option['files'][$filename] = $filepath;
+        return $this;
+    }
+
+
+    public function set(string $key, $value)
+    {
+        $this->option[$key] = $value;
+        return $this;
+    }
+
 
     /**
      * @param string $url
@@ -45,7 +237,7 @@ final class Output
 
         $cOption = [];
 
-        if (0) {
+        if ($option['echo'] ?? 0) {
             $cOption[CURLOPT_VERBOSE] = true;//输出所有的信息，写入到STDERR(直接打印到屏幕)
 //        $cOption[CURLOPT_STDERR] = root('/cache/curl');//若不指定，则输出到屏幕
             $cOption[CURLOPT_CERTINFO] = true;//TRUE 将在安全传输时输出 SSL 证书信息到 STDERR。
@@ -100,7 +292,7 @@ final class Output
             $cOption[CURLOPT_POSTREDIR] = 1;//什么情况下需要再次 HTTP POST 到重定向网址:1 (301 永久重定向), 2 (302 Found) 和 4 (303 See Other)
             $cOption[CURLOPT_FOLLOWLOCATION] = true;//根据服务器返回 HTTP 头中的 "Location: " 重定向
             $cOption[CURLOPT_AUTOREFERER] = true;//根据 Location: 重定向时，自动设置 header 中的Referer:信息
-            $cOption[CURLOPT_UNRESTRICTED_AUTH] = 1;//重定向时，时继续发送用户名和密码信息，哪怕主机名已改变
+            $cOption[CURLOPT_UNRESTRICTED_AUTH] = true;//重定向时，时继续发送用户名和密码信息，哪怕主机名已改变
         }
 
         $cOption[CURLOPT_URL] = $url;                                                      //接收页
@@ -199,11 +391,11 @@ final class Output
         }
 
         $cOption[CURLOPT_HEADER] = (isset($option['transfer']) and $option['transfer']);        //带回头信息
-        $cOption[CURLOPT_DNS_CACHE_TIMEOUT] = 120;                                              //内存中保存DNS信息，默认120秒
-        $cOption[CURLOPT_CONNECTTIMEOUT] = $option['wait'] ?? 10;                               //在发起连接前等待的时间，如果设置为0，则无限等待
-        $cOption[CURLOPT_TIMEOUT] = ($option['timeout'] ?? 10);                                 //允许执行的最长秒数，若用毫秒级，用CURLOPT_TIMEOUT_MS
-        $cOption[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V4;                                        //指定使用IPv4解析
-        $cOption[CURLOPT_RETURNTRANSFER] = true;                                                //返回文本流，若不指定则是直接打印
+        $cOption[CURLOPT_DNS_CACHE_TIMEOUT] = 120;                    //内存中保存DNS信息，默认120秒
+        $cOption[CURLOPT_CONNECTTIMEOUT] = $option['wait'] ?? 10;     //在发起连接前等待的时间，如果设置为0，则无限等待
+        $cOption[CURLOPT_TIMEOUT] = ($option['timeout'] ?? 10);       //允许执行的最长秒数，若用毫秒级，用CURLOPT_TIMEOUT_MS
+        $cOption[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V4;              //指定使用IPv4解析
+        $cOption[CURLOPT_RETURNTRANSFER] = true;                      //返回文本流，若不指定则是直接打印
 
         if (strtoupper(substr($url, 0, 5)) === "HTTPS") {
 //            $cOption[CURLOPT_HTTP_VERSION]=CURLOPT_HTTP_VERSION_2_0;
