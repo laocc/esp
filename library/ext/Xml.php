@@ -14,6 +14,12 @@ final class Xml
      * @param array $array
      * @return string
      */
+    /**
+     * @param string $root
+     * @param array $array
+     * @return string
+     * @throws \Exception
+     */
     public static function encode(string $root, array $array)
     {
         return (new Xml($array, $root))->render();

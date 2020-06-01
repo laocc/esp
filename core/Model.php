@@ -76,11 +76,22 @@ abstract class Model
     final public function debug($value, array $pre = null)
     {
         if (_CLI) return false;
-        if (is_null($this->_debug)) $this->_debug = Debug::class();
+        if (0) $this->_debug instanceof Debug and 1;
+
+        if (is_null($this->_debug)) {
+            $this->_debug = $this->_controller->_debug;
+//            $this->_debug = Debug::class();
+        }
         if (empty($value)) return $this->_debug;
         if (is_null($this->_debug)) return false;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         return $this->_debug->relay($value, $pre);
+    }
+
+    final public function request(string $url, $data = null, array $option = [])
+    {
+        if (0) $this->_controller instanceof Controller and 1;
+        return $this->_controller->request($url, $data, $option);
     }
 
     /**
