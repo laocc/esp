@@ -175,7 +175,7 @@ abstract class Controller
      * $option['ip']        客户端IP，相当于此cURL变成一个代理服务器
      * $option['lang']      语言，cn或en
      */
-    final public function request(string $url, $data = null, array $option = [])
+    final public function output(string $url, $data = null, array $option = [])
     {
         $response = [];
         $response['error'] = 100;
@@ -191,7 +191,7 @@ abstract class Controller
 
         $cOption = [];
 
-        if (0) {
+        if ($option['echo'] ?? 0) {
             $cOption[CURLOPT_VERBOSE] = true;//输出所有的信息，写入到STDERR(直接打印到屏幕)
 //        $cOption[CURLOPT_STDERR] = root('/cache/curl');//若不指定，则输出到屏幕
             $cOption[CURLOPT_CERTINFO] = true;//TRUE 将在安全传输时输出 SSL 证书信息到 STDERR。
@@ -246,7 +246,7 @@ abstract class Controller
             $cOption[CURLOPT_POSTREDIR] = 1;//什么情况下需要再次 HTTP POST 到重定向网址:1 (301 永久重定向), 2 (302 Found) 和 4 (303 See Other)
             $cOption[CURLOPT_FOLLOWLOCATION] = true;//根据服务器返回 HTTP 头中的 "Location: " 重定向
             $cOption[CURLOPT_AUTOREFERER] = true;//根据 Location: 重定向时，自动设置 header 中的Referer:信息
-            $cOption[CURLOPT_UNRESTRICTED_AUTH] = 1;//重定向时，时继续发送用户名和密码信息，哪怕主机名已改变
+            $cOption[CURLOPT_UNRESTRICTED_AUTH] = true;//重定向时，时继续发送用户名和密码信息，哪怕主机名已改变
         }
 
         $cOption[CURLOPT_URL] = $url;                                                      //接收页
@@ -433,8 +433,6 @@ abstract class Controller
             $response['error'] = intval($response['info']['http_code']);
             if ($response['error'] === 0) $response['error'] = 10;
             $response['message'] = $response['html'];
-//            unset($response['html']);
-//            return $response;
         }
 
         if (isset($option['encode']) and in_array($option['encode'], ['json', 'xml'])) {
@@ -457,8 +455,6 @@ abstract class Controller
                 $response['array'] = [];
             }
         }
-
-
         end:
         return $response;
     }

@@ -91,7 +91,7 @@ abstract class Model
     final public function request(string $url, $data = null, array $option = [])
     {
         if (0) $this->_controller instanceof Controller and 1;
-        return $this->_controller->request($url, $data, $option);
+        return $this->_controller->output($url, $data, $option);
     }
 
     /**
