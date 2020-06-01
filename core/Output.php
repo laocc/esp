@@ -21,6 +21,11 @@ final class Output
         return $this;
     }
 
+    /**
+     * post数据，若要传json，请先编码
+     * @param $data
+     * @return $this
+     */
     public function data($data)
     {
         if (is_array($data)) $data = http_build_query($data);
@@ -28,6 +33,11 @@ final class Output
         return $this;
     }
 
+    /**
+     * get方式读取
+     * @param string $encode
+     * @return array|mixed
+     */
     public function get(string $encode = '')
     {
         if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
@@ -39,6 +49,11 @@ final class Output
         return $this->value['array'] ?? [];
     }
 
+    /**
+     * post方式
+     * @param string $encode
+     * @return array|mixed
+     */
     public function post(string $encode = '')
     {
         if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
@@ -50,6 +65,11 @@ final class Output
         return $this->value['array'] ?? [];
     }
 
+    /**
+     * 上传文件
+     * @param string $encode
+     * @return array|mixed
+     */
     public function upload(string $encode = '')
     {
         if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
@@ -61,78 +81,143 @@ final class Output
         return $this->value['array'] ?? [];
     }
 
+    /**
+     * 指定主机
+     * @param string $host
+     * @return $this
+     */
     public function host(string $host)
     {
         $this->option['host'] = $host;
         return $this;
     }
 
+    /**
+     * 指定主机端口，若不设置，则自动判断80或443
+     * @param string $port
+     * @return $this
+     */
     public function port(string $port)
     {
         $this->option['port'] = $port;
         return $this;
     }
 
+    /**
+     * 语言，中文cn，英文en
+     * @param string $lang
+     * @return $this
+     */
     public function lang(string $lang = 'cn')
     {
         $this->option['lang'] = $lang;
         return $this;
     }
 
+    /**
+     * 指定referer
+     * @param string $referer
+     * @return $this
+     */
     public function referer(string $referer)
     {
         $this->option['referer'] = $referer;
         return $this;
     }
 
+    /**
+     * 指定客户端ip
+     * @param string $ip
+     * @return $this
+     */
     public function ip(string $ip)
     {
         $this->option['ip'] = $ip;
         return $this;
     }
 
+    /**
+     * 请求密码
+     * @param string $pwd
+     * @return $this
+     */
     public function password(string $pwd)
     {
         $this->option['auth'] = $pwd;
         return $this;
     }
 
+    /**
+     * 是否跟随 redirect 跳转次数，最小值2
+     * @param int $num
+     * @return $this
+     */
     public function redirect(int $num)
     {
         $this->option['redirect'] = $num;
         return $this;
     }
 
+    /**
+     * 请求等待（连接阶段）
+     * @param int $scd
+     * @return $this
+     */
     public function wait(int $scd = 10)
     {
         $this->option['wait'] = $scd;
         return $this;
     }
 
+    /**
+     * 请求等待时间（运行阶段）
+     * @param int $scd
+     * @return $this
+     */
     public function timeout(int $scd = 10)
     {
         $this->option['timeout'] = $scd;
         return $this;
     }
 
+    /**
+     * 指定header，可多次
+     * @param string $header
+     * @return $this
+     */
     public function headers(string $header)
     {
         $this->option['headers'][] = $header;
         return $this;
     }
 
+    /**
+     * 指定代理服务器
+     * @param string $proxy
+     * @return $this
+     */
     public function proxy(string $proxy)
     {
         $this->option['proxy'] = $proxy;
         return $this;
     }
 
+    /**
+     * 编码转换
+     * @param string $charset
+     * @return $this
+     */
     public function charset(string $charset = 'utf8')
     {
         $this->option['charset'] = $charset;
         return $this;
     }
 
+    /**
+     * 设置，或读取 cookies
+     * @param string|null $cookies
+     * @return $this|bool|mixed|string
+     */
     public function cookies(string $cookies = null)
     {
         if (is_null($cookies)) {
@@ -150,24 +235,42 @@ final class Output
         return $this;
     }
 
+    /**
+     * 浏览器
+     * @param string $ua
+     * @return $this
+     */
     public function ua(string $ua)
     {
         $this->option['agent'] = $ua;
         return $this;
     }
 
+    /**
+     * 模仿真人
+     * @return $this
+     */
     public function human()
     {
         $this->option['human'] = true;
         return $this;
     }
 
+    /**
+     * gZip解压
+     * @return $this
+     */
     public function gzip()
     {
         $this->option['gzip'] = true;
         return $this;
     }
 
+    /**
+     * 带回信息流
+     * @param bool $transfer
+     * @return $this
+     */
     public function transfer(bool $transfer = true)
     {
         $this->option['transfer'] = $transfer;
@@ -175,6 +278,12 @@ final class Output
     }
 
 
+    /**
+     * 携带证书
+     * @param $key
+     * @param null $value
+     * @return $this
+     */
     public function cert($key, $value = null)
     {
         if (is_array($key)) {
@@ -187,6 +296,12 @@ final class Output
     }
 
 
+    /**
+     * 上传文件
+     * @param string $filename
+     * @param $filepath
+     * @return $this
+     */
     public function files(string $filename, $filepath)
     {
         $this->option['files'][$filename] = $filepath;
@@ -194,6 +309,12 @@ final class Output
     }
 
 
+    /**
+     * 直接设置
+     * @param string $key
+     * @param $value
+     * @return $this
+     */
     public function set(string $key, $value)
     {
         $this->option[$key] = $value;
