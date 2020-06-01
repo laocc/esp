@@ -30,31 +30,34 @@ final class Output
 
     public function get(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'get';
         $this->value = $this->request($this->url, null, $this->option);
         if (!$encode) return $this->value;
+        if ('html' === $encode) return $this->value['html'];
         return $this->value['array'] ?? [];
     }
 
     public function post(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'post';
         $this->value = $this->request($this->url, null, $this->option);
         if (!$encode) return $this->value;
+        if ('html' === $encode) return $this->value['html'];
         return $this->value['array'] ?? [];
     }
 
     public function upload(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'upload';
         $this->value = $this->request($this->url, null, $this->option);
         if (!$encode) return $this->value;
+        if ('html' === $encode) return $this->value['html'];
         return $this->value['array'] ?? [];
     }
 
@@ -140,7 +143,7 @@ final class Output
                 return $this->option['cookies'];
             }
         }
-        if ($cookies === 'temp' or $cookies = 'rand') {
+        if ($cookies === 'temp' or $cookies === 'rand') {
             $cookies = "/tmp/ck_" . microtime(true) . mt_rand();
         }
         $this->option['cookies'] = $cookies;
