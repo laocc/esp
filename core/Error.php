@@ -3,7 +3,7 @@
 
 namespace esp\core;
 
-class Error
+final class Error
 {
     private $dispatcher;
 

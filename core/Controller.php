@@ -263,14 +263,32 @@ abstract class Controller
     }
 
     /**
+     * 构造一个Debug空类
+     */
+    private function anonymousDebug()
+    {
+        return new class()
+        {
+            public function relay(...$a)
+            {
+            }
+
+            public function __call($name, $arguments)
+            {
+                // TODO: Implement __call() method.
+            }
+        };
+    }
+
+    /**
      * @param string $data
      * @param null $pre
-     * @return bool|Debug|EmptyClass
+     * @return bool|Debug|__anonymous@6848
      */
     final public function debug($data = '_R_DEBUG_', $pre = null)
     {
         if (_CLI) return false;
-        if (is_null($this->_debug)) return new EmptyClass();
+        if (is_null($this->_debug)) return $this->anonymousDebug();
 //        if (is_null($data)) return $this->_debug;
         if ($data === '_R_DEBUG_') return $this->_debug;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
@@ -280,12 +298,12 @@ abstract class Controller
 
     /**
      * @param null $data
-     * @return bool|Debug|EmptyClass
+     * @return bool|Debug|__anonymous@6848
      */
     final public function debug_mysql($data = null)
     {
         if (_CLI) return false;
-        if (is_null($this->_debug)) return new EmptyClass();
+        if (is_null($this->_debug)) return $this->anonymousDebug();
         if (is_null($data)) return $this->_debug;
         $this->_debug->mysql_log($data);
         return $this->_debug;

@@ -17,6 +17,8 @@ class Example extends Plugin
 
     /**
      * 1.在路由之前触发
+     * @param Request $request
+     * @param Response $response
      */
     public function routeBefore(Request $request, Response $response)
     {
@@ -25,6 +27,8 @@ class Example extends Plugin
 
     /**
      * 2.路由结束之后触发
+     * @param Request $request
+     * @param Response $response
      */
     public function routeAfter(Request $request, Response $response)
     {
@@ -34,6 +38,8 @@ class Example extends Plugin
 
     /**
      * 3.分发循环开始之前被触发
+     * @param Request $request
+     * @param Response $response
      */
     public function dispatchBefore(Request $request, Response $response)
     {
@@ -42,6 +48,8 @@ class Example extends Plugin
 
     /**
      * 4.分发之前触发
+     * @param Request $request
+     * @param Response $response
      */
     public function dispatchAfter(Request $request, Response $response)
     {
@@ -50,6 +58,8 @@ class Example extends Plugin
 
     /**
      * 5.显示开始之前被触发
+     * @param Request $request
+     * @param Response $response
      */
     public function displayBefore(Request $request, Response $response)
     {
@@ -59,6 +69,8 @@ class Example extends Plugin
 
     /**
      * 6.显示之后触发
+     * @param Request $request
+     * @param Response $response
      */
     public function displayAfter(Request $request, Response $response)
     {
@@ -68,6 +80,8 @@ class Example extends Plugin
 
     /**
      * 7.结束之后触发
+     * @param Request $request
+     * @param Response $response
      */
     public function mainEnd(Request $request, Response $response)
     {
