@@ -11,6 +11,7 @@ final class Request
     public $router = null;//实际生效的路由器名称
     public $params = Array();
 
+    public $cookies;
     public $virtual;
     public $module;
     public $controller;//控制器名
@@ -39,6 +40,8 @@ final class Request
         $this->uri = _CLI ? //CLI模式下 取参数作为路由
             ('/' . trim(implode('/', array_slice($GLOBALS["argv"], 1)), '/')) :
             parse_url(getenv('REQUEST_URI'), PHP_URL_PATH);
+
+        $this->cookies = new Cookies();
     }
 
     public function id()
@@ -144,7 +147,7 @@ final class Request
                 throw new \Exception("Header be Send:{$file}[{$line}]", 505);
             }
             $time = time() + 86400 * 365;
-            $dom = Cookies::domain();
+            $dom = $this->cookies->domain;
             _HTTPS && setcookie($key, $unique, $time, '/', $dom, true, true);
             setcookie($key, $unique, $time, '/', $dom, false, true);
         }
@@ -365,6 +368,11 @@ final class Request
     }
 
 
+    /**
+     * 从ua中提取手机品牌
+     * @param null $ua
+     * @return string
+     */
     public function brand($ua = null)
     {
         if (is_null($ua)) $ua = (getenv('HTTP_USER_AGENT') ?: '');

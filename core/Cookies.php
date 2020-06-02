@@ -5,8 +5,14 @@ namespace esp\core;
 
 final class Cookies
 {
+    public $domain;
 
-    public static function set($key, $value, $ttl = null)
+    public function __construct()
+    {
+        $this->domain = $this->getDomain();
+    }
+
+    public function set($key, $value, $ttl = null)
     {
         if (_CLI) return null;
         if (!is_int($ttl) and preg_match('/^(\d+)\s?([ymDhw])$/i', trim($ttl), $mat)) {
@@ -14,10 +20,10 @@ final class Cookies
             $ttl = (intval($mat[1]) * $s) + time();
         }
         if (is_array($value)) $value = json_encode($value, 256);
-        return setcookie(strtolower($key), $value, $ttl, '/', self::domain(), _HTTPS, true);
+        return setcookie(strtolower($key), $value, $ttl, '/', $this->domain, _HTTPS, true);
     }
 
-    public static function domain()
+    private function getDomain()
     {
         $cookies = $GLOBALS['cookies'] ?? [];
         $config = ($cookies['default'] ?? []) + ['run' => 1, 'domain' => 'host'];
@@ -28,24 +34,24 @@ final class Cookies
         return $config['domain'] === 'host' ? host($domain) : getenv('HTTP_HOST');
     }
 
-    public static function del($key)
+    public function del($key)
     {
         if (_CLI) return null;
-        return setcookie(strtolower($key), null, -1, '/', self::domain(), _HTTPS, true);
+        return setcookie(strtolower($key), null, -1, '/', $this->domain, _HTTPS, true);
     }
 
-    public static function get($key = null, $autoValue = null)
+    public function get($key = null, $autoValue = null)
     {
         if (_CLI) return null;
         if (is_null($key)) return $_COOKIE;
         return $_COOKIE[strtolower($key)] ?? $autoValue;
     }
 
-    public static function disable()
+    public function disable()
     {
         $empty = empty($_COOKIE);
         if (!$empty) return false;
-        setcookie('_c', null, -1, '/', self::domain(), _HTTPS, true);
+        setcookie('_c', null, -1, '/', $this->domain, _HTTPS, true);
         $empty = empty($_COOKIE);
         return $empty;
     }

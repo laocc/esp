@@ -15,6 +15,7 @@ abstract class Controller
     protected $_session;
     protected $_plugs;
     protected $_system;
+    protected $_cookies;
     private $_input;
     public $_debug;
     public $_buffer;
@@ -33,6 +34,7 @@ abstract class Controller
         $this->_session = &$dispatcher->_session;
         $this->_debug = &$dispatcher->_debug;
         $this->_buffer = $this->_config->Redis();
+        $this->_cookies = &$dispatcher->_request->cookies;
         $this->_system = defined('_SYSTEM') ? _SYSTEM : 'auto';
         if (_CLI) return;
 

@@ -93,8 +93,9 @@ class Markdown
 
     /**
      * makeHtml
-     *
-     * @param mixed $text
+     * @param string $text
+     * @param bool $addNav
+     * @param bool $addBoth
      * @return string
      */
     public static function html(string $text, bool $addNav = false, bool $addBoth = true)
@@ -110,7 +111,7 @@ class Markdown
         $html = self::parse($text);
         $html = self::makeFootnotes($html);
         self::joinHtml($html);
-        self::$addNav = $addNav and !Client::is_wap();
+        self::$addNav = $addNav;
         return (self::$addNav ? self::makeNav() : '') .
             "<article class='markdown'>{$html}</article>" .
             ($addBoth ? '<div style="display: block;width:100%;height:100px;clear: both;"></div>' : '');
