@@ -147,7 +147,6 @@ final class Session
      * @param $key
      * @param null $value
      * @return bool
-     * @throws \Exception
      */
     public function set($key, $value = null)
     {
@@ -166,7 +165,6 @@ final class Session
      * @param null $key
      * @param null $autoValue
      * @return bool|float|int|mixed|null|string
-     * @throws \Exception
      */
     public function get($key = null, $autoValue = null)
     {

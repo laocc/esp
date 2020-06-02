@@ -115,7 +115,6 @@ final class Dispatcher
     /**
      * @param string $class '\library\Bootstrap'
      * @return Dispatcher
-     * @throws \Exception
      */
     public function bootstrap(string $class): Dispatcher
     {
@@ -136,7 +135,6 @@ final class Dispatcher
      * 接受注册插件
      * @param Plugin $class
      * @return bool
-     * @throws \Exception
      */
     public function setPlugin(Plugin $class): bool
     {
@@ -168,7 +166,6 @@ final class Dispatcher
     /**
      * 系统运行调度中心
      * @param callable|null $callable
-     * @throws \Exception
      */
     public function run(callable $callable = null): void
     {
@@ -237,7 +234,6 @@ final class Dispatcher
     /**
      * 路由结果分发至控制器动作
      * @return mixed
-     * @throws \Exception
      */
     private function dispatch()
     {

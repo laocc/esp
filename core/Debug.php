@@ -115,7 +115,6 @@ final class Debug
      * @param string $filename
      * @param string $data
      * @return string
-     * @throws \Exception
      */
     public function save_file(string $filename, string $data)
     {

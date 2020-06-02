@@ -168,7 +168,6 @@ abstract class Model
      * @param string $action
      * @param $data
      * @return mixed
-     * @throws \Exception
      */
     private function checkRunData(string $action, $data)
     {
@@ -196,6 +195,13 @@ abstract class Model
      * @param null $pre
      * @return array|int
      * @throws \ErrorException
+     */
+    /**
+     * @param array $data
+     * @param bool $full
+     * @param bool $returnID
+     * @param null $pre
+     * @return array|int
      */
     final public function insert(array $data, bool $full = false, bool $returnID = true, $pre = null)
     {
@@ -239,7 +245,6 @@ abstract class Model
      * 删
      * @param $where
      * @return mixed
-     * @throws \Exception
      */
     final public function delete($where)
     {
@@ -297,7 +302,6 @@ abstract class Model
      * @param string $sql
      * @param null $pre
      * @return mixed|null
-     * @throws \Exception
      */
     final public function get($where, string $orderBy = null, string $sort = 'asc', &$sql = '', $pre = null)
     {
@@ -421,7 +425,6 @@ abstract class Model
      * @param string $sort
      * @param int $limit
      * @return array
-     * @throws \Exception
      */
     final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0, &$sql = '', $pre = null)
     {
@@ -536,7 +539,6 @@ abstract class Model
     /**
      * @param string $string
      * @return mixed
-     * @throws \Exception
      */
     final public function quote(string $string)
     {
@@ -639,7 +641,6 @@ abstract class Model
      * @param int $tranID
      * @param array $_conf 如果要创建一个持久连接，则$_conf需要传入参数：persistent=true，
      * @return Mysql
-     * @throws \Exception
      */
     final public function Mysql(int $tranID = 0, array $_conf = []): Mysql
     {
@@ -672,7 +673,6 @@ abstract class Model
      * @param string $db
      * @param array $_conf
      * @return Mongodb
-     * @throws \Exception
      */
     final public function Mongodb(string $db = 'temp', array $_conf = [])
     {
@@ -692,7 +692,6 @@ abstract class Model
     /**
      * @param array $_conf
      * @return Redis
-     * @throws \Exception
      */
     final public function Redis(array $_conf = []): Redis
     {
@@ -713,7 +712,6 @@ abstract class Model
      * @param string|null $key
      * @param string|null $value
      * @return mixed
-     * @throws \Exception
      */
     final public function Hash(string $table, string $key = null, string $value = null)
     {
@@ -740,7 +738,6 @@ abstract class Model
      * @param string $hashTable
      * @param mixed ...$key
      * @return int
-     * @throws \Exception
      */
     final public function cache_del(string $hashTable, ...$key)
     {
@@ -753,7 +750,6 @@ abstract class Model
      * @param string $key
      * @param array $value
      * @return int
-     * @throws \Exception
      */
     final public function cache_set(string $hashTable, string $key, array $value)
     {
@@ -764,7 +760,6 @@ abstract class Model
      * @param string $hashTable
      * @param string $key
      * @return array|int|string
-     * @throws \Exception
      */
     final public function cache_get(string $hashTable, string $key)
     {

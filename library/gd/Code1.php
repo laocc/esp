@@ -24,7 +24,6 @@ class Code1
     /**
      * @param $option
      * @return mixed
-     * @throws \Exception
      */
     public static function create($option)
     {

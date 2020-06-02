@@ -22,7 +22,6 @@ final class Redis implements KeyValue
      * Redis constructor.
      * @param array $conf
      * @param int|null $db
-     * @throws \Exception
      */
     public function __construct(array $conf = [], int $db = null)
     {
@@ -270,7 +269,6 @@ final class Redis implements KeyValue
     /**
      * 返回服务器时间
      * @return mixed
-     * @throws \Exception
      * 一个包含两个字符串的列表： 第一个字符串是当前时间(以 UNIX 时间戳格式表示)，而第二个字符串是当前这一秒钟已经逝去的微秒数。
      */
     public function time()
@@ -284,7 +282,6 @@ final class Redis implements KeyValue
      * 读取信息，但好象读不到
      * @param null $option
      * @return mixed
-     * @throws \Exception
      */
     public function info($option = null)
     {

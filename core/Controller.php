@@ -23,7 +23,6 @@ abstract class Controller
     /**
      * Controller constructor.
      * @param Dispatcher $dispatcher
-     * @throws \Exception
      */
     public function __construct(Dispatcher $dispatcher)
     {
@@ -60,7 +59,6 @@ abstract class Controller
      * 若允许本站或空来路，则用：$this->check_host('');
      *
      * @param array ...$host
-     * @throws \Exception
      */
     final protected function check_host(...$host)
     {
@@ -164,7 +162,6 @@ abstract class Controller
 
     /**
      * @return Session
-     * @throws \Exception
      */
     final public function getSession()
     {
@@ -243,7 +240,6 @@ abstract class Controller
      * @param string $modName
      * @param mixed ...$param
      * @return mixed
-     * @throws \Exception
      */
     final public function Model(string $modName, ...$param)
     {
@@ -460,7 +456,6 @@ abstract class Controller
     /**
      * @param string|null $mdFile
      * @param string $mdCss
-     * @throws \Exception
      */
     final protected function md(string $mdFile = null, string $mdCss = '/css/markdown.css?1')
     {
@@ -475,7 +470,6 @@ abstract class Controller
     /**
      * @param string|null $value
      * @return bool
-     * @throws \Exception
      */
     final protected function html(string $value = null)
     {
@@ -485,7 +479,6 @@ abstract class Controller
     /**
      * @param array $value
      * @return bool
-     * @throws \Exception
      */
     final protected function json(array $value)
     {

@@ -4,7 +4,6 @@
 namespace esp\core\db\ext;
 
 use esp\core\db\Mysql;
-use esp\core\Exception;
 
 /**
  *
@@ -101,7 +100,6 @@ final class Builder
     /**
      * 事务结束，提交。
      * @return bool
-     * @throws \Exception
      */
     public function commit()
     {
@@ -157,14 +155,14 @@ final class Builder
 
     /**
      * @param $key
-     * @param $param
+     * @param null $param
      * @return $this
      * @throws \Exception
      */
     public function bind($key, $param = null)
     {
         if ($key === 0) {
-            throw new Exception('PDO数据列绑定下标应该从1开始');
+            throw new \Exception('PDO数据列绑定下标应该从1开始');
         }
         if (is_array($key)) {
             $this->_bindKV += $key;
@@ -251,7 +249,7 @@ final class Builder
             return $this;
         }
         if (!is_string($fields) or empty($fields)) {
-            throw new Exception('选择的字段不能为空，且只能是字符串类型。');
+            throw new \Exception('选择的字段不能为空，且只能是字符串类型。');
         }
 
         /**
@@ -405,7 +403,7 @@ final class Builder
         }
 
         if (!is_string($field)) {
-            throw new Exception("DB_ERROR: where 条件异常:" . var_export($field, true));
+            throw new \Exception("DB_ERROR: where 条件异常:" . var_export($field, true));
         }
 
 
@@ -529,7 +527,7 @@ final class Builder
                     break;
                 case '@'://组合 in 和 not in
                     if (!is_array($value)) {
-                        throw new Exception("where in 的值必须为数组形式");
+                        throw new \Exception("where in 的值必须为数组形式");
                     }
                     if (empty($value)) $value = [0, 0];
                     $in = $field[-2] === '!' ? 'not in' : 'in';
@@ -551,7 +549,7 @@ final class Builder
                     break;
                 case '%'://mod
                     if (!is_array($value)) {
-                        throw new Exception("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]");
+                        throw new \Exception("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]");
                     }
                     if (empty($value)) $value = [2, 1];
                     $field = substr($field, 0, -1);
@@ -568,7 +566,7 @@ final class Builder
                     //所有以[-.`\w]开头的，加保护符
                     $protectFiled = trim($field);
                     if (stripos('abcdefghijklmnopqrstuvwxyz', $protectFiled[0]) === false) {
-                        throw new Exception("DB_ERROR: where 非法 Key 值:【{$field}】");
+                        throw new \Exception("DB_ERROR: where 非法 Key 值:【{$field}】");
                     } else {
                         // 以数学运算符结尾的，加空格
                         if (stripos('<>=', $protectFiled[-1]) !== false) {
@@ -640,7 +638,7 @@ final class Builder
     public function where_in($field, $data, $is_OR = FALSE, $isNot = false)
     {
         if (empty($field)) {
-            throw new Exception('DB_ERROR: where in 条件不可为空');
+            throw new \Exception('DB_ERROR: where in 条件不可为空');
         }
         $protectField = $this->protect_identifier($field);
 
@@ -699,7 +697,7 @@ final class Builder
     public function where_like($field, $value, $is_OR = FALSE)
     {
         if (empty($field) || empty($value)) {
-            throw new Exception('DB_ERROR: where like 条件不能为空');
+            throw new \Exception('DB_ERROR: where like 条件不能为空');
         }
         $protectField = $this->protect_identifier($field);
 
@@ -738,7 +736,7 @@ final class Builder
         if (!is_bool($is_OR)) $is_OR = (strtolower($is_OR) === 'or') ? true : false;
 
         if ($this->_where_group_in) {
-            throw new Exception('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end');
+            throw new \Exception('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end');
         }
         if (empty($this->_where)) {
             $this->_where = '(';
@@ -757,10 +755,10 @@ final class Builder
     public function where_group_end()
     {
         if ($this->_where_group_in === false) {
-            throw new Exception('DB_ERROR: 当前未处于Where Group之中');
+            throw new \Exception('DB_ERROR: 当前未处于Where Group之中');
         }
         if (empty($this->_where)) {
-            throw new Exception('DB_ERROR: 当前where条件为空，无法创建where语句');
+            throw new \Exception('DB_ERROR: 当前where条件为空，无法创建where语句');
         } else {
             $this->_where .= ')';
             $this->_where_group_in = false;
@@ -788,7 +786,7 @@ final class Builder
     {
         if (empty($this->_where)) return '';
         if ($this->_where_group_in) {
-            throw new Exception('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end');
+            throw new \Exception('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end');
         }
         /**
          * 这只是个权宜之计，暂时先用正则替换掉括号后面的AND和OR
@@ -853,7 +851,7 @@ final class Builder
     {
         $method = strtoupper($method);
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
-            throw new Exception('DB_ERROR: JOIN模式不存在：' . $method);
+            throw new \Exception('DB_ERROR: JOIN模式不存在：' . $method);
         }
 
         // 保护标识符
@@ -877,7 +875,7 @@ final class Builder
         foreach ($_filters as &$re) {
             $_filter_arr[] = preg_replace_callback('/^(.*)(>|<|<>|=|<=>)(.*)/', function ($matches) use ($identifier) {
                 if ($matches[1] === $matches[3]) {
-                    throw new Exception('DB_ERROR: JOIN条件两边不能完全相同，如果是不同表相同字段名，请用[tabName.filed]的方式');
+                    throw new \Exception('DB_ERROR: JOIN条件两边不能完全相同，如果是不同表相同字段名，请用[tabName.filed]的方式');
                 }
                 if ($identifier)
                     return $this->protect_identifier($matches[1]) . " {$matches[2]} " . $this->protect_identifier($matches[3]);
@@ -908,7 +906,7 @@ final class Builder
          */
         $method = strtoupper(trim($method));
         if (!in_array($method, ['ASC', 'DESC', 'RAND'])) {
-            throw new Exception('DB_ERROR: ORDER模式不存在：' . $method);
+            throw new \Exception('DB_ERROR: ORDER模式不存在：' . $method);
         }
 
         if ($method === 'RAND' or $field === 'RAND') {
@@ -998,7 +996,7 @@ final class Builder
      * @param string $sql
      * @param null $pre
      * @return bool|Result|mixed|null
-     * @throws \ErrorException
+     * @throws \Exception
      */
     public function get(int $row = 0, &$sql = '', $pre = null)
     {
@@ -1249,7 +1247,7 @@ final class Builder
     public function update_batch(array $upData)
     {
         if (empty($upData)) {
-            throw new Exception('DB_ERROR: 不能 update 空数据');
+            throw new \Exception('DB_ERROR: 不能 update 空数据');
         }
         $sql = "UPDATE {$this->_table} SET ";
         foreach ($upData as $key => &$data) {

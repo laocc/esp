@@ -135,7 +135,6 @@ final class Request
      * @param string $key
      * @param bool $number
      * @return int|mixed|null|string
-     * @throws \Exception
      */
     public function cid(string $key = '_SSI', bool $number = false)
     {

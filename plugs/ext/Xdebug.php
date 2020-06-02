@@ -247,7 +247,6 @@ CSS;
     /**
      * 读取并进行分析
      * @param $filePath
-     * @throws \Exception
      */
     private function get_file($filePath)
     {

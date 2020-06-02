@@ -96,7 +96,6 @@ class Mongodb
      * @param array $value
      * @param bool $batch 批量插入
      * @return array|mixed
-     * @throws \Exception
      */
     public function insert(array $value, $batch = false)
     {
@@ -118,7 +117,6 @@ class Mongodb
      * @param array $value
      * @param string $action ，操作方式：$set赋值，$inc为数值增减
      * @return int
-     * @throws \MongoDB\Driver\Exception\InvalidArgumentException
      */
     public function update(array $value, $action = '$set')
     {
@@ -341,8 +339,6 @@ class Mongodb
 
     /**
      * @return array|mixed
-     * @throws \Exception
-     * @throws \MongoDB\Driver\Exception\Exception
      */
     public function row()
     {
@@ -363,7 +359,6 @@ class Mongodb
      * @param int $skip
      * @param null $limit
      * @return array|mixed
-     * @throws \Exception
      */
     public function get($skip = 0, $limit = null)
     {

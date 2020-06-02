@@ -39,7 +39,6 @@ final class Output
     /**
      * @param string $uri
      * @return $this
-     * @throws \Exception
      */
     public function rpc(string $uri)
     {

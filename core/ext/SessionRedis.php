@@ -37,7 +37,6 @@ class SessionRedis implements \SessionHandlerInterface
      * @param string $save_path
      * @param string $session_name 此值是cookies name
      * @return bool
-     * @throws \Exception
      */
     public function open($save_path, $session_name)
     {
@@ -164,7 +163,6 @@ class SessionRedis implements \SessionHandlerInterface
      * @param string $session_id
      * @param string $session_data
      * @return bool
-     * @throws \Exception
      */
     public function write($session_id, $session_data)
     {

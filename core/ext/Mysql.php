@@ -11,7 +11,6 @@ trait Mysql
      * select * from INFORMATION_SCHEMA.Columns where table_name='tabAdmin' and table_schema='dbPayCenter';
      * 当前模型表对应的主键字段名，即自增字段
      * @return null
-     * @throws \Exception
      *************************** 1. row ***************************
      * TABLE_CATALOG: def
      * TABLE_SCHEMA: dbPlatform
@@ -38,7 +37,6 @@ trait Mysql
     /**
      * @param string|null $table
      * @return null
-     * @throws \Exception
      */
     final public function PRI(string $table = null)
     {
@@ -93,7 +91,6 @@ trait Mysql
      * @param null $table
      * @param bool $html
      * @return array|string
-     * @throws \Exception
      */
     final public function desc($table = null, bool $html = false)
     {
@@ -171,7 +168,6 @@ trait Mysql
     /**
      * 列出表字段
      * @return array
-     * @throws \Exception
      */
     final public function field(string $table = null)
     {
@@ -221,7 +217,6 @@ trait Mysql
     /**
      * 列出所有字段的名称
      * @return array
-     * @throws \Exception
      */
     final public function title()
     {
@@ -244,7 +239,6 @@ trait Mysql
      * @param string $table
      * @param array $data
      * @return array
-     * @throws \Exception
      */
     final private function _FillField(string $dbName, string $table, array $data)
     {

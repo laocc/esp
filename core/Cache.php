@@ -115,7 +115,6 @@ final class Cache
     /**
      * 保存静态HTML
      * @return bool
-     * @throws \Exception
      */
     private function htmlSave()
     {

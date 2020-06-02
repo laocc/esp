@@ -10,7 +10,6 @@ final class Router
      * Router constructor.
      * @param Configure $configure
      * @param Request $request
-     * @throws \Exception
      */
     public function __construct(Configure $configure, Request $request)
     {
@@ -116,7 +115,6 @@ final class Router
      * @param array $matches 正则匹配结果
      * @param array $route
      * @return array
-     * @throws \Exception
      */
     private function fill_route(string &$directory, array $matches, array $route): array
     {

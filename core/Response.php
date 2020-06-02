@@ -61,7 +61,6 @@ final class Response
      * @param string $name
      * @param $value
      * @return bool
-     * @throws \Exception
      */
     public function set_value(string $name, $value): bool
     {
@@ -123,7 +122,6 @@ final class Response
     /**
      * 渲染视图并返回
      * @param void $value 控制器返回的值
-     * @throws \Exception
      */
     public function display(&$value): void
     {
@@ -204,7 +202,6 @@ final class Response
      * 视图注册标签解析器
      * @param Adapter $adapter
      * @return View
-     * @throws \Exception
      */
     public function registerAdapter(Adapter $adapter)
     {
@@ -307,7 +304,6 @@ final class Response
     /**
      * 渲染视图并返回
      * @return mixed|string
-     * @throws \Exception
      */
     public function render()
     {
@@ -416,7 +412,6 @@ final class Response
     /**
      * 最后显示内容
      * @return null|string
-     * @throws \Exception
      */
     private function display_response()
     {

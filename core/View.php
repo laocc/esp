@@ -119,7 +119,6 @@ final class View
     /**
      * @param $use
      * @return $this
-     * @throws \Exception
      */
     public function setAdapter($use): View
     {
@@ -151,7 +150,6 @@ final class View
      * @param string $file
      * @param array $value
      * @return string
-     * @throws \Exception
      */
     public function render(string $file, array $value): string
     {
@@ -186,7 +184,6 @@ final class View
      * 显示解析视图结果
      * @param $file
      * @param $value
-     * @throws \Exception
      */
     public function display($file, $value): void
     {

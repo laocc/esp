@@ -6,7 +6,6 @@ namespace esp\core\db;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\Result;
 use esp\core\Debug;
-use esp\core\Exception;
 
 class Mysql
 {
@@ -26,7 +25,6 @@ class Mysql
      * Mysql constructor.
      * @param int $tranID
      * @param array|null $conf
-     * @throws \Exception
      */
     public function __construct($tranID = 0, array $conf = null)
     {
@@ -52,19 +50,14 @@ class Mysql
     /**
      * @param $tabName
      * @return Builder
-     * @throws \Exception
      */
     public function table($tabName)
     {
-        try {
-            if (!is_string($tabName) || empty($tabName)) {
-                throw new Exception('PDO_Error :  数据表名错误');
-            }
-            return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? false), $this->transID))
-                ->table($tabName);
-        } catch (Exception $e) {
-            $e->display();
+        if (!is_string($tabName) || empty($tabName)) {
+            throw new \Exception('PDO_Error :  数据表名错误');
         }
+        return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? false), $this->transID))
+            ->table($tabName);
     }
 
     public function print(bool $boolPrint = false)
@@ -77,7 +70,6 @@ class Mysql
      * @param bool $upData
      * @param int $trans_id
      * @return mixed
-     * @throws \Exception
      */
     private function connect(bool $upData, int $trans_id = 0)
     {
@@ -169,7 +161,6 @@ class Mysql
      * @param string $sql
      * @param array $param
      * @return bool|Result|null
-     * @throws \Exception
      */
     public function query(string $sql, array $param = [])
     {
@@ -189,7 +180,6 @@ class Mysql
      * 从SQL语句中提取该语句的执行性质
      * @param $sql
      * @return mixed
-     * @throws \Exception
      */
     private function sqlAction($sql)
     {
@@ -213,7 +203,6 @@ class Mysql
      * @param \PDO|null $CONN
      * @param null $pre
      * @return false|string
-     * @throws \Exception
      */
     public function query_exec(string $sql, array $option, \PDO $CONN = null, $pre = null)
     {
@@ -538,7 +527,6 @@ class Mysql
      * @param int $trans_id
      * @param array $batch_SQLs
      * @return Builder
-     * @throws \Exception
      */
     public function trans(int $trans_id = 0, array $batch_SQLs = [])
     {
@@ -597,21 +585,16 @@ class Mysql
      * @param \PDO $CONN
      * @param $trans_id
      * @return bool
-     * @throws \Exception
      */
     public function trans_commit(\PDO $CONN, $trans_id)
     {
-        try {
-            if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) return false;
+        if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) return false;
 
-            if (!$CONN->inTransaction()) {
-                throw new Exception("Trans Commit Error: 当前没有处于事务{$trans_id}中");
-            }
-            $this->_trans_run[$trans_id] = false;
-            return $CONN->commit();
-        } catch (Exception $exception) {
-            $exception->display();
+        if (!$CONN->inTransaction()) {
+            throw new \Exception("Trans Commit Error: 当前没有处于事务{$trans_id}中");
         }
+        $this->_trans_run[$trans_id] = false;
+        return $CONN->commit();
     }
 
     /**
