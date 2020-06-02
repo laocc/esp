@@ -60,7 +60,7 @@ final class Configure
              * 并且主服务器返回的是`success`，如果返回的不是这个，就是出错了。
              * 然后，再次goto tryGet;从redis中读取config
              */
-            $get = RPC::get('/debug/config', true);
+            $get = Output::new()->rpc('/debug/config')->get('json');
             if (!($get['success'] ?? 0)) {
                 if ($tryCount > 1) throw new \Exception("系统出错." . $get, 505);
                 $tryCount++;

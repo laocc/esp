@@ -15,9 +15,42 @@ final class Output
         $this->option = $option;
     }
 
-    public function rpc()
-    {
 
+    /**
+     * @param array $option
+     * @return Output
+     */
+    public static function new(array $option = [])
+    {
+        return new Output($option);
+    }
+
+
+    public function flush()
+    {
+        $this->option = [];
+        $this->url = '';
+        $this->data = null;
+        $this->value = null;
+        return $this;
+    }
+
+
+    /**
+     * @param string $uri
+     * @return $this
+     * @throws \Exception
+     */
+    public function rpc(string $uri)
+    {
+        if (_VIRTUAL === 'rpc') throw new \Exception('RPC内不能请求rpc', 505);
+
+        $this->url = sprintf('http://%s:%s/%s', _RPC['host'], _RPC['port'], ltrim($uri, '/'));
+
+        $this->option['host'] = [implode(':', _RPC)];
+        $this->option['timeout'] = 3;
+        $this->option['encode'] = 'json';
+        return $this;
     }
 
 
@@ -46,7 +79,7 @@ final class Output
      */
     public function get(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html', 'array'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'get';
         $this->value = $this->request($this->url, null, $this->option);
@@ -62,7 +95,7 @@ final class Output
      */
     public function post(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html', 'array'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'post';
         $this->value = $this->request($this->url, null, $this->option);

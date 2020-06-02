@@ -60,6 +60,16 @@ abstract class Model
         }
     }
 
+    public function __debugInfo()
+    {
+        return ['table' => $this->_table, 'id' => $this->_id];
+    }
+
+    public function __toString()
+    {
+        return json_encode(['table' => $this->_table, 'id' => $this->_id]);
+    }
+
     /**
      * @return Controller
      */

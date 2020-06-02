@@ -111,6 +111,12 @@ final class Debug
         return $this;
     }
 
+    /**
+     * @param string $filename
+     * @param string $data
+     * @return string
+     * @throws \Exception
+     */
     public function save_file(string $filename, string $data)
     {
         $send = null;
@@ -141,8 +147,11 @@ final class Debug
             }
 
             //发到RPC，写入move专用目录，然后由后台移到实际目录
-            $send = RPC::post('/debug', ['filename' => $filename, 'data' => $data]);
-            if ($send) return "Rpc:{$send}";
+            $send = Output::new()->rpc('/debug/move')
+                ->data(['filename' => $filename, 'data' => $data])
+                ->post('json');
+
+            if ($send) return "Rpc:{$send['length']}";
         }
 
         $p = dirname($filename);
