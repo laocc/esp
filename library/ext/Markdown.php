@@ -2,7 +2,6 @@
 
 namespace esp\library\ext;
 
-use esp\core\Client;
 
 /**
  * 解析md代码：Markdown::html(mdCode);

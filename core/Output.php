@@ -15,6 +15,12 @@ final class Output
         $this->option = $option;
     }
 
+    public function rpc()
+    {
+
+    }
+
+
     public function url(string $url)
     {
         $this->url = $url;
