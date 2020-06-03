@@ -83,10 +83,10 @@ final class Resources
 
     public function replace(string $html): string
     {
-        $host = $this->host();
-        $path = $this->path();
-        if (empty($host)) $host = $path;
-        $face = substr(getenv('DOCUMENT_ROOT'), strlen(_ROOT));
+        $path = $this->path();//resource文件路径
+        $host = $this->host() ?: $path;//resource域名
+        $face = substr(getenv('DOCUMENT_ROOT'), strlen(_ROOT));//站点入口位置
+
         return str_replace([$path, '__RAND__', $face], [$host, $this->rand(), ''], $html);
     }
 

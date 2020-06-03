@@ -323,6 +323,7 @@ final class Response
                 break;
 
             case 'html':
+            case 'text':
                 $html = print_r($this->_display_value, true);
                 break;
 
@@ -331,9 +332,6 @@ final class Response
                 $html = base64_decode($this->_display_value);
                 break;
 
-            case 'text':
-                $html = print_r($this->_display_value, true);
-                break;
 
             case 'xml':
                 if (is_array($this->_display_value[1])) {
@@ -405,6 +403,7 @@ final class Response
             $html = str_replace("</head>", "{$cssTag}\n\t{$jssTag}\n</head>", $html);
         }
 
+        //由resource过滤一些特殊的字符串
         return $this->_resource->replace($html);
     }
 
@@ -495,7 +494,10 @@ final class Response
             } else {
                 $this->_layout_val['_css'] = null;
             }
-        } else {
+        } /**
+         * 不合并
+         */
+        else {
             foreach (['foot', 'head', 'body', 'defer'] as $pos) {
                 $defer = ($pos === 'defer') ? ' defer="defer"' : null;
                 foreach ($this->_layout_val["_js_{$pos}"] as $i => &$js) {

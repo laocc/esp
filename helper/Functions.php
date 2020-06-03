@@ -60,6 +60,21 @@ function safe_replace(string $str): string
     return preg_replace('/[\"\'\%\&\$\#\(\)\[\]\{\}\?]/', '', $str);
 }
 
+/**
+ * 过滤所有可能的符号
+ * @param string $str
+ * @param string $fix
+ * @return null|string|string[]
+ */
+function replace_for_split(string $str, string $fix = ',')
+{
+    if (empty($str)) return '';
+    $str = mb_ereg_replace(
+        '[  \`\-\=\[\]\\\;\',\.\/\~\!\@\#\$\%\^\&\*\(\)\_\+\{\}\|\:\"\<\>\?\·【】、；‘，。/~！@#￥%……&*（）——+{}|：“《》？]',
+        $fix, $str);
+    return trim($str, $fix);
+}
+
 
 /**
  * 查询域名的根域名，兼容国别的二级域名

@@ -95,14 +95,16 @@ abstract class Controller
         return $this->_response->getView();
     }
 
-    final public function setView($value)
+    final public function setView($value): Controller
     {
         $this->_response->setView($value);
+        return $this;
     }
 
-    final public function setViewPath(string $value)
+    final public function setViewPath(string $value): Controller
     {
         $this->_response->viewPath($value);
+        return $this;
     }
 
     final public function run_user(string $user = 'www')
@@ -136,9 +138,10 @@ abstract class Controller
         return $this->_response->getLayout();
     }
 
-    final protected function setLayout($value)
+    final protected function setLayout($value): Controller
     {
         $this->_response->setLayout($value);
+        return $this;
     }
 
     /**
@@ -314,9 +317,10 @@ abstract class Controller
         return $this->_buffer->flush();
     }
 
-    final protected function header(...$kv): void
+    final protected function header(...$kv): Controller
     {
         $this->_response->header(...$kv);
+        return $this;
     }
 
     /**
@@ -433,13 +437,13 @@ abstract class Controller
      * @param null $value
      * @return $this
      */
-    final protected function assign($name, $value = null)
+    final protected function assign($name, $value = null): Controller
     {
         $this->_response->assign($name, $value);
         return $this;
     }
 
-    final public function __set(string $name, $value)
+    final public function __set(string $name, $value): Controller
     {
         $this->_response->assign($name, $value);
         return $this;
@@ -450,7 +454,7 @@ abstract class Controller
         return $this->_response->get($name);
     }
 
-    final protected function set(string $name, $value = null)
+    final protected function set(string $name, $value = null): Controller
     {
         $this->_response->assign($name, $value);
         return $this;
@@ -508,7 +512,7 @@ abstract class Controller
      * @param bool $default
      * @return $this
      */
-    final protected function title(string $title, bool $default = false)
+    final protected function title(string $title, bool $default = false): Controller
     {
         $this->_response->title($title, $default);
         return $this;
@@ -537,12 +541,13 @@ abstract class Controller
         return $this->_response->set_value('xml', [$root, $value]);
     }
 
-    final protected function ajax($viewFile)
+    final protected function ajax($viewFile): Controller
     {
         if ($this->getRequest()->isAjax()) {
             $this->setLayout(false);
             $this->setView($viewFile);
         }
+        return $this;
     }
 
     /**
@@ -551,7 +556,7 @@ abstract class Controller
      * @param string $pos
      * @return $this
      */
-    final protected function js($file, $pos = 'foot')
+    final protected function js($file, $pos = 'foot'): Controller
     {
         $this->_response->js($file, $pos);
         return $this;
@@ -563,19 +568,19 @@ abstract class Controller
      * @param $file
      * @return $this
      */
-    final protected function css($file)
+    final protected function css($file): Controller
     {
         $this->_response->css($file);
         return $this;
     }
 
-    final protected function concat(bool $run)
+    final protected function concat(bool $run): Controller
     {
         $this->_response->concat($run);
         return $this;
     }
 
-    final protected function render(bool $run)
+    final protected function render(bool $run): Controller
     {
         $this->_response->autoRun($run);
         return $this;
@@ -588,7 +593,7 @@ abstract class Controller
      * @param string $value
      * @return $this
      */
-    final protected function meta(string $name, string $value)
+    final protected function meta(string $name, string $value): Controller
     {
         $this->_response->meta($name, $value);
         return $this;
@@ -600,7 +605,7 @@ abstract class Controller
      * @param string $value
      * @return $this
      */
-    final protected function keywords(string $value)
+    final protected function keywords(string $value): Controller
     {
         $this->_response->keywords($value);
         return $this;
@@ -612,13 +617,13 @@ abstract class Controller
      * @param string $value
      * @return $this
      */
-    final protected function description(string $value)
+    final protected function description(string $value): Controller
     {
         $this->_response->description($value);
         return $this;
     }
 
-    final protected function cache(bool $save = true)
+    final protected function cache(bool $save = true): Controller
     {
         $this->_response->cache($save);
         return $this;
@@ -629,10 +634,12 @@ abstract class Controller
      * 先注册的先执行，后注册的后执和，框架最后还有debug保存
      * @param callable $fun
      * @param mixed ...$parameter
+     * @return Controller
      */
-    final public function shutdown(callable $fun, ...$parameter)
+    final public function shutdown(callable $fun, ...$parameter): Controller
     {
         register_shutdown_function($fun, ...$parameter);
+        return $this;
     }
 
 
