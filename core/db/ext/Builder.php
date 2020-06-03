@@ -99,11 +99,15 @@ final class Builder
 
     /**
      * 事务结束，提交。
-     * @return bool
+     * @param bool $rest
+     * @return string|bool
+     * @throws \Exception
      */
-    public function commit()
+    public function commit(bool $rest = true)
     {
-        return $this->_MySQL->trans_commit($this->_MySQL->master[$this->_Trans_ID], $this->_Trans_ID);
+        $val = $this->_MySQL->trans_commit($this->_MySQL->master[$this->_Trans_ID], $this->_Trans_ID);
+        if ($rest && is_array($val)) return $val['error'];
+        return $val;
     }
 
     /**
@@ -1080,7 +1084,7 @@ final class Builder
     {
         $where = $this->_build_where();
         if (empty($where)) {//禁止无where时删除数据
-            throw new Exception('DB_ERROR: 禁止无where时删除数据，如果要清空表，请采用：id>0的方式');
+            throw new \Exception('DB_ERROR: 禁止无where时删除数据，如果要清空表，请采用：id>0的方式');
         }
 
         $sql = Array();
@@ -1105,7 +1109,7 @@ final class Builder
     public function insert(array $data, $is_REPLACE = FALSE)
     {
         if (empty($data)) {
-            throw new Exception('DB_ERROR: 无法 insert/replace 空数据');
+            throw new \Exception('DB_ERROR: 无法 insert/replace 空数据');
         }
         $this->_param_data = Array();
 
@@ -1228,7 +1232,7 @@ final class Builder
         err:
         $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $this->_MySQL->debug(['data' => $data, 'sql' => $sql, 'error' => $Exception], $pre);
-        throw new Exception($Exception);
+        throw new \Exception($Exception);
     }
 
     /**

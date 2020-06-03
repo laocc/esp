@@ -167,7 +167,7 @@ final class Response
         }
 
         display:
-
+        if ($this->_request->isAjax()) return;
         echo $this->_display_Result = $this->render();
     }
 

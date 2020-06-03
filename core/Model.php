@@ -271,16 +271,16 @@ abstract class Model
      * @param string $sql
      * @param null $pre
      * @return bool|db\ext\Result|null
-     * @throws Exception
+     * @throws \Exception
      */
     final public function update($where, array $data, &$sql = '', $pre = null)
     {
         $table = $this->table();
-        if (!$table) throw new Exception('Unable to get table name');
+        if (!$table) throw new \Exception('Unable to get table name');
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        if (empty($where)) throw new Exception('Update Where 禁止为空');
+        if (empty($where)) throw new \Exception('Update Where 禁止为空');
         $mysql = $this->Mysql();
 
         if ($this->__cache === true) {

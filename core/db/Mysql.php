@@ -11,6 +11,7 @@ class Mysql
 {
     private $_CONF;//配置定义
     private $_trans_run = Array();//事务状态
+    private $_trans_error = Array();//事务出错状态
     private $connect_time = Array();//连接时间
     private $transID = 0;
     private $_checkGoneAway = false;
@@ -530,65 +531,68 @@ class Mysql
      */
     public function trans(int $trans_id = 0, array $batch_SQLs = [])
     {
-        try {
-            if ($trans_id === 0) {
-                $trans_id = $this->transID;
-            }
-            if ($trans_id === 0) {
-                throw new Exception("Trans Error: 事务ID须从1开始，不可以为0。");
-            }
-
-            if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id]) {
-                throw new Exception("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中，或该事务未正常结束");
-            }
-
-            $CONN = $this->connect(true, $trans_id);//连接数据库，直接选择主库
-
-            if ($CONN->inTransaction()) {
-                throw new Exception("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中");
-            }
-
-            if (!$CONN->beginTransaction()) {
-                throw new Exception("PDO_Error :  启动事务失败。");
-            }
-            $this->_trans_run[$trans_id] = true;
-
-            /**
-             * 直接批量事务
-             */
-            if (!empty($batch_SQLs)) {
-                foreach ($batch_SQLs as $sql) {
-                    $action = $this->sqlAction($sql);
-                    $option = [
-                        'param' => false,
-                        'prepare' => true,
-                        'count' => false,
-                        'fetch' => 0,
-                        'bind' => [],
-                        'trans_id' => $trans_id,
-                        'action' => $action,
-                    ];
-                    $this->query_exec($sql, $option, $CONN);
-                }
-                $this->_trans_run[$trans_id] = false;
-                return $CONN->commit();
-            }
-
-            return new Builder($this, $this->_CONF['prefix'], $this->_CONF['param'] ?? false, $trans_id);
-        } catch (Exception $exception) {
-            $exception->display();
+//        try {
+        if ($trans_id === 0) {
+            $trans_id = $this->transID;
         }
+        if ($trans_id === 0) {
+            throw new \Exception("Trans Error: 事务ID须从1开始，不可以为0。");
+        }
+
+        if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id]) {
+            throw new \Exception("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中，或该事务未正常结束");
+        }
+
+        $CONN = $this->connect(true, $trans_id);//连接数据库，直接选择主库
+
+        if ($CONN->inTransaction()) {
+            throw new \Exception("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中");
+        }
+
+        if (!$CONN->beginTransaction()) {
+            throw new \Exception("PDO_Error :  启动事务失败。");
+        }
+        $this->_trans_run[$trans_id] = true;
+        $this->_trans_error = [];
+        /**
+         * 直接批量事务
+         */
+        if (!empty($batch_SQLs)) {
+            foreach ($batch_SQLs as $sql) {
+                $action = $this->sqlAction($sql);
+                $option = [
+                    'param' => false,
+                    'prepare' => true,
+                    'count' => false,
+                    'fetch' => 0,
+                    'bind' => [],
+                    'trans_id' => $trans_id,
+                    'action' => $action,
+                ];
+                $this->query_exec($sql, $option, $CONN);
+            }
+            $this->_trans_run[$trans_id] = false;
+            return $CONN->commit();
+        }
+
+        return new Builder($this, $this->_CONF['prefix'], $this->_CONF['param'] ?? false, $trans_id);
+//        } catch (\Exception $exception) {
+//            $exception->display();
+//        }
     }
 
     /**
      * 提交事务
      * @param \PDO $CONN
      * @param $trans_id
-     * @return bool
+     * @return bool|array
      */
     public function trans_commit(\PDO $CONN, $trans_id)
     {
-        if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) return false;
+        if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
+            if (!empty($this->_trans_error)) return $this->_trans_error;
+            return false;
+        }
 
         if (!$CONN->inTransaction()) {
             throw new \Exception("Trans Commit Error: 当前没有处于事务{$trans_id}中");
@@ -607,16 +611,16 @@ class Mysql
         if (!$CONN->inTransaction()) {
             return true;
         }
-        $debugVal = [
+        $this->_trans_error = [
             'wait' => 0,
             'trans' => $trans_id,
             'sql' => 'rollBack',
             'prepare' => null,
             'param' => null,
             'result' => true,
-            'error' => $error,
+            'error' => $error[2],
         ];
-        !_CLI and $this->debug($debugVal);
+        !_CLI and $this->debug($this->_trans_error);
 
         return $CONN->rollBack();
     }

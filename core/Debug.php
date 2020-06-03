@@ -292,7 +292,7 @@ final class Debug
                     if (!is_readable($p)) @mkdir($p, 0740, true);
                     if (!is_dir($p)) @mkdir($p, 0740, true);
                     rename(_RUNTIME . "/debug/move/{$file}", $move);
-                } catch (Exception $e) {
+                } catch (\Exception $e) {
                     print_r(['moveDebug' => $e]);
                 }
             }
@@ -321,7 +321,7 @@ final class Debug
                     if (!is_dir($p)) @mkdir($p, 0740, true);
                     file_put_contents($data['filename'], $data['data'], LOCK_EX);
                     @unlink(_RUNTIME . "/debug/cache/{$file}");
-                } catch (Exception $e) {
+                } catch (\Exception $e) {
                     print_r(['moveDebug' => $e]);
                 }
             }

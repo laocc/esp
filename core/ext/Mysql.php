@@ -193,22 +193,35 @@ trait Mysql
         if (!is_dir($root)) return "请先创建[{$root}]目录";
 
         $mysql = $this->Mysql();
+        /**
+         * @var $mysql \esp\core\db\Mysql
+         */
         $val = $mysql->table('INFORMATION_SCHEMA.TABLES')
             ->select('TABLE_NAME')
             ->where(['TABLE_SCHEMA' => $mysql->dbName])->get()->rows();
         $tables = [];
-        $rn = "\r\n";
         foreach ($val as $table) {
-            $tab = ucfirst(substr($table['TABLE_NAME'], 3));
+            $tab = ucfirst(substr($table['TABLE_NAME'], 3)) . 'Model';
             if (!is_readable("{$root}/{$tab}.php")) {
                 $keyID = $mysql->table('INFORMATION_SCHEMA.Columns')
                     ->select('COLUMN_NAME')
                     ->where(['table_schema' => $mysql->dbName, 'table_name' => $table['TABLE_NAME'], 'EXTRA' => 'auto_increment'])
                     ->get()->row();
                 $namespace = str_replace('/', '\\', trim($path, '/'));
-                $php = "<?php{$rn}{$rn}namespace {$namespace};{$rn}{$rn}class %sModel extends %s{$rn}{{$rn}    public \$_table = '%s';{$rn}    public \$_id = '%s';{$rn}{$rn}}";
+                $php = <<<PHP
+<?php
+
+namespace {$namespace};
+
+class {$tab} extends {$baseModel} 
+{
+    public \$_table = '{$table['TABLE_NAME']}';
+    public \$_id = '{$keyID['COLUMN_NAME']}';
+    
+}
+PHP;
                 $tables[] = $tab;
-                file_put_contents("{$root}/{$tab}.php", sprintf($php, $tab, $baseModel, $table['TABLE_NAME'], $keyID['COLUMN_NAME']));
+                file_put_contents("{$root}/{$tab}.php", $php);
             }
         }
         return $tables;

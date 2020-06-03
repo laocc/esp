@@ -63,16 +63,17 @@ function safe_replace(string $str): string
 /**
  * 过滤所有可能的符号
  * @param string $str
- * @param string $fix
+ * @param string $f
  * @return null|string|string[]
  */
-function replace_for_split(string $str, string $fix = ',')
+function replace_for_split(string $str, string $f = ',')
 {
     if (empty($str)) return '';
     $str = mb_ereg_replace(
         '[  \`\-\=\[\]\\\;\',\.\/\~\!\@\#\$\%\^\&\*\(\)\_\+\{\}\|\:\"\<\>\?\·【】、；‘，。/~！@#￥%……&*（）——+{}|：“《》？]',
-        $fix, $str);
-    return trim($str, $fix);
+        $f, $str);
+    if (empty($f)) return $str;
+    return trim(str_replace(["{$f}{$f}{$f}", "{$f}{$f}{$f}", "{$f}{$f}", "{$f}{$f}", "{$f}{$f}"], $f, $str), $f);
 }
 
 
@@ -193,7 +194,7 @@ function save_file(string $file, string $content, bool $append = false): int
  * 设置HTTP响应头
  * @param int $code
  * @param string|null $text
- * @throws Exception
+ * @throws \Exception
  */
 function header_state(int $code = 200, string $text = '')
 {
@@ -270,7 +271,7 @@ function xml_decode(string $str, bool $toArray = true)
  * @param array $array
  * @param bool $outHead
  * @return string
- * @throws Exception
+ * @throws \Exception
  */
 function xml_encode($root, array $array, bool $outHead = true)
 {
@@ -742,32 +743,41 @@ function array_sort(&$array, string $key, string $order = 'desc')
  */
 function str_cut(string $str): array
 {
-    $len = mb_strlen($str);
     $arr = Array();
-    for ($i = 0; $i < $len; $i++) {
+    for ($i = 0; $i < mb_strlen($str); $i++) {
         $arr[] = mb_substr($str, $i, 1, "utf8");
     }
     return $arr;
 }
 
-/**
- * @param string $str
- * @return int
- */
-function str_len(string $str): int
-{
-    return count(str_cut($str));
-}
 
 /**
+ * 中文left，纯英文时可以直接用substr()
  * @param string $str
  * @param int $len
  * @return string
  */
-function str_left($str, int $len): string
+function str_left(string $str, int $len): string
 {
     if (empty($str)) return '';
-    return implode(array_slice(str_cut($str), 0, $len));
+    return mb_substr($str, 0, $len, "utf8");
+}
+
+/**
+ * HTML截取
+ * str_ireplace中最后几个空白符号，不是空格，是一些特殊空格
+ * @param $html
+ * @param int $star
+ * @param int $stop
+ * @return string
+ * strip_tags
+ */
+function text(string $html, int $star = null, int $stop = null): string
+{
+    if ($stop === null) list($star, $stop) = [0, $star];
+    $v = preg_replace(['/\&lt\;(.*?)\&gt\;/is', '/&[a-z]+?\;/', '/<(.*?)>/is', '/[\s\x20\xa\xd\'\"\`]/is'], '', trim($html));
+    $v = str_ireplace(["\a", "\b", "\f", "\s", "\t", "\n", "\r", "\v", "\0", "\h", " ", "　", "	"], '', $v);
+    return htmlentities(mb_substr($v, $star, $stop, 'utf-8'));
 }
 
 /**
@@ -817,24 +827,6 @@ function unicode_decode(string $code): string
     return preg_replace_callback('/\\\\u([0-9a-f]{4})/i', function ($matches) {
         return mb_convert_encoding(pack("H*", $matches[1]), "UTF-8", "UCS-2BE");
     }, $code);
-}
-
-
-/**
- * HTML截取
- * str_ireplace中最后几个空白符号，不是空格，是一些特殊空格
- * @param $html
- * @param int $star
- * @param int $stop
- * @return string
- * strip_tags
- */
-function text(string $html, int $star = null, int $stop = null): string
-{
-    if ($stop === null) list($star, $stop) = [0, $star];
-    $v = preg_replace(['/\&lt\;(.*?)\&gt\;/is', '/&[a-z]+?\;/', '/<(.*?)>/is', '/[\s\x20\xa\xd\'\"\`]/is'], '', trim($html));
-    $v = str_ireplace(["\a", "\b", "\f", "\s", "\t", "\n", "\r", "\v", "\0", "\h", " ", "　", "	"], '', $v);
-    return htmlentities(mb_substr($v, $star, $stop, 'utf-8'));
 }
 
 

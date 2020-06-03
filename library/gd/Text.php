@@ -35,13 +35,12 @@ class Text
             'percent' => 1.5,//字体间距与字号比例
         ];
 
-        $cut = self::str_cut($text);
-        $count = count($cut);
+        $tLen = mb_strlen($text);
 
         //不指定尺寸，自动计算
         if (!$option['width']) {
             if (!$option['vertical']) {
-                $option['width'] = $count * $option['size'] * $option['percent'] + $option['size'];
+                $option['width'] = $tLen * $option['size'] * $option['percent'] + $option['size'];
             } else {
                 $option['width'] = $option['size'] * $option['percent'] + $option['size'];
             }
@@ -50,7 +49,7 @@ class Text
             if (!$option['vertical']) {
                 $option['height'] = $option['size'] * $option['percent'] + $option['size'];
             } else {
-                $option['height'] = $count * $option['size'] * $option['percent'] + $option['size'];
+                $option['height'] = $tLen * $option['size'] * $option['percent'] + $option['size'];
             }
         }
 
@@ -70,7 +69,9 @@ class Text
         imagefill($im, 0, 0, $bg);
         imagealphablending($im, true);
         $color = Gd::createColor($im, $option['color']);
-        foreach ($cut as $i => &$cn) {
+
+        for ($i = 0; $i < $tLen; $i++) {
+            $cn = mb_substr($text, $i, 1, "utf8");
             imagettftext($im,
                 $option['size'],
                 $option['angle'],
@@ -78,7 +79,6 @@ class Text
                 $color,
                 $option['font'],
                 $cn);
-
             if ($option['vertical'])
                 $option['y'] += ($option['size'] * $option['percent']);
             else
@@ -100,20 +100,6 @@ class Text
     }
 
 
-    /**
-     * 将字符串分割成1个字的数组，主要用于中英文混合时，将中英文安全的分割开
-     * @param $str
-     * @return array
-     */
-    private static function str_cut($str)
-    {
-        $len = mb_strlen($str);
-        $arr = Array();
-        for ($i = 0; $i < $len; $i++) {
-            $arr[] = mb_substr($str, $i, 1, "utf8");
-        }
-        return $arr;
-    }
 
 
     /**
