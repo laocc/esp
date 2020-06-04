@@ -229,9 +229,23 @@ final class Error
         $conf = parse_ini_file(root('/esp/core/config/state.ini'), true);
         $state = $conf[$code] ?? '';
         if (_CLI) return "[{$code}]:{$state}\n";
-
+        http_response_code($code);
         $server = isset($_SERVER['SERVER_SOFTWARE']) ? ucfirst($_SERVER['SERVER_SOFTWARE']) : null;
-        $html = "<html>\n<head><title>{$code} {$state}</title></head>\n<body bgcolor=\"white\">\n<center><h1>{$code} {$state}</h1></center>\n<hr><center>{$server}</center>\n</body>\n</html>\n\n";
+        $html = <<<HTML
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{$code} {$state}</title>
+        <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1">
+    </head>
+    <body bgcolor=\"white\">
+        <center><h1>{$code} {$state}</h1></center>
+        <hr>
+        <center>{$server}</center>
+    </body>
+</html>
+HTML;
+
         if (!stripos(PHP_SAPI, 'cgi')) {
             header("Status: {$code} {$state}", true);
         } else {
