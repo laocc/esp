@@ -239,31 +239,6 @@ abstract class Controller
         return isset($this->_plugs[$name]) ? $this->_plugs[$name] : null;
     }
 
-    /**
-     * @param string $modName
-     * @param mixed ...$param
-     * @return mixed
-     */
-    final public function Model(string $modName, ...$param)
-    {
-        static $model = [];
-        $modName = ucfirst($modName);
-        if (isset($model[$modName])) return $model[$modName];
-
-        $base = "/models/main/Base.php";
-        if (is_readable($base)) load($base);
-
-        if (!load("/models/main/{$modName}.php")) {
-            throw new \Exception("[{$modName}Model] don't exists", 404);
-        }
-
-        $mod = '\\models\\main\\' . $modName . 'Model';
-        $model[$modName] = new $mod($this, ...$param);
-        if (!$model[$modName] instanceof Model) {
-            throw new \Exception("{$modName} 须继承自 \\esp\\core\\Model", 404);
-        }
-        return $model[$modName];
-    }
 
     /**
      * 构造一个Debug空类

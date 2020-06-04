@@ -471,6 +471,11 @@ abstract class Model
 
     private $_count = null;
 
+    /**
+     * 当前请求结果的总行数
+     * @param bool $count
+     * @return $this
+     */
     final public function count(bool $count = true)
     {
         $this->_count = $count;
@@ -602,13 +607,21 @@ abstract class Model
         return $this;
     }
 
+    /**
+     * @param $select
+     * @param bool $add_identifier
+     * @return $this
+     * @throws \Exception
+     */
     final public function select($select, $add_identifier = true)
     {
         if (is_int($add_identifier)) {
+            //当$add_identifier是整数时，表示返回第x列数据
             $this->columnKey = $add_identifier;
             $this->selectKey = [$select, true];
 
-        } else if ($select and $select[0] === '~' and $add_identifier) {//不含选择，只适合从单表取数据
+        } else if ($select and $select[0] === '~' and $add_identifier) {
+            //不含选择，只适合从单表取数据
             $field = $this->field();
             $seKey = array_column($field, 'COLUMN_NAME');
             $kill = explode(',', substr($select, 1));
