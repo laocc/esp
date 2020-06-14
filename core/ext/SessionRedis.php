@@ -20,7 +20,7 @@ class SessionRedis implements \SessionHandlerInterface
      * @param bool $delay
      * @param string $prefix
      */
-    public function __construct(Debug $debug, bool $delay = false, string $prefix = '')
+    public function __construct(Debug $debug = null, bool $delay = false, string $prefix = '')
     {
         $this->_debug = $debug;
         $this->_delay = $delay;

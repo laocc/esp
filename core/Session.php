@@ -51,7 +51,7 @@ final class Session
     private $run = true;
     public $update = false;
 
-    public function __construct(array $config, Debug $debug)
+    public function __construct(array $config, Debug $debug = null)
     {
         $this->debug = $debug;
 

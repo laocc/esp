@@ -68,6 +68,11 @@ abstract class Controller
         }
     }
 
+    /**
+     * 读取Config值
+     * @param mixed ...$key
+     * @return array|null|string
+     */
     final protected function config(...$key)
     {
         return $this->_config->get(...$key);
@@ -79,7 +84,7 @@ abstract class Controller
      * @param $value
      * @return int
      */
-    final public function publish(string $action, $value)
+    final protected function publish(string $action, $value)
     {
         $channel = $this->_config->get('app.dim.channel');
         if (!$channel) $channel = 'order';
@@ -90,24 +95,24 @@ abstract class Controller
      * 设置视图文件，或获取对象
      * @return View|bool
      */
-    final public function getView()
+    final protected function getView()
     {
         return $this->_response->getView();
     }
 
-    final public function setView($value): Controller
+    final protected function setView($value): Controller
     {
         $this->_response->setView($value);
         return $this;
     }
 
-    final public function setViewPath(string $value): Controller
+    final protected function setViewPath(string $value): Controller
     {
         $this->_response->viewPath($value);
         return $this;
     }
 
-    final public function run_user(string $user = 'www')
+    final protected function run_user(string $user = 'www')
     {
         if (getenv('USER') !== $user) {
             $cmd = implode(' ', $GLOBALS["argv"]);
@@ -611,7 +616,7 @@ abstract class Controller
      * @param mixed ...$parameter
      * @return Controller
      */
-    final public function shutdown(callable $fun, ...$parameter): Controller
+    final protected function shutdown(callable $fun, ...$parameter): Controller
     {
         register_shutdown_function($fun, ...$parameter);
         return $this;

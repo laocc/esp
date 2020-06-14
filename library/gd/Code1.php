@@ -68,7 +68,7 @@ class Code1
         $color = new BCG_Color(0, 0, 0);
         $background = new BCG_Color(255, 255, 255);
 
-        list($file, $filename) = Gd::getFileName($option['save'], $option['root'], $option['path'], $option['filename'], 'png');
+        $file = Gd::getFileName($option['save'], $option['root'], $option['path'], $option['filename'], 'png');
 
         $Obj = new BCG_code128();
         $Obj->setLabel($option['label']);
@@ -89,7 +89,7 @@ class Code1
 
         $option = [
             'save' => $option["save"],//0：只显示，1：只保存，2：即显示也保存
-            'filename' => $filename,
+            'filename' => $file['filename'],
             'type' => IMAGETYPE_PNG,//文件类型
         ];
 

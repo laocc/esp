@@ -28,7 +28,7 @@ final class Configure
 
         $_bufferConf = parse_ini_file("{$conf['path']}/buffer.ini", true);
         if (isset($conf['folder'])) {
-            $_bufferConf = $_bufferConf[$conf['folder']];
+            $_bufferConf = $_bufferConf[$conf['folder']] ?? [];
         } else if (_DEBUG and isset($_bufferConf['debug'])) {
             $_bufferConf = $_bufferConf['debug'];
         }
@@ -62,7 +62,7 @@ final class Configure
              */
             $get = Output::new()->rpc('/debug/config')->get('json');
             if (!($get['success'] ?? 0)) {
-                if ($tryCount > 1) throw new \Exception("系统出错." . $get, 505);
+                if ($tryCount > 1) throw new \Exception("系统出错." . var_export($get, true), 505);
                 $tryCount++;
                 goto tryGet;
             } else {

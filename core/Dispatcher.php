@@ -6,7 +6,7 @@ namespace esp\core;
 final class Dispatcher
 {
     public $_plugs = Array();
-    private $_plugs_count = 0;
+    private $_plugs_count = 0;//引入的Bootstrap数量
     public $_request;
     public $_response;
     public $_session;
@@ -116,15 +116,17 @@ final class Dispatcher
      * @param string $class '\library\Bootstrap'
      * @return Dispatcher
      */
-    public function bootstrap(string $class): Dispatcher
+    public function bootstrap($class): Dispatcher
     {
-        if (!class_exists($class)) {
-            throw new \Exception("Bootstrap类不存在，请检查{$class}.php文件", 404);
+        if (is_string($class)) {
+            if (!class_exists($class)) {
+                throw new \Exception("Bootstrap类不存在，请检查{$class}.php文件", 404);
+            }
+            $class = new $class();
         }
-        $boot = new $class();
-        foreach (get_class_methods($boot) as $method) {
+        foreach (get_class_methods($class) as $method) {
             if (substr($method, 0, 5) === '_init') {
-                $run = call_user_func_array([$boot, $method], [$this]);
+                $run = call_user_func_array([$class, $method], [$this]);
                 if ($run === false) $this->run = false;
             }
         }
@@ -134,9 +136,9 @@ final class Dispatcher
     /**
      * 接受注册插件
      * @param Plugin $class
-     * @return bool
+     * @return $this
      */
-    public function setPlugin(Plugin $class): bool
+    public function setPlugin(Plugin $class): Dispatcher
     {
         $name = get_class($class);
         $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
@@ -145,22 +147,29 @@ final class Dispatcher
         }
         $this->_plugs[$name] = $class;
         $this->_plugs_count++;
-        return true;
+        return $this;
     }
 
     /**
      * 执行HOOK
-     * @param $time
+     * @param string $time
+     * @return mixed
+     * bool:仅表示Hook是否执行
+     * string或array，都将直接截断前端
+     * string以原样返回
+     * array以json返回
      */
-    private function plugsHook(string $time): void
+    private function plugsHook(string $time)
     {
-        if (empty($this->_plugs)) return;
+        if (empty($this->_plugs)) return false;
         if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'displayBefore', 'displayAfter', 'mainEnd'])) return;
         foreach ($this->_plugs as $plug) {
             if (method_exists($plug, $time)) {
-                call_user_func_array([$plug, $time], [$this->_request, $this->_response]);
+                $val = call_user_func_array([$plug, $time], [$this->_request, $this->_response]);
+                if (is_string($val) or is_array($val)) return $val;
             }
         }
+        return true;
     }
 
     /**
@@ -173,16 +182,37 @@ final class Dispatcher
 
         if ($this->run === false) return;
 
-        $this->_plugs_count and $this->plugsHook('routeBefore');
+        if ($this->_plugs_count and ($hook = $this->plugsHook('routeBefore')) and (is_array($hook) or is_string($hook))) {
+            $this->_response->display($hook);
+            return;
+        }
+
         (new Router($this->_config, $this->_request));
-        $this->_plugs_count and $this->plugsHook('routeAfter');
+
+        if ($this->_plugs_count and ($hook = $this->plugsHook('routeAfter')) and (is_array($hook) or is_string($hook))) {
+            $this->_response->display($hook);
+            return;
+        }
 
         if (!_CLI and !is_null($this->_cache)) if ($this->_cache->Display()) goto end;
 
-        $this->_plugs_count and $this->plugsHook('dispatchBefore');
+        if ($this->_plugs_count and ($hook = $this->plugsHook('dispatchBefore')) and (is_array($hook) or is_string($hook))) {
+            $this->_response->display($hook);
+            return;
+        }
+
         $value = $this->dispatch();//运行控制器->方法
-        $this->_plugs_count and $this->plugsHook('dispatchAfter');
-        $this->_plugs_count and $this->plugsHook('displayBefore');
+
+        if ($this->_plugs_count and ($hook = $this->plugsHook('dispatchAfter')) and (is_array($hook) or is_string($hook))) {
+            $this->_response->display($hook);
+            return;
+        }
+
+        if ($this->_plugs_count and ($hook = $this->plugsHook('displayBefore')) and (is_array($hook) or is_string($hook))) {
+            $this->_response->display($hook);
+            return;
+        }
+
         if (_CLI) {
             print_r($value);
         } else {
@@ -192,13 +222,13 @@ final class Dispatcher
             }
             $this->_response->display($value);
         }
-        $this->_plugs_count and $this->plugsHook('displayAfter');
+        $this->_plugs_count and $hook = $this->plugsHook('displayAfter');
 
         if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
         if (!_CLI and !is_null($this->_cache)) $this->_cache->Save();
 
         end:
-        $this->_plugs_count and $this->plugsHook('mainEnd');
+        $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
             if (0) {
@@ -218,7 +248,7 @@ final class Dispatcher
         }
     }
 
-    private function check_debug($save, $file = null)
+    private function check_debug($save, $file = null): void
     {
 //        if (!getenv('HTTP_DEBUG')) return;
         $testDebug = [];
@@ -229,7 +259,6 @@ final class Dispatcher
         $testDebug['save'] = $save;
         file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . $file . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
     }
-
 
     /**
      * 路由结果分发至控制器动作

@@ -156,7 +156,7 @@ final class Request
 
     /**
      * 分析客户端信息
-     * @param null $agent
+     * @param string $agent
      * @return array ['agent' => '', 'browser' => '', 'version' => '', 'os' => '']
      */
     public function agent(string $agent = null)

@@ -25,8 +25,8 @@ abstract class Model
 
     protected $_buffer;
     protected $_config;
-
     protected $_controller;
+
     private $_debug;
     private $_print_sql;
 

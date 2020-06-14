@@ -93,14 +93,14 @@ class Code2
         $lmqh = ['L' => 0, 'M' => 1, 'Q' => 2, 'H' => 3];
         if (in_array($option['level'], ['L', 'M', 'Q', 'H'])) $option['level'] = $lmqh[$option['level']];
 
-        list($file, $filename) = Gd::getFileName($option['save'], $option['root'], $option['path'], $option['filename'], 'png');
+        $file = Gd::getFileName($option['save'], $option['root'], $option['path'], $option['filename'], 'png');
 
         $ec = new qr_Encode();
         $im = $ec->create($option);
 
         $option = [
             'save' => $option['save'],//0：只显示，1：只保存，2：即显示也保存，3：返回GD数据流
-            'filename' => $filename,
+            'filename' => $file['filename'],
             'type' => IMAGETYPE_PNG,//文件类型
         ];
 

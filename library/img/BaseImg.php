@@ -1,11 +1,15 @@
 <?php
 
-namespace esp\library\gd\ext;
+namespace esp\library\img;
 
 
-class Gd
+abstract class BaseImg
 {
-    const identifiers = [
+    protected $option;
+    protected $im;
+    protected $file;
+
+    protected $identifiers = [
         'gif' => IMAGETYPE_GIF,
         'jpg' => IMAGETYPE_JPEG,
         'png' => IMAGETYPE_PNG,
@@ -33,7 +37,7 @@ class Gd
      * @param array $option
      * @return bool
      */
-    public static function draw($im, array $option)
+    protected function draw($im, array $option)
     {
         $option += [
             'save' => 0,//0：只显示，1：只保存，2：即显示也保存，3：返回GD数据流
@@ -131,10 +135,10 @@ class Gd
      * @param int $alpha
      * @return int
      */
-    public static function createColor(&$im, $color = '#000000', $alpha = 0)
+    protected function createColor(&$im, $color = '#000000', $alpha = 0)
     {
         if (is_int($color)) list($color, $alpha) = ['#000000', $color];
-        list($R, $G, $B) = self::getRGBColor($color);
+        list($R, $G, $B) = $this->getRGBColor($color);
         if ($alpha > 0) {//透明色
             if ($alpha > 100) $alpha = 100;
             $alpha = $alpha * 1.27;
@@ -154,7 +158,7 @@ class Gd
      * @param int $type
      * @return null|resource
      */
-    public static function createIM($pic, $type = 0)
+    protected function createIM($pic, $type = 0)
     {
         if (is_bool($type)) {
             return imagecreatefromstring($pic);
@@ -181,7 +185,7 @@ class Gd
                 $PM = null;
                 break;
             default:
-                $PM = self::createFromImg($pic);
+                $PM = $this->createFromImg($pic);
                 break;
         }
         return $PM;
@@ -193,7 +197,7 @@ class Gd
      * @param string $filename
      * @return null|resource
      */
-    public static function createFromImg($filename)
+    protected function createFromImg($filename)
     {
         //打开文件，若出错则退
         if (!$fr = @fopen($filename, "rb")) return null;
@@ -286,14 +290,14 @@ class Gd
      * @param $color
      * @return resource
      */
-    public static function createCircle($w, $h = 0, $color, $radius)
+    protected function createCircle($w, $h = 0, $color, $radius)
     {
         $h = $h ?: $w;
         $im = imagecreate($w, $h);
-        if (is_string($color)) $color = Gd::createColor($im, $color);
+        if (is_string($color)) $color = $this->createColor($im, $color);
         imagefill($im, 0, 0, $color);
 
-        $black = Gd::createColor($im, '#000');
+        $black = $this->createColor($im, '#000');
 
         //画四个角的圆弧，各为1/4圆
         imagefilledarc($im, $w - $radius, $h - $radius, $radius * 2, $radius * 2, 0, 90, $black, IMG_ARC_PIE);
@@ -320,15 +324,15 @@ class Gd
      * @param int $border倒角半径
      * @return resource
      */
-    public static function createRectangle($w, $h = 0, $color, $radius = 0)
+    protected function createRectangle($w, $h = 0, $color, $radius = 0)
     {
         $h = $h ?: $w;
         $im = imagecreate($w, $h);
-        $black = Gd::createColor($im, '#00000f');
+        $black = $this->createColor($im, '#00000f');
         imagefill($im, 0, 0, $black);//填成黑色
         imagecolortransparent($im, $black);//再抽取掉所有黑色变成透明
 
-        $color = Gd::createColor($im, $color);
+        $color = $this->createColor($im, $color);
 
         if ($radius === 0) {
             imagefill($im, 0, 0, $color);//填充
@@ -349,10 +353,7 @@ class Gd
     }
 
 
-    /**
-     * @param $color
-     */
-    public static function getRGBColor($color)
+    protected function getRGBColor($color)
     {
         if (is_array($color)) {
             if (count($color) === 1) {
@@ -365,7 +366,7 @@ class Gd
                 list($R, $G, $B) = $color;
             }
         } else {
-            $color = preg_replace('/^[a-z]+$/i', self::getColorHex('$1'), $color);//颜色名换色值
+            $color = preg_replace('/^[a-z]+$/i', $this->getColorHex('$1'), $color);//颜色名换色值
             $color = preg_replace('/^\#([a-f0-9])([a-f0-9])([a-f0-9])$/i', '#$1$1$2$2$3$3', $color);//短色值换为标准色值
             $color = preg_match('/^\#[a-f0-9]{6}$/i', $color) ? $color : '#000000';//不是标准色值的，都当成黑色
             $R = hexdec(substr($color, 1, 2));
@@ -380,7 +381,7 @@ class Gd
      * @param $code
      * @return int
      */
-    public static function getColorHex($code)
+    protected function getColorHex($code)
     {
         switch (strtolower($code)) {
             case 'white':
@@ -438,7 +439,7 @@ class Gd
      * @return array
      * @throws \Exception
      */
-    public static function getFileName($save, $root, $path, $name = null, $ext = 'png')
+    protected function getFileName($save, $root, $path, $name = null, $ext = 'png')
     {
         $fileInfo = ['filename' => null];
         if ($save === 1 or $save === 2) {

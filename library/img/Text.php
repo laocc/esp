@@ -1,28 +1,22 @@
 <?php
 
-namespace esp\library\gd;
+namespace esp\library\img;
 
-use esp\library\gd\ext\Gd;
 
-class Text
+class Text extends BaseImg
 {
-    const Quality = 80;    //JPG默认质量，对所有方法都有效
+    private $Quality = 80;    //JPG默认质量，对所有方法都有效
 
-    /**
-     * 写文字到图片，这不是写文字水印，是直接将几个字生成一个图片
-     * @param string $text
-     * @param array $option
-     * @return array
-     */
-    public static function create(string $text, array $option = [])
+    public function __construct(string $text, array $option = [])
     {
         $option += [
             'width' => 0,
             'height' => 0,
             'size' => 20,
+            'area' => '',
             'x' => null,//xy指文字左下角位置
             'y' => null,
-            'quality' => self::Quality,
+            'quality' => $this->Quality,
             'font' => null,
             'color' => '#000000',
             'background' => '#ffffff',
@@ -34,7 +28,6 @@ class Text
             'vertical' => false,//竖向
             'percent' => 1.5,//字体间距与字号比例
         ];
-
         $tLen = mb_strlen($text);
 
         //不指定尺寸，自动计算
@@ -52,8 +45,6 @@ class Text
                 $option['height'] = $tLen * $option['size'] * $option['percent'] + $option['size'];
             }
         }
-//        $option['x'] = 0;
-//        $option['y'] = 0;
         if ($option['x'] === null) {
             //一个间距
             $option['x'] = $option['size'] * ($option['percent'] - 1);
@@ -63,12 +54,11 @@ class Text
             $option['y'] = $option['height'] - ($option['size'] * 0.5);
         }
 
-        $file = Gd::getFileName($option['save'], $option['root'], $option['path'], 'png');
         $im = imagecreatetruecolor($option['width'], $option['height']);//建立一个画板
-        $bg = Gd::createColor($im, $option['background'], $option['alpha']);//拾取一个完全透明的颜色
+        $bg = $this->createColor($im, $option['background'], $option['alpha']);//拾取一个完全透明的颜色
         imagefill($im, 0, 0, $bg);
         imagealphablending($im, true);
-        $color = Gd::createColor($im, $option['color']);
+        $color = $this->createColor($im, $option['color']);
 
         for ($i = 0; $i < $tLen; $i++) {
             $cn = mb_substr($text, $i, 1, "utf8");
@@ -87,17 +77,30 @@ class Text
 
         imagesavealpha($im, true);//设置保存PNG时保留透明通道信息
 
-        $gdOption = [
-            'save' => $option['save'],//0：只显示，1：只保存，2：即显示也保存
-            'filename' => $file['filename'],
-            'type' => IMAGETYPE_PNG,//文件类型
-            'quality' => $option['quality'],
-        ];
-//        print_r($gdOption);
-//        pre($option);
-        Gd::draw($im, $gdOption);
+        $this->option = $option;
+        $this->im = $im;
+    }
 
-        return $file;
+    /**
+     * 写文字到图片，这不是写文字水印，是直接将几个字生成一个图片
+     */
+    public function display()
+    {
+        $this->file = $this->getFileName($this->option['save'], $this->option['root'], $this->option['path'], 'png');
+
+        $gdOption = [
+            'save' => $this->option['save'],//0：只显示，1：只保存，2：即显示也保存
+            'filename' => $this->file['filename'],
+            'type' => IMAGETYPE_PNG,//文件类型
+            'quality' => $this->option['quality'],
+        ];
+
+        $this->draw($this->im, $gdOption);
+    }
+
+    public function filename()
+    {
+        return $this->file;
     }
 
 
@@ -110,7 +113,7 @@ class Text
      * @param $txt
      * @return array
      */
-    private static function get_text_xy($iw, $ih, &$size, $font, $txt)
+    private function get_text_xy($iw, $ih, &$size, $font, $txt)
     {
         $temp = imagettfbbox(ceil($size), 0, $font, $txt);//取得使用 TrueType 字体的文本的范围
         var_dump($temp);
@@ -119,11 +122,10 @@ class Text
         unset($temp);
         if ($w * 1.1 > $iw) {
             $size -= 2;
-            return self::get_text_xy($iw, $ih, $size, $font, $txt);
+            return $this->get_text_xy($iw, $ih, $size, $font, $txt);
         }
         $x = ($iw - $w) / 2;
         $y = $ih - ($ih - $h) / 2 - 10;
         return [$x, $y];
     }
-
 }
