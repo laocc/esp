@@ -22,7 +22,7 @@ final class Debug
     private $_response;
     private $_redis;
     private $_errorText;
-    private $_save_type = 'file';
+    public $_save_type = 'shutdown';
     private $_ROOT_len = 0;
     private $_key;//保存记录的Key,要在控制器中->key($key)
 
@@ -154,7 +154,13 @@ final class Debug
         }
 
         $p = dirname($filename);
-        if (!is_dir($p)) @mkdir($p, 0740, true);
+        if (!is_dir($p)) {
+            try {
+                @mkdir($p, 0740, true);
+            } catch (\Exception $e) {
+                print_r($e);
+            }
+        }
 
         return 'Self Save:' . file_put_contents($filename, $data, LOCK_EX);
     }
@@ -243,7 +249,7 @@ final class Debug
             $data[] = "\n## 页面实际响应： \n";
             $headers = headers_list();
             headers_sent($hFile, $hLin);
-            $headers[] = "Filename: {$hFile}($hLin)";
+            $headers[] = "HeaderSent: {$hFile}($hLin)";
             $data[] = "\n## _Headers\n```\n" . json_encode($headers, 256 | 128 | 64) . "\n```\n";
             $data[] = "\n## Echo:\n```\n" . ob_get_contents() . "\n```\n";
             $display = $this->_response->_display_Result;

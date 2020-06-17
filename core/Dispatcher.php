@@ -17,7 +17,6 @@ final class Dispatcher
 
     public function __construct(array $option, string $virtual = 'www')
     {
-//        try {
         if (!defined('_ROOT')) exit("网站入口处须定义 _ROOT 项，指向系统根目录");
         define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
@@ -53,11 +52,12 @@ final class Dispatcher
 
         $this->_request = new Request($this->_config->get('frame.request'));
         if (_CLI) return;
+
         $this->_response = new Response($this->_config, $this->_request);
 
         if ($debug = $this->_config->get('debug')) {
             $this->_debug = new Debug($this->_request, $this->_response, $this->_config->Redis(), $debug);
-            $GLOBALS['_Debug'] = &$this->_debug;
+            $GLOBALS['_Debug'] = $this->_debug;
         }
 
         if (($session = $this->_config->get('session')) and !_CLI) {
@@ -88,10 +88,6 @@ final class Dispatcher
         if (headers_sent($file, $line)) {
             throw new \Exception("在{$file}[{$line}]行已有数据输出，系统无法启动");
         }
-
-//        } catch (\Exception $exception) {
-//            pre($exception);
-//        }
     }
 
 
@@ -224,27 +220,24 @@ final class Dispatcher
         }
         $this->_plugs_count and $hook = $this->plugsHook('displayAfter');
 
-        if (!_CLI) fastcgi_finish_request(); //运行结束，客户端断开
+        if (!_CLI and _DEBUG and $this->_debug->_save_type !== 'cgi') fastcgi_finish_request(); //运行结束，客户端断开
         if (!_CLI and !is_null($this->_cache)) $this->_cache->Save();
 
         end:
         $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-            if (0) {
+            if ($this->_debug->_save_type === 'cgi') {
                 $save = $this->_debug->save_logs('Dispatcher Debug');
                 $this->check_debug($save);
                 if (!$this->_request->isAjax()) var_dump($save);
+                return;
             }
 
             register_shutdown_function(function () {
                 $save = $this->_debug->save_logs('Dispatcher');
 //                $this->check_debug($save);
             });
-        } else {
-            if (!$this->_request->isAjax() and !_CLI) {
-                echo 'empty debug';
-            }
         }
     }
 
@@ -257,7 +250,7 @@ final class Dispatcher
         $testDebug['ver'] = getenv('HTTP_DEBUG');
         $testDebug['file'] = $this->_debug->filename();
         $testDebug['save'] = $save;
-        file_put_contents(_RUNTIME . '/debug/test/' . date('YmdHis_') . $file . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
+        file_put_contents(_RUNTIME . '/debug/' . date('YmdHis_') . $file . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
     }
 
     /**
@@ -266,20 +259,8 @@ final class Dispatcher
      */
     private function dispatch()
     {
-        $suffix = &$this->_request->suffix;
-        $actionExt = $suffix['auto'];
-        $isPost = $this->_request->isPost();
-        $isAjax = $this->_request->isAjax();
-        if ($this->_request->isGet() and ($p = $suffix['get'])) $actionExt = $p;
-        elseif ($isPost and ($p = $suffix['post'])) $actionExt = $p;
-        elseif ($isAjax and ($p = $suffix['ajax'])) $actionExt = $p;
-        elseif ($isPost and ($p = $suffix['post'])) $actionExt = $p;
-        elseif (_CLI and ($p = $suffix['auto'])) $actionExt = $p;
-        else {
-//            print_r($suffix);
-//            var_dump([$this->_request->isGet(), $this->_request->isCli(), $isAjax, $isPost]);
-//            return 'Unknown method=' . $this->_request->method;
-        }
+        $contExt = $this->_request->contFix;
+        $actionExt = $this->_request->getActionExt();
 
         LOOP:
         if (empty($this->_request->module)) {
@@ -289,37 +270,36 @@ final class Dispatcher
             $virtual = "{$this->_request->virtual}/{$this->_request->module}";
             $module = $this->_request->virtual . '\\' . $this->_request->module;
         }
-        $controller = ucfirst($this->_request->controller);
-        $action = strtolower($this->_request->action) . ucfirst($actionExt);
+        $cFile = ucfirst($this->_request->controller) . $contExt;
+        $action = strtolower($this->_request->action) . $actionExt;
         $auto = strtolower($this->_request->action) . 'Action';
-
-        if ($controller === 'Base') throw new \Exception('控制器名不可以为base，这是系统保留公共控制器名', 404);
 
         /**
          * 加载控制器，也可以在composer中预加载
          * "admin\\": "application/admin/controllers/",
          */
-        $base = $this->_request->directory . "/{$virtual}/controllers/Base.php";
-        $file = $this->_request->directory . "/{$virtual}/controllers/{$controller}.php";
+        $base = $this->_request->directory . "/{$virtual}/controllers/Base{$contExt}.php";
+        $file = $this->_request->directory . "/{$virtual}/controllers/{$cFile}.php";
         if (is_readable($base)) load($base);//加载控制器公共类，有可能不存在
         if (!load($file)) {
-            return $this->err404("[{$this->_request->directory}/{$virtual}/controllers/{$controller}.php] not exists.");
+            return $this->err404("[{$this->_request->directory}/{$virtual}/controllers/{$cFile}.php] not exists.");
         }
+        $cName = '\\' . $module . '\\' . $cFile;
+        if (!$contExt) $cName .= 'Controller';
 
-        $controller = '\\' . $module . '\\' . $controller . 'Controller';
-        if (!class_exists($controller)) {
-            return $this->err404("[{$controller}] not exists.");
+        if (!class_exists($cName)) {
+            return $this->err404("[{$cName}] not exists.");
         }
-        $cont = new $controller($this);
+        $cont = new $cName($this);
         if (!$cont instanceof Controller) {
-            throw new \Exception("{$controller} 须继承自 \\esp\\core\\Controller", 404);
+            throw new \Exception("{$cName} 须继承自 \\esp\\core\\Controller", 404);
         }
 
         if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {
             if (method_exists($cont, $auto) and is_callable([$cont, $auto])) {
                 $action = $auto;
             } else {
-                return $this->err404("[{$controller}::{$action}()] not exists.");
+                return $this->err404("[{$cName}::{$action}()] not exists.");
             }
         }
 
@@ -327,30 +307,30 @@ final class Dispatcher
 
         //运行初始化方法
         if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
-            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$controller}->_init() ============================]", []);
-            $val = call_user_func_array([$cont, '_init'], [$action]);
-            if (!is_null($val)) {
-                if (!is_null($this->_debug)) $this->_debug->relay(['_init' => 'return', 'return' => $val], []);
-                return $val;
+            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$cName}->_init() ============================]", []);
+            $contReturn = call_user_func_array([$cont, '_init'], [$action]);
+            if (!is_null($contReturn)) {
+                if (!is_null($this->_debug)) $this->_debug->relay(['_init' => 'return', 'return' => $contReturn], []);
+                return $contReturn;
             }
         }
 
         if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
-            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$controller}->_main() =============================]", []);
-            $val = call_user_func_array([$cont, '_main'], [$action]);
-            if (!is_null($val)) {
-                if (!is_null($this->_debug)) $this->_debug->relay(['_main' => 'return', 'return' => $val], []);
-                return $val;
+            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$cName}->_main() =============================]", []);
+            $contReturn = call_user_func_array([$cont, '_main'], [$action]);
+            if (!is_null($contReturn)) {
+                if (!is_null($this->_debug)) $this->_debug->relay(['_main' => 'return', 'return' => $contReturn], []);
+                return $contReturn;
             }
         }
 
         /**
          * 正式请求到控制器
          */
-        if (!is_null($this->_debug)) $this->_debug->relay("[green;{$controller}->{$action} Star ==============================]", []);
-        $val = call_user_func_array([$cont, $action], $this->_request->params);
+        if (!is_null($this->_debug)) $this->_debug->relay("[green;{$cName}->{$action} Star ==============================]", []);
+        $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
         if (!is_null($this->_debug)) {
-            $this->_debug->relay("[red;{$controller}->{$action} End ==============================]", []);
+            $this->_debug->relay("[red;{$cName}->{$action} End ==============================]", []);
         }
         if ($this->_request->loop === true) {
             $this->_request->loop = false;
@@ -359,38 +339,17 @@ final class Dispatcher
 
         //运行结束方法
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
-            $clo = call_user_func_array([$cont, '_close'], [$action, $val]);
-            if (!is_null($clo)) $val = $clo;// and is_null($val)
-            if (!is_null($this->_debug)) $this->_debug->relay("[red;{$controller}->_close() ==================================]", []);
+            $clo = call_user_func_array([$cont, '_close'], [$action, $contReturn]);
+            if (!is_null($clo)) $contReturn = $clo;
+            if (!is_null($this->_debug)) $this->_debug->relay("[red;{$cName}->_close() ==================================]", []);
         }
 
-        if ($isPost or $isAjax) {
-            $rest = $cont->result ?? [];
-            $val = $this->_close($rest, $val);
-        }
+        $rest = $cont->ReorganizeReturn($contReturn);
+        if (!is_null($rest)) return $rest;
 
-//        unset($cont);
-        return $val;
+        return $contReturn;
     }
 
-    final private function _close(array $result, $return)
-    {
-        //所有数组
-        if (is_array($return)) return $return + $result + ['success' => 1, 'message' => 'OK'];
-
-        //指定了$result
-        if (!empty($result)) return $result + ['success' => 1, 'message' => $return ?: 'OK'];
-
-        if (is_string($return)) {
-            if (substr($return, 0, 4) === 'err:') return ['success' => 0, 'message' => substr($return, 4)];
-            if (substr($return, 0, 6) === 'error:') return ['success' => 0, 'message' => substr($return, 6)];
-
-            if (_VIRTUAL !== 'api') $this->_debug->error($return);
-        }
-
-        //其他情况原样返回
-        return $return;
-    }
 
     final private function err404(string $msg)
     {

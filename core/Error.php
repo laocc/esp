@@ -75,13 +75,14 @@ final class Error
             if (!isset($errcontext['errorTitle'])) {
                 $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
             }
+            http_response_code($err['code']);
 
             if (is_int($option['run'])) {
                 if ($option['run'] === 1) {
                     unset($err['text']);
                     print_r($err);
                 } else if ($option['run'] === 9) {
-                    header("Content-type: application/json; charset=UTF-8", true, 200);
+                    header("Content-type: application/json; charset=UTF-8", true, $err['code']);
                     unset($err['text']);
                     $text = $err['error'];
                     if (isset($errcontext['errorTitle'])) $text = "{$errcontext['errorTitle']}：{$err['error']}";
@@ -113,13 +114,14 @@ final class Error
             $err['file'] = $error->getFile();
             $err['line'] = $error->getLine();
             $this->error($err + ['trace' => $error->getTrace()], debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+            http_response_code($err['code']);
 
             $trace = str_replace(_ROOT, '', $error->getTraceAsString());
             if (is_int($option['throw'])) {
                 if ($option['throw'] === 1) {
                     print_r([$err, $trace]);
                 } else if ($option['throw'] === 9) {
-                    header("Content-type: application/json; charset=UTF-8", true, 200);
+                    header("Content-type: application/json; charset=UTF-8", true, $err['code']);
                     echo json_encode(['success' => 0, 'message' => $err['error'], 'trace' => $trace, 'level' => 'Throw'], 256 | 128 | 64);
                 } else if ($option['throw'] === 2) {
                     $this->displayError('Throw', $err, $error->getTrace());

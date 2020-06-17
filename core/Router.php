@@ -67,6 +67,8 @@ final class Router
                 //分别获取模块、控制器、动作的实际值
                 list($module, $controller, $action, $param) = $this->fill_route($request->directory, $matches, $route['route']);
 
+                if ($controller === 'base') throw new \Exception('控制器名不可以为Base，这是系统保留公共控制器名', 505);
+
                 //分别获取各个指定参数
                 $params = Array();
                 if (isset($route['map'])) {
@@ -123,8 +125,6 @@ final class Router
 
         //正则结果中没有指定结果集
         if (empty($matches) or !isset($matches[0])) return [null, null, null, null];
-
-//        pre([$directory, $matches]);
 
         //未指定MCA
         if (empty($route)) {

@@ -21,6 +21,12 @@ abstract class Controller
     public $_buffer;
 
     /**
+     * 用于post,ajax的返回数据，只要启用此变量，最后_close之后会重新组织返回值
+     * 对于get请求无效
+     */
+    protected $result = [];
+
+    /**
      * Controller constructor.
      * @param Dispatcher $dispatcher
      */
@@ -423,28 +429,6 @@ abstract class Controller
         return $this;
     }
 
-    final public function __set(string $name, $value): Controller
-    {
-        $this->_response->assign($name, $value);
-        return $this;
-    }
-
-    final public function __get(string $name)
-    {
-        return $this->_response->get($name);
-    }
-
-    final protected function set(string $name, $value = null): Controller
-    {
-        $this->_response->assign($name, $value);
-        return $this;
-    }
-
-    final protected function get(string $name)
-    {
-        return $this->_response->get($name);
-    }
-
     final protected function markdown(string $mdFile = null, string $mdCss = '/css/markdown.css?2')
     {
         $this->css($mdCss);
@@ -622,5 +606,81 @@ abstract class Controller
         return $this;
     }
 
+
+    /**
+     * @param $return
+     * @return array|null
+     *
+     * 控制器返回约定：
+     * string:错误信息
+     * int:success值，APP据此值处理
+     *
+     * 302或router：进入指定URI
+     * 500或reload：重启APP
+     * 505或warn：出错
+     * 400或login：进入登录页面
+     */
+    public function ReorganizeReturn($return)
+    {
+        $value = &$this->result;
+        if (empty($value)) return null;
+//        if (!$this->getRequest()->isAjax()) return null;
+
+        if (is_string($return)) {
+            if (_VIRTUAL !== 'api') $this->_debug->error($return);
+            elseif (substr($return, 0, 6) === 'error:') return ['success' => 0, 'message' => substr($return, 6)];
+            elseif (substr($return, 0, 4) === 'err:') return ['success' => 0, 'message' => substr($return, 4)];
+
+            $value = ['success' => 0, 'message' => $return];
+
+        } else if (is_int($return)) {
+            $value = ['success' => $return, 'message' => $return];
+
+        } else if (is_array($return)) {
+            $value = $return + $value + ['success' => 1, 'message' => 'OK'];
+
+        } else if (is_float($return)) {
+            $value += ['success' => 1, 'message' => $return];
+
+        } else if ($return === true) {
+            $value += ['success' => 1, 'message' => 'True'];
+
+        } else if ($return === false) {
+            $value += ['success' => 0, 'message' => 'False'];
+
+        } else {
+            $value += ['success' => 1, 'message' => 'OK'];
+        }
+
+        return $value;
+    }
+
+    final protected function Result(string $name, $value): Controller
+    {
+        $this->result[$name] = $value;
+        return $this;
+    }
+
+    final public function __set(string $name, $value): Controller
+    {
+        $this->result[$name] = $value;
+        return $this;
+    }
+
+    final protected function set(string $name, $value = null): Controller
+    {
+        $this->result[$name] = $value;
+        return $this;
+    }
+
+    final public function __get(string $name)
+    {
+        return $this->result[$name] ?? null;
+    }
+
+    final protected function get(string $name)
+    {
+        return $this->result[$name] ?? null;
+    }
 
 }

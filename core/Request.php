@@ -14,13 +14,14 @@ final class Request
     public $cookies;
     public $virtual;
     public $module;
-    public $controller;//控制器名
+    public $controller;//控制器名，不含后缀
     public $action;
     public $method;
     public $directory;
     public $referer;
     public $uri;
     public $suffix;
+    public $contFix;
     public $route_view;
 
     public function __construct(array $conf = null)
@@ -28,14 +29,19 @@ final class Request
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
         if ($this->isAjax() and !$this->isPost()) $this->method = 'AJAX';
         if (!is_array($conf)) $conf = [];
-        $conf += ['directory' => '/application'];
+        $conf += [
+            'directory' => '/application',
+            'router' => '/config/routes',
+            'controller' => '',
+            'suffix' => ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post'],
+        ];
 
-        $this->virtual = _VIRTUAL;
-        $this->module = '';
-        $this->directory = root($conf['directory'] ?? '/directory');
-        $this->router_path = root($conf['router'] ?? '/config/routes');
-        if (!isset($conf['suffix'])) $conf['suffix'] = array();
-        $this->suffix = $conf['suffix'] + ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post'];
+        $this->virtual = _VIRTUAL;//虚拟机
+        $this->module = '';//虚拟机下模块
+        $this->directory = root($conf['directory']);
+        $this->router_path = root($conf['router']);
+        $this->contFix = $conf['controller'];//控制器后缀，固定的
+        $this->suffix = $conf['suffix'];//数组，方法名后缀，在总控中根据不同请求再取值
         $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
         $this->uri = _CLI ? //CLI模式下 取参数作为路由
             ('/' . trim(implode('/', array_slice($GLOBALS["argv"], 1)), '/')) :
@@ -57,6 +63,25 @@ final class Request
     {
         return $this->virtual . $this->directory . $this->module . $this->controller . $this->action . json_encode($this->params);
     }
+
+    /**
+     * 控制器方法后缀
+     * @return mixed
+     * @throws \Exception
+     */
+    public function getActionExt()
+    {
+        $suffix = $this->suffix;
+        if ($this->isGet() and ($p = $suffix['get'])) $actionExt = $p;
+        elseif ($this->isPost() and ($p = $suffix['post'])) $actionExt = $p;
+        elseif ($this->isAjax() and ($p = $suffix['ajax'])) $actionExt = $p;//必须放在isPost之后
+        elseif (_CLI and ($p = $suffix['auto'])) $actionExt = $p;
+        else {
+            throw new \Exception("非法访问请求：{$this->method}", 500);
+        }
+        return ucfirst($actionExt);
+    }
+
 
     public function __get(string $name)
     {
