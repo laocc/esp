@@ -627,14 +627,10 @@ abstract class Controller
 //        if (!$this->getRequest()->isAjax()) return null;
 
         if (is_string($return)) {
-//            if (_VIRTUAL !== 'api') $this->_debug->error($return);
-//            elseif (substr($return, 0, 6) === 'error:') return ['success' => 0, 'message' => substr($return, 6)];
-//            elseif (substr($return, 0, 4) === 'err:') return ['success' => 0, 'message' => substr($return, 4)];
-
             $value = ['success' => 0, 'message' => $return] + $value;
 
         } else if (is_int($return)) {
-            $value = ['success' => $return, 'message' => $return];
+            $value = ['success' => 0, 'message' => $return] + $value;
 
         } else if (is_array($return)) {
             $value = $return + $value + ['success' => 1, 'message' => 'OK'];
