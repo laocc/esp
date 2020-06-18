@@ -5,7 +5,7 @@ namespace esp\core;
 
 final class Dispatcher
 {
-    public $_plugs = Array();
+    public $_plugs = array();
     private $_plugs_count = 0;//引入的Bootstrap数量
     public $_request;
     public $_response;
@@ -17,31 +17,47 @@ final class Dispatcher
 
     public function __construct(array $option, string $virtual = 'www')
     {
-        if (!defined('_ROOT')) exit("网站入口处须定义 _ROOT 项，指向系统根目录");
+        if (!defined('_ROOT')) {
+            exit("网站入口处须定义 _ROOT 项，指向系统根目录");
+        }
         define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
-        if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
-        if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
-        if (!defined('_SYSTEM')) define('_SYSTEM', 'auto');
+        if (!defined('_DEBUG')) {
+            define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
+        }
+        if (!defined('_VIRTUAL')) {
+            define('_VIRTUAL', strtolower($virtual));
+        }
+        if (!defined('_SYSTEM')) {
+            define('_SYSTEM', 'auto');
+        }
         if (_CLI) {
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
             define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
-            if (_URI === '/favicon.ico') exit;
+            if (_URI === '/favicon.ico') {
+                exit;
+            }
         }
 
         $ip = '127.0.0.1';
         if (!_CLI) {
             foreach (['X-REAL-IP', 'X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'REMOTE_ADDR'] as $k) {
                 if (!empty($ip = ($_SERVER[$k] ?? null))) {
-                    if (strpos($ip, ',')) $ip = explode(',', $ip)[0];
-                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) break;
+                    if (strpos($ip, ',')) {
+                        $ip = explode(',', $ip)[0];
+                    }
+                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                        break;
+                    }
                 }
             }
         }
         define('_CIP', $ip);
 
-        if (isset($option['callback'])) $option['callback']($option);
+        if (isset($option['callback'])) {
+            $option['callback']($option);
+        }
         $option += ['error' => [], 'config' => []];
         //以下2项必须在`chdir()`之前，且顺序不可变
         if (!_CLI) {
@@ -51,7 +67,9 @@ final class Dispatcher
         chdir(_ROOT);
 
         $this->_request = new Request($this->_config->get('frame.request'));
-        if (_CLI) return;
+        if (_CLI) {
+            return;
+        }
 
         $this->_response = new Response($this->_config, $this->_request);
 
@@ -62,9 +80,15 @@ final class Dispatcher
 
         if (($session = $this->_config->get('session')) and !_CLI) {
             $config = $session['default'] + ['run' => 1];
-            if (isset($session[_VIRTUAL])) $config = $session[_VIRTUAL] + $config;
-            if (isset($session[_HOST])) $config = $session[_HOST] + $config;
-            if (isset($session[_DOMAIN])) $config = $session[_DOMAIN] + $config;
+            if (isset($session[_VIRTUAL])) {
+                $config = $session[_VIRTUAL] + $config;
+            }
+            if (isset($session[_HOST])) {
+                $config = $session[_HOST] + $config;
+            }
+            if (isset($session[_DOMAIN])) {
+                $config = $session[_DOMAIN] + $config;
+            }
             if ($config['run']) {
                 $this->_session = new Session($config, $this->_debug);
                 if (!is_null($this->_debug)) {
@@ -75,13 +99,17 @@ final class Dispatcher
 
         if ($cache = $this->_config->get('cache')) {
             $setting = $cache['setting'];
-            if (isset($cache[_VIRTUAL])) $setting = $cache[_VIRTUAL] + $setting;
+            if (isset($cache[_VIRTUAL])) {
+                $setting = $cache[_VIRTUAL] + $setting;
+            }
             if (isset($setting['run']) and $setting['run']) {
                 $this->_cache = new Cache($this, $setting);
             }
         }
 
-        if (isset($option['attack'])) $option['attack']($option);
+        if (isset($option['attack'])) {
+            $option['attack']($option);
+        }
 
         $GLOBALS['cookies'] = $this->_config->get('cookies');
         unset($GLOBALS['option']);
@@ -123,7 +151,9 @@ final class Dispatcher
         foreach (get_class_methods($class) as $method) {
             if (substr($method, 0, 5) === '_init') {
                 $run = call_user_func_array([$class, $method], [$this]);
-                if ($run === false) $this->run = false;
+                if ($run === false) {
+                    $this->run = false;
+                }
             }
         }
         return $this;
@@ -157,12 +187,18 @@ final class Dispatcher
      */
     private function plugsHook(string $time)
     {
-        if (empty($this->_plugs)) return false;
-        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'displayBefore', 'displayAfter', 'mainEnd'])) return;
+        if (empty($this->_plugs)) {
+            return false;
+        }
+        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'displayBefore', 'displayAfter', 'mainEnd'])) {
+            return;
+        }
         foreach ($this->_plugs as $plug) {
             if (method_exists($plug, $time)) {
                 $val = call_user_func_array([$plug, $time], [$this->_request, $this->_response]);
-                if (is_string($val) or is_array($val)) return $val;
+                if (is_string($val) or is_array($val)) {
+                    return $val;
+                }
             }
         }
         return true;
@@ -174,9 +210,13 @@ final class Dispatcher
      */
     public function run(callable $callable = null): void
     {
-        if ($callable and call_user_func($callable)) return;
+        if ($callable and call_user_func($callable)) {
+            return;
+        }
 
-        if ($this->run === false) return;
+        if ($this->run === false) {
+            return;
+        }
 
         if ($this->_plugs_count and ($hook = $this->plugsHook('routeBefore')) and (is_array($hook) or is_string($hook))) {
             $this->_response->display($hook);
@@ -190,7 +230,11 @@ final class Dispatcher
             return;
         }
 
-        if (!_CLI and !is_null($this->_cache)) if ($this->_cache->Display()) goto end;
+        if (!_CLI and !is_null($this->_cache)) {
+            if ($this->_cache->Display()) {
+                goto end;
+            }
+        }
 
         if ($this->_plugs_count and ($hook = $this->plugsHook('dispatchBefore')) and (is_array($hook) or is_string($hook))) {
             $this->_response->display($hook);
@@ -220,8 +264,12 @@ final class Dispatcher
         }
         $this->_plugs_count and $hook = $this->plugsHook('displayAfter');
 
-        if (!_CLI and _DEBUG and $this->_debug->_save_type !== 'cgi') fastcgi_finish_request(); //运行结束，客户端断开
-        if (!_CLI and !is_null($this->_cache)) $this->_cache->Save();
+        if (!_CLI and _DEBUG and $this->_debug->_save_type !== 'cgi') {
+            fastcgi_finish_request();
+        } //运行结束，客户端断开
+        if (!_CLI and !is_null($this->_cache)) {
+            $this->_cache->Save();
+        }
 
         end:
         $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
@@ -230,7 +278,9 @@ final class Dispatcher
             if ($this->_debug->_save_type === 'cgi') {
                 $save = $this->_debug->save_logs('Dispatcher Debug');
                 $this->check_debug($save);
-                if (!$this->_request->isAjax()) var_dump($save);
+                if (!$this->_request->isAjax()) {
+                    var_dump($save);
+                }
                 return;
             }
 
@@ -280,12 +330,16 @@ final class Dispatcher
          */
         $base = $this->_request->directory . "/{$virtual}/controllers/Base{$contExt}.php";
         $file = $this->_request->directory . "/{$virtual}/controllers/{$cFile}.php";
-        if (is_readable($base)) load($base);//加载控制器公共类，有可能不存在
+        if (is_readable($base)) {
+            load($base);
+        }//加载控制器公共类，有可能不存在
         if (!load($file)) {
             return $this->err404("[{$this->_request->directory}/{$virtual}/controllers/{$cFile}.php] not exists.");
         }
         $cName = '\\' . $module . '\\' . $cFile;
-        if (!$contExt) $cName .= 'Controller';
+        if (!$contExt) {
+            $cName .= 'Controller';
+        }
 
         if (!class_exists($cName)) {
             return $this->err404("[{$cName}] not exists.");
@@ -307,19 +361,27 @@ final class Dispatcher
 
         //运行初始化方法
         if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
-            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$cName}->_init() ============================]", []);
+            if (!is_null($this->_debug)) {
+                $this->_debug->relay("[blue;{$cName}->_init() ============================]", []);
+            }
             $contReturn = call_user_func_array([$cont, '_init'], [$action]);
             if (!is_null($contReturn)) {
-                if (!is_null($this->_debug)) $this->_debug->relay(['_init' => 'return', 'return' => $contReturn], []);
+                if (!is_null($this->_debug)) {
+                    $this->_debug->relay(['_init' => 'return', 'return' => $contReturn], []);
+                }
                 return $contReturn;
             }
         }
 
         if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
-            if (!is_null($this->_debug)) $this->_debug->relay("[blue;{$cName}->_main() =============================]", []);
+            if (!is_null($this->_debug)) {
+                $this->_debug->relay("[blue;{$cName}->_main() =============================]", []);
+            }
             $contReturn = call_user_func_array([$cont, '_main'], [$action]);
             if (!is_null($contReturn)) {
-                if (!is_null($this->_debug)) $this->_debug->relay(['_main' => 'return', 'return' => $contReturn], []);
+                if (!is_null($this->_debug)) {
+                    $this->_debug->relay(['_main' => 'return', 'return' => $contReturn], []);
+                }
                 return $contReturn;
             }
         }
@@ -327,7 +389,9 @@ final class Dispatcher
         /**
          * 正式请求到控制器
          */
-        if (!is_null($this->_debug)) $this->_debug->relay("[green;{$cName}->{$action} Star ==============================]", []);
+        if (!is_null($this->_debug)) {
+            $this->_debug->relay("[green;{$cName}->{$action} Star ==============================]", []);
+        }
         $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
         if (!is_null($this->_debug)) {
             $this->_debug->relay("[red;{$cName}->{$action} End ==============================]", []);
@@ -340,12 +404,18 @@ final class Dispatcher
         //运行结束方法
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
             $clo = call_user_func_array([$cont, '_close'], [$action, $contReturn]);
-            if (!is_null($clo)) $contReturn = $clo;
-            if (!is_null($this->_debug)) $this->_debug->relay("[red;{$cName}->_close() ==================================]", []);
+            if (!is_null($clo)) {
+                $contReturn = $clo;
+            }
+            if (!is_null($this->_debug)) {
+                $this->_debug->relay("[red;{$cName}->_close() ==================================]", []);
+            }
         }
 
         $rest = $cont->ReorganizeReturn($contReturn);
-        if (!is_null($rest)) return $rest;
+        if (!is_null($rest)) {
+            return $rest;
+        }
 
         return $contReturn;
     }
@@ -353,11 +423,16 @@ final class Dispatcher
 
     final private function err404(string $msg)
     {
-        if (!is_null($this->_debug)) $this->_debug->folder('error');
-        if (_DEBUG) return $msg;
+        if (!is_null($this->_debug)) {
+            $this->_debug->folder('error');
+        }
+        if (_DEBUG) {
+            return $msg;
+        }
         $empty = $this->_config->get('frame.request.empty');
-        if (!empty($empty)) return $empty;
+        if (!empty($empty)) {
+            return $empty;
+        }
         return $msg;
     }
-
 }

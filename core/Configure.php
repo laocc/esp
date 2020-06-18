@@ -29,7 +29,7 @@ final class Configure
         $_bufferConf = parse_ini_file("{$conf['path']}/buffer.ini", true);
         if (isset($conf['folder'])) {
             $_bufferConf = $_bufferConf[$conf['folder']] ?? [];
-        } else if (_DEBUG and isset($_bufferConf['debug'])) {
+        } elseif (_DEBUG and isset($_bufferConf['debug'])) {
             $_bufferConf = $_bufferConf['debug'];
         }
 
@@ -48,7 +48,9 @@ final class Configure
             and (!isset($conf['cache']) or $conf['cache'])
         ) {
             $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
-            if (!empty($this->_CONFIG_)) return;
+            if (!empty($this->_CONFIG_)) {
+                return;
+            }
         }
 
         if (!_DEBUG and !_CLI and
@@ -62,7 +64,9 @@ final class Configure
              */
             $get = Output::new()->rpc('/debug/config')->get('json');
             if (!($get['success'] ?? 0)) {
-                if ($tryCount > 1) throw new \Exception("系统出错." . var_export($get, true), 505);
+                if ($tryCount > 1) {
+                    throw new \Exception("系统出错." . var_export($get, true), 505);
+                }
                 $tryCount++;
                 goto tryGet;
             } else {
@@ -73,19 +77,23 @@ final class Configure
         $config = [];
         $dir = new \DirectoryIterator($conf['path']);
         foreach ($dir as $f) {
-            if ($f->isFile()) $config[] = $f->getPathname();
+            if ($f->isFile()) {
+                $config[] = $f->getPathname();
+            }
         }
         $config[] = __DIR__ . '/config/mime.ini';
         $config[] = __DIR__ . '/config/state.ini';
 //        $config[] = __DIR__ . '/config/ua.ini';
 
-        $this->_CONFIG_ = Array();
+        $this->_CONFIG_ = array();
         $this->_CONFIG_[] = date('Y-m-d H:i:s');
         foreach ($config as $i => $file) {
             $_config = $this->loadFile($file, $i);
             //查找子目录下相同文件，如果存在，则覆盖相关值
             if (isset($conf['folder']) or _DEBUG) {
-                if (!isset($conf['folder'])) $conf['folder'] = 'debug';
+                if (!isset($conf['folder'])) {
+                    $conf['folder'] = 'debug';
+                }
                 $tmp = explode('/', $file);
                 $tmp[count($tmp) - 1] = $conf['folder'] . '/' . $tmp[count($tmp) - 1];
                 $tmp = implode('/', $tmp);
@@ -93,12 +101,16 @@ final class Configure
                     $_config = array_replace_recursive($_config, $this->loadFile($tmp, $i));
                 }
             }
-            if (!empty($_config)) $this->_CONFIG_ = array_merge($this->_CONFIG_, $_config);
+            if (!empty($_config)) {
+                $this->_CONFIG_ = array_merge($this->_CONFIG_, $_config);
+            }
         }
 
 
         $this->_CONFIG_ = $this->re_arr($this->_CONFIG_);
-        if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
+        if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) {
+            $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
+        }
     }
 
     public function flush(int $lev = 0)
@@ -108,7 +120,6 @@ final class Configure
         if ($lev === 0) {
             //清空config本身
             $rds->set($this->_token . '_CONFIG_', null);
-
         } else {
             //清空整个redis表
             $rand = $rds->get('resourceRand');
@@ -124,7 +135,9 @@ final class Configure
         $db1Value = [];
         $v = ['NULL', 'STRING', 'SET', 'LIST', 'ZSET', 'HASH'];
         foreach ($config as $key) {
-            if ($key === ($this->_token . '_CONFIG_')) continue;
+            if ($key === ($this->_token . '_CONFIG_')) {
+                continue;
+            }
             $type = $rds->type($key);
             if ($showAll) {
                 switch ($type) {
@@ -179,16 +192,20 @@ final class Configure
 
         if ($info['extension'] === 'php') {
             $_config = include($file);
-            if (!is_array($_config)) $_config = [];
-
+            if (!is_array($_config)) {
+                $_config = [];
+            }
         } elseif ($info['extension'] === 'ini') {
             $_config = parse_ini_file($file, true);
-            if (!is_array($_config)) $_config = [];
-
+            if (!is_array($_config)) {
+                $_config = [];
+            }
         } elseif ($info['extension'] === 'json') {
             $_config = file_get_contents($file);
             $_config = json_decode($_config, true);
-            if (!is_array($_config)) $_config = [];
+            if (!is_array($_config)) {
+                $_config = [];
+            }
         }
 
         if (isset($_config['include'])) {
@@ -196,18 +213,24 @@ final class Configure
             unset($_config['include']);
             foreach ($include as $key => $fil) {
                 if (is_array($fil)) {
-                    $_config[$key] = Array();
+                    $_config[$key] = array();
                     foreach ($fil as $l => $f) {
                         $_inc = $this->loadFile(root($f), $l);
-                        if (!empty($_inc)) $_config[$key] = $_inc + $_config[$key];
+                        if (!empty($_inc)) {
+                            $_config[$key] = $_inc + $_config[$key];
+                        }
                     }
                 } else {
                     $_inc = $this->loadFile(root($fil), $key);
-                    if (!empty($_inc)) $_config = $_inc + $_config;
+                    if (!empty($_inc)) {
+                        $_config = $_inc + $_config;
+                    }
                 }
             }
         }
-        if (is_null($byKey) or is_int($byKey) or is_numeric($byKey)) $byKey = $info['filename'];
+        if (is_null($byKey) or is_int($byKey) or is_numeric($byKey)) {
+            $byKey = $info['filename'];
+        }
 
         return empty($_config) ? [] : [$byKey => $_config];
     }
@@ -223,7 +246,9 @@ final class Configure
     {
         $conf = parse_ini_file(root($file), true);
         $conf = $this->re_arr($conf);
-        if (is_null($key)) return $conf;
+        if (is_null($key)) {
+            return $conf;
+        }
 
         $key = preg_replace('/[\.\,\/]+/', '.', strtolower($key));
         if (strrpos($key, '.')) {
@@ -231,7 +256,9 @@ final class Configure
             $_config = $conf;
             foreach ($keys as $k) {
                 $_config = isset($_config[$k]) ? $_config[$k] : null;
-                if (is_null($_config)) return $auto;
+                if (is_null($_config)) {
+                    return $auto;
+                }
             }
             return $_config;
         }
@@ -245,14 +272,18 @@ final class Configure
             $search = array('_TIME', '_DATE', '_NOW');
             $replace = array(date('H:i:s'), date('Ymd'), time());
             $re = str_ireplace($search, $replace, $matches[1]);
-            if ($re !== $matches[1]) return $re;
+            if ($re !== $matches[1]) {
+                return $re;
+            }
             return defined($matches[1]) ? constant($matches[1]) : $matches[1];
         }, $value);
 
         if (substr($value, 0, 1) === '[' and substr($value, -1, 1) === ']') {
             $arr = json_decode($value, true);
-            if (is_array($arr)) $value = $arr;
-        } else if (is_numeric($value) and strlen($value) < 10) {
+            if (is_array($arr)) {
+                $value = $arr;
+            }
+        } elseif (is_numeric($value) and strlen($value) < 10) {
             $value = intval($value);
         }
         return $value;
@@ -260,7 +291,7 @@ final class Configure
 
     private function re_arr($array)
     {
-        $val = Array();
+        $val = array();
         foreach ($array as $k => $arr) {
             if (is_array($arr)) {
                 $val[strtolower(strval($k))] = $this->re_arr($arr);
@@ -278,12 +309,20 @@ final class Configure
      */
     public function get(...$key)
     {
-        if (empty($key)) return null;
-        if ($key === ['*']) return $this->_CONFIG_;
+        if (empty($key)) {
+            return null;
+        }
+        if ($key === ['*']) {
+            return $this->_CONFIG_;
+        }
         $conf = $this->_CONFIG_;
         foreach (explode('.', strtolower(implode('.', $key))) as $k) {
-            if ($k === '' or $k === '*') return null;
-            if (!isset($conf[$k])) return null;
+            if ($k === '' or $k === '*') {
+                return null;
+            }
+            if (!isset($conf[$k])) {
+                return null;
+            }
             $conf = &$conf[$k];
         }
         return $conf;
@@ -297,7 +336,9 @@ final class Configure
     public function mime(string $type): string
     {
         $mime = $this->get('mime', $type);
-        if (!$mime) $mime = 'text/html';
+        if (!$mime) {
+            $mime = 'text/html';
+        }
         return $mime;
     }
 
@@ -308,8 +349,9 @@ final class Configure
     public function states(int $code): string
     {
         $state = $this->get('state', $code);
-        if (!$state) $state = 'Unexpected';
+        if (!$state) {
+            $state = 'Unexpected';
+        }
         return $state;
     }
-
 }
