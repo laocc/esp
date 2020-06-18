@@ -631,7 +631,7 @@ abstract class Controller
 //            elseif (substr($return, 0, 6) === 'error:') return ['success' => 0, 'message' => substr($return, 6)];
 //            elseif (substr($return, 0, 4) === 'err:') return ['success' => 0, 'message' => substr($return, 4)];
 
-            $value = ['success' => 0, 'message' => $return];
+            $value = ['success' => 0, 'message' => $return] + $value;
 
         } else if (is_int($return)) {
             $value = ['success' => $return, 'message' => $return];
