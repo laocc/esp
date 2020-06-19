@@ -20,6 +20,19 @@ final class Cookies
             $ttl = (intval($mat[1]) * $s) + time();
         }
         if (is_array($value)) $value = json_encode($value, 256);
+
+        if (version_compare(PHP_VERSION, '7.3', '>')) {
+            $option = [];
+            $option['domain'] = $this->domain;
+            $option['expires'] = $ttl;
+            $option['path'] = '/';
+            $option['secure'] = _HTTPS;//仅https
+            $option['httponly'] = true;
+            $option['samesite'] = 'Lax';
+            return setcookie(strtolower($key), $value, $option);
+        }
+
+        //function setcookie ($name, $value = "", $expire = 0, $path = "", $domain = "", $secure = false, $httponly = false) {}
         return setcookie(strtolower($key), $value, $ttl, '/', $this->domain, _HTTPS, true);
     }
 
@@ -37,6 +50,16 @@ final class Cookies
     public function del($key)
     {
         if (_CLI) return null;
+        if (version_compare(PHP_VERSION, '7.3', '>')) {
+            $option = [];
+            $option['domain'] = $this->domain;
+            $option['expires'] = -1;
+            $option['path'] = '/';
+            $option['secure'] = _HTTPS;//仅https
+            $option['httponly'] = true;
+            $option['samesite'] = 'Lax';
+            return setcookie(strtolower($key), null, $option);
+        }
         return setcookie(strtolower($key), null, -1, '/', $this->domain, _HTTPS, true);
     }
 
@@ -49,11 +72,20 @@ final class Cookies
 
     public function disable()
     {
-        $empty = empty($_COOKIE);
-        if (!$empty) return false;
-        setcookie('_c', null, -1, '/', $this->domain, _HTTPS, true);
-        $empty = empty($_COOKIE);
-        return $empty;
+        if (empty($_COOKIE)) return false;
+        if (version_compare(PHP_VERSION, '7.3', '>')) {
+            $option = [];
+            $option['domain'] = $this->domain;
+            $option['expires'] = -1;
+            $option['path'] = '/';
+            $option['secure'] = _HTTPS;//仅https
+            $option['httponly'] = true;
+            $option['samesite'] = 'Lax';
+            setcookie('_c', null, $option);
+        } else {
+            setcookie('_c', null, -1, '/', $this->domain, _HTTPS, true);
+        }
+        return empty($_COOKIE);
     }
 
 }

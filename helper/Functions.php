@@ -876,19 +876,9 @@ function re_size(string $size): int
 
 function data_size(int $byte, int $x = 2)
 {
-    if ($byte > pow(1024, 4)) {
-        return round($byte / pow(1024, 4), $x) . 'TB';
-    }
-    if ($byte > pow(1024, 3)) {
-        return round($byte / pow(1024, 3), $x) . 'GB';
-    }
-    if ($byte > pow(1024, 2)) {
-        return round($byte / pow(1024, 2), $x) . 'MB';
-    }
-    if ($byte > 1024) {
-        return round($byte / 1024, $x) . 'KB';
-    }
-    return $byte . 'B';
+    $k = 4;
+    while ($k--) if ($byte > pow(1024, $k)) break;
+    return round($byte / pow(1024, $k), $x) . ['B', 'KB', 'MB', 'TB'][$k];
 }
 
 /**

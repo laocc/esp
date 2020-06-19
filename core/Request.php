@@ -172,8 +172,21 @@ final class Request
             }
             $time = time() + 86400 * 365;
             $dom = $this->cookies->domain;
-            _HTTPS && setcookie($key, $unique, $time, '/', $dom, true, true);
-            setcookie($key, $unique, $time, '/', $dom, false, true);
+
+            if (version_compare(PHP_VERSION, '7.3', '>')) {
+                $option = [];
+                $option['domain'] = $dom;
+                $option['expires'] = $time;
+                $option['path'] = '/';
+                $option['secure'] = true;//仅https
+                $option['httponly'] = true;
+                $option['samesite'] = 'Lax';
+                setcookie($key, $unique, $option);
+                _HTTPS && setcookie($key, $unique, ['secure' => true] + $option);
+            } else {
+                setcookie($key, $unique, $time, '/', $dom, false, true);
+                _HTTPS && setcookie($key, $unique, $time, '/', $dom, true, true);
+            }
         }
         return $unique;
     }
