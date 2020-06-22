@@ -75,7 +75,7 @@ final class Request
         if ($this->isGet() and ($p = $suffix['get'])) $actionExt = $p;
         elseif ($this->isPost() and ($p = $suffix['post'])) $actionExt = $p;
         elseif ($this->isAjax() and ($p = $suffix['ajax'])) $actionExt = $p;//必须放在isPost之后
-        elseif (_CLI and ($p = $suffix['auto'])) $actionExt = $p;
+        elseif (_CLI and ($p = $suffix['auto'] ?? 'Action')) $actionExt = $p;
         else {
             throw new \Exception("非法访问请求：{$this->method}", 500);
         }

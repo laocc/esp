@@ -163,22 +163,24 @@ final class Session
     }
 
     /**
-     * @param null $key
+     * @param  $key
      * @param null $autoValue
      * @return bool|float|int|mixed|null|string
      */
-    public function get($key = null, $autoValue = null)
+    public function get($key, $autoValue = null)
     {
         if (is_null($this->SessionHandler)) {
             throw new \Exception("系统未开启Session", 500);
         }
-        if ($key === null) return $_SESSION;
+        if ($key === null) return null;
         if (empty($_SESSION)) return null;
-        $value = $_SESSION[$key] ?? $autoValue;
+        if (!isset($_SESSION[$key])) return $autoValue;
+        $value = $_SESSION[$key];
         if (is_int($autoValue)) $value = intval($value);
         else if (is_bool($autoValue)) $value = boolval($value);
-        else if (is_array($autoValue)) $value = json_decode($value, true);
-        else if (is_string($autoValue)) $value = strval($value);
+        else if (is_array($autoValue)) {
+            if (!is_array($value)) $value = json_decode($value, true);
+        } else if (is_string($autoValue)) $value = strval($value);
         else if (is_float($autoValue)) $value = floatval($value);
         return $value;
     }

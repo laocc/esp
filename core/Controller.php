@@ -167,6 +167,21 @@ abstract class Controller
     }
 
     /**
+     * @param string $type json/string
+     * @return array
+     */
+    final protected function getPost(string $type = 'json')
+    {
+        $post = file_get_contents("php://input");
+        if ($type === 'json') {
+            $arr = json_decode($post, true);
+        } else {
+            parse_str($post, $arr);
+        }
+        return $arr ?: [];
+    }
+
+    /**
      * @return Redis
      */
     final public function getBuffer()
@@ -425,6 +440,7 @@ abstract class Controller
      */
     final protected function assign($name, $value = null): Controller
     {
+        if (_CLI) return $this;
         $this->_response->assign($name, $value);
         return $this;
     }

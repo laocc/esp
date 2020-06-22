@@ -49,13 +49,10 @@ final class Router
             $matches = [];
             if ((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0) or
                 (isset($route['match']) and preg_match($route['match'], $request->uri, $matches))) {
-//                var_dump((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0));
-//                var_dump(isset($route['match']) and preg_match($route['match'], $request->uri, $matches));
 
                 if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax()))
                     throw new \Exception('非法Method请求', 404);
 
-//                $matches = [];
                 if ($key === '_default') {
                     $matches = explode('/', $request->uri);
                     $matches[0] = $request->uri;
@@ -103,7 +100,6 @@ final class Router
                 if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
 
                 unset($modRoute, $default);
-//                pre($request);
                 return;
             }
         }

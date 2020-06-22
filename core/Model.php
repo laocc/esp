@@ -658,6 +658,12 @@ abstract class Model
     final public function Mysql(int $tranID = 0, array $_conf = []): Mysql
     {
         $branchName = $this->_branch ?? 'auto';
+
+        if ($tranID === 1) {
+            if (!isset($GLOBALS['_tranID'])) $GLOBALS['_tranID'] = 0;
+            $tranID = $GLOBALS['_tranID']++;
+        }
+
         if (isset($this->_Mysql[$branchName][$tranID])) {
             return $this->_Mysql[$branchName][$tranID];
         }
