@@ -170,7 +170,7 @@ abstract class Controller
      * @param string $type json/string
      * @return array
      */
-    final protected function getPost(string $type = 'json')
+    final protected function phpPost(string $type = 'json')
     {
         $post = file_get_contents("php://input");
         if ($type === 'json') {
