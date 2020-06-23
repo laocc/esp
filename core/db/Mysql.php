@@ -13,7 +13,7 @@ class Mysql
     private $_trans_run = Array();//事务状态
     private $_trans_error = Array();//事务出错状态
     private $connect_time = Array();//连接时间
-    private $transID = 0;
+    private $transID = 1;
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
     private $_debug;

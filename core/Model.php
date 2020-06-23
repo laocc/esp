@@ -676,6 +676,10 @@ abstract class Model
             }
             $conf = $_branch + $conf;
         }
+        if (isset($this->_conf) and is_array($this->_conf) and !empty($this->_conf)) {
+            $conf = $this->_conf + $conf;
+        }
+
         if (empty($conf) or !is_array($conf)) {
             throw new \Exception("`Database.Mysql`配置信息错误", 501);
         }
