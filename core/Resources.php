@@ -83,9 +83,13 @@ final class Resources
 
     public function replace(string $html): string
     {
+        $nc = $this->conf['nterchange'] ?? [];
         $path = $this->path();//resource文件路径
-        $host = $this->host() ?: $path;//resource域名
+        $host = $this->host() ?: $path;
         $face = substr(getenv('DOCUMENT_ROOT'), strlen(_ROOT));//站点入口位置
+        if (!empty($nc)) {
+            $html = str_replace(array_keys($nc), array_values($nc), $html);
+        }
 
         return str_replace([$path, '__RAND__', $face], [$host, $this->rand(), ''], $html);
     }

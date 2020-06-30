@@ -22,6 +22,7 @@ final class Redis implements KeyValue
      * Redis constructor.
      * @param array $conf
      * @param int|null $db
+     * @throws \Exception
      */
     public function __construct(array $conf = [], int $db = null)
     {

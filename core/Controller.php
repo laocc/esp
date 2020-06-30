@@ -175,6 +175,8 @@ abstract class Controller
         $post = file_get_contents("php://input");
         if ($type === 'json') {
             $arr = json_decode($post, true);
+        } else if ($type === 'xml') {
+            $arr = json_decode(json_encode(@simplexml_load_string($post, "SimpleXMLElement", LIBXML_NOCDATA)), true);
         } else {
             parse_str($post, $arr);
         }
@@ -191,6 +193,7 @@ abstract class Controller
 
     /**
      * @return Session
+     * @throws \Exception
      */
     final public function getSession()
     {

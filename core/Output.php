@@ -35,10 +35,16 @@ final class Output
         return $this;
     }
 
+    public function debug()
+    {
+        return ['url' => $this->url, 'option' => $this->option, 'data' => $this->data, 'value' => $this->value];
+    }
+
 
     /**
      * @param string $uri
      * @return $this
+     * @throws \Exception
      */
     public function rpc(string $uri)
     {
@@ -586,10 +592,11 @@ final class Output
             $response['post'] = $data;
         }
         $response['option'] = $cOption;
-
+        $time = microtime(true);
         curl_setopt_array($cURL, $cOption);
         $response['html'] = curl_exec($cURL);
         $response['info'] = curl_getinfo($cURL);
+        $response['time_used'] = microtime(true) - $time;
 
         if (($err = curl_errno($cURL)) > 0) {
             $response['error'] = $err;

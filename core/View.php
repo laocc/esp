@@ -162,7 +162,11 @@ final class View
         }
 
         if (!is_readable($fileV)) {
-            throw new \Exception("视图文件({$fileV})不存在", 400);
+            if (!is_readable($fileT = "{$dir}/view.php")) {
+                throw new \Exception("视图文件({$fileV})不存在", 400);
+            } else {
+                $fileV = $fileT;
+            }
         }
 
         if ($this->_layout instanceof View) {//先解析子视图

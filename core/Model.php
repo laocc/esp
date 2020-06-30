@@ -92,7 +92,7 @@ abstract class Model
             $this->_debug = $this->_controller->_debug;
 //            $this->_debug = Debug::class();
         }
-        if (empty($value)) return $this->_debug;
+        if (is_null($value)) return $this->_debug;
         if (is_null($this->_debug)) return false;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         return $this->_debug->relay($value, $pre);

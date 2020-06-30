@@ -71,14 +71,14 @@ final class Error
                 unset($errcontext['all']);
             }
             if (!_CLI) $err['text'] = $errcontext;
-
             if (!isset($errcontext['errorTitle'])) {
                 $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
             }
-            http_response_code($err['code']);
 
             if (is_int($option['run'])) {
-                if ($option['run'] === 1) {
+                if ($option['run'] === 0) {
+                    http_response_code($err['code']);
+                } else if ($option['run'] === 1) {
                     unset($err['text']);
                     print_r($err);
                 } else if ($option['run'] === 9) {
@@ -114,11 +114,14 @@ final class Error
             $err['file'] = $error->getFile();
             $err['line'] = $error->getLine();
             $this->error($err + ['trace' => $error->getTrace()], debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
-            http_response_code($err['code']);
+
 
             $trace = str_replace(_ROOT, '', $error->getTraceAsString());
             if (is_int($option['throw'])) {
-                if ($option['throw'] === 1) {
+                if ($option['throw'] === 0) {
+                    http_response_code($err['code']);
+
+                } else if ($option['throw'] === 1) {
                     print_r([$err, $trace]);
                 } else if ($option['throw'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, $err['code']);
@@ -231,7 +234,7 @@ final class Error
         $conf = parse_ini_file(root('/esp/core/config/state.ini'), true);
         $state = $conf[$code] ?? '';
         if (_CLI) return "[{$code}]:{$state}\n";
-        http_response_code($code);
+//        http_response_code($code);
         $server = isset($_SERVER['SERVER_SOFTWARE']) ? ucfirst($_SERVER['SERVER_SOFTWARE']) : null;
         $html = <<<HTML
 <html>
