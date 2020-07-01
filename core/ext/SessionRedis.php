@@ -56,7 +56,7 @@ class SessionRedis implements \SessionHandlerInterface
 
         $select = $this->_Redis->select(intval($conf['db']));
         if (!$select) {
-            throw new \Exception("Redis选择库【{$conf['db']}】失败。");
+            throw new \Exception("Redis选择库【{$conf['db']}】失败。" . json_encode($conf));
         }
         return $this->realValue($select);
     }
