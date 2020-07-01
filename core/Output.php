@@ -84,12 +84,12 @@ final class Output
      */
     public function get(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml', 'html', 'array'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html', 'array', 'text'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'get';
         $this->value = $this->request($this->url, null, $this->option);
         if (!$encode) return $this->value;
-        if ('html' === $encode) return $this->value['html'];
+        if (in_array($encode, ['html', 'text'])) return $this->value['html'];
         return $this->value['array'] ?? [];
     }
 
