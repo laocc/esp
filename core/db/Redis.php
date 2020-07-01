@@ -60,7 +60,8 @@ final class Redis implements KeyValue
         } catch (\Exception $e) {
             if ($tryCont++ > 2) {
                 if (_DEBUG) print_r($conf);
-                throw new \Exception($e->getMessage(), $e->getCode());
+                $err = base64_encode(print_r($conf, true));
+                throw new \Exception($e->getMessage() . '/' . $err, $e->getCode());
             }
             usleep(10000);
             goto tryCont;
