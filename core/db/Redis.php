@@ -49,7 +49,6 @@ final class Redis implements KeyValue
                     throw new \Exception("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
                 }
             } else {
-                pre($conf);
                 if ($conf['host'][0] === '/') {
                     if (!$this->redis->connect($conf['host'])) {
                         throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
