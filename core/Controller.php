@@ -451,11 +451,8 @@ abstract class Controller
     final protected function markdown(string $mdFile = null, string $mdCss = '/css/markdown.css?2')
     {
         $this->css($mdCss);
-        if ($mdFile) {
-            $this->_response->setView($mdFile);
-        } else {
-            $this->_response->set_value('md', $mdFile);
-        }
+        if ($mdFile) $this->_response->setView($mdFile);
+        $this->_response->set_value('md', null);
     }
 
     /**
@@ -465,11 +462,8 @@ abstract class Controller
     final protected function md(string $mdFile = null, string $mdCss = '/css/markdown.css?1')
     {
         $this->css($mdCss);
-        if ($mdFile) {
-            $this->_response->setView($mdFile);
-        } else {
-            $this->_response->set_value('md', $mdFile);
-        }
+        if ($mdFile) $this->_response->setView($mdFile);
+        $this->_response->set_value('md', null);
     }
 
     /**

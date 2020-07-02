@@ -434,8 +434,9 @@ final class Response
             if (isset($route['path']) and $route['path']) $view->dir($route['path']);
             if (isset($route['file']) and $route['file']) $view->file($route['file']);
         }
+        //组合一个默认值送到视图中，但是，有可能在这之前已经通过$this->getView()->file($value);指定过实际视图文件
         $file = "{$this->_request->controller}/{$this->_request->action}.{$viewFileExt}";
-        return $view->render(strtolower($file), $this->_view_val);
+        return $view->display_type($this->_display_type)->render(strtolower($file), $this->_view_val);
     }
 
     /**

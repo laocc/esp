@@ -142,7 +142,8 @@ abstract class Model
 
 
     /**
-     * 当前模型对应的表名
+     * 指定当前模型的表
+     * 或，返回当前模型对应的表名
      * @param string|null $table
      * @return $this|null|string
      */

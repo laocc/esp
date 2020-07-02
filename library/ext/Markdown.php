@@ -1060,20 +1060,22 @@ class Markdown
                 $bgcolor = $width = null;
                 $color = '\#(?:[a-f0-9]{6}|[a-f0-9]{3});';
                 if (preg_match("/^(?:({$color})|(?:(\d+);)|(?:(\d{1,3}px;))){1,2}(.*)$/i", $text, $matches)) {
-                    $text = $matches[4];
                     $bgcolor = $matches[1];
                     $num = intval($matches[2]);
                     $width = intval($matches[3]);
+                    $text = $matches[4];
                 }
 
                 $html .= "<{$tag}";
                 if ($num > 1) $html .= " colspan=\"{$num}\"";
-                if (is_int($width) and $width > 0) $html .= " width=\"{$width}\"";
-                if (!!$bgcolor) $html .= " style=\"background:{$bgcolor}\"";
-
+                $style = '';
+                if (is_int($width) and $width > 0) $style = "width:{$width}px;";
+                if (!!$bgcolor) $style .= "background:{$bgcolor};";
                 if (isset($aligns[$ky]) && $aligns[$ky] != 'none') {
-                    $html .= " align=\"{$aligns[$ky]}\"";
+                    $style .= "text-align:{$aligns[$ky]};";
                 }
+
+                if (!empty($style)) $html .= " style=\"{$style}\"";
                 $html .= '>' . self::parseInline(htmlspecialchars($text)) . "</{$tag}>";
                 $cols = $ky + ($num - 1);
             }

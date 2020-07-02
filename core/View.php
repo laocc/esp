@@ -17,6 +17,7 @@ final class View
     private $_adapter;//标签解析器对象
     private $_adapter_use;
     private $_controller;
+    private $_display_type;
 
     public function __construct(string $dir, string $controller, $file)
     {
@@ -144,6 +145,12 @@ final class View
         return $this;
     }
 
+    public function display_type(string $type): View
+    {
+        $this->_display_type = $type;
+        return $this;
+    }
+
 
     /**
      * 解析视图结果并返回
@@ -170,10 +177,13 @@ final class View
         }
 
         if ($this->_layout instanceof View) {//先解析子视图
-            if (substr($fileV, -3) === '.md') {
+            if ($this->_display_type === 'md' && substr($fileV, -3) === '.md') {
                 $html = Markdown::html(file_get_contents($fileV));
             } else {
                 $html = $this->fetch($fileV, $value + $this->_view_val);
+                if ($this->_display_type === 'md') {
+                    $html = Markdown::html($html);
+                }
             }
             $layout = '/layout.php';
             $layout_file = $dir . $layout;
