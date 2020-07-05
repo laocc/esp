@@ -87,8 +87,9 @@ function host(string $domain): string
     if (empty($domain)) return '';
     $dm1 = 'cn|cm|my|ph|tw|uk|hk';
     $dm2 = 'com|net|org|gov|idv|co|name';
-    if (strpos('/', $domain)) $domain = explode('/', "{$domain}//")[2];
-
+    if (strpos($domain, '/')) {
+        $domain = explode('/', "{$domain}//")[2];
+    }
     if (preg_match("/^(?:[\w\.\-]+\.)?([a-z]+)\.({$dm2})\.({$dm1})$/i", $domain, $match)) {
         return "{$match[1]}.{$match[2]}.{$match[3]}";
 
