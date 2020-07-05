@@ -614,6 +614,19 @@ function is_time(string $time): bool
     return (boolean)preg_match('/^([0-1]\d|2[0-3])(\:[0-5]\d){2}$/', $time);
 }
 
+function is_json(string $json): bool
+{
+    if (!preg_match('/^(\{.*\})|(\[.*\])$/', $json)) return false;
+    try {
+        $a = json_decode($json, true);
+        if (!is_array($a)) return false;
+    } catch (Exception $exception) {
+        return false;
+    }
+    return true;
+}
+
+
 /**
  * 字串是否为正则表达式
  * @param $string

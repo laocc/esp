@@ -6,6 +6,7 @@ namespace esp\core;
 use esp\core\db\Redis;
 use esp\core\face\Adapter;
 use esp\core\ext\Input;
+use esp\library\ext\Markdown;
 
 abstract class Controller
 {
@@ -116,6 +117,11 @@ abstract class Controller
     {
         $this->_response->viewPath($value);
         return $this;
+    }
+
+    final protected function getViewPath()
+    {
+        return $this->_response->viewPath();
     }
 
     final protected function run_user(string $user = 'www')
@@ -448,11 +454,12 @@ abstract class Controller
         return $this;
     }
 
-    final protected function markdown(string $mdFile = null, string $mdCss = '/css/markdown.css?2')
+    final protected function markdown(string $mdValue)
     {
-        $this->css($mdCss);
-        if ($mdFile) $this->_response->setView($mdFile);
-        $this->_response->set_value('md', null);
+        if (stripos($mdValue, _ROOT) === 0) {
+            $mdValue = file_get_contents($mdValue);
+        }
+        return Markdown::html($mdValue);
     }
 
     /**
