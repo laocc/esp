@@ -1,5 +1,5 @@
 <?php
-//declare(strict_types=1);
+declare(strict_types=1);
 
 namespace esp\core;
 
@@ -110,11 +110,16 @@ final class Error
             $err = Array();
             $err['level'] = 'Throw';
             $err['error'] = $error->getMessage();
+            $err['message'] = $err['error'];
             $err['code'] = $error->getCode();
             $err['file'] = $error->getFile();
             $err['line'] = $error->getLine();
             $this->error($err + ['trace' => $error->getTrace()], debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
 
+            if ($err['error'][0] === '{') {
+                $ems = json_decode($err['error'], true);
+                if (isset($ems[2])) $err['message'] = $ems[2];
+            }
 
             $trace = str_replace(_ROOT, '', $error->getTraceAsString());
             if (is_int($option['throw'])) {
@@ -122,10 +127,13 @@ final class Error
                     http_response_code($err['code']);
 
                 } else if ($option['throw'] === 1) {
-                    print_r([$err, $trace]);
+                    echo $err['message'];
                 } else if ($option['throw'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, $err['code']);
-                    echo json_encode(['success' => 0, 'message' => $err['error'], 'trace' => $trace, 'level' => 'Throw'], 256 | 128 | 64);
+                    echo json_encode(['success' => 0,
+                        'message' => $err['error'],
+                        'trace' => $trace,
+                        'level' => 'Throw'], 256 | 128 | 64);
                 } else if ($option['throw'] === 2) {
                     $this->displayError('Throw', $err, $error->getTrace());
                 } else if ($option['throw'] === 3) {

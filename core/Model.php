@@ -1,5 +1,5 @@
 <?php
-//declare(strict_types=1);
+declare(strict_types=1);
 
 namespace esp\core;
 
@@ -181,9 +181,10 @@ abstract class Model
         /**
          * 当前ajax中
          */
-        if (($ajax = getenv('HTTP_X_REQUESTED_WITH')) and strtolower($ajax) === 'xmlhttprequest') {
-            return $json[2];
-        }
+//        if (($ajax = getenv('HTTP_X_REQUESTED_WITH')) and strtolower($ajax) === 'xmlhttprequest') {
+//            $this->debug(null)->error($json);
+//            return $json[2];
+//        }
 
         throw new \Exception($data);
     }
@@ -212,7 +213,8 @@ abstract class Model
         $data = $full ? $data : $this->_FillField($mysql->dbName, $table, $data);
         $obj = $mysql->table($table);
         $val = $obj->insert($data);
-        if (is_string($val)) return $val;
+        $ck = $this->checkRunData('insert', $val);
+        if ($ck) return $ck;
         if ($returnID) return $val;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
@@ -221,11 +223,17 @@ abstract class Model
             $value = [];
             foreach ($val as $id) {
                 $sql = null;
-                $value[] = $mysql->table($table)->param(false)->prepare(false)->where($pri, $id)->get(1, $sql, $pre)->row();
+                $nID = $mysql->table($table)->param(false)->prepare(false)->where($pri, $id)->get(1, $sql, $pre)->row();
+                $ck = $this->checkRunData('insert', $nID);
+                if ($ck) return $ck;
+                $value[] = $val;
             }
             return $value;
         } else {
-            return $mysql->table($table)->param(false)->prepare(false)->where($pri, $val)->get(1, $sql, $pre)->row();
+            $value = $mysql->table($table)->param(false)->prepare(false)->where($pri, $val)->get(1, $sql, $pre)->row();
+            $ck = $this->checkRunData('insert', $value);
+            if ($ck) return $ck;
+            return $value;
         }
     }
 
@@ -685,7 +693,6 @@ abstract class Model
             throw new \Exception("`Database.Mysql`配置信息错误", 501);
         }
 //            if (defined('_DISABLED_PARAM') and _DISABLED_PARAM) $_conf['param'] = false;
-
         $this->_Mysql[$branchName][$tranID] = new Mysql($tranID, ($_conf + $conf));
         $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $this->debug("New Mysql({$branchName}-{$tranID});", $pre);

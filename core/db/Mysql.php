@@ -1,5 +1,5 @@
 <?php
-//declare(strict_types=1);
+declare(strict_types=1);
 
 namespace esp\core\db;
 
@@ -13,7 +13,7 @@ class Mysql
     private $_trans_run = Array();//事务状态
     private $_trans_error = Array();//事务出错状态
     private $connect_time = Array();//连接时间
-    private $transID = 1;
+    private $transID;
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
     private $_debug;
@@ -27,14 +27,14 @@ class Mysql
      * @param int $tranID
      * @param array|null $conf
      */
-    public function __construct($tranID = 0, array $conf = null)
+    public function __construct(int $tranID = 0, array $conf = null)
     {
         if (is_array($tranID)) list($tranID, $conf) = [0, $tranID];
         if (!is_array($conf)) {
             throw new \Exception('Mysql配置信息错误');
         }
         $this->_CONF = $conf;
-        if ($tranID) $this->transID = $tranID;
+        $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
         $this->dbName = $conf['db'];
     }
@@ -208,7 +208,6 @@ class Mysql
     public function query_exec(string $sql, array $option, \PDO $CONN = null, $pre = null)
     {
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-
         if (empty($sql)) {
             throw new \Exception("PDO_Error :  SQL语句不能为空");
         }
@@ -532,9 +531,6 @@ class Mysql
     public function trans(int $trans_id = 0, array $batch_SQLs = [])
     {
 //        try {
-        if ($trans_id === 0) {
-            $trans_id = $this->transID;
-        }
         if ($trans_id === 0) {
             throw new \Exception("Trans Error: 事务ID须从1开始，不可以为0。");
         }

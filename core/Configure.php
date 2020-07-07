@@ -1,5 +1,5 @@
 <?php
-//declare(strict_types=1);
+declare(strict_types=1);
 
 namespace esp\core;
 
@@ -118,7 +118,7 @@ final class Configure
 //        print_r($this->_CONFIG_);
     }
 
-    public function flush(int $lev = 0)
+    public function flush(int $lev = 0): void
     {
         $rds = $this->Redis();
 
@@ -242,12 +242,12 @@ final class Configure
 
     /**
      * 加载在format时没载入的，不经过缓存
-     * @param $file
-     * @param null $key
+     * @param string $file
+     * @param string $key
      * @param null $auto
      * @return array|bool|mixed|null
      */
-    public function load($file, $key = null, $auto = null)
+    public function load(string $file, string $key = null, $auto = null)
     {
         $conf = parse_ini_file(root($file), true);
         $conf = $this->re_arr($conf);
@@ -271,7 +271,7 @@ final class Configure
     }
 
 
-    private function re_key($value)
+    private function re_key(string $value)
     {
         $value = preg_replace_callback('/\{(_[A-Z_]+)\}/', function ($matches) {
             $search = array('_TIME', '_DATE', '_NOW');
@@ -294,7 +294,7 @@ final class Configure
         return $value;
     }
 
-    private function re_arr($array)
+    private function re_arr(array $array): array
     {
         $val = array();
         foreach ($array as $k => $arr) {

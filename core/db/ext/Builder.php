@@ -1,5 +1,5 @@
 <?php
-//declare(strict_types=1);
+declare(strict_types=1);
 
 namespace esp\core\db\ext;
 
@@ -207,9 +207,10 @@ final class Builder
 
     /**
      * 传回mysql的选项
+     * @param $action
      * @return array
      */
-    private function option($action)
+    private function option(string $action): array
     {
         return [
             'param' => ($this->_param or $this->_prepare) ? $this->_param_data : [],
