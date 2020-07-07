@@ -25,8 +25,11 @@ final class Configure
         $this->_token = md5(_ROOT);
         $conf += ['path' => '/common/config'];
         $conf['path'] = root($conf['path']);
-
-        $_bufferConf = parse_ini_file("{$conf['path']}/buffer.ini", true);
+        if (isset($conf['buffer'])) {
+            $_bufferConf = parse_ini_file(root($conf['buffer']), true);
+        } else {
+            $_bufferConf = parse_ini_file("{$conf['path']}/buffer.ini", true);
+        }
         if (isset($conf['folder'])) {
             $_bufferConf = $_bufferConf[$conf['folder']] ?? [];
         } elseif (_DEBUG and isset($_bufferConf['debug'])) {
@@ -75,28 +78,30 @@ final class Configure
         }
 
         $config = [];
+        if (is_dir("{$conf['path']}/esp")) {
+            $dir = new \DirectoryIterator("{$conf['path']}/esp");
+            foreach ($dir as $f) {
+                if ($f->isFile()) {
+                    $config[] = ['file' => $f->getPathname(), 'name' => $f->getFilename()];
+                }
+            }
+        }
         $dir = new \DirectoryIterator($conf['path']);
         foreach ($dir as $f) {
             if ($f->isFile()) {
-                $config[] = $f->getPathname();
+                $config[] = ['file' => $f->getPathname(), 'name' => $f->getFilename()];
             }
         }
-        $config[] = __DIR__ . '/config/mime.ini';
-        $config[] = __DIR__ . '/config/state.ini';
-//        $config[] = __DIR__ . '/config/ua.ini';
+        $config[] = ['file' => __DIR__ . '/config/mime.ini', 'name' => 'mime.ini'];
+        $config[] = ['file' => __DIR__ . '/config/state.ini', 'name' => 'state.ini'];
 
         $this->_CONFIG_ = array();
         $this->_CONFIG_[] = date('Y-m-d H:i:s');
-        foreach ($config as $i => $file) {
-            $_config = $this->loadFile($file, $i);
+        foreach ($config as $i => $cf) {
+            $_config = $this->loadFile($cf['file'], $i);
             //查找子目录下相同文件，如果存在，则覆盖相关值
-            if (isset($conf['folder']) or _DEBUG) {
-                if (!isset($conf['folder'])) {
-                    $conf['folder'] = 'debug';
-                }
-                $tmp = explode('/', $file);
-                $tmp[count($tmp) - 1] = $conf['folder'] . '/' . $tmp[count($tmp) - 1];
-                $tmp = implode('/', $tmp);
+            if (isset($conf['folder'])) {
+                $tmp = "{$conf['path']}/{$conf['folder']}/{$cf['name']}";
                 if (is_readable($tmp)) {
                     $_config = array_replace_recursive($_config, $this->loadFile($tmp, $i));
                 }
@@ -106,11 +111,11 @@ final class Configure
             }
         }
 
-
         $this->_CONFIG_ = $this->re_arr($this->_CONFIG_);
         if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) {
             $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
         }
+//        print_r($this->_CONFIG_);
     }
 
     public function flush(int $lev = 0)
