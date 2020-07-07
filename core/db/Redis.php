@@ -1,5 +1,5 @@
 <?php
-//declare(strict_types=1);
+declare(strict_types=1);
 
 namespace esp\core\db;
 
@@ -74,13 +74,13 @@ final class Redis implements KeyValue
         }
 
         if (isset($conf['timeout'])) {
-            $this->redis->setOption(\Redis::OPT_READ_TIMEOUT, intval($conf['timeout']));
+            $this->redis->setOption(\Redis::OPT_READ_TIMEOUT, strval($conf['timeout']));
         }
         if (isset($conf['prefix']) and !empty($conf['prefix'])) {
             $this->redis->setOption(\Redis::OPT_PREFIX, strval($conf['prefix']));
         }
         if (!isset($conf['nophp'])) {
-            $this->redis->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);//序列化方式
+            $this->redis->setOption(\Redis::OPT_SERIALIZER, strval(\Redis::SERIALIZER_PHP));//序列化方式
         }
 
         if (!$this->redis->select((int)$db)) {

@@ -271,7 +271,7 @@ final class Configure
     }
 
 
-    private function re_key(string $value)
+    private function re_key($value)
     {
         $value = preg_replace_callback('/\{(_[A-Z_]+)\}/', function ($matches) {
             $search = array('_TIME', '_DATE', '_NOW');
