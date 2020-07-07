@@ -571,7 +571,7 @@ class Mysql
             return $CONN->commit();
         }
 
-        return new Builder($this, $this->_CONF['prefix'], $this->_CONF['param'] ?? false, $trans_id);
+        return new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $trans_id);
 //        } catch (\Exception $exception) {
 //            $exception->display();
 //        }
