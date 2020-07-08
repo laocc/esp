@@ -232,31 +232,6 @@ abstract class Controller
     }
 
     /**
-     * @param $type
-     * @param $val
-     * @param null $color
-     * @return string|array
-     * $color 可以直接指定为一个数组
-     * $color=true 时，无论是否有预定义的颜色，都返回全部内容
-     * $color=false 时，不返回预定义的颜色
-     */
-    final public function state($type, $val, $color = null)
-    {
-        if ($val === '' or is_null($val)) return '';
-        $value = $this->_config->get("app.state.{$type}.{$val}") ?: $val;
-        if ($color === true) return $value;
-        if (strpos($value, ':')) {
-            $pieces = explode(':', $value);
-            if (is_array($color)) return $pieces;
-            if ($color === false) return $pieces[0];
-            return "<span class='v{$val}' style='color:{$pieces[1]}'>{$pieces[0]}</span>";
-        }
-        if (empty($color)) return $value;
-        if (!isset($color[$val])) return $value;
-        return "<span class='v{$val}' style='color:{$color[$val]}'>{$value}</span>";
-    }
-
-    /**
      * @return Resources
      */
     final public function getResource()
