@@ -179,13 +179,13 @@ class Mysql
 
     /**
      * 从SQL语句中提取该语句的执行性质
-     * @param $sql
+     * @param string $sql
      * @return mixed
      */
-    private function sqlAction($sql)
+    public function sqlAction(string $sql)
     {
         if (preg_match('/^(select|insert|replace|update|delete|alter|analyze)\s+.+/is', trim($sql), $matches)) {
-            return $matches[1];
+            return strtolower($matches[1]);
         } else {
             throw new \Exception("PDO_Error:SQL语句不合法:{$sql}");
         }
