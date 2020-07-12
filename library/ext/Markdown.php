@@ -311,7 +311,8 @@ class Markdown
                     (!!$matches['imp'] ? "class='important'" : "class='code'")
                 );
 
-            return $matches['hd'] . self::makeHolder("<span {$style}>" . htmlspecialchars($matches['val']) . '</span>');
+            //htmlspecialchars
+            return $matches['hd'] . self::makeHolder("<span {$style} data-line='314'>" . ($matches['val']) . '</span>');
         }, $text);
 
 //        // 单行``注释
@@ -404,7 +405,14 @@ class Markdown
         $text = preg_replace_callback("/\[((?:[^\]]|\\]|\\[)+?)\]\(((?:[^\)]|\\)|\\()+?)\)/", function ($matches) {
             $escaped = self::parseInline(self::escapeBracket($matches[1]), '', false, false);
             $url = self::escapeBracket($matches[2]);
-            $target = $url[0] == '#' ? ' target="_self"' : '';
+            $target = '';
+            if ($url[0] === '#') {
+                $target = ' target="_self"';
+                $url = substr($url, 1);
+            } else if ($url[0] === '&') {
+                $target = ' target="parent"';
+                $url = substr($url, 1);
+            }
             return self::makeHolder("<a href=\"{$url}\" {$target} data-typ='397'>{$escaped}</a>");
         }, $text);
 

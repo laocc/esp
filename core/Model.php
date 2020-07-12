@@ -253,17 +253,22 @@ abstract class Model
     /**
      * 删
      * @param $where
+     * @param string $sql
+     * @param null $pre
      * @return mixed
+     * @throws \Exception
      */
-    final public function delete($where)
+    final public function delete($where, &$sql = '', $pre = null)
     {
         $table = $this->table();
         if (!$table) throw new \Exception('Unable to get table name');
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+
         $mysql = $this->Mysql();
-        $val = $mysql->table($table)->where($where)->delete();
+        $val = $mysql->table($table)->where($where)->delete($sql, $pre);
 
         if ($this->__cache === true) {
             $kID = md5(serialize($where));

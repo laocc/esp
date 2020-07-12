@@ -1078,10 +1078,12 @@ final class Builder
     /**
      * 删除记录，配合where类子句使用以删除指定记录
      * 没有where的情况下是删除表内所有数据
-     * @return mixed
+     * @param string $sql
+     * @param null $pre
+     * @return false|string
      * @throws \Exception
      */
-    public function delete()
+    public function delete(&$sql = '', $pre = null)
     {
         $where = $this->_build_where();
         if (empty($where)) {//禁止无where时删除数据
@@ -1093,7 +1095,7 @@ final class Builder
         if (!empty($this->_order_by)) $sql[] = "ORDER BY {$this->_order_by}";
         if (!empty($this->_limit)) $sql[] = "LIMIT {$this->_limit}";
         $sql = implode(' ', $sql);
-        return $this->_MySQL->query_exec($sql, $this->option('delete'));
+        return $this->_MySQL->query_exec($sql, $this->option('delete'), null, $pre);
 //        return $this->_MySQL->query_exec($sql, $this->option('delete'), $this->_MySQL->master[$this->_Trans_ID]);
     }
 

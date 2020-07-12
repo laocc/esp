@@ -168,7 +168,7 @@ function mk_dir(string $path, int $mode = 0740): bool
     if (strrchr($path, '/')) $path = dirname($path);
     try {
         if (!is_dir($path)) {
-            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+//            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
             @mkdir($path, $mode ?: 0740, true);
         }
         return true;
