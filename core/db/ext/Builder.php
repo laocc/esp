@@ -470,6 +470,19 @@ final class Builder
                         $_where = "locate('" . $this->quote($value) . "'," . $this->protect_identifier($field) . ')';
                     }
                     break;
+                case '$'://全文搜索："MATCH (`godTitle`,`godPinYin`) AGAINST ('{$py}')"
+                    $field = substr($field, 0, -1);
+                    if (!is_array($value)) $value = [$value, 0.01];
+                    if (!is_float($value[1])) throw new \Exception("MATCH第2个值只能是浮点型值，表示匹配度");
+
+                    if ($this->_param) {//采用占位符后置内容方式
+                        $key = $this->paramKey($field);
+                        $this->_param_data[$key] = $value[0];
+                        $_where = "MATCH({$field}) AGAINST (" . $key . ")>{$value[1]}";
+                    } else {
+                        $_where = "MATCH({$field}) AGAINST ('" . $this->quote($value[0]) . "')>{$value[1]}";
+                    }
+                    break;
                 case '!'://等同于 !=
                     $field = substr($field, 0, -1);
 
@@ -1011,6 +1024,7 @@ final class Builder
         $_build_sql = $this->_build_get();
         $this->replace_tempTable($_build_sql);
         $option = $this->option('select');
+//        var_dump($_build_sql);
         $get = $this->_MySQL->query_exec($_build_sql, $option, null, $pre);
         if (is_null($sql)) {
             $sql = $_build_sql;
