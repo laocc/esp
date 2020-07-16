@@ -1,11 +1,16 @@
 
+
+
+# 本文已过时，最新文档还没整理。
+
+
+
 # ESP (Efficient Simple PHP)
 - PHP >7
 - 这是一个高效简洁的PHP框架。本框架的部分结构思路参考YAF框架`官网：http://yaf.laruence.com`。
 如果要追求极至性能，推荐使用yaf框架，ESP是在参考yaf的基础上，增加了很多yaf并未实现的方法。
 也打包了一些实际开发中常用的功能。
 实际上本人在以往的开发中基本上用的也是这套框架结构，只不过没有现在这么整洁规范，现在融入了yaf的结构思想，特别是Bootstrap及插件hook方法，让程序更可塑。
-另外利用composer的autoload方法也是最新调整的，其加载方法比`spl_autoload_register()`可能更高效一点，至少简洁很多，不用操心，更主要是为了让以后引用其他第三方插件更方便。
 
 # 一、安装
 - 网站核心文件加载机制为利用composer的autoload，另外程序所需要的一些插件也依赖于composer，所以关于composer部分，请参看[`composer.md`](./composer.md)文件。
