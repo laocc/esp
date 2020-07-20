@@ -562,6 +562,7 @@ function is_url(string $url): bool
     if (empty($url)) return false;
     return (bool)filter_var($url, FILTER_VALIDATE_URL);
 //    return preg_match('/^https?\:\/\/[\w\-]+(\.[\w\-]+)+\/.+$/i', $url);
+//    return preg_match('/^(https?)\:\/{2}((?:(?:[a-z0-9][\w]*\.)+[a-z]{2,10})|(?:(?:(?:(?:1?\d?\d)|(?:2[0-4]\d)|(?:25[0-5]))\.){3}(?:(?:1?\d?\d)|(?:2[0-4]\d)|(?:25[0-5]))))(?:\:(\d+))?(\/.*)?$/i', $url, $match);
 }
 
 

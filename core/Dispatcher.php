@@ -369,7 +369,8 @@ final class Dispatcher
                 if (!is_null($this->_debug)) {
                     $this->_debug->relay(['_init' => 'return', 'return' => $contReturn], []);
                 }
-                return $contReturn;
+//                return $contReturn;
+                goto close;
             }
         }
 
@@ -382,7 +383,8 @@ final class Dispatcher
                 if (!is_null($this->_debug)) {
                     $this->_debug->relay(['_main' => 'return', 'return' => $contReturn], []);
                 }
-                return $contReturn;
+//                return $contReturn;
+                goto close;
             }
         }
 
@@ -401,6 +403,7 @@ final class Dispatcher
             goto LOOP;
         }
 
+        close:
         //运行结束方法
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
             $clo = call_user_func_array([$cont, '_close'], [$action, $contReturn]);
