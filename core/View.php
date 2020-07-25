@@ -5,6 +5,7 @@ namespace esp\core;
 
 use esp\core\face\Adapter;
 use esp\library\ext\Markdown;
+use esp\library\ext\MarkdownObject;
 
 final class View
 {
@@ -151,6 +152,13 @@ final class View
         return $this;
     }
 
+    private $md_conf = [];
+
+    public function mdConf(array $conf): View
+    {
+        $this->md_conf = $conf;
+        return $this;
+    }
 
     /**
      * 解析视图结果并返回
@@ -178,11 +186,13 @@ final class View
 
         if ($this->_layout instanceof View) {//先解析子视图
             if ($this->_display_type === 'md' && substr($fileV, -3) === '.md') {
-                $html = Markdown::html(file_get_contents($fileV));
+                $md = new MarkdownObject($this->md_conf);
+                $html = $md->render(file_get_contents($fileV));
             } else {
                 $html = $this->fetch($fileV, $value + $this->_view_val);
                 if ($this->_display_type === 'md') {
-                    $html = Markdown::html($html);
+                    $md = new MarkdownObject($this->md_conf);
+                    $html = $md->render($html);
                 }
             }
             $layout = '/layout.php';

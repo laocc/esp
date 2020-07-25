@@ -267,6 +267,21 @@ final class Response
         return $this;
     }
 
+    public function setMarkDown(array $mdConf)
+    {
+        if (isset($mdConf['css'])) $this->_layout_val['_css'][] = $mdConf['css'];
+        if (isset($mdConf['file'])) {
+            $this->_view_set['view_use'] = true;
+            $this->_view_set['view_file'] = $mdConf['file'];
+            $this->getView()->file($mdConf['file']);
+        }
+        if (isset($mdConf['md'])) {
+            $this->getView()->mdConf($mdConf['md']);
+        }
+        $this->_display_type = 'md';
+        $this->_display_value = null;
+    }
+
 
     /**
      * @return View

@@ -429,20 +429,26 @@ abstract class Controller
         return $this;
     }
 
-    final protected function markdown(string $mdValue)
+    final protected function markdown(string $mdValue, bool $addNav = false, bool $addBoth = true)
     {
         if (stripos($mdValue, _ROOT) === 0) {
             $mdValue = file_get_contents($mdValue);
         }
-        return Markdown::html($mdValue);
+        return Markdown::html($mdValue, $addNav, $addBoth);
     }
 
     /**
-     * @param string|null $mdFile
+     * @param null $mdFile
      * @param string $mdCss
+     * @return $this
+     * @throws \Exception
      */
-    final protected function md(string $mdFile = null, string $mdCss = '/css/markdown.css?1')
+    final protected function md($mdFile = null, string $mdCss = '/css/markdown.css?1')
     {
+        if (is_array($mdFile)) {
+            $this->_response->setMarkDown($mdFile);
+            return $this;
+        }
         $this->css($mdCss);
         if ($mdFile) $this->_response->setView($mdFile);
         $this->_response->set_value('md', null);
