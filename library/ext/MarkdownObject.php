@@ -179,6 +179,7 @@ class MarkdownObject
     }
 
     /**
+     * 暂存需要返回HTML原型的内容
      * @param $str
      * @return string
      */
@@ -187,7 +188,6 @@ class MarkdownObject
         $key = "|\r" . $this->_uniqid . $this->_id . "\r|";
         $this->_id++;
         $this->_holders[$key] = $str;
-
         return $key;
     }
 
@@ -333,6 +333,13 @@ class MarkdownObject
             return $matches[1] . $this->makeHolder("<span style='{$matches['style']}' data-line='324'>" . htmlspecialchars($matches['val']) . '</span>');
         }, $text);
 
+
+//        // 单行[#f00;内容]加色
+        $text = preg_replace_callback("/\[({$cp});(.+)\]/i", function ($mc) {
+            return $this->makeHolder("<span style='color:{$mc[1]}'>{$mc[2]}</span>");
+        }, $text);
+
+
         //@@@
         $text = preg_replace_callback("/(^|[^\\\])(\@{3})\s*(.+?)\s*\\2/", function ($matches) {
             return $matches[1] . $this->makeHolder('<div class="notes"><h2>Notes:</h2><div>' . htmlspecialchars($matches[3]) . '</div></div>');
@@ -384,7 +391,7 @@ class MarkdownObject
             return $this->makeHolder("<p>{$file}:</p><pre class='{$matches[1]}'>" . file_get_contents($file) . "</pre>");
         }, $text);
 
-        $text = str_replace(['<', '>'], ['&lt;', '&gt;'], $text);
+//        $text = str_replace(['<', '>'], ['&lt;', '&gt;'], $text);
 
         // footnote
         $text = preg_replace_callback("/\[\^((?:[^\]]|\\]|\\[)+?)\]/", function ($matches) {
@@ -1088,17 +1095,17 @@ class MarkdownObject
                 $tag = $head ? 'th' : 'td';
                 $bgcolor = $width = null;
                 $color = '\#(?:[a-f0-9]{6}|[a-f0-9]{3});';
-                if (preg_match("/^(?:({$color})|(?:(\d+);)|(?:(\d{1,3}px;))){1,2}(.*)$/i", $text, $matches)) {
+                if (preg_match("/^(?:({$color})|(?:(\d+);)|(?:(\d{1,3}(?:px|%);))){1,2}(.*)$/i", $text, $matches)) {
                     $bgcolor = $matches[1];
                     $num = intval($matches[2]);
-                    $width = intval($matches[3]);
+                    $width = ($matches[3]);
                     $text = $matches[4];
                 }
 
                 $html .= "<{$tag}";
                 if ($num > 1) $html .= " colspan=\"{$num}\"";
                 $style = '';
-                if (is_int($width) and $width > 0) $style = "width:{$width}px;";
+                if ($width) $style = "width:{$width};l:1108;";
                 if (!!$bgcolor) $style .= "background:{$bgcolor};";
                 if (isset($aligns[$ky]) && $aligns[$ky] != 'none') {
                     $style .= "text-align:{$aligns[$ky]};";
