@@ -59,6 +59,7 @@ final class Error
         use ($option) {
 //            Session::reset();
 
+
             $err = Array();
             $err['level'] = 'Error';
             $err['error'] = $errStr;
@@ -74,7 +75,6 @@ final class Error
             if (!isset($errcontext['errorTitle'])) {
                 $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
             }
-
             if (is_int($option['run'])) {
                 if ($option['run'] === 0) {
                     http_response_code($err['code']);
@@ -82,7 +82,7 @@ final class Error
                     unset($err['text']);
                     print_r($err);
                 } else if ($option['run'] === 9) {
-                    header("Content-type: application/json; charset=UTF-8", true, $err['code']);
+                    header("Content-type: application/json; charset=UTF-8", true, 500);
                     unset($err['text']);
                     $text = $err['error'];
                     if (isset($errcontext['errorTitle'])) $text = "{$errcontext['errorTitle']}：{$err['error']}";
@@ -127,9 +127,9 @@ final class Error
                     http_response_code($err['code']);
 
                 } else if ($option['throw'] === 1) {
-                    echo $err['message'];
+                    print_r($err);
                 } else if ($option['throw'] === 9) {
-                    header("Content-type: application/json; charset=UTF-8", true, $err['code']);
+                    header("Content-type: application/json; charset=UTF-8", true, 500);
                     echo json_encode(['success' => 0,
                         'message' => $err['error'],
                         'trace' => $trace,
