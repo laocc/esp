@@ -348,10 +348,12 @@ final class Dispatcher
         if (!$cont instanceof Controller) {
             throw new \Exception("{$cName} 须继承自 \\esp\\core\\Controller", 404);
         }
-
+        $_call = null;
         if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {
             if (method_exists($cont, $auto) and is_callable([$cont, $auto])) {
                 $action = $auto;
+//            } else if (method_exists($cont, '_call') and is_callable([$cont, '_call'])) {
+//                $_call = '_call';
             } else {
                 return $this->err404("[{$cName}::{$action}()] not exists.");
             }
@@ -394,7 +396,11 @@ final class Dispatcher
         if (!is_null($this->_debug)) {
             $this->_debug->relay("[green;{$cName}->{$action} Star ==============================]", []);
         }
-        $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
+        if ($_call) {
+            $contReturn = call_user_func_array([$cont, '_call'], [$action, $this->_request->params]);
+        } else {
+            $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
+        }
         if (!is_null($this->_debug)) {
             $this->_debug->relay("[red;{$cName}->{$action} End ==============================]", []);
         }

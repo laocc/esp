@@ -10,6 +10,7 @@ use esp\library\ext\Markdown;
 
 abstract class Controller
 {
+    protected $_dispatcher;
     protected $_config;
     protected $_request;
     protected $_response;
@@ -33,6 +34,7 @@ abstract class Controller
      */
     public function __construct(Dispatcher $dispatcher)
     {
+        $this->_dispatcher = &$dispatcher;
         $this->_config = &$dispatcher->_config;
         $this->_plugs = &$dispatcher->_plugs;
         $this->_request = &$dispatcher->_request;
