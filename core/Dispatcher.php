@@ -325,21 +325,25 @@ final class Dispatcher
         $auto = strtolower($this->_request->action) . 'Action';
 
         /**
-         * 加载控制器，也可以在composer中预加载
-         * "admin\\": "application/admin/controllers/",
+         * 加载控制器，也可以在composer中预加载  "application\\": "application/",
+         * 若不符合psr-4标准，则需要在入口入定义    define('_PSR4', false);
          */
-        $base = $this->_request->directory . "/{$virtual}/controllers/Base{$contExt}.php";
-        $file = $this->_request->directory . "/{$virtual}/controllers/{$cFile}.php";
-        if (is_readable($base)) {
-            load($base);
-        }//加载控制器公共类，有可能不存在
-        if (!load($file)) {
-            return $this->err404("[{$this->_request->directory}/{$virtual}/controllers/{$cFile}.php] not exists.");
+        if (defined('_PSR4') and !_PSR4) {
+            $base = $this->_request->directory . "/{$virtual}/controllers/Base{$contExt}.php";
+            $file = $this->_request->directory . "/{$virtual}/controllers/{$cFile}.php";
+            if (is_readable($base)) {
+                load($base);
+            }
+            //加载控制器公共类，有可能不存在
+            if (!load($file)) {
+                return $this->err404("[{$this->_request->directory}/{$virtual}/controllers/{$cFile}.php] not exists.");
+            }
+            $cName = '\\' . $module . '\\' . $cFile;
+        } else {
+            $cName = '\\application\\' . $module . '\\controllers\\' . $cFile;
         }
-        $cName = '\\' . $module . '\\' . $cFile;
-        if (!$contExt) {
-            $cName .= 'Controller';
-        }
+
+        if (!$contExt) $cName .= 'Controller';
 
         if (!class_exists($cName)) {
             return $this->err404("[{$cName}] not exists.");
