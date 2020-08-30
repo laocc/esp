@@ -215,26 +215,7 @@ abstract class Model
         $val = $obj->insert($data);
         $ck = $this->checkRunData('insert', $val);
         if ($ck) return $ck;
-        if ($returnID) return $val;
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-
-        $pri = $this->PRI();
-        if (is_array($val)) {
-            $value = [];
-            foreach ($val as $id) {
-                $sql = null;
-                $nID = $mysql->table($table)->param(false)->prepare(false)->where($pri, $id)->get(1, $sql, $pre)->row();
-                $ck = $this->checkRunData('insert', $nID);
-                if ($ck) return $ck;
-                $value[] = $val;
-            }
-            return $value;
-        } else {
-            $value = $mysql->table($table)->param(false)->prepare(false)->where($pri, $val)->get(1, $sql, $pre)->row();
-            $ck = $this->checkRunData('insert', $value);
-            if ($ck) return $ck;
-            return $value;
-        }
+        return $val;
     }
 
     final public function unset_cache(...$where)

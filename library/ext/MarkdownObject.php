@@ -429,11 +429,11 @@ class MarkdownObject
             if ($url[0] === '#') {
                 $target = ' target="_self"';
                 $url = substr($url, 1);
-            } else if ($url[0] === '&') {
-                $target = ' target="parent"';
+            } else if ($url[0] === '@') {
+                $target = ' class="parent"';
                 $url = substr($url, 1);
             }
-            return $this->makeHolder("<a href=\"{$url}\" {$target} data-typ='397'>{$escaped}</a>");
+            return $this->makeHolder("<a href=\"{$url}\" {$target} data-typ='436'>{$escaped}</a>");
         }, $text);
 
         $text = preg_replace_callback("/\[((?:[^\]]|\\]|\\[)+?)\]\[((?:[^\]]|\\]|\\[)+?)\]/", function ($matches) {
@@ -664,7 +664,9 @@ class MarkdownObject
                             $align = 'none';
 
                             /**
-                             * |:--|左对齐，|:--:|居中，|--:|右对齐。
+                             * |:--|左对齐，
+                             * |:--:|居中，
+                             * |--:|右对齐。
                              */
                             if (preg_match("/^\s*(:?)\-+(:?)\s*$/", $row, $match)) {
                                 if (!empty($match[1]) && !empty($match[2])) {

@@ -899,12 +899,12 @@ final class Builder
 
     /**
      * 创建一个联合查询
-     *
      * @param string $table 要联查的表的名称
-     * @param string $_filter ON关系字符串
+     * @param null $_filter 条件
      * @param string $method 联查的类型，默认是NULL，可选值为'left','right','inner','outer','full','using'
-     * @throws \Exception
+     * @param bool $identifier 是否加保护符
      * @return $this
+     * @throws \Exception
      */
     public function join($table, $_filter = null, $method = 'left', $identifier = true)
     {
@@ -915,36 +915,37 @@ final class Builder
 
         // 保护标识符
         if ($identifier) $table = $this->protect_identifier($table);
-        //连接条件允许以数组方式
-        $_filters = is_array($_filter) ? $_filter : explode(',', $_filter);
-//
-//        if (is_null($_filters)) {
-//            $_filter_str = implode('`,`', $_filters);
-//            $this->_join[] = "{$method} JOIN {$table} USING(`{$_filter_str}`) ";
-//            return $this;
-//        }
 
-        if ($method === 'USING') {
-            $_filter_str = implode('`,`', $_filters);
-            $this->_join[] = " JOIN {$table} USING(`{$_filter_str}`) ";
-            return $this;
+        //连接条件允许以数组方式
+        if (is_string($_filter)) {
+            if (stripos($_filter, ' and ')) {
+                $_filter = explode(' and ', $_filter);
+            } else if (stripos($_filter, ',')) {
+                $_filter = explode(',', $_filter);
+            } else {
+                $_filter = [$_filter];
+            }
         }
 
-        $_filter_arr = Array();  // 临时保存拼接的 ON 字符串
-        foreach ($_filters as &$re) {
-            $_filter_arr[] = preg_replace_callback('/^(.*)(>|<|<>|=|<=>)(.*)/', function ($matches) use ($identifier) {
-                if ($matches[1] === $matches[3]) {
+        $_filter_arr = array_map(function ($re) use ($identifier) {
+            return preg_replace_callback('/^(.*)(>|<|<>|=|<=>)(.*)/', function ($mch) use ($identifier) {
+                if ($mch[1] === $mch[3]) {
                     throw new \Exception('DB_ERROR: JOIN条件两边不能完全相同，如果是不同表相同字段名，请用[tabName.filed]的方式');
                 }
                 if ($identifier)
-                    return $this->protect_identifier($matches[1]) . " {$matches[2]} " . $this->protect_identifier($matches[3]);
+                    return $this->protect_identifier($mch[1]) . " {$mch[2]} " . $this->protect_identifier($mch[3]);
                 else
-                    return "{$matches[1]} {$matches[2]} $matches[3]";
+                    return "{$mch[1]} {$mch[2]} {$mch[3]}";
             }, $re);
-        }
-        $_filter_str = implode(',', $_filter_arr);
+        }, $_filter);
 
-        $this->_join[] = " {$method} JOIN {$table} ON {$_filter_str} ";
+        $_filter_str = implode(' and ', $_filter_arr);
+
+        if ($method === 'USING') {
+            $this->_join[] = " JOIN {$table} USING ({$_filter_str}) ";
+        } else {
+            $this->_join[] = " {$method} JOIN {$table} ON ({$_filter_str}) ";
+        }
 
         return $this;
     }

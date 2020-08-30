@@ -266,6 +266,11 @@ class Image
      * 2，最后两个数字是缩略图的尺寸；
      * 3，数字中间为x|v|z，x=以最小边多余部分裁掉，v=最大边不够补白,z=拉伸
      */
+    /**
+     * @param null $path
+     * @param null $option
+     * @return bool|string
+     */
     public static function thumbs($path = null, $option = null)
     {
         if (is_array($path)) list($path, $option) = [$option, $path];
@@ -407,9 +412,6 @@ class Image
                 if ($y > 260) continue;
                 $index = imagecolorat($i, $x, $y);
                 $rgb = imagecolorsforindex($i, $index);
-//                $r = ($rgb >> 16) & 0xFF;
-//                $g = ($rgb >> 8) & 0xFF;
-//                $b = $rgb & 0xFF;
                 $r = $rgb['red'];
                 $g = $rgb['green'];
                 $b = $rgb['blue'];
@@ -447,6 +449,7 @@ class Image
         if (!function_exists('tclip')) return self::thumbs_create($file, $option);
 
         if (!isset($option['source']) or !is_file($option['source'])) return '源文件不存在';//源文件不存在
+        $watermark_text = '';
         $create = \tclip($option['source'], $file, $option['width'], $option['height']);
 
         if ($create === true) {
@@ -673,10 +676,9 @@ class Image
     /**
      * 给图片加水印
      *
-     * @param string $picFile
-     * @param string $image
-     * @param string $text
-     * @return bool
+     * @param $picFile
+     * @param array $config
+     * @return bool|string
      */
     public static function mark($picFile, array $config)
     {
