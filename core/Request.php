@@ -280,6 +280,7 @@ final class Request
     public function ip()
     {
         if (_CLI) return '127.0.0.1';
+        if (defined('_CIP')) return _CIP;
         foreach (['X-REAL-IP', 'X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'REMOTE_ADDR'] as $k) {
             if (!empty($ip = ($_SERVER[$k] ?? null))) {
                 if (strpos($ip, ',')) $ip = explode(',', $ip)[0];
