@@ -123,7 +123,7 @@ final class Input
                 } elseif ($autoValue === 'json') {
                     if (is_string($value)) $value = json_decode($value, true);
                     $value = json_encode(array_map(function ($v) {
-                        return trim($v);
+                        return ($v);//trim
                     }, $value), 256);
 
                 } elseif ($autoValue === 'array') {

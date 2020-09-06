@@ -47,6 +47,7 @@ final class Request
             ('/' . trim(implode('/', array_slice($GLOBALS["argv"], 1)), '/')) :
             parse_url(getenv('REQUEST_URI'), PHP_URL_PATH);
 
+        if (_CLI) return;
         $this->cookies = new Cookies();
     }
 
@@ -72,10 +73,10 @@ final class Request
     public function getActionExt()
     {
         $suffix = $this->suffix;
-        if ($this->isGet() and ($p = $suffix['get'])) $actionExt = $p;
-        elseif ($this->isPost() and ($p = $suffix['post'])) $actionExt = $p;
-        elseif ($this->isAjax() and ($p = $suffix['ajax'])) $actionExt = $p;//必须放在isPost之后
-        elseif (_CLI and ($p = $suffix['auto'] ?? 'Action')) $actionExt = $p;
+        if ($this->isGet() and ($p = $suffix['get'] ?? '')) $actionExt = $p;
+        elseif ($this->isPost() and ($p = $suffix['post'] ?? '')) $actionExt = $p;
+        elseif ($this->isAjax() and ($p = $suffix['ajax'] ?? '')) $actionExt = $p;//必须放在isPost之后
+        elseif (_CLI and ($p = $suffix['cli'] ?? '')) $actionExt = $p;
         else {
             throw new \Exception("非法访问请求：{$this->method}", 500);
         }

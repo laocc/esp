@@ -9,6 +9,7 @@ final class Cookies
 
     public function __construct()
     {
+        if (_CLI) return;
         $this->domain = $this->getDomain();
     }
 
