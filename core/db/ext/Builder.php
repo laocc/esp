@@ -1259,7 +1259,8 @@ final class Builder
             } elseif (in_array($kFH, ['+', '-', '|'])) { //键以+-结束，或以|结束的位运算
                 $key = substr($key, 0, -1);
                 if (!is_numeric($value)) {
-                    $Exception = "DB_ERROR: [{$key}]加减操作时，其值必须为数字";
+                    if (!preg_match('/^\w+[\+\-\*\/]\w+$/', $value))
+                        $Exception = "DB_ERROR: [{$key}]加减操作时，其值必须为数字";
                 }
                 $value = $this->protect_identifier($key) . " {$kFH} {$value}";
 

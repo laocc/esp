@@ -464,6 +464,14 @@ abstract class Model
         return $data;
     }
 
+
+//
+//    public function group(){
+//
+//    }
+
+
+
     private $_count = null;
 
     /**
