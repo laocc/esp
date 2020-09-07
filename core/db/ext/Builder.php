@@ -65,7 +65,7 @@ final class Builder
     {
         $this->_table = $this->_where = $this->_limit = $this->_having = $this->_order_by = '';
         $this->_select = $this->_join = Array();
-        $this->_where_group_in = false;
+        $this->_where_group_in = 0;
 
         $this->_skip = 0;
         $this->_fetch_type = 1;
@@ -400,9 +400,9 @@ final class Builder
                 if (is_int($key)) {
                     $this->where($val, null, $is_OR);
                 } else if (is_array($val) and !in_array($fType, ['#', '$', '@', '%'])) {
-                    foreach ($val as $v) {
-                        $this->where($key, $v, true);
-                    }
+                    $this->where_group_start();
+                    foreach ($val as $v) $this->where($key, $v, true);
+                    $this->where_group_end();
                 } else {
                     $this->where($key, $val, $is_OR);
                 }
@@ -652,9 +652,11 @@ final class Builder
                     } else {
                         $_where = "{$field} = " . $this->quote($value);// 对 $value 进行安全转义
                     }
-
             }
         }
+
+        //$this->_where .= " {$ao} {$_where} ";
+
         $this->_where_insert($_where, ($is_OR ? ' OR ' : ' AND '));
         return $this;
     }
@@ -781,7 +783,12 @@ final class Builder
         if (empty($this->_where)) {
             $this->_where = $_where;
         } else {
-            $this->_where .= " {$ao} {$_where} ";
+            if ($this->_where_group_in === 1) {
+                $this->_where .= " {$_where}";
+            } else {
+                $this->_where .= " {$ao} {$_where} ";
+            }
+            if ($this->_where_group_in) $this->_where_group_in++;
         }
     }
 
@@ -805,7 +812,7 @@ final class Builder
         } else {
             $this->_where .= ($is_OR ? ' or' : ' and') . ' (';
         }
-        $this->_where_group_in = true;
+        $this->_where_group_in++;
         return $this;
     }
 
@@ -816,14 +823,14 @@ final class Builder
      */
     public function where_group_end()
     {
-        if ($this->_where_group_in === false) {
+        if (!$this->_where_group_in) {
             throw new \Exception('DB_ERROR: 当前未处于Where Group之中');
         }
         if (empty($this->_where)) {
             throw new \Exception('DB_ERROR: 当前where条件为空，无法创建where语句');
         } else {
             $this->_where .= ')';
-            $this->_where_group_in = false;
+            $this->_where_group_in = 0;
         }
         return $this;
     }

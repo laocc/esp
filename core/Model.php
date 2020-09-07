@@ -180,7 +180,8 @@ abstract class Model
      * 检查执行结果，所有增删改查的结果都不会是字串，所以，如果是字串，则表示出错了
      * @param string $action
      * @param $data
-     * @return mixed
+     * @return null
+     * @throws \Exception
      */
     private function checkRunData(string $action, $data)
     {
@@ -204,18 +205,11 @@ abstract class Model
     /**
      * 增
      * @param array $data
-     * @param bool $full 传入的数据是否已经是全部字段，如果不是，则要从表中拉取所有字段
-     * @param bool $returnID 返回新ID,false时返回刚刚添加的数据
+     * @param bool $full  传入的数据是否已经是全部字段，如果不是，则要从表中拉取所有字段
+     * @param bool $returnID  返回新ID,false时返回刚刚添加的数据
      * @param null $pre
-     * @return array|int
-     * @throws \ErrorException
-     */
-    /**
-     * @param array $data
-     * @param bool $full
-     * @param bool $returnID
-     * @param null $pre
-     * @return array|int
+     * @return int|null
+     * @throws \Exception
      */
     final public function insert(array $data, bool $full = false, bool $returnID = true, $pre = null)
     {
