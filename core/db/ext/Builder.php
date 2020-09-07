@@ -396,9 +396,10 @@ final class Builder
          */
         if (is_array($field) and !empty($field)) {
             foreach ($field as $key => $val) {
+                $fType = strtolower($key[-1]);
                 if (is_int($key)) {
                     $this->where($val, null, $is_OR);
-                } else if (is_array($val)) {
+                } else if (is_array($val) and !in_array($fType, ['#', '$', '@', '%'])) {
                     foreach ($val as $v) {
                         $this->where($key, $v, true);
                     }
