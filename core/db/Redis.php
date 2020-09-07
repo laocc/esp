@@ -117,6 +117,18 @@ final class Redis implements KeyValue
         return $list[$tabName];
     }
 
+    public function hGet(string $table, string $hashKey)
+    {
+        $val = $this->redis->hGet($table, $hashKey);
+        if (empty($val)) return null;
+        return ($val);
+    }
+
+    public function hSet(string $table, string $hashKey, $value)
+    {
+        return $this->redis->hSet($table, $hashKey, $value);
+    }
+
     public function hGetAlls($table)
     {
         return $this->redis->hGetAll($table);
