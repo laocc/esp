@@ -80,7 +80,8 @@ final class Error
                     http_response_code($err['code']);
                 } else if ($option['run'] === 1) {
                     unset($err['text']);
-                    print_r($err);
+                    echo json_encode($err, 256 | 128 | 64);
+//                    print_r($err);
                 } else if ($option['run'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, 500);
                     unset($err['text']);
@@ -127,7 +128,8 @@ final class Error
                     http_response_code($err['code']);
 
                 } else if ($option['throw'] === 1) {
-                    print_r($err);
+//                    print_r($err);
+                    echo json_encode($err, 256 | 128 | 64);
                 } else if ($option['throw'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, 500);
                     echo json_encode(['success' => 0,

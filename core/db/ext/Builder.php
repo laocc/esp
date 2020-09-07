@@ -398,8 +398,10 @@ final class Builder
             foreach ($field as $key => $val) {
                 if (is_int($key)) {
                     $this->where($val, null, $is_OR);
-//                } else if (is_null($val)) {
-//                    $this->where($key, 0, $is_OR);
+                } else if (is_array($val)) {
+                    foreach ($val as $v) {
+                        $this->where($key, $v, true);
+                    }
                 } else {
                     $this->where($key, $val, $is_OR);
                 }

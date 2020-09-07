@@ -123,9 +123,21 @@ abstract class Model
      */
     final public function publish(string $action, array $value)
     {
-        $channel = $this->_config->get('app.dim.channel');
-        if (!$channel) $channel = 'order';
-        return $this->_buffer->publish($channel, $action, $value);
+        return $this->_buffer->publish('order', $action, $value);
+    }
+
+    /**
+     * 发送到队列
+     * @param string $queKey
+     * @param array $data
+     * @return int
+     *
+     * 用下面方法读取
+     * while ($data = $this->_redis->lPop($queKey)){...}
+     */
+    final public function queue(string $queKey, array $data)
+    {
+        return $this->_buffer->push('task', $data + ['_action' => $queKey]);
     }
 
     /**
