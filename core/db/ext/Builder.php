@@ -654,9 +654,6 @@ final class Builder
                     }
             }
         }
-
-        //$this->_where .= " {$ao} {$_where} ";
-
         $this->_where_insert($_where, ($is_OR ? ' OR ' : ' AND '));
         return $this;
     }
@@ -751,10 +748,9 @@ final class Builder
     /**
      * 创建一个where like 子句
      * 代码和 where_in差不多
-     *
      * @param $field
-     * @param $like_condition
-     * @param bool|FALSE $is_OR
+     * @param $value
+     * @param bool $is_OR
      * @return $this
      * @throws \Exception
      */
