@@ -110,7 +110,7 @@ final class Output
     }
 
     /**
-     * 上传文件
+     * 上传文件，需要同时用files/field附加文件和指定表单文件名
      * @param string $encode
      * @return array|mixed
      */
@@ -123,6 +123,24 @@ final class Output
         if (!$encode) return $this->value;
         if ('html' === $encode) return $this->value['html'];
         return $this->value['array'] ?? [];
+    }
+
+    /**
+     * 上传文件
+     * @param string $filename
+     * @param $filepath
+     * @return $this
+     */
+    public function files(string $filename, $filepath)
+    {
+        $this->option['files'][$filename] = $filepath;
+        return $this;
+    }
+
+    public function field(string $field)
+    {
+        $this->option['field'] = $field;
+        return $this;
     }
 
     /**
@@ -341,19 +359,6 @@ final class Output
 
 
     /**
-     * 上传文件
-     * @param string $filename
-     * @param $filepath
-     * @return $this
-     */
-    public function files(string $filename, $filepath)
-    {
-        $this->option['files'][$filename] = $filepath;
-        return $this;
-    }
-
-
-    /**
      * 直接设置
      * @param string $key
      * @param $value
@@ -517,7 +522,8 @@ final class Output
                 }
                 if (isset($data['files'])) {
                     foreach ($data['files'] as $fil => $file) {
-                        $data["{$field}[{$fil}]"] = new \CURLFile($file);
+                        $data[$field] = new \CURLFile($file);
+//                        $data["{$field}[{$fil}]"] = new \CURLFile($file);
                     }
                     unset($data['files']);
                 }
