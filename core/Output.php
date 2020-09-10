@@ -469,7 +469,7 @@ final class Output
         }
 
         $cOption[CURLOPT_URL] = $url;                                                      //接收页
-//        $cOption[CURLOPT_FRESH_CONNECT] = true;                                            //强制新连接，不用缓存中的
+        $cOption[CURLOPT_FRESH_CONNECT] = true;                                            //强制新连接，不用缓存中的
 
         if (isset($option['ip'])) {     //指定客户端IP
             $option['headers'][] = "CLIENT-IP: {$option['ip']}";
