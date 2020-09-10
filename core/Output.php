@@ -469,7 +469,7 @@ final class Output
         }
 
         $cOption[CURLOPT_URL] = $url;                                                      //接收页
-        $cOption[CURLOPT_FRESH_CONNECT] = true;                                            //强制新连接，不用缓存中的
+//        $cOption[CURLOPT_FRESH_CONNECT] = true;                                            //强制新连接，不用缓存中的
 
         if (isset($option['ip'])) {     //指定客户端IP
             $option['headers'][] = "CLIENT-IP: {$option['ip']}";
@@ -513,8 +513,8 @@ final class Output
 
             case 'UPLOAD':
                 $field = (isset($option['field']) ? $option['field'] : 'files');
-                $option['headers'][] = "X-HTTP-Method-Override: POST";
-                $option['headers'][] = "Content-Type: multipart/form-data; boundary=-------------" . uniqid();
+//                $option['headers'][] = "X-HTTP-Method-Override: POST";
+//                $option['headers'][] = "Content-Type: multipart/form-data; boundary=-------------" . uniqid();
 
                 if (!is_array($data)) {
                     $response['message'] = '上传数据只能为数组，被上传的文件置于files字段内';
