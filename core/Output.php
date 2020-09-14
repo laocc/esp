@@ -504,7 +504,7 @@ final class Output
                 break;
 
             case "POST":
-                if (is_array($data)) $data = json_encode($data, 256);
+                if (is_array($data)) $data = json_encode($data, 256 | 64);
                 $option['headers'][] = "X-HTTP-Method-Override: POST";
                 $option['headers'][] = "Expect: ";  //post大于1024时，会带100 ContinueHTTP标头的请求，加此指令禁止
                 $cOption[CURLOPT_POST] = true;      //类型为：application/x-www-form-urlencoded
@@ -513,20 +513,20 @@ final class Output
 
             case 'UPLOAD':
                 $field = (isset($option['field']) ? $option['field'] : 'files');
-//                $option['headers'][] = "X-HTTP-Method-Override: POST";
+                $option['headers'][] = "X-HTTP-Method-Override: POST";
 //                $option['headers'][] = "Content-Type: multipart/form-data; boundary=-------------" . uniqid();
 
                 if (!is_array($data)) {
-                    $response['message'] = '上传数据只能为数组，被上传的文件置于files字段内';
+                    $response['message'] = '上传数据只能为数组，被上传的文件置于data中';
                     return $response;
                 }
-                if (isset($data['files'])) {
-                    foreach ($data['files'] as $fil => $file) {
-                        $data[$field] = new \CURLFile($file);
-//                        $data["{$field}[{$fil}]"] = new \CURLFile($file);
-                    }
-                    unset($data['files']);
-                }
+//                if (isset($data['files'])) {
+//                    foreach ($data['files'] as $fil => $file) {
+//                        $data[$field] = new \CURLFile($file);
+////                        $data["{$field}[{$fil}]"] = new \CURLFile($file);
+//                    }
+//                    unset($data['files']);
+//                }
                 $cOption[CURLOPT_POST] = true;
                 $cOption[CURLOPT_POSTFIELDS] = $data;
                 break;

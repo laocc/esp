@@ -398,7 +398,13 @@ final class Builder
             foreach ($field as $key => $val) {
                 $fType = is_string($key) ? strtolower($key[-1]) : '';
                 if (is_int($key)) {
-                    $this->where($val, null, $is_OR);
+                    if (is_array($val)) {
+                        $this->where_group_start();
+                        foreach ($val as $k => $v) $this->where($k, $v, true);
+                        $this->where_group_end();
+                    } else {
+                        $this->where($val, null, $is_OR);
+                    }
                 } else if (is_array($val) and !in_array($fType, ['#', '$', '@', '%'])) {
                     $this->where_group_start();
                     foreach ($val as $v) $this->where($key, $v, true);

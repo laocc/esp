@@ -797,28 +797,36 @@ function text(string $html, int $star = null, int $stop = null): string
 
 /**
  * 计算一个数的组成，比如：10=8+2，14=8+4+2，22=16+4+2。
- * @param $value
+ * @param $num
  * @return array
  */
-function numbers(int $value): array
+function numbers(int $num): array
 {
-    $val = Array();
-    if ($value % 2 != 0) {//非偶数
-        $value -= 1;
-        $val[] = 1;
-    }
-    $i = 0;
-    while (true) {
-        if (2 << $i > $value) break;
-        $i++;
-    }
-    for ($j = $i; $j >= 0; $j--) {
-        if (2 << $j > $value) continue;
-        $val[] = 2 << $j;
-        $value -= 2 << $j;
-        if ($value <= 0) break;
-    }
+    $i = 1;
+    $val = [];
+    do {
+        ($i & $num) && ($val[] = $i) && ($num -= $i);
+    } while ($num > 0 && $i <<= 1);
     return $val;
+//
+//
+//    $val = Array();
+//    if ($value % 2 != 0) {//非偶数
+//        $value -= 1;
+//        $val[] = 1;
+//    }
+//    $i = 0;
+//    while (true) {
+//        if (2 << $i > $value) break;
+//        $i++;
+//    }
+//    for ($j = $i; $j >= 0; $j--) {
+//        if (2 << $j > $value) continue;
+//        $val[] = 2 << $j;
+//        $value -= 2 << $j;
+//        if ($value <= 0) break;
+//    }
+//    return $val;
 }
 
 
