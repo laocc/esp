@@ -204,6 +204,7 @@ class Mysql
      * @param \PDO|null $CONN
      * @param null $pre
      * @return false|string
+     * @throws \Exception
      */
     public function query_exec(string $sql, array $option, \PDO $CONN = null, $pre = null)
     {
@@ -213,6 +214,7 @@ class Mysql
         }
         if (_CLI and $this->_cli_print_sql) echo "{$sql}\n";
         $action = strtolower($option['action']);
+        $transID = ($option['trans_id']);
 
         if (!in_array($action, ['select', 'insert', 'replace', 'update', 'delete', 'alter', 'analyze'])) {
             throw new \Exception("PDO_Error :  数据处理方式不明确：【{$action}】。");
@@ -231,10 +233,10 @@ class Mysql
         //连接数据库，自动选择主从库
         if (!$CONN) {
             $real = $upData ? 'master' : 'slave';
-            if (isset($this->{$real}[$option['trans_id']]) and !empty($this->{$real}[$option['trans_id']])) {
-                $CONN = $this->{$real}[$option['trans_id']];
+            if (isset($this->{$real}[$transID]) and !empty($this->{$real}[$transID])) {
+                $CONN = $this->{$real}[$transID];
             } else {
-                $CONN = $this->connect($upData, $option['trans_id']);
+                $CONN = $this->connect($upData, $transID);
             }
         }
 
@@ -247,13 +249,13 @@ class Mysql
             if (empty($info)) {//获取不到有关属性，说明连接可能已经断开
                 if ($try++ === 0) {
                     print_r([
-                        'id' => $option['trans_id'],
-                        'connect_time' => $this->connect_time[$option['trans_id']],
+                        'id' => $transID,
+                        'connect_time' => $this->connect_time[$transID],
                         'now' => time(),
-                        'after' => time() - $this->connect_time[$option['trans_id']],
+                        'after' => time() - $this->connect_time[$transID],
                     ]);
 
-                    unset($this->{$real}[$option['trans_id']]);
+                    unset($this->{$real}[$transID]);
                     $CONN = null;
                     goto tryExe;
                 } else {
@@ -265,16 +267,15 @@ class Mysql
         $debug = true;
 
         //数据操作时，若当前`trans_run`=false，则说明刚才被back过了或已经commit，后面的数据不再执行
-        if ($upData and //更新操作
-            $this->trans_in($CONN, $option['trans_id']) and //在事务中
-            isset($this->_trans_run[$option['trans_id']]) and //存在事务ID
-            $this->_trans_run[$option['trans_id']] === false) {//不在运行中
+        //更新操作，有事务ID，在运行中，且已被标识为false
+        if ($upData and $transID and (!($this->_trans_run[$transID] ?? 0) and $this->trans_in($CONN, $transID))) {
             return null;
         }
+
         $error = Array();//预置的错误信息
 
         $debugOption = [
-            'trans' => var_export($option['trans_id'], true),
+            'trans' => var_export($transID, true),
             'server' => $CONN->getAttribute(\PDO::FETCH_COLUMN),//服务器IP
             'sql' => $sql,
             'prepare' => (!empty($option['param']) or $option['prepare']) ? 'YES' : 'NO',
@@ -300,21 +301,22 @@ class Mysql
                 if (_CLI) {
                     print_r($debugVal);
                     print_r([
-                        'id' => $option['trans_id'],
-                        'connect_time' => $this->connect_time[$option['trans_id']],
+                        'id' => $transID,
+                        'connect_time' => $this->connect_time[$transID],
                         'now' => time(),
-                        'after' => time() - $this->connect_time[$option['trans_id']],
+                        'after' => time() - $this->connect_time[$transID],
                     ]);
                     print_r($this->PdoAttribute($CONN));
                 } else {
                     ($debug and !_CLI) and $this->debug($debugOption + $debugVal, $pre);
                 }
 
-                unset($this->{$real}[$option['trans_id']]);
+                unset($this->{$real}[$transID]);
                 $CONN = null;
                 goto tryExe; //重新执行
-            } else if ($option['trans_id'] > 0 and $upData) {
-                $this->trans_back($CONN, $option['trans_id'], $error);//回滚事务
+            } else if ($transID > 0 and $upData) {
+//                print_r([$option, $error]);
+                $this->trans_back($CONN, $transID, $error);//回滚事务
             }
             if ($debug) $error['sql'] = $sql;
             if (_CLI) print_r($debugVal);
@@ -527,6 +529,7 @@ class Mysql
      * @param int $trans_id
      * @param array $batch_SQLs
      * @return Builder
+     * @throws \Exception
      */
     public function trans(int $trans_id = 1, array $batch_SQLs = [])
     {
@@ -581,7 +584,8 @@ class Mysql
      * 提交事务
      * @param \PDO $CONN
      * @param $trans_id
-     * @return bool|array
+     * @return array|bool
+     * @throws \Exception
      */
     public function trans_commit(\PDO $CONN, $trans_id)
     {
