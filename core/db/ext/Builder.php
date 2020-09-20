@@ -1205,14 +1205,14 @@ final class Builder
                 }
                 $nv = Array();
                 foreach ($item as $k => &$v) {
-                    if (is_array($v)) $v = json_encode($v, 256);
+                    if (is_array($v)) $v = json_encode($v, 256 | 64);
                     $nv[":{$k}"] = $v;
                 }
                 $this->_param_data[] = $nv;
 
             } else {
                 $values = array_values($item);
-                foreach ($values as $v => $val) if (is_array($val)) $values[$v] = json_encode($val, 256);
+                foreach ($values as $v => $val) if (is_array($val)) $values[$v] = json_encode($val, 256 | 64);
                 $values[] = '(' . implode(', ', $this->quote($values)) . ')';
             }
         }
@@ -1257,7 +1257,7 @@ final class Builder
                 $sets[] = $value;
                 continue;
             }
-            if (is_array($value)) $value = json_encode($value, 256);
+            if (is_array($value)) $value = json_encode($value, 256 | 64);
             $kFH = substr($key, -1);
             if (isset($value[0]) and in_array($value[0], ['+', '-']) and in_array($kFH, ['+', '-'])) {
                 $Exception = "DB_ERROR: [{$key}]键值不可同时带有符号";
