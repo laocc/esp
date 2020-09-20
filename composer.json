@@ -1,6 +1,6 @@
 {
-  "name": "core/2.1",
-  "description": "esp core:composer dump-autoload --optimize",
+  "name": "esp",
+  "description": "Efficient Simple PHP",
   "require": {
     "ext-iconv": "*",
     "ext-json": "*",

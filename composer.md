@@ -87,6 +87,8 @@ composer update
 只更新autoload加载项
 ```
 composer dump-autoload
+
+composer dump-autoload --optimize
 ```
 
 
