@@ -2,19 +2,14 @@
   "name": "laocc/esp",
   "description": "Efficient Simple PHP",
   "require": {
-    "ext-iconv": "*",
     "ext-json": "*",
     "ext-curl": "*",
     "ext-simplexml": "*",
     "ext-libxml": "*",
     "ext-xml": "*",
     "ext-gd": "*",
-    "ext-exif": "*",
     "ext-mbstring": "*",
     "ext-pdo": "*",
-    "ext-mongodb": "*",
-    "ext-memcached": "*",
-    "ext-memcache": "*",
     "php": ">7.0"
   },
   "require-dev": {
@@ -22,15 +17,12 @@
   },
   "autoload": {
     "files": [
-      "helper/Functions.php",
-      "helper/Bootstrap.php"
+      "helper/Functions.php"
     ],
     "psr-4": {
       "esp\\core\\": "core/",
       "esp\\plugs\\": "plugs/",
-      "esp\\library\\": "library/",
-      "esp\\library\\ext\\": "library/ext/",
-      "model\\": "application/models/"
+      "esp\\library\\": "library/"
     }
   }
 }
