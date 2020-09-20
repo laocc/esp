@@ -1,5 +1,5 @@
 {
-  "name": "esp",
+  "name": "laocc/esp",
   "description": "Efficient Simple PHP",
   "require": {
     "ext-iconv": "*",
