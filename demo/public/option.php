@@ -14,6 +14,8 @@ define('_HTTPS', (getenv('HTTP_HTTPS') === 'on' or getenv('HTTPS') === 'on'));
 define('_HTTP_', (_HTTPS ? 'https://' : 'http://'));
 define('_URL', _HTTP_ . _DOMAIN . getenv('REQUEST_URI'));
 
+define('_CONFIG_LOAD', 1);
+
 $option = array();
 $option['config']['path'] = '/common/config';
 return $option;

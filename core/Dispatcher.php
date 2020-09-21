@@ -78,6 +78,8 @@ final class Dispatcher
         if ($debug = $this->_config->get('debug')) {
             $this->_debug = new Debug($this->_request, $this->_response, $this->_config->Redis(), $debug);
             $GLOBALS['_Debug'] = $this->_debug;
+        } else {
+//            $GLOBALS['_Debug'] = $this->anonymousDebug();
         }
 
         if (($session = $this->_config->get('session')) and !_CLI) {
@@ -208,6 +210,26 @@ final class Dispatcher
         return true;
     }
 
+
+    /**
+     * 构造一个Debug空类
+     */
+    public function anonymousDebug()
+    {
+        return new class()
+        {
+            public function relay(...$a)
+            {
+            }
+
+            public function __call($name, $arguments)
+            {
+                // TODO: Implement __call() method.
+            }
+        };
+    }
+
+
     /**
      * 系统运行调度中心
      * @param callable|null $callable
@@ -290,8 +312,7 @@ final class Dispatcher
             }
 
             register_shutdown_function(function () {
-                $save = $this->_debug->save_logs('Dispatcher');
-//                $this->check_debug($save);
+                $this->_debug->save_logs('Dispatcher');
             });
         }
     }

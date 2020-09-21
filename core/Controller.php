@@ -291,7 +291,6 @@ abstract class Controller
     {
         if (_CLI) return false;
         if (is_null($this->_debug)) return $this->anonymousDebug();
-//        if (is_null($data)) return $this->_debug;
         if ($data === '_R_DEBUG_') return $this->_debug;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $this->_debug->relay($data, $pre);
@@ -342,7 +341,7 @@ abstract class Controller
     final protected function redirect(string $url, int $code = 302)
     {
         if (headers_sent($filename, $line)) {
-            $this->_debug->relay([
+            !is_null($this->_debug) && $this->_debug->relay([
                     "header Has Send:{$filename}({$line})",
                     'headers' => headers_list()]
             )->error("页面已经输出过");

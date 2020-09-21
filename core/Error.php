@@ -241,7 +241,7 @@ final class Error
      */
     public static function displayState(int $code)
     {
-        $conf = parse_ini_file(root('/esp/core/config/state.ini'), true);
+        $conf = parse_ini_file(_ESP_ROOT . '/common/static/state.ini', true);
         $state = $conf[$code] ?? '';
         if (_CLI) return "[{$code}]:{$state}\n";
 //        http_response_code($code);
