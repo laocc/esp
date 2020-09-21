@@ -68,8 +68,8 @@ class Code
         'source' => '',         //站点内位置标识符，同一个站可能多个地方需要验证码，加此标识加以区分
 
         //分别是中英文字体，要确保这些文件真实存在，相对于根目录
-        'en_font' => ['/esp/library/fonts/arial.ttf', '/esp/library/fonts/ariblk.ttf'],
-        'cn_font' => ['/esp/library/fonts/simkai.ttf', '/esp/library/fonts/ygyxsziti2.0.ttf'],
+        'en_font' => ['/library/fonts/arial.ttf', '/library/fonts/ariblk.ttf'],
+        'cn_font' => ['/library/fonts/simkai.ttf', '/library/fonts/ygyxsziti2.0.ttf'],
 
         //下面四种颜色均是指范围，0-255之间，值越大颜色越浅。
         'b_color' => [157, 255],     //背景色范围
@@ -104,10 +104,10 @@ class Code
         $option += self::$option;
         $enFont = ['en' => [], 'cn' => []];
         foreach ($option['en_font'] as $i => $f) {
-            $enFont['en'][] = _ROOT . $f;
+            $enFont['en'][] = dirname(__DIR__) . $f;
         }
         foreach ($option['cn_font'] as $i => $f) {
-            $enFont['cn'][] = _ROOT . $f;
+            $enFont['cn'][] = dirname(__DIR__) . $f;
         }
         $option['en_font'] = array_flip($enFont['en']);
         $option['cn_font'] = array_flip($enFont['cn']);
