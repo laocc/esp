@@ -472,8 +472,8 @@ final class Debug
         if (is_null($path)) {
             if (is_null($this->_root))
                 return $this->_root = str_replace(
-                    ['{RUNTIME}', '{ROOT}', '{SYSTEM}', '{VIRTUAL}', '{DOMAIN}', '{DATE}'],
-                    [_RUNTIME, _ROOT, _SYSTEM, _VIRTUAL, _DOMAIN, date('Y_m_d')],
+                    ['{RUNTIME}', '{ROOT}', '{VIRTUAL}', '{DOMAIN}', '{DATE}'],
+                    [_RUNTIME, _ROOT, _VIRTUAL, _DOMAIN, date('Y_m_d')],
                     $this->_conf['path']);
             return $this->_root;
         }

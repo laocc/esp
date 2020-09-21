@@ -195,28 +195,27 @@ final class Configure
      */
     public function loadFile(string $file, $byKey = null): array
     {
-        if (!is_readable($file)) {
-//            throw new \Exception("配置文件{$fullName}不存在", 404);
-            return [];
-        };
+        if (!is_readable($file)) return [];
         $info = pathinfo($file);
 
         if ($info['extension'] === 'php') {
             $_config = include($file);
-            if (!is_array($_config)) {
-                $_config = [];
-            }
+            if (!is_array($_config)) $_config = [];
         } elseif ($info['extension'] === 'ini') {
             $_config = parse_ini_file($file, true);
-            if (!is_array($_config)) {
-                $_config = [];
+            if (!is_array($_config)) $_config = [];
+            foreach ($_config as $k => $v) {
+                if (!is_string($k)) continue;
+                if (strpos($k, '.')) {
+                    $tm = explode('.', $k, 2);
+                    $_config[$tm[0]][$tm[1]] = $v;
+                    unset($_config[$k]);
+                }
             }
         } elseif ($info['extension'] === 'json') {
             $_config = file_get_contents($file);
             $_config = json_decode($_config, true);
-            if (!is_array($_config)) {
-                $_config = [];
-            }
+            if (!is_array($_config)) $_config = [];
         }
 
         if (isset($_config['include'])) {

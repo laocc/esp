@@ -29,7 +29,6 @@ final class Dispatcher
         if (!defined('_DAY_TIME')) define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
         if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
-        if (!defined('_SYSTEM')) define('_SYSTEM', 'www');
         if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
         if (!defined('_HOST')) define('_HOST', host(_DOMAIN));//域名的根域
@@ -41,7 +40,10 @@ final class Dispatcher
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
             define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
-            if (_URI === '/favicon.ico') exit('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAQSURBVHjaYvj//z8DQIABAAj8Av7bok0WAAAAAElFTkSuQmCC');
+            if (_URI === '/favicon.ico') {
+                header('Content-type: image/x-icon', true);
+                exit('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAQSURBVHjaYvj//z8DQIABAAj8Av7bok0WAAAAAElFTkSuQmCC');
+            }
         }
 
         $ip = '127.0.0.1';
@@ -55,7 +57,7 @@ final class Dispatcher
         }
         if (!defined('_CIP')) define('_CIP', $ip);
 
-        if (isset($option['callback'])) $option['callback']($option);
+        if (isset($option['before'])) $option['before']($option);
         $option += ['error' => [], 'config' => []];
 
         //以下2项必须在`chdir()`之前，且顺序不可变
@@ -102,7 +104,7 @@ final class Dispatcher
             }
         }
 
-        if (isset($option['attack'])) $option['attack']($option);
+        if (isset($option['after'])) $option['after']($option);
 
         $GLOBALS['cookies'] = $this->_config->get('cookies');
         unset($GLOBALS['option']);

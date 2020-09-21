@@ -16,7 +16,6 @@ abstract class Controller
     protected $_response;
     protected $_session;
     protected $_plugs;
-    protected $_system;
     protected $_cookies;
     private $_input;
     public $_debug;
@@ -43,7 +42,6 @@ abstract class Controller
         $this->_debug = &$dispatcher->_debug;
         $this->_buffer = $this->_config->Redis();
         $this->_cookies = &$dispatcher->_request->cookies;
-        $this->_system = defined('_SYSTEM') ? _SYSTEM : 'auto';
         if (_CLI) return;
 
         if (defined('_DEBUG_PUSH_KEY')) {
@@ -51,7 +49,6 @@ abstract class Controller
                 //发送访问记录到redis队列管道中，后面由cli任务写入数据库
                 $debug = [];
                 $debug['time'] = time();
-                $debug['system'] = _SYSTEM;
                 $debug['virtual'] = _VIRTUAL;
                 $debug['module'] = $request->module;
                 $debug['controller'] = $request->controller;
