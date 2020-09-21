@@ -74,7 +74,7 @@ class SessionRedis implements \SessionHandlerInterface
     {
         $dataString = $this->_Redis->get($session_id);
 
-        $this->_debug->relay([
+        !is_null($this->_debug) && $this->_debug->relay([
             'read_session' => [
                 'id' => $session_id,
                 'value' => $dataString,
@@ -174,7 +174,7 @@ class SessionRedis implements \SessionHandlerInterface
             if ($ttl < 0) $ttl = session_cache_expire();
         }
         $save = $this->_Redis->set($session_id, $session_data, $ttl);
-        $this->_debug->relay(['write_session' => [
+        !is_null($this->_debug) && $this->_debug->relay(['write_session' => [
             'id' => $session_id,
             'value' => $session_data,
             'ttl' => $ttl,
