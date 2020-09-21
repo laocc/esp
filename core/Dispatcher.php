@@ -20,6 +20,8 @@ final class Dispatcher
         if (!defined('_ROOT')) {
             exit("网站入口处须定义 _ROOT 项，指向系统根目录");
         }
+        define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
+
         define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
         define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!defined('_DEBUG')) {
@@ -267,7 +269,7 @@ final class Dispatcher
         }
         $this->_plugs_count and $hook = $this->plugsHook('displayAfter');
 
-        if (!_CLI and _DEBUG and $this->_debug->_save_type !== 'cgi') {
+        if (!_CLI and _DEBUG and !is_null($this->_debug) && $this->_debug->_save_type !== 'cgi') {
             fastcgi_finish_request();
         } //运行结束，客户端断开
         if (!_CLI and !is_null($this->_cache)) {

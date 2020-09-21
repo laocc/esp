@@ -1,6 +1,6 @@
 <?php
 
-namespace esp\plugs;
+namespace demo\library;
 
 use esp\core\Plugin;
 use esp\core\Request;

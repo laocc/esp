@@ -299,6 +299,7 @@ function rnd(float $amount, int $len = 2, bool $zero = true): string
  */
 function get_cpu()
 {
+    if (PHP_OS !== 'Linux') return [];
     $str = file_get_contents("/proc/cpuinfo");
     if (!$str) return ['number' => 0, 'name' => 'null'];
     $cpu = [];
@@ -808,25 +809,6 @@ function numbers(int $num): array
         ($i & $num) && ($val[] = $i) && ($num -= $i);
     } while ($num > 0 && $i <<= 1);
     return $val;
-//
-//
-//    $val = Array();
-//    if ($value % 2 != 0) {//非偶数
-//        $value -= 1;
-//        $val[] = 1;
-//    }
-//    $i = 0;
-//    while (true) {
-//        if (2 << $i > $value) break;
-//        $i++;
-//    }
-//    for ($j = $i; $j >= 0; $j--) {
-//        if (2 << $j > $value) continue;
-//        $val[] = 2 << $j;
-//        $value -= 2 << $j;
-//        if ($value <= 0) break;
-//    }
-//    return $val;
 }
 
 

@@ -26,10 +26,14 @@ final class Configure
         $conf += ['path' => '/common/config'];
         $conf['path'] = root($conf['path']);
         if (isset($conf['buffer'])) {
-            $_bufferConf = parse_ini_file(root($conf['buffer']), true);
+            $bFile = root($conf['buffer']);
+            if (!is_readable($bFile)) throw new \Exception("指定的buffer文件({$bFile})不存在");
         } else {
-            $_bufferConf = parse_ini_file("{$conf['path']}/buffer.ini", true);
+            $bFile = "{$conf['path']}/buffer.ini";
+            if (!is_readable($bFile)) $bFile = _ESP_ROOT . "/common/config/buffer.ini";
         }
+
+        $_bufferConf = parse_ini_file($bFile, true);
         if (isset($conf['folder'])) {
             $_bufferConf = $_bufferConf[$conf['folder']] ?? [];
         } elseif (_DEBUG and isset($_bufferConf['debug'])) {
@@ -78,32 +82,34 @@ final class Configure
         }
 
         $config = [];
-        if (is_dir("{$conf['path']}/esp")) {
-            $dir = new \DirectoryIterator("{$conf['path']}/esp");
-            foreach ($dir as $f) {
-                if ($f->isFile()) {
-                    $config[] = ['file' => $f->getPathname(), 'name' => $f->getFilename()];
-                }
+        $dir = new \DirectoryIterator(_ESP_ROOT . "/common/config");
+        foreach ($dir as $f) {
+            if ($f->isFile()) {
+                $fn = $f->getFilename();
+                $config[] = ['file' => $f->getPathname(), 'name' => $fn];
             }
         }
         $dir = new \DirectoryIterator($conf['path']);
         foreach ($dir as $f) {
             if ($f->isFile()) {
-                $config[] = ['file' => $f->getPathname(), 'name' => $f->getFilename()];
+                $fn = $f->getFilename();
+                $config[] = ['file' => $f->getPathname(), 'name' => $fn];
             }
         }
-        $config[] = ['file' => __DIR__ . '/config/mime.ini', 'name' => 'mime.ini'];
-        $config[] = ['file' => __DIR__ . '/config/state.ini', 'name' => 'state.ini'];
+        $config[] = ['file' => _ESP_ROOT . '/common/static/mime.ini', 'name' => 'mime.ini'];
+        $config[] = ['file' => _ESP_ROOT . '/common/static/state.ini', 'name' => 'state.ini'];
+
+//        pre($config);
 
         $this->_CONFIG_ = array();
         $this->_CONFIG_[] = date('Y-m-d H:i:s');
-        foreach ($config as $i => $cf) {
-            $_config = $this->loadFile($cf['file'], $i);
+        foreach ($config as $fn => $cf) {
+            $_config = $this->loadFile($cf['file'], $fn);
             //查找子目录下相同文件，如果存在，则覆盖相关值
             if (isset($conf['folder'])) {
                 $tmp = "{$conf['path']}/{$conf['folder']}/{$cf['name']}";
                 if (is_readable($tmp)) {
-                    $_config = array_replace_recursive($_config, $this->loadFile($tmp, $i));
+                    $_config = array_replace_recursive($_config, $this->loadFile($tmp, $fn));
                 }
             }
             if (!empty($_config)) {

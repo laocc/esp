@@ -1,0 +1,27 @@
+{
+  "name": "laocc/espdemo",
+  "description": "esp demo",
+  "require": {
+    "laocc/esp": "dev-master",
+    "php": ">7.0"
+  },
+  "require-dev": {
+    "laocc/esp": "dev-master",
+    "php": ">7.0"
+  },
+  "autoload": {
+    "files": [
+      "library/Functions.php"
+    ],
+    "psr-4": {
+      "models\\": "models/",
+      "library\\": "library/"
+    }
+  },
+  "repositories": {
+    "packagist": {
+      "type": "composer",
+      "url": "https://mirrors.aliyun.com/composer/"
+    }
+  }
+}

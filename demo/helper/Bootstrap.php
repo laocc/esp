@@ -1,8 +1,9 @@
 <?php
+namespace demo\helper;
 
 use \esp\core\Dispatcher;
 use \esp\library\gd\Image;
-use \esp\plugs\Example;
+use \demo\library\Example;
 
 final class Bootstrap
 {

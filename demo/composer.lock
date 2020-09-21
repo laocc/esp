@@ -1,0 +1,73 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "fb3b248591a9090b75b94bffd19a23c7",
+    "packages": [
+        {
+            "name": "laocc/esp",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laocc/esp.git",
+                "reference": "ca372217ab88d68a904ee5c58bb17628541d6528"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laocc/esp/zipball/ca372217ab88d68a904ee5c58bb17628541d6528",
+                "reference": "ca372217ab88d68a904ee5c58bb17628541d6528",
+                "shasum": "",
+                "mirrors": [
+                    {
+                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
+                        "preferred": true
+                    }
+                ]
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-gd": "*",
+                "ext-json": "*",
+                "ext-libxml": "*",
+                "ext-mbstring": "*",
+                "ext-pdo": "*",
+                "ext-simplexml": "*",
+                "ext-xml": "*",
+                "php": ">7.0"
+            },
+            "require-dev": {
+                "php": ">7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "helper/Functions.php"
+                ],
+                "psr-4": {
+                    "esp\\core\\": "core/",
+                    "esp\\plugs\\": "plugs/",
+                    "esp\\library\\": "library/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "description": "Efficient Simple PHP",
+            "time": "2020-09-21T04:51:57+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {
+        "laocc/esp": 20
+    },
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">7.0"
+    },
+    "platform-dev": {
+        "php": ">7.0"
+    }
+}
