@@ -22,7 +22,7 @@ final class Configure
      */
     public function __construct(array $conf)
     {
-        $this->_token = md5(_ROOT);
+        $this->_token = md5(__FILE__);
         $conf += ['path' => '/common/config'];
         $conf['path'] = root($conf['path']);
         if (isset($conf['buffer'])) {

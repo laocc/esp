@@ -37,6 +37,7 @@ class SessionRedis implements \SessionHandlerInterface
      * @param string $save_path
      * @param string $session_name 此值是cookies name
      * @return bool
+     * @throws \Exception
      */
     public function open($save_path, $session_name)
     {
@@ -56,7 +57,7 @@ class SessionRedis implements \SessionHandlerInterface
 
         $select = $this->_Redis->select(intval($conf['db']));
         if (!$select) {
-            throw new \Exception("Redis选择库【{$conf['db']}】失败。" . json_encode($conf));
+            throw new \Exception("Redis选择库【{$conf['db']}】失败。" . json_encode($conf, 256 | 64));
         }
         return $this->realValue($select);
     }

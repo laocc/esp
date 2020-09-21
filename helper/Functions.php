@@ -177,6 +177,19 @@ function mk_dir(string $path, int $mode = 0740): bool
     }
 }
 
+
+/**
+ * 查询2个字串从开头起的相同部分
+ * @param string $str1
+ * @param string $str2
+ * @return bool|string
+ */
+function strSameFirst(string $str1, string $str2): string
+{
+    $pos = strspn($str1 ^ $str2, "\0");
+    return $pos ? substr($str1, 0, $pos) : '';
+}
+
 /**
  * 储存文件
  * @param string $file

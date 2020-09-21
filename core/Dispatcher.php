@@ -15,71 +15,62 @@ final class Dispatcher
     public $_cache;
     private $run = true;
 
+    /**
+     * Dispatcher constructor.
+     * @param array $option
+     * @param string $virtual
+     * @throws \Exception
+     */
     public function __construct(array $option, string $virtual = 'www')
     {
-        if (!defined('_ROOT')) {
-            exit("网站入口处须定义 _ROOT 项，指向系统根目录");
-        }
-        define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
+        if (!defined('_ROOT')) define('_ROOT', dirname(strSameFirst(__DIR__, getenv('DOCUMENT_ROOT'))));//网站根目录
+        if (!defined('_ESP_ROOT')) define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
+        if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
+        if (!defined('_DAY_TIME')) define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
+        if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
+        if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
+        if (!defined('_SYSTEM')) define('_SYSTEM', 'www');
+        if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
+        if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
+        if (!defined('_HOST')) define('_HOST', host(_DOMAIN));//域名的根域
+        if (!defined('_HTTPS')) define('_HTTPS', (getenv('HTTP_HTTPS') === 'on' or getenv('HTTPS') === 'on'));
+        if (!defined('_HTTP_')) define('_HTTP_', (_HTTPS ? 'https://' : 'http://'));
+        if (!defined('_URL')) define('_URL', _HTTP_ . _DOMAIN . getenv('REQUEST_URI'));
 
-        define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
-        define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
-        if (!defined('_DEBUG')) {
-            define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
-        }
-        if (!defined('_VIRTUAL')) {
-            define('_VIRTUAL', strtolower($virtual));
-        }
-        if (!defined('_SYSTEM')) {
-            define('_SYSTEM', 'auto');
-        }
         if (_CLI) {
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
             define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
-            if (_URI === '/favicon.ico') {
-                exit;
-            }
+            if (_URI === '/favicon.ico') exit('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAQSURBVHjaYvj//z8DQIABAAj8Av7bok0WAAAAAElFTkSuQmCC');
         }
 
         $ip = '127.0.0.1';
         if (!_CLI) {
             foreach (['X-REAL-IP', 'X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'REMOTE_ADDR'] as $k) {
                 if (!empty($ip = ($_SERVER[$k] ?? null))) {
-                    if (strpos($ip, ',')) {
-                        $ip = explode(',', $ip)[0];
-                    }
-                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                        break;
-                    }
+                    if (strpos($ip, ',')) $ip = explode(',', $ip)[0];
+                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) break;
                 }
             }
         }
-        define('_CIP', $ip);
+        if (!defined('_CIP')) define('_CIP', $ip);
 
-        if (isset($option['callback'])) {
-            $option['callback']($option);
-        }
+        if (isset($option['callback'])) $option['callback']($option);
         $option += ['error' => [], 'config' => []];
+
         //以下2项必须在`chdir()`之前，且顺序不可变
-        if (!_CLI) {
-            $err = new Error($this, $option['error']);
-        }
+        if (!_CLI) $err = new Error($this, $option['error']);
         $this->_config = new Configure($option['config']);
         chdir(_ROOT);
 
         $this->_request = new Request($this->_config->get('frame.request'));
-        if (_CLI) {
-            return;
-        }
+        if (_CLI) return;
 
         $this->_response = new Response($this->_config, $this->_request);
 
         if ($debug = $this->_config->get('debug')) {
             $this->_debug = new Debug($this->_request, $this->_response, $this->_config->Redis(), $debug);
             $GLOBALS['_Debug'] = $this->_debug;
-        } else {
-//            $GLOBALS['_Debug'] = $this->anonymousDebug();
         }
 
         if (($session = $this->_config->get('session')) and !_CLI) {
@@ -111,9 +102,7 @@ final class Dispatcher
             }
         }
 
-        if (isset($option['attack'])) {
-            $option['attack']($option);
-        }
+        if (isset($option['attack'])) $option['attack']($option);
 
         $GLOBALS['cookies'] = $this->_config->get('cookies');
         unset($GLOBALS['option']);
@@ -292,8 +281,9 @@ final class Dispatcher
         $this->_plugs_count and $hook = $this->plugsHook('displayAfter');
 
         if (!_CLI and _DEBUG and !is_null($this->_debug) && $this->_debug->_save_type !== 'cgi') {
-            fastcgi_finish_request();
-        } //运行结束，客户端断开
+            fastcgi_finish_request();//运行结束，客户端断开
+        }
+
         if (!_CLI and !is_null($this->_cache)) {
             $this->_cache->Save();
         }
