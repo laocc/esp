@@ -68,8 +68,8 @@ class Code
         'source' => '',         //站点内位置标识符，同一个站可能多个地方需要验证码，加此标识加以区分
 
         //分别是中英文字体，要确保这些文件真实存在，相对于根目录
-        'en_font' => ['/library/fonts/arial.ttf', '/library/fonts/ariblk.ttf'],
-        'cn_font' => ['/library/fonts/simkai.ttf', '/library/fonts/ygyxsziti2.0.ttf'],
+        'en_font' => ['/fonts/arial.ttf', '/fonts/ariblk.ttf'],
+        'cn_font' => ['/fonts/simkai.ttf', '/fonts/ygyxsziti2.0.ttf'],
 
         //下面四种颜色均是指范围，0-255之间，值越大颜色越浅。
         'b_color' => [157, 255],     //背景色范围
