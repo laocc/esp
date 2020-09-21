@@ -1,3 +1,0 @@
-<?php
-
-pre($_SERVER);
