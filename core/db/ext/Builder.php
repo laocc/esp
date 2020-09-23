@@ -24,6 +24,7 @@ final class Builder
     private $_skip = 0;//跳过行数
 
     private $_join = Array();//保存已经应用的join字符串，数组内保存解析好的完整字符串
+    private $_joinTable = Array();
 
     private $_order_by = '';//保存已经解析的排序字符串
 
@@ -356,7 +357,8 @@ final class Builder
      */
     private function _build_select()
     {
-        return ($this->_count ? ' SQL_CALC_FOUND_ROWS ' : '') . (empty($this->_select) ? '*' : implode(',', $this->_select));
+        //($this->_count ? ' SQL_CALC_FOUND_ROWS ' : '') .
+        return (empty($this->_select) ? '*' : implode(',', $this->_select));
     }
 
 
@@ -369,6 +371,13 @@ final class Builder
      *
      * 表达式支持以下格式的使用及自动转义
      *      where('abcde <=', 'ddddd')
+     *
+     *
+     * 如果当前查询中有join，且where中有所join表的字段条件，则在计算总数时不考虑join表
+     * 而如果join表中有where条件，则需要在句子中明确指表名。
+     * 如原语句：where userAge>10 and orderAmount>100,这其中userAge是join表tabUser的，
+     * 则需改为：where tabUser.userAge>10 and orderAmount>100
+     * 如果不加表名，则在不考虑userAge条件的情况下计算总数
      *
      * @param string $field
      * @param null $value
@@ -924,6 +933,7 @@ final class Builder
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
             throw new \Exception('DB_ERROR: JOIN模式不存在：' . $method);
         }
+        $this->_joinTable[] = $table;
 
         // 保护标识符
         if ($identifier) $table = $this->protect_identifier($table);
@@ -1062,6 +1072,38 @@ final class Builder
         return implode(' ', $sql);
     }
 
+
+    public function _build_count_sql()
+    {
+        $sql = Array();
+        $sql[] = "SELECT count(1) FROM {$this->_table}";
+
+        if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
+
+        if (!empty($this->_distinct)) $sql[] = "DISTINCT";
+        $where = $this->_build_where();
+
+        if (!empty($this->_join) and !empty($where)) {
+            foreach ($this->_join as $j => $join) {
+                if (stripos($where, " {$this->_joinTable[$j]}.") !== false) $sql[] = $join;
+            }
+        }
+
+        if (!empty($where)) $sql[] = "WHERE {$where}";
+
+        if (!empty($this->_group)) {
+            if (is_array($this->_group)) {
+                $this->_group = implode(',', $this->_group);
+            }
+            $sql[] = "GROUP BY {$this->_group}";
+        }
+
+        if (!empty($this->_having)) $sql[] = "HAVING {$this->_having}";
+
+        return implode(' ', $sql);
+    }
+
+
     /**
      * 获取查询结果
      * @param int $row
@@ -1075,10 +1117,16 @@ final class Builder
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
         if ($row > 0) $this->limit($row);
+
+        $option = $this->option('select');
         $_build_sql = $this->_build_get();
         $this->replace_tempTable($_build_sql);
-        $option = $this->option('select');
-//        var_dump($_build_sql);
+
+        if ($option['count']) {
+            $option['_count_sql'] = $this->_build_count_sql();
+            $this->replace_tempTable($option['_count_sql']);
+        }
+
         $get = $this->_MySQL->query_exec($_build_sql, $option, null, $pre);
         if (is_null($sql)) {
             $sql = $_build_sql;

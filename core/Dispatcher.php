@@ -23,6 +23,7 @@ final class Dispatcher
      */
     public function __construct(array $option, string $virtual = 'www')
     {
+        if (!getenv('HTTP_HOST')) die();
         if (!defined('_ROOT')) define('_ROOT', dirname(strSameFirst(__DIR__, getenv('DOCUMENT_ROOT'))));//网站根目录
         if (!defined('_ESP_ROOT')) define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');

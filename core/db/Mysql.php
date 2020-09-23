@@ -458,6 +458,7 @@ class Mysql
     {
         $fetch = [\PDO::FETCH_NUM, \PDO::FETCH_ASSOC, \PDO::FETCH_BOTH];
         if (!in_array($option['fetch'], [0, 1, 2])) $option['fetch'] = 2;
+        $count = null;
 
         if (!empty($option['param']) or $option['prepare']) {
             try {
@@ -487,6 +488,20 @@ class Mysql
                     $error = $stmt->errorInfo();
                     return null;
                 }
+
+
+                if ($option['count']) {
+                    $stmtC = $CONN->prepare($option['_count_sql']);
+                    if (!empty($option['bind'])) {
+                        foreach ($option['bind'] as $k => &$av) {
+                            $stmtC->bindColumn($k, $av);
+                        }
+                    }
+                    $stmtC->execute($option['param']);
+                    $count = $stmtC->fetch()[0] ?? 0;
+                }
+
+
             } catch (\PDOException $PdoError) {
                 $error = $PdoError->errorInfo;
                 return null;
@@ -502,6 +517,11 @@ class Mysql
                     $stmt->setFetchMode(\PDO::FETCH_INTO, $option['object']);
                 }
 
+                if ($option['count']) {
+                    $count = $CONN->query($option['_count_sql'], \PDO::FETCH_NUM)->fetch()[0]??0;
+                }
+
+
             } catch (\PDOException $PdoError) {
                 $error = $PdoError->errorInfo;
                 return null;
@@ -509,7 +529,7 @@ class Mysql
         }
 
         //查询总数
-        $count = $option['count'] ? $CONN->query('SELECT FOUND_ROWS()', \PDO::FETCH_NUM)->fetch()[0] : null;
+//        $count = $option['count'] ? $CONN->query('SELECT FOUND_ROWS()', \PDO::FETCH_NUM)->fetch()[0] : null;
         return new Result($stmt, $count, $sql);
     }
 

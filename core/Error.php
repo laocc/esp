@@ -57,9 +57,6 @@ final class Error
          */
         $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $errcontext = null)
         use ($option) {
-//            Session::reset();
-
-
             $err = Array();
             $err['level'] = 'Error';
             $err['error'] = $errStr;
@@ -202,7 +199,7 @@ final class Error
         $debug = Debug::class();
         $info = [
             'time' => date('Y-m-d H:i:s'),
-            'HOST' => getenv('SERVER_ADDR'),
+            'HOST' => getenv('HTTP_HOST'),
             'Url' => _HTTP_ . _DOMAIN . _URI,
             'Debug' => !is_null($debug) ? $debug->filename() : '',
             'Error' => $error,
