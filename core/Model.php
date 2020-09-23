@@ -205,8 +205,8 @@ abstract class Model
     /**
      * 增
      * @param array $data
-     * @param bool $full  传入的数据是否已经是全部字段，如果不是，则要从表中拉取所有字段
-     * @param bool $returnID  返回新ID,false时返回刚刚添加的数据
+     * @param bool $full 传入的数据是否已经是全部字段，如果不是，则要从表中拉取所有字段
+     * @param bool $returnID 返回新ID,false时返回刚刚添加的数据
      * @param null $pre
      * @return int|null
      * @throws \Exception
@@ -479,7 +479,6 @@ abstract class Model
 //    }
 
 
-
     private $_count = null;
 
     /**
@@ -600,12 +599,17 @@ abstract class Model
 
     /**
      * 强制从索引中读取，多索引用逗号连接
-     * @param string $index
+     * @param $index
      * @return $this
      */
-    final public function force(string $index)
+    final public function force($index)
     {
-        $this->forceIndex = $index;
+        if (empty($index)) return $this;
+        if (is_array($index)) {
+            $this->forceIndex = implode(',', $index);
+        } else {
+            $this->forceIndex = $index;
+        }
         return $this;
     }
 
@@ -614,9 +618,14 @@ abstract class Model
      * @param string $index
      * @return $this
      */
-    final public function index(string $index)
+    final public function index($index)
     {
-        $this->forceIndex = $index;
+        if (empty($index)) return $this;
+        if (is_array($index)) {
+            $this->forceIndex = implode(',', $index);
+        } else {
+            $this->forceIndex = $index;
+        }
         return $this;
     }
 
