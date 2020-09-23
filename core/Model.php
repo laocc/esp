@@ -328,6 +328,7 @@ abstract class Model
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
+        if ($this->forceIndex) $obj->force($this->forceIndex);
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
 
@@ -387,6 +388,7 @@ abstract class Model
                 $obj->order($a['key'], $a['sort'], $a['pro']);
             }
         }
+        if ($this->forceIndex) $obj->force($this->forceIndex);
 
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $obj = $obj->where_in($this->PRI(), $ids);
@@ -510,6 +512,8 @@ abstract class Model
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
+        if ($this->forceIndex) $obj->force($this->forceIndex);
+
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
         if (!empty($this->_order)) {
@@ -595,7 +599,7 @@ abstract class Model
     }
 
     /**
-     * 强制从索引中读取
+     * 强制从索引中读取，多索引用逗号连接
      * @param string $index
      * @return $this
      */
