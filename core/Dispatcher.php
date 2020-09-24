@@ -23,14 +23,14 @@ final class Dispatcher
      */
     public function __construct(array $option, string $virtual = 'www')
     {
-        if (!getenv('HTTP_HOST')) die();
+        if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
+        if (!getenv('HTTP_HOST') && !_CLI) die();
         if (!defined('_ROOT')) define('_ROOT', dirname(strSameFirst(__DIR__, getenv('DOCUMENT_ROOT'))));//网站根目录
         if (!defined('_ESP_ROOT')) define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
         if (!defined('_DAY_TIME')) define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
         if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
-        if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
         if (!defined('_HOST')) define('_HOST', host(_DOMAIN));//域名的根域
         if (!defined('_HTTPS')) define('_HTTPS', (getenv('HTTP_HTTPS') === 'on' or getenv('HTTPS') === 'on'));
