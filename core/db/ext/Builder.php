@@ -409,7 +409,15 @@ final class Builder
                 if (is_int($key)) {
                     if (is_array($val)) {
                         $this->where_group_start();
-                        foreach ($val as $k => $v) $this->where($k, $v, true);
+                        foreach ($val as $k => $v) {
+                            if (is_int($k) and is_array($v)) {
+                                foreach ($v as $vk => $vv) {
+                                    $this->where($vk, $vv, true);
+                                }
+                            } else {
+                                $this->where($k, $v, true);
+                            }
+                        }
                         $this->where_group_end();
                     } else {
                         $this->where($val, null, $is_OR);
