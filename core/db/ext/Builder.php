@@ -1090,10 +1090,11 @@ final class Builder
 
         if (!empty($this->_distinct)) $sql[] = "DISTINCT";
         $where = $this->_build_where();
-
         if (!empty($this->_join) and !empty($where)) {
             foreach ($this->_join as $j => $join) {
-                if (stripos($where, " {$this->_joinTable[$j]}.") !== false) $sql[] = $join;
+                if (stripos($where, "{$this->_joinTable[$j]}.") !== false) {
+                    $sql[] = $join;
+                }
             }
         }
 

@@ -489,13 +489,16 @@ class Mysql
                     return null;
                 }
 
-
                 if ($option['count']) {
                     $stmtC = $CONN->prepare($option['_count_sql']);
                     if (!empty($option['bind'])) {
                         foreach ($option['bind'] as $k => &$av) {
                             $stmtC->bindColumn($k, $av);
                         }
+                    }
+                    if ($stmtC === false) {
+                        $error = $CONN->errorInfo();
+                        return null;
                     }
                     $stmtC->execute($option['param']);
                     $count = $stmtC->fetch()[0] ?? 0;
@@ -518,7 +521,7 @@ class Mysql
                 }
 
                 if ($option['count']) {
-                    $count = $CONN->query($option['_count_sql'], \PDO::FETCH_NUM)->fetch()[0]??0;
+                    $count = $CONN->query($option['_count_sql'], \PDO::FETCH_NUM)->fetch()[0] ?? 0;
                 }
 
 
