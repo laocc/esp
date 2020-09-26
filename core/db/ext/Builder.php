@@ -1153,7 +1153,6 @@ final class Builder
         }
 
         if (is_string($get)) {
-            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
             $get = json_decode($get, true);
             throw new \ErrorException($get[2], $get[1], 1, $pre['file'], $pre['line']);
         }

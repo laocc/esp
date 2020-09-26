@@ -119,16 +119,19 @@ final class Error
                 if (isset($ems[2])) $err['message'] = $ems[2];
             }
 
-            $trace = str_replace(_ROOT, '', $error->getTraceAsString());
             if (is_int($option['throw'])) {
                 if ($option['throw'] === 0) {
                     http_response_code($err['code']);
 
                 } else if ($option['throw'] === 1) {
-//                    print_r($err);
-                    echo json_encode($err, 256 | 128 | 64);
+                    if ($this->dispatcher->getRequest()->isGet()) {
+                        pre($err);
+                    } else {
+                        echo json_encode($err, 256 | 128 | 64);
+                    }
                 } else if ($option['throw'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, 500);
+                    $trace = str_replace(_ROOT, '', $error->getTraceAsString());
                     echo json_encode(['success' => 0,
                         'message' => $err['error'],
                         'trace' => $trace,
