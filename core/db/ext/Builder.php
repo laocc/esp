@@ -249,7 +249,7 @@ final class Builder
     public function select($fields, $add_identifier = TRUE)
     {
         if (is_array($fields) and !empty($fields)) {
-            foreach ($fields as &$field) {
+            foreach ($fields as $field) {
                 $this->select($field, $add_identifier);
             }
             return $this;

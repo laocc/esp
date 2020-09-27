@@ -324,7 +324,9 @@ abstract class Model
 
         $obj = $mysql->table($table);
 
-        if (!empty($this->selectKey)) $obj->select(...$this->selectKey);
+        if (!empty($this->selectKey)) {
+            foreach ($this->selectKey as $select) $obj->select(...$select);
+        }
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
@@ -374,7 +376,9 @@ abstract class Model
         $table = $this->table();
         $obj = $this->Mysql()->table($table);
 
-        if (!empty($this->selectKey)) $obj->select(...$this->selectKey);
+        if (!empty($this->selectKey)) {
+            foreach ($this->selectKey as $select) $obj->select(...$select);
+        }
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
@@ -442,7 +446,9 @@ abstract class Model
             }
         }
 
-        if (!empty($this->selectKey)) $obj->select(...$this->selectKey);
+        if (!empty($this->selectKey)) {
+            foreach ($this->selectKey as $select) $obj->select(...$select);
+        }
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
@@ -507,7 +513,9 @@ abstract class Model
         if (!$table) throw new \Exception('Unable to get table name');
         if ($this->pageSize === 0) $this->pageSet();
         $obj = $this->Mysql()->table($table);
-        if (!empty($this->selectKey)) $obj->select(...$this->selectKey);
+        if (!empty($this->selectKey)) {
+            foreach ($this->selectKey as $select) $obj->select(...$select);
+        }
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
@@ -640,17 +648,17 @@ abstract class Model
         if (is_int($add_identifier)) {
             //当$add_identifier是整数时，表示返回第x列数据
             $this->columnKey = $add_identifier;
-            $this->selectKey = [$select, true];
+            $this->selectKey[] = [$select, true];
 
-        } else if ($select and $select[0] === '~' and $add_identifier) {
+        } else if ($select and ($select[0] === '~' or $select[0] === '!') and $add_identifier) {
             //不含选择，只适合从单表取数据
             $field = $this->field();
             $seKey = array_column($field, 'COLUMN_NAME');
             $kill = explode(',', substr($select, 1));
-            $this->selectKey = [implode(',', array_diff($seKey, $kill)), $add_identifier];
+            $this->selectKey[] = [implode(',', array_diff($seKey, $kill)), $add_identifier];
 
         } else {
-            $this->selectKey = [$select, $add_identifier];
+            $this->selectKey[] = [$select, $add_identifier];
         }
         return $this;
     }
