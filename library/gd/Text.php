@@ -93,10 +93,7 @@ class Text
             'type' => IMAGETYPE_PNG,//文件类型
             'quality' => $option['quality'],
         ];
-//        print_r($gdOption);
-//        pre($option);
         Gd::draw($im, $gdOption);
-
         return $file;
     }
 

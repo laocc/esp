@@ -24,9 +24,9 @@ final class Configure
     {
         $this->_token = md5(__FILE__);
         $conf += ['path' => '/common/config'];
-        $conf['path'] = root($conf['path']);
+        $conf['path'] = \esp\helper\root($conf['path']);
         if (isset($conf['buffer'])) {
-            $bFile = root($conf['buffer']);
+            $bFile = \esp\helper\root($conf['buffer']);
             if (!is_readable($bFile)) throw new \Exception("指定的buffer文件({$bFile})不存在");
         } else {
             $bFile = "{$conf['path']}/buffer.ini";
@@ -98,8 +98,6 @@ final class Configure
         }
         $config[] = ['file' => _ESP_ROOT . '/common/static/mime.ini', 'name' => 'mime.ini'];
         $config[] = ['file' => _ESP_ROOT . '/common/static/state.ini', 'name' => 'state.ini'];
-
-//        pre($config);
 
         $this->_CONFIG_ = array();
         $this->_CONFIG_[] = date('Y-m-d H:i:s');
@@ -225,13 +223,13 @@ final class Configure
                 if (is_array($fil)) {
                     $_config[$key] = array();
                     foreach ($fil as $l => $f) {
-                        $_inc = $this->loadFile(root($f), $l);
+                        $_inc = $this->loadFile(\esp\helper\root($f), $l);
                         if (!empty($_inc)) {
                             $_config[$key] = $_inc + $_config[$key];
                         }
                     }
                 } else {
-                    $_inc = $this->loadFile(root($fil), $key);
+                    $_inc = $this->loadFile(\esp\helper\root($fil), $key);
                     if (!empty($_inc)) {
                         $_config = $_inc + $_config;
                     }
@@ -254,7 +252,7 @@ final class Configure
      */
     public function load(string $file, string $key = null, $auto = null)
     {
-        $conf = parse_ini_file(root($file), true);
+        $conf = parse_ini_file(\esp\helper\root($file), true);
         $conf = $this->re_arr($conf);
         if (is_null($key)) {
             return $conf;

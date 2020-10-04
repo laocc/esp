@@ -23,12 +23,12 @@ final class Router
         if (empty($modRoute) or $modRoute === 'null') {
             $file = $request->router_path . '/' . _VIRTUAL . '.php';
             if (is_readable($file)) {
-                $modRoute = load($file);
+                $modRoute = \esp\helper\load($file);
                 if (!empty($modRoute)) {
                     foreach ($modRoute as $r => $route) {
-                        if (isset($route['match']) and !is_match($route['match']))
+                        if (isset($route['match']) and !\esp\helper\is_match($route['match']))
                             throw new \Exception("Route[Match]：{$route['match']} 不是有效正则表达式", 505);
-                        if (isset($route['uri']) and !is_uri($route['uri']))
+                        if (isset($route['uri']) and !\esp\helper\is_uri($route['uri']))
                             throw new \Exception("Route[uri]：{$route['uri']} 不是合法的URI格式", 505);
                         if (!isset($route['route'])) $route['route'] = [];
                     }
@@ -59,7 +59,7 @@ final class Router
                 }
 
                 //MVC位置，不含模块
-                if (isset($route['directory'])) $request->directory = root($route['directory']);
+                if (isset($route['directory'])) $request->directory = \esp\helper\root($route['directory']);
 
                 //分别获取模块、控制器、动作的实际值
                 list($module, $controller, $action, $param) = $this->fill_route($request->directory, $matches, $route['route']);

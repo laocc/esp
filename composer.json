@@ -1,6 +1,13 @@
 {
   "name": "laocc/esp",
-  "description": "Efficient Simple PHP",
+  "description": "(esp)Efficient Simple PHP",
+  "homepage": "https://github.com/laocc/esp",
+  "authors": [
+    {
+      "name": "fazo",
+      "email": "fazo@qq.com"
+    }
+  ],
   "require": {
     "php": ">7.0",
     "ext-json": "*",
@@ -12,12 +19,12 @@
     "ext-mbstring": "*",
     "ext-pdo": "*"
   },
-  "require-dev": {
-    "php": ">7.0"
-  },
   "autoload": {
     "files": [
-      "helper/Functions.php"
+      "helper/rely.php",
+      "helper/judge.php",
+      "helper/time.php",
+      "helper/tools.php"
     ],
     "psr-4": {
       "esp\\core\\": "core/",

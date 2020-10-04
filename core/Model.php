@@ -294,6 +294,33 @@ abstract class Model
         return $this->checkRunData('update', $val) ?: $val;
     }
 
+    /**
+     * 压缩字符串
+     * @param string $string
+     * @return string
+     */
+    final public function gz(string $string)
+    {
+        try {
+            return gzcompress($string, 5);
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * 解压缩字符串
+     * @param string $string
+     * @return string
+     */
+    final public function ugz(string $string)
+    {
+        try {
+            return gzuncompress($string);
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+    }
 
     /**
      * 选择一条记录

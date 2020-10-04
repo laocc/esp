@@ -69,7 +69,7 @@ abstract class Controller
     final protected function check_host(...$host)
     {
         if (isset($host[0]) and is_array($host[0])) $host = $host[0];
-        if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
+        if (!in_array(\esp\helper\host($this->_request->referer), array_merge([_HOST], $host))) {
             throw new \Exception('禁止接入', 401);
         }
     }
@@ -391,7 +391,7 @@ abstract class Controller
         $controller = $action = $params = null;
 
         if (is_string($param[0]) and is_dir($param[0])) {
-            $directory = root($param[0]) . '/';
+            $directory = \esp\helper\root($param[0]) . '/';
             array_shift($param);
         }
         if (is_dir($directory . $param[0])) {

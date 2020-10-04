@@ -45,7 +45,7 @@ final class Cookies
         if (isset($cookies[_HOST])) $config = $cookies[_HOST] + $config;
         if (isset($cookies[_DOMAIN])) $config = $cookies[_DOMAIN] + $config;
         $domain = getenv('HTTP_HOST');
-        return $config['domain'] === 'host' ? host($domain) : getenv('HTTP_HOST');
+        return $config['domain'] === 'host' ? \esp\helper\host($domain) : getenv('HTTP_HOST');
     }
 
     public function del($key)

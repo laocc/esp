@@ -124,11 +124,7 @@ final class Error
                     http_response_code($err['code']);
 
                 } else if ($option['throw'] === 1) {
-                    if ($this->dispatcher->getRequest()->isGet()) {
-                        pre($err);
-                    } else {
-                        echo json_encode($err, 256 | 128 | 64);
-                    }
+                    echo json_encode($err, 256 | 128 | 64);
                 } else if ($option['throw'] === 9) {
                     header("Content-type: application/json; charset=UTF-8", true, 500);
                     $trace = str_replace(_ROOT, '', $error->getTraceAsString());

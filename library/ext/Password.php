@@ -162,7 +162,7 @@ class Password
     public static function base_en($String, $expiration = 0)
     {
         //创建时间，内容，有效时间
-        $str = base64_encode(time() . self::$RANDOM . $String . self::$RANDOM . $expiration . self::$RANDOM . self::str_rand());
+        $str = base64_encode(time() . self::$RANDOM . $String . self::$RANDOM . $expiration . self::$RANDOM . self::s_rand());
         $RS = str_split($str);
         $RS = array_reverse($RS);//倒排
         $index = count($RS) % self::$FACTORLEN;//使用密码库因子
@@ -350,7 +350,7 @@ class Password
      * @param int $max 若给定此值，则生成$min-$max之间的随机长度
      * @return string
      */
-    public static function str_rand($min = 0, $max = 0)
+    private static function s_rand($min = 0, $max = 0)
     {
         $factor = 'aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ1234567890';
         $rLen = $max === 0 ? ($min === 0 ? mt_rand(1, 10) : $min) : mt_rand($min, $max);//计算生成的长度

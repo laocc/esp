@@ -47,6 +47,8 @@ final class Builder
     private $_bindKV = Array();
     private $_object = null;
 
+    private $_gzLevel = 5;//压缩比
+
     public function __construct(Mysql $mysql, $table_pre, bool $param, int $trans_id = 0)
     {
         $this->_MySQL = $mysql;
@@ -1271,13 +1273,24 @@ final class Builder
                 $nv = Array();
                 foreach ($item as $k => &$v) {
                     if (is_array($v)) $v = json_encode($v, 256 | 64);
+                    if (substr($k, -1) === '#') {
+                        $k = substr($k, 0, -1);
+                        $v = gzcompress($v, $this->_gzLevel);
+                    }
                     $nv[":{$k}"] = $v;
                 }
                 $this->_param_data[] = $nv;
 
             } else {
                 $values = array_values($item);
-                foreach ($values as $v => $val) if (is_array($val)) $values[$v] = json_encode($val, 256 | 64);
+                foreach ($values as $k => $val) {
+                    if (is_array($val)) $val = json_encode($val, 256 | 64);
+                    if (substr($k, -1) === '#') {
+                        $k = substr($k, 0, -1);
+                        $val = gzcompress($val, $this->_gzLevel);
+                    }
+                    if (is_array($val)) $values[$k] = $val;
+                }
                 $values[] = '(' . implode(', ', $this->quote($values)) . ')';
             }
         }
@@ -1328,10 +1341,24 @@ final class Builder
                 $Exception = "DB_ERROR: [{$key}]键值不可同时带有符号";
             }
 
-
-            if (0 and in_array($value[0], ['+', '-'])) { //值以+-开头
-                $val = substr($value, 1);
-                $value = $this->protect_identifier($key) . " {$value[0]} {$val}";
+            if ($kFH === '#') { //字段以#结束，表示此字段值要压缩
+                /**
+                 * 采用压缩的字段类型只能是：
+                 * TINYBLOB    0-255 bytes    不超过 255 个字符的二进制字符串 ，对应：CHAR
+                 * BLOB    0-65 535 bytes    二进制形式的长文本数据，对应：TEXT和VARCHAR
+                 * MEDIUMBLOB    0-16 777 215 bytes    二进制形式的中等长度文本数据，对应：MEDIUMTEXT
+                 * LONGBLOB    0-4 294 967 295 bytes    二进制形式的极大文本数据，对应：LONGBLOB
+                 * 其中之一。
+                 */
+                $key = substr($key, 0, -1);
+                $value = gzcompress($value, $this->_gzLevel);
+                if ($this->_param) {
+                    $pKey = $this->paramKey($key);
+                    $this->_param_data[$pKey] = $value;
+                    $value = $pKey;
+                } else {
+                    $value = $this->quote($value);
+                }
 
             } elseif (in_array($kFH, ['+', '-', '|'])) { //键以+-结束，或以|结束的位运算
                 $key = substr($key, 0, -1);
@@ -1353,6 +1380,9 @@ final class Builder
 
         $sets = implode(', ', $sets);
         $sql = "UPDATE {$this->_table} SET {$sets} WHERE {$this->_build_where()}";
+
+        var_dump($sql);
+        var_dump($this->_param_data);
 
         //如果有抛错，则不执行，由后面记录sQL内容
         if (isset($Exception)) goto err;

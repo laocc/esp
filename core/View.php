@@ -168,10 +168,10 @@ final class View
      */
     public function render(string $file, array $value): string
     {
-        $dir = root($this->dir());
+        $dir = \esp\helper\root($this->dir());
         $fileV = $this->file() ?: $file;//以之前设置的优先
         if (strpos($fileV[0], '/') === 0) {
-            $fileV = root($fileV);
+            $fileV = \esp\helper\root($fileV);
         } else {
             $fileV = "{$dir}/{$fileV}";
         }

@@ -52,7 +52,7 @@ class Mysql
      * @param $tabName
      * @return Builder
      */
-    public function table($tabName)
+    public function table(string $tabName)
     {
         if (!is_string($tabName) || empty($tabName)) {
             throw new \Exception('PDO_Error :  数据表名错误');

@@ -911,7 +911,6 @@ class MarkdownObject
      */
     private function parseSh(array $lines, $num)
     {
-//        pre(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]);//231行
         $addMap = false;
         if ($lines[0][-1] === '#') {
             $lines[0] = substr($lines[0], 0, -1);

@@ -189,7 +189,7 @@ trait Mysql
      */
     final public function createModel(string $path, string $baseModel = 'BaseModel')
     {
-        $root = root($path);
+        $root = \esp\helper\root($path);
         if (!is_dir($root)) return "请先创建[{$root}]目录";
 
         $mysql = $this->Mysql();

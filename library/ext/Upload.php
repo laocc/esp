@@ -295,15 +295,15 @@ final class Upload
         $option = $this->option;
         $ext = trim(strtolower($ext), '.');
 
-        $root = root(rtrim($option['save']['root'], '/') . '/');
+        $root = \esp\helper\root(rtrim($option['save']['root'], '/') . '/');
 
         $folder = trim($option['save']['folder'] ?: '%D', '/') . '/';
-        $folder = format($folder);
-        $name = format($option['save']['name'] ?: '%u');
+        $folder = \esp\helper\format($folder);
+        $name = \esp\helper\format($option['save']['name'] ?: '%u');
         $name = strtolower($name);
 
         $path = $root . $folder . $name . ($ext ? ".{$ext}" : '');
-        mk_dir($path);
+        \esp\helper\mk_dir($path);
 
         if (is_file(realpath($path))) {
             return $this->filename($ext);
