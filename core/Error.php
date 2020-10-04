@@ -36,17 +36,8 @@ final class Error
      */
     private function register_handler(array $option)
     {
-        $default = ['display' => 1, 'filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
-        if (_CLI) {
-            $default['display'] = 1;
-        }
-        //ajax方式下，都只显示简单信息
-        if (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest' or
-            strtolower(getenv('REQUEST_METHOD') ?: '') === 'post') {
-            $default['throw'] = 1;
-        }
+        $option += ['display' => 'json', 'filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
 
-        $option += $default;
         /**
          * 一般警告错误
          * @param int $errNo
@@ -70,21 +61,37 @@ final class Error
 
             $this->error($error, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
 
-            if (is_int($option['display'])) {
-                switch ($option['display']) {
-                    case 0:
-                        http_response_code($error->getCode());
-                        break;
-                    case 1:
+            switch (true) {
+                case _CLI:
+                    echo json_encode($error->display(), 256 | 128 | 64);
+                    break;
+
+                case is_int($option['display']):
+                    if ($option['display'] === 0) {
+                        $this->displayState($error->getCode());
+                    } else {
+                        $this->displayState($option['display']);
+                    }
+                    break;
+
+                case ($option['display'] === 'json'):
+                    //ajax方式下，都只显示简单信息
+                    if (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest' or
+                        strtolower(getenv('REQUEST_METHOD') ?: '') === 'post') {
                         echo json_encode($error->display(), 256 | 128 | 64);
-                        break;
-                    case 2:
-                        $this->displayError($error);
-                        break;
-                }
-            } else {
-                echo($option['throw']);
+                    } else {
+                        echo '<pre>' . json_encode($error->display(), 256 | 128 | 64) . '</pre>';
+                    }
+                    break;
+
+                case ($option['display'] === 'html'):
+                    $this->displayError($error);
+                    break;
+
+                default:
+                    echo $option['display'];
             }
+
             fastcgi_finish_request();
             exit;
         };
@@ -168,37 +175,40 @@ final class Error
     /**
      * 显示成一个错误状态
      * @param $code
+     * @param $writeHeader
      * @return string
      */
-    public static function displayState(int $code)
+    public static function displayState(int $code, bool $writeHeader = true): string
     {
         $conf = parse_ini_file(_ESP_ROOT . '/common/static/state.ini', true);
-        $state = $conf[$code] ?? '';
+        $state = $conf[$code] ?? 'OK';
         if (_CLI) return "[{$code}]:{$state}\n";
-//        http_response_code($code);
         $server = isset($_SERVER['SERVER_SOFTWARE']) ? ucfirst($_SERVER['SERVER_SOFTWARE']) : null;
         $html = <<<HTML
-<html>
+<!DOCTYPE html>
+<html lang="zh-cn">
     <head>
         <meta charset="UTF-8">
         <title>{$code} {$state}</title>
         <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1">
     </head>
-    <body bgcolor=\"white\">
+    <body bgcolor="white">
         <center><h1>{$code} {$state}</h1></center>
         <hr>
         <center>{$server}</center>
     </body>
 </html>
 HTML;
-
-        if (!stripos(PHP_SAPI, 'cgi')) {
-            header("Status: {$code} {$state}", true);
-        } else {
-            $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.1';
-            header("{$protocol} {$code} {$state}", true, $code);
+        if ($writeHeader) {
+            http_response_code($code);
+            if (!stripos(PHP_SAPI, 'cgi')) {
+                header("Status: {$code} {$state}", true);
+            } else {
+                $protocol = $_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.1';
+                header("{$protocol} {$code} {$state}", true, $code);
+            }
+            header('Content-type: text/html', true);
         }
-        header('Content-type: text/html', true);
         return $html;
     }
 
@@ -229,14 +239,14 @@ HTML;
                     $args = null;
                 } else {
                     foreach ($tr['args'] as $i => &$arr) {
-                        if (is_array($arr)) $arr = json_encode($arr, 256);
+                        if (is_array($arr)) $arr = json_encode($arr, 256 | 64);
                     }
-                    $args = '"……"';
-//                    $args = '"' . implode('","', $tr['args']) . '"';
+//                    $args = '"……"';
+                    $args = '"' . implode('", "', $tr['args']) . '"';
                 }
-                $str .= "{$tr['function']}({$args})";
+                $str .= "{$tr['function']}(<span style='color:#d00;'>{$args}</span>)";
             }
-            $str .= '</td></tr>';
+            $str .= "</td></tr>\n";
             $traceHtml .= $str;
         }
 
@@ -249,7 +259,7 @@ HTML;
 
         ob_start();
         extract($errValue);
-        include('../view/error.php');
+        include('view/error.php');
         $content = ob_get_contents();
         ob_end_clean();
         echo $content;

@@ -316,7 +316,7 @@ class Mysql
                 unset($this->{$real}[$transID]);
                 $CONN = null;
                 goto tryExe; //重新执行
-                
+
             } else if ($transID > 0 and $upData) {
                 $this->trans_back($CONN, $transID, $error);//回滚事务
             }
