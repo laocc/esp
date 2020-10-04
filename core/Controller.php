@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\db\Redis;
+use esp\core\ext\EspError;
 use esp\core\face\Adapter;
 use esp\core\ext\Input;
 use esp\library\ext\Markdown;
@@ -70,7 +71,7 @@ abstract class Controller
     {
         if (isset($host[0]) and is_array($host[0])) $host = $host[0];
         if (!in_array(\esp\helper\host($this->_request->referer), array_merge([_HOST], $host))) {
-            throw new \Exception('禁止接入', 401);
+            throw new EspError('禁止接入', 401);
         }
     }
 
@@ -214,7 +215,7 @@ abstract class Controller
      */
     final public function getSession()
     {
-        if (is_null($this->_session)) throw new \Exception('当前站点未开启session', 401);
+        if (is_null($this->_session)) throw new EspError('当前站点未开启session', 401);
         return $this->_session;
     }
 

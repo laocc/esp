@@ -2,6 +2,8 @@
 
 namespace esp\core\db;
 
+use esp\core\ext\EspError;
+
 /**
  * 简单文件存储缓存
  * Class File
@@ -69,12 +71,12 @@ final class File
 
     public function host()
     {
-        throw new \Exception("当前系统只是简单文件存储服务，请改用Redis服务", 505);
+        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 505);
     }
 
     public function publish(string $channel, string $action, $message)
     {
-        throw new \Exception("当前系统只是简单文件存储服务，请改用Redis服务", 505);
+        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 505);
     }
 
 }

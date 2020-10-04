@@ -44,20 +44,20 @@ class SessionRedis implements \SessionHandlerInterface
         $conf = unserialize($save_path);
         if (!isset($conf['port']) or intval($conf['port']) === 0) {
             if (!$this->_Redis->connect($conf['host'])) {
-                throw new \Exception("Redis服务器【{$conf['host']}】无法连接。");
+                throw new EspError("Redis服务器【{$conf['host']}】无法连接。");
             }
         } else if (!$this->_Redis->connect($conf['host'], $conf['port'])) {
-            throw new \Exception("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
+            throw new EspError("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
         }
 
         //用密码登录
         if (isset($conf['password']) and !empty($conf['password']) and !$this->_Redis->auth($conf['password'])) {
-            throw new \Exception("Redis密码错误，无法连接服务器。");
+            throw new EspError("Redis密码错误，无法连接服务器。");
         }
 
         $select = $this->_Redis->select(intval($conf['db']));
         if (!$select) {
-            throw new \Exception("Redis选择库【{$conf['db']}】失败。" . json_encode($conf, 256 | 64));
+            throw new EspError("Redis选择库【{$conf['db']}】失败。" . json_encode($conf, 256 | 64));
         }
         return $this->realValue($select);
     }

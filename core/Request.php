@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\core\ext\EspError;
+
 final class Request
 {
     private $_var = Array();
@@ -78,7 +80,7 @@ final class Request
         elseif ($this->isAjax() and ($p = $suffix['ajax'] ?? '')) $actionExt = $p;//必须放在isPost之后
         elseif (_CLI and ($p = $suffix['cli'] ?? '')) $actionExt = $p;
         else {
-            throw new \Exception("非法访问请求：{$this->method}", 500);
+            throw new EspError("非法访问请求：{$this->method}", 500);
         }
         return ucfirst($actionExt);
     }
@@ -169,7 +171,7 @@ final class Request
         if (!$unique) {
             $unique = $number ? mt_rand() : \esp\helper\str_rand(20);
             if (headers_sent($file, $line)) {
-                throw new \Exception("Header be Send:{$file}[{$line}]", 505);
+                throw new EspError("Header be Send:{$file}[{$line}]", 505);
             }
             $time = time() + 86400 * 365;
             $dom = $this->cookies->domain;

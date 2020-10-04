@@ -6,6 +6,7 @@ namespace esp\core\db;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\Result;
 use esp\core\Debug;
+use esp\core\ext\EspError;
 
 class Mysql
 {
@@ -31,7 +32,7 @@ class Mysql
     {
         if (is_array($tranID)) list($tranID, $conf) = [0, $tranID];
         if (!is_array($conf)) {
-            throw new \Exception('Mysql配置信息错误');
+            throw new EspError('Mysql配置信息错误');
         }
         $this->_CONF = $conf;
         $this->transID = $tranID;
@@ -55,7 +56,7 @@ class Mysql
     public function table(string $tabName)
     {
         if (!is_string($tabName) || empty($tabName)) {
-            throw new \Exception('PDO_Error :  数据表名错误');
+            throw new EspError('PDO_Error :  数据表名错误');
         }
         return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? false), $this->transID))
             ->table($tabName);
@@ -124,7 +125,7 @@ class Mysql
             try {
                 $pdo = new \PDO($conStr, $cnf['username'], $cnf['password'], $opts);
             } catch (\PDOException $PdoError) {
-                throw new \Exception("Mysql Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage());
+                throw new EspError("Mysql Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage());
             }
             $this->connect_time[$trans_id] = time();
             $this->{$real}[$trans_id] = $pdo;
@@ -137,7 +138,7 @@ class Mysql
              * PDO::ERRMODE_WARNING： 还将发出一条传统的 E_WARNING 信息，
              * PDO::ERRMODE_EXCEPTION，还将抛出一个 PDOException 异常类并设置它的属性来反射错误码和错误信息，
             */
-            throw new \Exception("Mysql Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage());
+            throw new EspError("Mysql Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage());
         }
     }
 
@@ -187,7 +188,7 @@ class Mysql
         if (preg_match('/^(select|insert|replace|update|delete|alter|analyze)\s+.+/is', trim($sql), $matches)) {
             return strtolower($matches[1]);
         } else {
-            throw new \Exception("PDO_Error:SQL语句不合法:{$sql}");
+            throw new EspError("PDO_Error:SQL语句不合法:{$sql}");
         }
     }
 
@@ -204,20 +205,20 @@ class Mysql
      * @param \PDO|null $CONN
      * @param null $pre
      * @return false|string
-     * @throws \Exception
+     * @throws EspError
      */
     public function query_exec(string $sql, array $option, \PDO $CONN = null, $pre = null)
     {
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (empty($sql)) {
-            throw new \Exception("PDO_Error :  SQL语句不能为空");
+            throw new EspError("PDO_Error :  SQL语句不能为空");
         }
         if (_CLI and $this->_cli_print_sql) echo "{$sql}\n";
         $action = strtolower($option['action']);
         $transID = ($option['trans_id']);
 
         if (!in_array($action, ['select', 'insert', 'replace', 'update', 'delete', 'alter', 'analyze'])) {
-            throw new \Exception("PDO_Error :  数据处理方式不明确：【{$action}】。");
+            throw new EspError("PDO_Error :  数据处理方式不明确：【{$action}】。");
         }
 
         //是否更新数据操作
@@ -259,7 +260,7 @@ class Mysql
                     $CONN = null;
                     goto tryExe;
                 } else {
-                    throw new \Exception('服务器状态错误，且无法连接成功', 505);
+                    throw new EspError('服务器状态错误，且无法连接成功', 505);
                 }
             }
         }
@@ -552,27 +553,27 @@ class Mysql
      * @param int $trans_id
      * @param array $batch_SQLs
      * @return Builder
-     * @throws \Exception
+     * @throws EspError
      */
     public function trans(int $trans_id = 1, array $batch_SQLs = [])
     {
 //        try {
         if ($trans_id === 0) {
-            if ($trans_id === 0) throw new \Exception("Trans Error: 事务ID须从1开始，不可以为0。");
+            if ($trans_id === 0) throw new EspError("Trans Error: 事务ID须从1开始，不可以为0。");
         }
 
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id]) {
-            throw new \Exception("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中，或该事务未正常结束");
+            throw new EspError("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中，或该事务未正常结束");
         }
 
         $CONN = $this->connect(true, $trans_id);//连接数据库，直接选择主库
 
         if ($CONN->inTransaction()) {
-            throw new \Exception("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中");
+            throw new EspError("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中");
         }
 
         if (!$CONN->beginTransaction()) {
-            throw new \Exception("PDO_Error :  启动事务失败。");
+            throw new EspError("PDO_Error :  启动事务失败。");
         }
         $this->_trans_run[$trans_id] = true;
         $this->_trans_error = [];
@@ -598,7 +599,7 @@ class Mysql
         }
 
         return new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $trans_id);
-//        } catch (\Exception $exception) {
+//        } catch (EspError $exception) {
 //            $exception->display();
 //        }
     }
@@ -608,7 +609,7 @@ class Mysql
      * @param \PDO $CONN
      * @param $trans_id
      * @return array|bool
-     * @throws \Exception
+     * @throws EspError
      */
     public function trans_commit(\PDO $CONN, $trans_id)
     {
@@ -618,7 +619,7 @@ class Mysql
         }
 
         if (!$CONN->inTransaction()) {
-            throw new \Exception("Trans Commit Error: 当前没有处于事务{$trans_id}中");
+            throw new EspError("Trans Commit Error: 当前没有处于事务{$trans_id}中");
         }
         $this->_trans_run[$trans_id] = false;
         return $CONN->commit();

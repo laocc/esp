@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\core\ext\EspError;
 use esp\core\ext\SessionRedis;
 
 
@@ -170,7 +171,7 @@ final class Session
     public function get($key, $autoValue = null)
     {
         if (is_null($this->SessionHandler)) {
-            throw new \Exception("系统未开启Session", 500);
+            throw new EspError("系统未开启Session", 500);
         }
         if ($key === null) return null;
         if (empty($_SESSION)) return null;
@@ -201,7 +202,7 @@ final class Session
     public function data(string $key, $val = null)
     {
         if ($this->run !== true) {
-            throw new \Exception($this->run, 500);
+            throw new EspError($this->run, 500);
         }
         if (is_null($val)) {
             $value = $_SESSION[$key] ?? '';

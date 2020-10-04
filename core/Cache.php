@@ -74,7 +74,7 @@ final class Cache
 
         //这里的_cache_key是前面Display()生成的
         $key = $this->request->get('_cache_key');
-        if (!$key) return;
+        if (empty($key)) return;
         $value = $this->response->render();
 
         if (!$value) return;

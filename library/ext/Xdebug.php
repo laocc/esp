@@ -2,6 +2,8 @@
 
 namespace esp\library\ext;
 
+use esp\core\ext\EspError;
+
 /**
  * 仅仅是对Xdebug的结果进行可读重排版，不是用来控制Xdebug的
  * 至于Xdebug是否启动，取于决于URL中有没有加【?XDEBUG_TRACE】
@@ -252,7 +254,7 @@ CSS;
     {
         $files = file($filePath);
         if (empty($files)) {
-            throw new \Exception("{$filePath} 不是有效文件。");
+            throw new EspError("{$filePath} 不是有效文件。");
         }
 
         foreach ($files as $line => &$row) {

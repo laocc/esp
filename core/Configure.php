@@ -5,6 +5,7 @@ namespace esp\core;
 
 use esp\core\db\File;
 use esp\core\db\Redis;
+use esp\core\ext\EspError;
 
 /**
  * Class Config
@@ -27,7 +28,7 @@ final class Configure
         $conf['path'] = \esp\helper\root($conf['path']);
         if (isset($conf['buffer'])) {
             $bFile = \esp\helper\root($conf['buffer']);
-            if (!is_readable($bFile)) throw new \Exception("指定的buffer文件({$bFile})不存在");
+            if (!is_readable($bFile)) throw new EspError("指定的buffer文件({$bFile})不存在");
         } else {
             $bFile = "{$conf['path']}/buffer.ini";
             if (!is_readable($bFile)) $bFile = _ESP_ROOT . "/common/config/buffer.ini";
@@ -72,12 +73,12 @@ final class Configure
             $get = Output::new()->rpc('/debug/config')->get('json');
             if (!($get['success'] ?? 0)) {
                 if ($tryCount > 1) {
-                    throw new \Exception("系统出错." . var_export($get, true), 505);
+                    throw new EspError("系统出错." . var_export($get, true), 505);
                 }
                 $tryCount++;
                 goto tryGet;
             } else {
-                throw new \Exception("系统出错." . var_export($get, true), 505);
+                throw new EspError("系统出错." . var_export($get, true), 505);
             }
         }
 

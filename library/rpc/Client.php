@@ -1,7 +1,9 @@
 <?php
 
-namespace esp\core\rpc;
+namespace library\rpc;
 
+
+use esp\core\ext\EspError;
 
 class Client
 {
@@ -43,7 +45,7 @@ class Client
 
     public function send(callable $callback = null)
     {
-        if (empty($this->_task)) throw new \Error('当前队列任务为空');
+        if (empty($this->_task)) throw new EspError('当前队列任务为空');
         $pid = pcntl_fork();
         if ($pid == -1) {
             die('could not fork');
@@ -128,7 +130,7 @@ class Client
                 pcntl_wait($status);
             } else {
                 $callback = $item['callback'] ?: $callback;
-                if (is_null($callback) and !$item['async']) throw new \Error('同步请求，必须提供处理返回数据的回调函数');
+                if (is_null($callback) and !$item['async']) throw new EspError('同步请求，必须提供处理返回数据的回调函数');
 
                 //短连接
                 $fp = fsockopen($item['host'], $item['port'], $err_no, $err_str, $timeout);
@@ -139,9 +141,9 @@ class Client
 
                 if (!$fp) {//连接失败
                     if (!is_null($callback)) {
-                        $callback($index, new \Error($err_str, $err_no));
+                        $callback($index, new EspError($err_str, $err_no));
                     } else {//异步时，直接抛错
-                        throw new \Exception($err_str, $err_no);
+                        throw new EspError($err_str, $err_no);
                     }
                 } else {
                     $_data = http_build_query($item['data']);
@@ -198,7 +200,7 @@ class Client
      */
     private function realUrl(string $url, string $action, $data, $async)
     {
-        if (!\esp\helper\is_url($url)) throw new \Exception("请求调用地址不是一个合法的URL");
+        if (!\esp\helper\is_url($url)) throw new EspError("请求调用地址不是一个合法的URL");
 
         $_data = [
             $this->_form_key['action'] => $action,

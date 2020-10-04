@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\core\db\ext;
 
 use esp\core\db\Mysql;
+use esp\core\ext\EspError;
 
 /**
  *
@@ -104,7 +105,7 @@ final class Builder
      * 事务结束，提交。
      * @param bool $rest
      * @return string|bool
-     * @throws \Exception
+     * @throws EspError
      */
     public function commit(bool $rest = true)
     {
@@ -164,12 +165,12 @@ final class Builder
      * @param $key
      * @param null $param
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function bind($key, $param = null)
     {
         if ($key === 0) {
-            throw new \Exception('PDO数据列绑定下标应该从1开始');
+            throw new EspError('PDO数据列绑定下标应该从1开始');
         }
         if (is_array($key)) {
             $this->_bindKV += $key;
@@ -246,7 +247,7 @@ final class Builder
      * @param $fields
      * @param bool $add_identifier
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function select($fields, $add_identifier = TRUE)
     {
@@ -257,7 +258,7 @@ final class Builder
             return $this;
         }
         if (!is_string($fields) or empty($fields)) {
-            throw new \Exception('选择的字段不能为空，且只能是字符串类型。');
+            throw new EspError('选择的字段不能为空，且只能是字符串类型。');
         }
 
         /**
@@ -385,7 +386,7 @@ final class Builder
      * @param null $value
      * @param null $is_OR
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function where($field = '', $value = null, $is_OR = null)
     {
@@ -436,7 +437,7 @@ final class Builder
         }
 
         if (!is_string($field)) {
-            throw new \Exception("DB_ERROR: where 条件异常:" . var_export($field, true));
+            throw new EspError("DB_ERROR: where 条件异常:" . var_export($field, true));
         }
 
 
@@ -504,7 +505,7 @@ final class Builder
                     }
 
                     if (!is_array($value)) $value = [$value, 0];
-                    if (!is_float($value[1])) throw new \Exception("MATCH第2个值只能是浮点型值，表示匹配度");
+                    if (!is_float($value[1])) throw new EspError("MATCH第2个值只能是浮点型值，表示匹配度");
 
                     if ($this->_param) {//采用占位符后置内容方式
                         $key = $this->paramKey($field);
@@ -603,7 +604,7 @@ final class Builder
                     }
 
                     if (!is_array($value)) {
-                        throw new \Exception("where in 的值必须为数组形式");
+                        throw new EspError("where in 的值必须为数组形式");
                     }
                     if (empty($value)) $value = [0, 0];
 
@@ -629,7 +630,7 @@ final class Builder
                     }
 
                     if (!is_array($value)) {
-                        throw new \Exception("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]");
+                        throw new EspError("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]");
                     }
                     if (empty($value)) $value = [2, 1];
 
@@ -703,7 +704,7 @@ final class Builder
      * @param $field
      * @param null $value
      * @return Builder
-     * @throws \Exception
+     * @throws EspError
      */
     public function or_where($field, $value = null)
     {
@@ -714,7 +715,7 @@ final class Builder
      * @param $field
      * @param null $value
      * @return Builder
-     * @throws \Exception
+     * @throws EspError
      */
     public function where_or($field, $value = null)
     {
@@ -728,12 +729,12 @@ final class Builder
      * @param array $data IN的内容，必须是一个数组
      * @param bool|FALSE $is_OR
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function where_in($field, $data, $is_OR = FALSE, $isNot = false)
     {
         if (empty($field)) {
-            throw new \Exception('DB_ERROR: where in 条件不可为空');
+            throw new EspError('DB_ERROR: where in 条件不可为空');
         }
         $protectField = $this->protect_identifier($field);
 
@@ -759,7 +760,7 @@ final class Builder
      * @param $data
      * @param bool $is_OR
      * @return Builder
-     * @throws \Exception
+     * @throws EspError
      */
     public function where_not_in($field, $data, $is_OR = FALSE)
     {
@@ -772,7 +773,7 @@ final class Builder
      * @param string $field
      * @param array $data
      * @return Builder
-     * @throws \Exception
+     * @throws EspError
      */
     public function or_where_in($field, array $data)
     {
@@ -786,12 +787,12 @@ final class Builder
      * @param $value
      * @param bool $is_OR
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function where_like($field, $value, $is_OR = FALSE)
     {
         if (empty($field) || empty($value)) {
-            throw new \Exception('DB_ERROR: where like 条件不能为空');
+            throw new EspError('DB_ERROR: where like 条件不能为空');
         }
         $protectField = $this->protect_identifier($field);
 
@@ -828,14 +829,14 @@ final class Builder
      *
      * @param bool $is_OR
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function where_group_start($is_OR = FALSE)
     {
         if (!is_bool($is_OR)) $is_OR = (strtolower($is_OR) === 'or') ? true : false;
 
         if ($this->_where_group_in) {
-            throw new \Exception('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end');
+            throw new EspError('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end');
         }
         if (empty($this->_where)) {
             $this->_where = '(';
@@ -849,15 +850,15 @@ final class Builder
     /**
      * 结束一个where组，为语句加上后括号
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function where_group_end()
     {
         if (!$this->_where_group_in) {
-            throw new \Exception('DB_ERROR: 当前未处于Where Group之中');
+            throw new EspError('DB_ERROR: 当前未处于Where Group之中');
         }
         if (empty($this->_where)) {
-            throw new \Exception('DB_ERROR: 当前where条件为空，无法创建where语句');
+            throw new EspError('DB_ERROR: 当前where条件为空，无法创建where语句');
         } else {
             $this->_where .= ')';
             $this->_where_group_in = 0;
@@ -869,7 +870,7 @@ final class Builder
      * @see $this->where_group_start
      * @return Builder
      * @return Builder
-     * @throws \Exception
+     * @throws EspError
      */
     public function or_where_group_start()
     {
@@ -879,13 +880,13 @@ final class Builder
     /**
      * 创建Where查询字符串
      * @return string
-     * @throws \Exception
+     * @throws EspError
      */
     private function _build_where()
     {
         if (empty($this->_where)) return '';
         if ($this->_where_group_in) {
-            throw new \Exception('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end');
+            throw new EspError('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end');
         }
         /**
          * 这只是个权宜之计，暂时先用正则替换掉括号后面的AND和OR
@@ -944,13 +945,13 @@ final class Builder
      * @param string $method 联查的类型，默认是NULL，可选值为'left','right','inner','outer','full','using'
      * @param bool $identifier 是否加保护符
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function join($table, $_filter = null, $method = 'left', $identifier = true)
     {
         $method = strtoupper($method);
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
-            throw new \Exception('DB_ERROR: JOIN模式不存在：' . $method);
+            throw new EspError('DB_ERROR: JOIN模式不存在：' . $method);
         }
         $this->_joinTable[] = $table;
 
@@ -971,7 +972,7 @@ final class Builder
         $_filter_arr = array_map(function ($re) use ($identifier) {
             return preg_replace_callback('/^(.*)(>|<|<>|=|<=>)(.*)/', function ($mch) use ($identifier) {
                 if ($mch[1] === $mch[3]) {
-                    throw new \Exception('DB_ERROR: JOIN条件两边不能完全相同，如果是不同表相同字段名，请用[tabName.filed]的方式');
+                    throw new EspError('DB_ERROR: JOIN条件两边不能完全相同，如果是不同表相同字段名，请用[tabName.filed]的方式');
                 }
                 if ($identifier)
                     return $this->protect_identifier($mch[1]) . " {$mch[2]} " . $this->protect_identifier($mch[3]);
@@ -998,7 +999,7 @@ final class Builder
      * @param string $method 排序的方法，可选值有 'ASC','DESC','RAND'
      *              其中，RAND随机排序和字段名无关（任意即可）
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function order($field, $method = 'ASC', $addProtect = true)
     {
@@ -1007,7 +1008,7 @@ final class Builder
          */
         $method = strtoupper(trim($method));
         if (!in_array($method, ['ASC', 'DESC', 'RAND'])) {
-            throw new \Exception('DB_ERROR: ORDER模式不存在：' . $method);
+            throw new EspError('DB_ERROR: ORDER模式不存在：' . $method);
         }
 
         if ($method === 'RAND' or $field === 'RAND') {
@@ -1061,7 +1062,7 @@ final class Builder
 
     /**
      * @return string
-     * @throws \Exception
+     * @throws EspError
      */
     public function _build_get()
     {
@@ -1130,7 +1131,7 @@ final class Builder
      * @param string $sql
      * @param null $pre
      * @return bool|Result|mixed|null
-     * @throws \Exception
+     * @throws EspError
      */
     public function get(int $row = 0, &$sql = '', $pre = null)
     {
@@ -1165,7 +1166,7 @@ final class Builder
 
         if (is_string($get)) {
             $get = json_decode($get, true);
-            throw new \ErrorException($get[2], $get[1], 1, $pre['file'], $pre['line']);
+            throw new EspError($get[2], $get[1], 1, $pre['file'], $pre['line']);
         }
         return $get;
     }
@@ -1173,7 +1174,7 @@ final class Builder
     /**
      * 组合SQL，并不执行，暂存起来，供后面调用
      * @return string
-     * @throws \Exception
+     * @throws EspError
      */
     public function temp()
     {
@@ -1187,7 +1188,7 @@ final class Builder
 
     /**
      * @return string
-     * @throws \Exception
+     * @throws EspError
      */
     public function sql()
     {
@@ -1216,13 +1217,13 @@ final class Builder
      * @param string $sql
      * @param null $pre
      * @return false|string
-     * @throws \Exception
+     * @throws EspError
      */
     public function delete(&$sql = '', $pre = null)
     {
         $where = $this->_build_where();
         if (empty($where)) {//禁止无where时删除数据
-            throw new \Exception('DB_ERROR: 禁止无where时删除数据，如果要清空表，请采用：id>0的方式');
+            throw new EspError('DB_ERROR: 禁止无where时删除数据，如果要清空表，请采用：id>0的方式');
         }
 
         $sql = Array();
@@ -1241,13 +1242,13 @@ final class Builder
      * @param array $data
      * @param bool|FALSE $is_REPLACE
      * @return int
-     * @throws \Exception
+     * @throws EspError
      * 注：在一次插入很多记录时，不用预处理或许速度更快，若一次插入数据只有几条或十几条，这种性能损失可以忽略不计。
      */
     public function insert(array $data, $is_REPLACE = FALSE)
     {
         if (empty($data)) {
-            throw new \Exception('DB_ERROR: 无法 insert/replace 空数据');
+            throw new EspError('DB_ERROR: 无法 insert/replace 空数据');
         }
         $this->_param_data = Array();
 
@@ -1310,7 +1311,7 @@ final class Builder
      *
      * @param array $data
      * @return string
-     * @throws \Exception
+     * @throws EspError
      */
     public function replace(array $data)
     {
@@ -1322,7 +1323,7 @@ final class Builder
      * @param array $data
      * @param bool $add_identifier
      * @return bool|Result|null
-     * @throws \Exception
+     * @throws EspError
      */
     public function update(array $data, bool $add_identifier = true, &$sql = '', $pre = null)
     {
@@ -1389,14 +1390,14 @@ final class Builder
         if (is_string($exe)) {
             $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
             $exe = json_decode($exe, true);
-            throw new \ErrorException($exe[2], $exe[1], 1, $pre['file'], $pre['line']);
+            throw new EspError($exe[2], $exe[1], 1, $pre['file'], $pre['line']);
         }
         return $exe;
 
         err:
         $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $this->_MySQL->debug(['data' => $data, 'sql' => $sql, 'error' => $Exception], $pre);
-        throw new \Exception($Exception);
+        throw new EspError($Exception);
     }
 
     /**
@@ -1404,7 +1405,7 @@ final class Builder
      * @param array $data
      * @param $key
      * @return mixed
-     * @throws \Exception
+     * @throws EspError
      *
      * 此时外部where作为大条件，内部条件仅实现了根据name查询，更复杂的条件有待进一步设计
      *
@@ -1415,7 +1416,7 @@ final class Builder
     public function update_batch(array $upData)
     {
         if (empty($upData)) {
-            throw new \Exception('DB_ERROR: 不能 update 空数据');
+            throw new EspError('DB_ERROR: 不能 update 空数据');
         }
         $sql = "UPDATE {$this->_table} SET ";
         foreach ($upData as $key => &$data) {

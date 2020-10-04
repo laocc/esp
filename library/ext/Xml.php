@@ -2,6 +2,8 @@
 
 namespace esp\library\ext;
 
+use esp\core\ext\EspError;
+
 final class Xml
 {
     private $value;
@@ -52,8 +54,8 @@ final class Xml
     public function __construct($value, $notes = 'xml')
     {
         if (is_array($notes) and is_string($value)) list($value, $notes) = [$notes, $value];
-        if (!is_array($value)) throw new \Exception('XML数据要求为数组格式');
-        if (!preg_match('/^[a-z]+$/i', $notes)) throw new \Exception('XML根节点名称只能是字母组成的字符串');
+        if (!is_array($value)) throw new EspError('XML数据要求为数组格式');
+        if (!preg_match('/^[a-z]+$/i', $notes)) throw new EspError('XML根节点名称只能是字母组成的字符串');
         $this->value = $value;
         $this->notes = $notes;
     }

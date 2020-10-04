@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\core\ext\EspError;
+
 final class Error
 {
     private $dispatcher;
@@ -19,11 +21,11 @@ final class Error
     public function simple_register_handler()
     {
         set_error_handler(function (...$err) {
-            header("Status: 400 Bad Request", true);
+            header("Status: 500 Internal Server Error", true);
             echo("[{$err[0]}]{$err[1]}");
         });
-        set_exception_handler(function (\Throwable $error) {
-            header("Status: 400 Bad Request", true);
+        set_exception_handler(function (EspError $error) {
+            header("Status: 500 Internal Server Error", true);
             echo("[{$error->getCode()}]{$error->getMessage()}");
         });
     }
@@ -34,16 +36,14 @@ final class Error
      */
     private function register_handler(array $option)
     {
-        $default = ['run' => 1, 'throw' => 1, 'filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
+        $default = ['display' => 1, 'filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
         if (_CLI) {
-            $default['run'] = 1;
-            $default['throw'] = 1;
+            $default['display'] = 1;
         }
         //ajax方式下，都只显示简单信息
         if (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest' or
             strtolower(getenv('REQUEST_METHOD') ?: '') === 'post') {
-            $default['run'] = 9;
-            $default['throw'] = 9;
+            $default['throw'] = 1;
         }
 
         $option += $default;
@@ -53,92 +53,34 @@ final class Error
          * @param string $errStr
          * @param string $errFile
          * @param int $errLine
-         * @param array|null $errcontext
+         * @param array|null $context
          */
-        $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $errcontext = null)
+        $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $context = null)
         use ($option) {
-            $err = Array();
-            $err['level'] = 'Error';
-            $err['error'] = $errStr;
-            $err['code'] = $errNo;
-            $err['file'] = $errFile;
-            $err['line'] = $errLine;
-            if (is_null($errcontext)) $errcontext = [];
-            foreach ($errcontext as $k => $item) {
-                if (is_object($item)) $errcontext[$k] = '(OBJECT)';
-                unset($errcontext['all']);
-            }
-            if (!_CLI) $err['text'] = $errcontext;
-            if (!isset($errcontext['errorTitle'])) {
-                $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
-            }
-            if (is_int($option['run'])) {
-                if ($option['run'] === 0) {
-                    http_response_code($err['code']);
-                } else if ($option['run'] === 1) {
-                    unset($err['text']);
-                    echo json_encode($err, 256 | 128 | 64);
-//                    print_r($err);
-                } else if ($option['run'] === 9) {
-                    header("Content-type: application/json; charset=UTF-8", true, 500);
-                    unset($err['text']);
-                    $text = $err['error'];
-                    if (isset($errcontext['errorTitle'])) $text = "{$errcontext['errorTitle']}：{$err['error']}";
-                    echo json_encode(['success' => 0, 'message' => $text, 'level' => 'Error'], 256);
-                } else if ($option['run'] === 2) {
-                    $this->displayError('Error', $err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
-                } else {
-                    echo $this->displayState($option['run']);
-                }
-            } else {
-                echo($option['run']);
-            }
-
-            fastcgi_finish_request();
-            exit;
+            //($message = "", $code = 0, $severity = 1, $filename = __FILE__, $lineno = __LINE__, $previous)
+            throw new EspError($errStr, $errNo, 1, $errFile, $errLine);
         };
 
         /**
          * 严重错误
          * @param $error
          */
-        $handler_exception = function (\Throwable $error) use ($option) {
+        $handler_exception = function (EspError $error) use ($option) {
 //            Session::reset();
 
-            $err = Array();
-            $err['level'] = 'Throw';
-            $err['error'] = $error->getMessage();
-            $err['message'] = $err['error'];
-            $err['code'] = $error->getCode();
-            $err['file'] = $error->getFile();
-            $err['line'] = $error->getLine();
-            $this->error($err + ['trace' => $error->getTrace()], debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+            $this->error($error, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
 
-            if ($err['error'][0] === '{') {
-                $ems = json_decode($err['error'], true);
-                if (isset($ems[2])) $err['message'] = $ems[2];
-            }
-
-            if (is_int($option['throw'])) {
-                if ($option['throw'] === 0) {
-                    http_response_code($err['code']);
-
-                } else if ($option['throw'] === 1) {
-                    echo json_encode($err, 256 | 128 | 64);
-                } else if ($option['throw'] === 9) {
-                    header("Content-type: application/json; charset=UTF-8", true, 500);
-                    $trace = str_replace(_ROOT, '', $error->getTraceAsString());
-                    echo json_encode(['success' => 0,
-                        'message' => $err['error'],
-                        'trace' => $trace,
-                        'level' => 'Throw'], 256 | 128 | 64);
-                } else if ($option['throw'] === 2) {
-                    $this->displayError('Throw', $err, $error->getTrace());
-                } else if ($option['throw'] === 3) {
-                    if (!$err['code']) $err['code'] = $option['run'];
-                    echo $this->displayState($err['code']);
-                } else {
-                    echo $this->displayState($option['throw']);
+            if (is_int($option['display'])) {
+                switch ($option['display']) {
+                    case 0:
+                        http_response_code($error->getCode());
+                        break;
+                    case 1:
+                        echo json_encode($error->display(), 256 | 128 | 64);
+                        break;
+                    case 2:
+                        $this->displayError($error);
+                        break;
                 }
             } else {
                 echo($option['throw']);
@@ -163,37 +105,30 @@ final class Error
          * 处理类型：
          * 1，调用了不存在的函数；
          * 2，函数参数不对；
-         * 3，throw new \Exception('抛出的异常');
+         * 3，throw new EspError('抛出的异常');
          */
         set_exception_handler($handler_exception);
     }
 
-    public static function exception(\Exception $exception)
+    public static function exception(EspError $exception)
     {
-        $err = Array();
-        $err['level'] = 'Exception';
-        $err['error'] = $exception->getMessage();
-        $err['code'] = $exception->getCode();
-        $err['file'] = $exception->getFile();
-        $err['line'] = $exception->getLine();
-
         echo "<pre style='background:#fff;display:block;'>";
         if (_DEBUG) {
-            print_r($exception);
+            print_r($exception->debug());
         } else {
-            print_r($err);
+            print_r($exception->display());
         }
         echo "</pre>";
     }
 
     /**
      * 仅记录错误，但不阻止程序继续运行
-     * @param array $error
+     * @param EspError $error
      * @param array $prev
      * @param string $path
      * @param string $filename
      */
-    private function error(array $error, array $prev, string $path, string $filename)
+    private function error(EspError $error, array $prev, string $path, string $filename)
     {
         $debug = Debug::class();
         $info = [
@@ -201,7 +136,7 @@ final class Error
             'HOST' => getenv('HTTP_HOST'),
             'Url' => _HTTP_ . _DOMAIN . _URI,
             'Debug' => !is_null($debug) ? $debug->filename() : '',
-            'Error' => $error,
+            'Error' => $error->debug(),
             'Server' => $_SERVER,
             'Post' => file_get_contents("php://input"),
             'prev' => $prev
@@ -270,24 +205,16 @@ HTML;
 
     /**
      * 显示并停止所有操作
-     * @param $type
-     * @param $err
-     * @param $trace
+     * @param $error
      */
-    private function displayError(string $type, array $err, array $trace)
+    private function displayError(EspError $error)
     {
         if (_CLI) {
             echo "\n\e[40;31;m================ERROR=====================\e[0m\n";
-            print_r($err);
-            if (!empty($trace)) print_r($trace);
+            print_r($error->display());
             exit;
         }
-
-        if (is_numeric($err['error'])) {
-            echo $this->displayState(intval($err['error']));
-            exit;
-        }
-
+        $trace = $error->getTrace();
         $traceHtml = '';
         foreach (array_reverse($trace) as $tr) {
             $str = '<tr><td class="l">';
@@ -315,14 +242,14 @@ HTML;
 
         $errValue = [];
         $errValue['time'] = date('Y-m-d H:i:s');
-        $errValue['title'] = $this->filter_root($err['error']);
-        $errValue['code'] = "{$type}={$err['code']}";
-        $errValue['file'] = "{$this->filter_root($err['file'])} ({$err['line']})";
+        $errValue['title'] = $error->getMessage();
+        $errValue['code'] = $error->getCode();
+        $errValue['file'] = $error->file();
         $errValue['trace'] = $traceHtml;
 
         ob_start();
         extract($errValue);
-        include('view/error.php');
+        include('../view/error.php');
         $content = ob_get_contents();
         ob_end_clean();
         echo $content;

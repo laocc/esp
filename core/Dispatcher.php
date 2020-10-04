@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace esp\core;
 
 
+use esp\core\ext\EspError;
+
 final class Dispatcher
 {
     public $_plugs = array();
@@ -20,7 +22,7 @@ final class Dispatcher
      * Dispatcher constructor.
      * @param array $option
      * @param string $virtual
-     * @throws \Exception
+     * @throws EspError
      */
     public function __construct(array $option, string $virtual = 'www')
     {
@@ -111,7 +113,7 @@ final class Dispatcher
         $GLOBALS['cookies'] = $this->_config->get('cookies');
         unset($GLOBALS['option']);
         if (headers_sent($file, $line)) {
-            throw new \Exception("在{$file}[{$line}]行已有数据输出，系统无法启动");
+            throw new EspError("在{$file}[{$line}]行已有数据输出，系统无法启动");
         }
     }
 
@@ -136,13 +138,13 @@ final class Dispatcher
     /**
      * @param string $class '\library\Bootstrap'
      * @return Dispatcher
-     * @throws \Exception
+     * @throws EspError
      */
     public function bootstrap($class): Dispatcher
     {
         if (is_string($class)) {
             if (!class_exists($class)) {
-                throw new \Exception("Bootstrap类不存在，请检查{$class}.php文件", 404);
+                throw new EspError("Bootstrap类不存在，请检查{$class}.php文件", 404);
             }
             $class = new $class();
         }
@@ -161,14 +163,14 @@ final class Dispatcher
      * 接受注册插件
      * @param Plugin $class
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     public function setPlugin(Plugin $class): Dispatcher
     {
         $name = get_class($class);
         $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
         if (isset($this->_plugs[$name])) {
-            throw new \Exception("插件名{$name}已被注册过", 404);
+            throw new EspError("插件名{$name}已被注册过", 404);
         }
         $this->_plugs[$name] = $class;
         $this->_plugs_count++;
@@ -226,7 +228,7 @@ final class Dispatcher
     /**
      * 系统运行调度中心
      * @param callable|null $callable
-     * @throws \Exception
+     * @throws EspError
      */
     public function run(callable $callable = null): void
     {
@@ -326,7 +328,7 @@ final class Dispatcher
     /**
      * 路由结果分发至控制器动作
      * @return mixed
-     * @throws \Exception
+     * @throws EspError
      */
     private function dispatch()
     {
@@ -371,7 +373,7 @@ final class Dispatcher
         }
         $cont = new $cName($this);
         if (!$cont instanceof Controller) {
-            throw new \Exception("{$cName} 须继承自 \\esp\\core\\Controller", 404);
+            throw new EspError("{$cName} 须继承自 \\esp\\core\\Controller", 404);
         }
         $_call = null;
         if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {

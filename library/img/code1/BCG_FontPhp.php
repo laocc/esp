@@ -2,6 +2,8 @@
 
 namespace esp\library\img\code1;
 
+use esp\core\ext\EspError;
+
 final class BCG_FontPhp implements BCG_Font
 {
     private $font;
@@ -113,7 +115,7 @@ final class BCG_FontPhp implements BCG_Font
     {
         if ($this->rotationAngle !== 0) {
             if (!function_exists('imagerotate')) {
-                throw new \Exception('The method imagerotate doesn\'t exist on your server. Do not use any rotation.');
+                throw new EspError('The method imagerotate doesn\'t exist on your server. Do not use any rotation.');
             }
 
             $w = imagefontwidth($this->font) * strlen($this->text);

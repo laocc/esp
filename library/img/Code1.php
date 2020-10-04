@@ -2,6 +2,7 @@
 
 namespace esp\library\img;
 
+use esp\core\ext\EspError;
 use esp\library\img\code1\BCG_FontFile;
 use esp\library\img\code1\BCG_Barcode;
 use esp\library\img\code1\BCG_Barcode1D;
@@ -46,7 +47,7 @@ class Code1 extends BaseImg
         $option['path'] = '/' . trim($option['path'], '/') . '/';
 
         if (!preg_match('/^[\x20\w\!\@\#\$\%\^\&\*\(\)\_\+\`\-\=\[\]\{\}\;\'\\\:\"\|\,\.\/\<\>\?]+$/', $option['code'])) {
-            throw new \Exception("条形码只能是英文、数字及半角符号组成");
+            throw new EspError("条形码只能是英文、数字及半角符号组成");
         }
 
         if (!!$option['split']) {

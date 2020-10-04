@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\core\ext\EspError;
+
 final class Output
 {
     private $option;
@@ -48,7 +50,8 @@ final class Output
      */
     public function rpc(string $uri)
     {
-        if (_VIRTUAL === 'rpc') throw new \Exception('RPC内不能请求rpc', 505);
+        if (_VIRTUAL === 'rpc') throw new EspError('RPC内不能请求rpc', 505);
+        if (!defined('_RPC')) throw new EspError("未定义_RPC");
 
         $this->url = sprintf('http://%s:%s/%s', _RPC['host'], _RPC['port'], ltrim($uri, '/'));
 

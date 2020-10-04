@@ -2,6 +2,8 @@
 
 namespace esp\library\img\code1;
 
+use esp\core\ext\EspError;
+
 final class BCG_Label
 {
     const POSITION_TOP = 0;
@@ -74,7 +76,7 @@ final class BCG_Label
     public function setFont($font = null)
     {
         if ($font === null) {
-            throw new \Exception('Font cannot be null.');
+            throw new EspError('Font cannot be null.');
         }
 
         $this->font = clone $font;
@@ -102,7 +104,7 @@ final class BCG_Label
     {
         $position = intval($position);
         if ($position !== self::POSITION_TOP && $position !== self::POSITION_RIGHT && $position !== self::POSITION_BOTTOM && $position !== self::POSITION_LEFT) {
-            throw new \Exception('The text position must be one of a valid constant.');
+            throw new EspError('The text position must be one of a valid constant.');
         }
 
         $this->position = $position;
@@ -127,7 +129,7 @@ final class BCG_Label
     {
         $alignment = intval($alignment);
         if ($alignment !== self::ALIGN_LEFT && $alignment !== self::ALIGN_TOP && $alignment !== self::ALIGN_CENTER && $alignment !== self::ALIGN_RIGHT && $alignment !== self::ALIGN_BOTTOM) {
-            throw new \Exception('The text alignment must be one of a valid constant.');
+            throw new EspError('The text alignment must be one of a valid constant.');
         }
 
         $this->alignment = $alignment;

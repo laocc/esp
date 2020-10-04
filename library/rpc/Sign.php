@@ -1,6 +1,6 @@
 <?php
 
-namespace esp\core\rpc;
+namespace library\rpc;
 
 
 trait Sign

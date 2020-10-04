@@ -119,7 +119,7 @@ final class Debug
     public function save_file(string $filename, string $data)
     {
         $send = null;
-        if ($this->_save_type === 'redis') {
+        if ($this->_save_type === 'redis' and defined('_DEBUG_PUSH_KEY')) {
             //发送到队列，由后台写入实际文件
             $debug = [];
             $debug['filename'] = $filename;
@@ -168,7 +168,7 @@ final class Debug
     /**
      * 保存记录到的数据
      * @param string $pre
-     * @return bool|int|null|string
+     * @return string
      */
     public function save_logs(string $pre = '')
     {

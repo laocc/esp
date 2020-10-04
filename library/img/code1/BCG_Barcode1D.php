@@ -2,6 +2,8 @@
 
 namespace esp\library\img\code1;
 
+use esp\core\ext\EspError;
+
 abstract class BCG_Barcode1D extends BCG_Barcode
 {
     const SIZE_SPACING_FONT = 5;
@@ -43,7 +45,7 @@ abstract class BCG_Barcode1D extends BCG_Barcode
     {
         $this->thickness = intval($thickness);
         if ($this->thickness <= 0) {
-            throw new \Exception('The thickness must be larger than 0.');
+            throw new EspError('The thickness must be larger than 0.');
         }
     }
 

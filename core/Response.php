@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\core\ext\EspError;
 use esp\core\face\Adapter;
 use esp\library\ext\Xml;
 
@@ -106,7 +107,7 @@ final class Response
                 break;
 
             default:
-                throw new \Exception("不接受{$name}类型的值");
+                throw new EspError("不接受{$name}类型的值");
 
         }
         return true;
@@ -208,7 +209,7 @@ final class Response
         if (!$this->_view_set['view_use']) return null;
 
         if (!$this->_request->virtual) {
-            throw new \Exception("registerAdapter要在routeAfter之后执行", 500);
+            throw new EspError("registerAdapter要在routeAfter之后执行", 500);
         }
         return $this->getView()->registerAdapter($adapter);
     }

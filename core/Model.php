@@ -7,6 +7,7 @@ use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
 use esp\core\db\Yac;
+use esp\core\ext\EspError;
 use esp\core\ext\Mysql as MysqlExt;
 use esp\core\ext\Page as PageExt;
 
@@ -181,7 +182,7 @@ abstract class Model
      * @param string $action
      * @param $data
      * @return null
-     * @throws \Exception
+     * @throws EspError
      */
     private function checkRunData(string $action, $data)
     {
@@ -199,7 +200,7 @@ abstract class Model
 //            return $json[2];
 //        }
 
-        throw new \Exception($data);
+        throw new EspError($data);
     }
 
     /**
@@ -209,12 +210,12 @@ abstract class Model
      * @param bool $returnID 返回新ID,false时返回刚刚添加的数据
      * @param null $pre
      * @return int|null
-     * @throws \Exception
+     * @throws EspError
      */
     final public function insert(array $data, bool $full = false, bool $returnID = true, $pre = null)
     {
         $table = $this->table();
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         $mysql = $this->Mysql();
         $data = $full ? $data : $this->_FillField($mysql->dbName, $table, $data);
         $obj = $mysql->table($table);
@@ -243,12 +244,12 @@ abstract class Model
      * @param string $sql
      * @param null $pre
      * @return mixed
-     * @throws \Exception
+     * @throws EspError
      */
     final public function delete($where, &$sql = '', $pre = null)
     {
         $table = $this->table();
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
@@ -272,16 +273,16 @@ abstract class Model
      * @param string $sql
      * @param null $pre
      * @return bool|db\ext\Result|null
-     * @throws \Exception
+     * @throws EspError
      */
     final public function update($where, array $data, &$sql = '', $pre = null)
     {
         $table = $this->table();
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        if (empty($where)) throw new \Exception('Update Where 禁止为空');
+        if (empty($where)) throw new EspError('Update Where 禁止为空');
         $mysql = $this->Mysql();
 
         if ($this->__cache === true) {
@@ -303,7 +304,7 @@ abstract class Model
     {
         try {
             return gzcompress($string, 5);
-        } catch (\Exception $e) {
+        } catch (EspError $e) {
             return $e->getMessage();
         }
     }
@@ -317,7 +318,7 @@ abstract class Model
     {
         try {
             return gzuncompress($string);
-        } catch (\Exception $e) {
+        } catch (EspError $e) {
             return $e->getMessage();
         }
     }
@@ -335,7 +336,7 @@ abstract class Model
     {
         $mysql = $this->Mysql();
         $table = $this->table();
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
@@ -463,7 +464,7 @@ abstract class Model
     final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0, &$sql = '', $pre = null)
     {
         $table = $this->table();
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         $obj = $this->Mysql()->table($table)->prepare();
         if ($orderBy === 'PRI') {
             $orderBy = $this->PRI($table);
@@ -537,7 +538,7 @@ abstract class Model
     final public function list($where = null, $orderBy = null, string $sort = 'desc', &$sql = '', $pre = null)
     {
         $table = $this->table();
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         if ($this->pageSize === 0) $this->pageSet();
         $obj = $this->Mysql()->table($table);
         if (!empty($this->selectKey)) {
@@ -668,7 +669,7 @@ abstract class Model
      * @param $select
      * @param bool $add_identifier
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
     final public function select($select, $add_identifier = true)
     {
@@ -729,7 +730,7 @@ abstract class Model
         if (isset($this->_branch) and !empty($this->_branch)) {
             $_branch = $this->_config->get($this->_branch);
             if (empty($_branch) or !is_array($_branch)) {
-                throw new \Exception("Model中`_branch`指向内容非Mysql配置信息", 501);
+                throw new EspError("Model中`_branch`指向内容非Mysql配置信息", 501);
             }
             $conf = $_branch + $conf;
         }
@@ -738,7 +739,7 @@ abstract class Model
         }
 
         if (empty($conf) or !is_array($conf)) {
-            throw new \Exception("`Database.Mysql`配置信息错误", 501);
+            throw new EspError("`Database.Mysql`配置信息错误", 501);
         }
 //            if (defined('_DISABLED_PARAM') and _DISABLED_PARAM) $_conf['param'] = false;
         $this->_Mysql[$branchName][$tranID] = new Mysql($tranID, ($_conf + $conf));
@@ -758,7 +759,7 @@ abstract class Model
         if (!isset($this->_Mongodb[$db])) {
             $conf = $this->_config->get('database.mongodb');
             if (empty($conf)) {
-                throw new \Exception('无法读取mongodb配置信息', 501);
+                throw new EspError('无法读取mongodb配置信息', 501);
             }
             $this->_Mongodb[$db] = new Mongodb($_conf + $conf, $db);
             $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];

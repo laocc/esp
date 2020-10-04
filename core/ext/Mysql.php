@@ -45,7 +45,7 @@ trait Mysql
         if (is_null($table)) {
             $table = $this->table();
         }
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         $val = $this->Mysql()->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME')
             ->where(['table_name' => $table, 'EXTRA' => 'auto_increment'])
@@ -96,14 +96,14 @@ trait Mysql
     {
         if (is_bool($table)) list($table, $html) = [null, $table];
         $table = $table ?: $this->table();
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         $mysql = $this->Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('column_name as name,COLUMN_DEFAULT as default,column_type as type,column_key as key,column_comment as comment')
             ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
             ->order('ORDINAL_POSITION', 'asc')
             ->get()->rows();
-        if (empty($val)) throw new \Exception("Table '{$table}' doesn't exist");
+        if (empty($val)) throw new EspError("Table '{$table}' doesn't exist");
         if ($html) {
             $table = [];
             $table[] = '<table class="layui-table">';
@@ -172,12 +172,12 @@ trait Mysql
     final public function field(string $table = null)
     {
         $table = $table ?: $this->table();
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         $mysql = $this->Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
             ->get()->rows();
-        if (empty($val)) throw new \Exception("Table '{$table}' doesn't exist");
+        if (empty($val)) throw new EspError("Table '{$table}' doesn't exist");
         return $val;
     }
 
@@ -238,11 +238,11 @@ PHP;
         $data = $this->cache_get("{$mysql->dbName}.{$table}", '_title');
         if (!empty($data)) return $data;
 
-        if (!$table) throw new \Exception('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name');
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME as field,COLUMN_COMMENT as title')
             ->where(['table_name' => $table])->get()->rows();
-        if (empty($val)) throw new \Exception("Table '{$table}' doesn't exist");
+        if (empty($val)) throw new EspError("Table '{$table}' doesn't exist");
         $this->cache_set("{$mysql->dbName}.{$table}", '_title', $val);
         return $val;
     }
