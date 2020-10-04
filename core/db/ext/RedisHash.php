@@ -3,7 +3,6 @@
 
 namespace esp\core\db\ext;
 
-
 use \Redis;
 
 class RedisHash
@@ -69,8 +68,8 @@ class RedisHash
     }
 
     /**
-     * @param string[] ...$hashKey
-     * @return int
+     * @param string ...$hashKey
+     * @return bool|int
      */
     public function del(string ...$hashKey)
     {
@@ -165,7 +164,6 @@ class RedisHash
     /**
      * Adds a value to the hash stored at key only if this field isn't already in the hash.
      *
-     * @param   string $key
      * @param   string $hashKey
      * @param   string $value
      * @return  bool    TRUE if the field was set, FALSE if it was already present.
@@ -186,7 +184,6 @@ class RedisHash
     /**
      * Returns the length of a hash, in number of items
      *
-     * @param   string $key
      * @return  int     the number of items in a hash, FALSE if the key doesn't exist or isn't a hash.
      * @link    http://redis.io/commands/hlen
      * @example
@@ -206,10 +203,7 @@ class RedisHash
      * Removes a values from the hash stored at key.
      * If the hash table doesn't exist, or the key doesn't exist, FALSE is returned.
      *
-     * @param   string $key
-     * @param   string $hashKey1
-     * @param   string $hashKey2
-     * @param   string $hashKeyN
+     * @param   string ...$hashKey
      * @return  int     Number of deleted fields
      * @link    http://redis.io/commands/hdel
      * @example
@@ -240,7 +234,6 @@ class RedisHash
     /**
      * Returns the keys in a hash, as an array of strings.
      *
-     * @param   string $key
      * @return  array   An array of elements, the keys of the hash. This works like PHP's array_keys().
      * @link    http://redis.io/commands/hkeys
      * @example
@@ -265,6 +258,9 @@ class RedisHash
      * // }
      * // The order is random and corresponds to redis' own internal representation of the set structure.
      * </pre>
+     */
+    /**
+     * @return array
      */
     public function hKeys()
     {

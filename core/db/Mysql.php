@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace esp\core\db;
 
+use esp\core\Debug;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\Result;
-use esp\core\Debug;
 use esp\core\ext\EspError;
 
 class Mysql
@@ -206,6 +206,7 @@ class Mysql
      * @param null $pre
      * @return false|string
      * @throws EspError
+     * 此方法内若发生错误，必须以string返回
      */
     public function query_exec(string $sql, array $option, \PDO $CONN = null, $pre = null)
     {
@@ -315,14 +316,14 @@ class Mysql
                 unset($this->{$real}[$transID]);
                 $CONN = null;
                 goto tryExe; //重新执行
+                
             } else if ($transID > 0 and $upData) {
-//                print_r([$option, $error]);
                 $this->trans_back($CONN, $transID, $error);//回滚事务
             }
             if ($debug) $error['sql'] = $sql;
             if (_CLI) print_r($debugVal);
             ($debug and !_CLI) and $this->debug($debugOption + $debugVal, $pre);
-            return json_encode($error, 256);
+            return json_encode($error, 256 | 64);
         }
         ($debug and !_CLI) and $this->debug($debugOption + $debugVal, $pre);
         return $result;
@@ -460,7 +461,6 @@ class Mysql
         $fetch = [\PDO::FETCH_NUM, \PDO::FETCH_ASSOC, \PDO::FETCH_BOTH];
         if (!in_array($option['fetch'], [0, 1, 2])) $option['fetch'] = 2;
         $count = null;
-
         if (!empty($option['param']) or $option['prepare']) {
             try {
                 //预处理，返回结果允许游标上下移动
@@ -557,7 +557,6 @@ class Mysql
      */
     public function trans(int $trans_id = 1, array $batch_SQLs = [])
     {
-//        try {
         if ($trans_id === 0) {
             if ($trans_id === 0) throw new EspError("Trans Error: 事务ID须从1开始，不可以为0。");
         }
@@ -599,9 +598,6 @@ class Mysql
         }
 
         return new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $trans_id);
-//        } catch (EspError $exception) {
-//            $exception->display();
-//        }
     }
 
     /**
@@ -627,6 +623,9 @@ class Mysql
 
     /**
      * 回滚事务
+     * @param \PDO $CONN
+     * @param int $trans_id
+     * @param null $error
      * @return bool
      */
     public function trans_back(\PDO $CONN, $trans_id = 0, &$error = null)
@@ -642,7 +641,7 @@ class Mysql
             'prepare' => null,
             'param' => null,
             'result' => true,
-            'error' => $error[2],
+            'error' => $error[2] ?? json_encode($error, 256 | 64),
         ];
         !_CLI and $this->debug($this->_trans_error);
 

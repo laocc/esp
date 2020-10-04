@@ -23,7 +23,19 @@ class EspError extends \ErrorException
         $err['message'] = $this->getMessage();
         $err['file'] = $this->file();
         $err['trace'] = array_map(function ($e) {
-            return "{$e['file']}({$e['line']})";
+            if (isset($e['file'])) {
+                return "{$e['file']}({$e['line']})";
+
+            } else if (isset($e['class'])) {
+                if (isset($e['function'])) {
+                    return "{$e['class']}->{$e['function']}()";
+                }
+                return "{$e['class']}";
+
+            } else if (isset($e['function'])) {
+                return "{$e['function']}()";
+            }
+            return $e;
         }, $this->getTrace());
 
         if ($err['message'][0] === '{') {

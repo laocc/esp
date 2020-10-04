@@ -15,6 +15,7 @@
     "ext-libxml": "*",
     "ext-xml": "*",
     "ext-gd": "*",
+    "ext-redis": "*",
     "ext-simplexml": "*",
     "ext-mbstring": "*",
     "ext-pdo": "*"
