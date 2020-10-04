@@ -144,7 +144,7 @@ final class Input
                         $value = 0;
                     }
 
-                } else if (is_match($autoValue)) {
+                } else if (\esp\helper\is_match($autoValue)) {
                     //autoValue是一个正则表达式，常用的如：/^\w+$/
                     if (!preg_match($autoValue, $value)) $value = null;
 

@@ -321,8 +321,8 @@ class MarkdownObject
             //htmlspecialchars
             $span = ($matches['val']);
             if ($this->conf['link'] ?? 1) {
-                if (is_url($span)) $span = "<a href='{$span}' target='_blank'>{$span}</a>";
-                else if (is_domain($span)) $span = "<a href='http://{$span}' target='_blank'>{$span}</a>";
+                if (\esp\helper\is_url($span)) $span = "<a href='{$span}' target='_blank'>{$span}</a>";
+                else if (\esp\helper\is_domain($span)) $span = "<a href='http://{$span}' target='_blank'>{$span}</a>";
             }
 
             return $matches['hd'] . $this->makeHolder("<span {$style} data-line='328'>{$span}</span>");

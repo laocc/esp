@@ -130,7 +130,7 @@ final class Cache
         }
         if (is_null($filename)) return false;
         $html = $this->response->render();
-        $save = save_file($filename, $html);
+        $save = \esp\helper\save_file($filename, $html);
         if ($save !== strlen($html)) {
             @unlink($filename);
             return false;

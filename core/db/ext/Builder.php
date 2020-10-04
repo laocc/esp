@@ -1381,9 +1381,6 @@ final class Builder
         $sets = implode(', ', $sets);
         $sql = "UPDATE {$this->_table} SET {$sets} WHERE {$this->_build_where()}";
 
-        var_dump($sql);
-        var_dump($this->_param_data);
-
         //如果有抛错，则不执行，由后面记录sQL内容
         if (isset($Exception)) goto err;
 

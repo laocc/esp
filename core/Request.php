@@ -167,7 +167,7 @@ final class Request
         $key = strtolower($key);
         $unique = $_COOKIE[$key] ?? null;
         if (!$unique) {
-            $unique = $number ? mt_rand() : str_rand(20);
+            $unique = $number ? mt_rand() : \esp\helper\str_rand(20);
             if (headers_sent($file, $line)) {
                 throw new \Exception("Header be Send:{$file}[{$line}]", 505);
             }

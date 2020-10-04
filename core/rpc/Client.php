@@ -198,7 +198,7 @@ class Client
      */
     private function realUrl(string $url, string $action, $data, $async)
     {
-        if (!is_url($url)) throw new \Exception("请求调用地址不是一个合法的URL");
+        if (!\esp\helper\is_url($url)) throw new \Exception("请求调用地址不是一个合法的URL");
 
         $_data = [
             $this->_form_key['action'] => $action,

@@ -140,7 +140,7 @@ final class Input
                         $value = 0;
                     }
 
-                } else if (is_match($autoValue)) {
+                } else if (\esp\helper\is_match($autoValue)) {
                     //autoValue是一个正则表达式，常用的如：/^\w+$/
                     if (!preg_match($autoValue, $value)) $value = null;
 
@@ -267,7 +267,7 @@ final class Input
                         $value[$index] = trim($data[$param]);
                     }
                     //autoValue是一个正则表达式，常用的如：/^\w+$/
-                    if ($autoValue and is_match($autoValue)) {
+                    if ($autoValue and \esp\helper\is_match($autoValue)) {
                         if (!preg_match($autoValue, $value[$index])) $value[$index] = null;
                     } elseif (self::_XSS_CLEAN) {
                         Xss::clear($value[$index]);

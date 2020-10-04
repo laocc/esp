@@ -389,10 +389,10 @@ final class Upload
         $conf = $this->option['allow']['size'];
         $limitSize = json_decode($conf, true);
         if (is_array($limitSize)) {
-            $limitSize[0] = re_size($limitSize[0]);
-            $limitSize[1] = re_size($limitSize[1]);
+            $limitSize[0] = \esp\helper\re_size($limitSize[0]);
+            $limitSize[1] = \esp\helper\re_size($limitSize[1]);
         } else {
-            $limitSize = re_size($conf);
+            $limitSize = \esp\helper\re_size($conf);
         }
         if (is_array($limitSize) and ($limitSize[0] > $size or ($limitSize[1] > 0 and $limitSize[1] < $size))) {
             if ($limitSize[0] == 0)

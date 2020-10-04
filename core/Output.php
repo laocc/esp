@@ -423,7 +423,7 @@ final class Output
             if (is_array($option['host'])) {
                 $cOption[CURLOPT_RESOLVE] = $option['host'];
             } else {
-                if (!is_ip($option['host'])) {
+                if (!\esp\helper\is_ip($option['host'])) {
                     $response['message'] = 'host must be a IP address';
                     return $response;
                 }

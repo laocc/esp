@@ -313,8 +313,8 @@ class Markdown
 
             //htmlspecialchars
             $span = htmlspecialchars($matches['val']);
-//            if (is_url($span)) $span = "<a href='{$span}' target='_blank'>{$span}</a>";
-//            else if (is_domain($span)) $span = "<a href='http://{$span}' target='_blank'>{$span}</a>";
+//            if (\esp\helper\is_url($span)) $span = "<a href='{$span}' target='_blank'>{$span}</a>";
+//            else if (\esp\helper\is_domain($span)) $span = "<a href='http://{$span}' target='_blank'>{$span}</a>";
 
             return $matches['hd'] . self::makeHolder("<span {$style} data-line='314'>{$span}</span>");
         }, $text);
