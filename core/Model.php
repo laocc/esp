@@ -396,7 +396,7 @@ abstract class Model
      * @param string $sql
      * @param null $pre
      * @return array|mixed
-     * @throws \ErrorException
+     * @throws EspError
      */
     final public function in(array $ids, $where = null, $orderBy = null, $sort = 'asc', &$sql = '', $pre = null)
     {
@@ -507,12 +507,6 @@ abstract class Model
     }
 
 
-//
-//    public function group(){
-//
-//    }
-
-
     private $_count = null;
 
     /**
@@ -532,8 +526,8 @@ abstract class Model
      * @param string $sort
      * @param string $sql
      * @param null $pre
-     * @return array|mixed
-     * @throws \ErrorException
+     * @return array|mixed|null
+     * @throws EspError
      */
     final public function list($where = null, $orderBy = null, string $sort = 'desc', &$sql = '', $pre = null)
     {

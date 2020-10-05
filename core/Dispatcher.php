@@ -92,9 +92,7 @@ final class Dispatcher
             }
             if ($config['run']) {
                 $this->_session = new Session($config, $this->_debug);
-                if (!is_null($this->_debug)) {
-                    $this->_debug->relay(['cookies' => $_COOKIE, 'session' => $_SESSION]);
-                }
+                $this->relayDebug(['cookies' => $_COOKIE, 'session' => $_SESSION]);
             }
         }
 
@@ -117,6 +115,11 @@ final class Dispatcher
         }
     }
 
+    private function relayDebug($info)
+    {
+        if (is_null($this->_debug)) return;
+        $this->_debug->relay($info, []);
+    }
 
     /**
      * @return Request
@@ -192,7 +195,7 @@ final class Dispatcher
             return false;
         }
         if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'displayBefore', 'displayAfter', 'mainEnd'])) {
-            return;
+            return false;
         }
         foreach ($this->_plugs as $plug) {
             if (method_exists($plug, $time)) {
@@ -279,14 +282,14 @@ final class Dispatcher
             print_r($value);
         } else {
             if (!is_null($this->_session) and !is_null($this->_debug)) {
-                $this->_debug->relay(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
+                $this->relayDebug(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
                 session_write_close();//立即保存并结束
             }
             $this->_response->display($value);
         }
         $this->_plugs_count and $hook = $this->plugsHook('displayAfter');
 
-        if (!_CLI and _DEBUG and !is_null($this->_debug) && $this->_debug->_save_type !== 'cgi') {
+        if (!_CLI and _DEBUG and !is_null($this->_debug) && $this->_debug->_save_mode !== 'cgi') {
             fastcgi_finish_request();//运行结束，客户端断开
         }
 
@@ -298,12 +301,9 @@ final class Dispatcher
         $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-            if ($this->_debug->_save_type === 'cgi') {
-                $save = $this->_debug->save_logs('Dispatcher Debug');
-                $this->check_debug($save);
-                if (!$this->_request->isAjax()) {
-                    var_dump($save);
-                }
+
+            if ($this->_debug->_save_mode === 'cgi') {
+                $this->_debug->save_logs('Dispatcher Debug');
                 return;
             }
 
@@ -311,18 +311,6 @@ final class Dispatcher
                 $this->_debug->save_logs('Dispatcher');
             });
         }
-    }
-
-    private function check_debug($save, $file = null): void
-    {
-//        if (!getenv('HTTP_DEBUG')) return;
-        $testDebug = [];
-        $file .= $this->_request->controller . '_' . $this->_request->action;
-        $testDebug['ua'] = getenv('HTTP_USER_AGENT');
-        $testDebug['ver'] = getenv('HTTP_DEBUG');
-        $testDebug['file'] = $this->_debug->filename();
-        $testDebug['save'] = $save;
-        file_put_contents(_RUNTIME . '/debug/' . date('YmdHis_') . $file . '.txt', json_encode($testDebug, 64 | 128 | 256), LOCK_EX);
     }
 
     /**
@@ -354,13 +342,13 @@ final class Dispatcher
         if (defined('_PSR4') and !_PSR4) {
             $base = $this->_request->directory . "/{$virtual}/controllers/Base{$contExt}.php";
             $file = $this->_request->directory . "/{$virtual}/controllers/{$cFile}.php";
-            if (is_readable($base)) {
-                \esp\helper\load($base);
-            }
+            if (is_readable($base)) \esp\helper\load($base);
+
             //加载控制器公共类，有可能不存在
             if (!\esp\helper\load($file)) {
                 return $this->err404("[{$this->_request->directory}/{$virtual}/controllers/{$cFile}.php] not exists.");
             }
+
             $cName = '\\' . $module . '\\' . $cFile;
         } else {
             $cName = '\\application\\' . $module . '\\controllers\\' . $cFile;
@@ -368,19 +356,16 @@ final class Dispatcher
 
         if (!$contExt) $cName .= 'Controller';
 
-        if (!class_exists($cName)) {
-            return $this->err404("[{$cName}] not exists.");
-        }
+        if (!class_exists($cName)) return $this->err404("[{$cName}] not exists.");
+
         $cont = new $cName($this);
         if (!$cont instanceof Controller) {
             throw new EspError("{$cName} 须继承自 \\esp\\core\\Controller", 404);
         }
-        $_call = null;
+
         if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {
             if (method_exists($cont, $auto) and is_callable([$cont, $auto])) {
                 $action = $auto;
-//            } else if (method_exists($cont, '_call') and is_callable([$cont, '_call'])) {
-//                $_call = '_call';
             } else {
                 return $this->err404("[{$cName}::{$action}()] not exists.");
             }
@@ -390,29 +375,19 @@ final class Dispatcher
 
         //运行初始化方法
         if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
-            if (!is_null($this->_debug)) {
-                $this->_debug->relay("[blue;{$cName}->_init() ============================]", []);
-            }
+            $this->relayDebug("[blue;{$cName}->_init() ============================]");
             $contReturn = call_user_func_array([$cont, '_init'], [$action]);
             if (!is_null($contReturn)) {
-                if (!is_null($this->_debug)) {
-                    $this->_debug->relay(['_init' => 'return', 'return' => $contReturn], []);
-                }
-//                return $contReturn;
+                $this->relayDebug(['_init' => 'return', 'return' => $contReturn]);
                 goto close;
             }
         }
 
         if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
-            if (!is_null($this->_debug)) {
-                $this->_debug->relay("[blue;{$cName}->_main() =============================]", []);
-            }
+            $this->relayDebug("[blue;{$cName}->_main() =============================]");
             $contReturn = call_user_func_array([$cont, '_main'], [$action]);
             if (!is_null($contReturn)) {
-                if (!is_null($this->_debug)) {
-                    $this->_debug->relay(['_main' => 'return', 'return' => $contReturn], []);
-                }
-//                return $contReturn;
+                $this->relayDebug(['_main' => 'return', 'return' => $contReturn]);
                 goto close;
             }
         }
@@ -420,17 +395,11 @@ final class Dispatcher
         /**
          * 正式请求到控制器
          */
-        if (!is_null($this->_debug)) {
-            $this->_debug->relay("[green;{$cName}->{$action} Star ==============================]", []);
-        }
-        if ($_call) {
-            $contReturn = call_user_func_array([$cont, '_call'], [$action, $this->_request->params]);
-        } else {
-            $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
-        }
-        if (!is_null($this->_debug)) {
-            $this->_debug->relay("[red;{$cName}->{$action} End ==============================]", []);
-        }
+        $this->relayDebug("[green;{$cName}->{$action} Star ==============================]");
+        $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
+        $this->relayDebug("[red;{$cName}->{$action} End ==============================]");
+
+        //在控制器中，如果调用了reload方法，则所有请求数据已变化，loop将赋为true，开始重新加载
         if ($this->_request->loop === true) {
             $this->_request->loop = false;
             goto LOOP;
@@ -440,18 +409,12 @@ final class Dispatcher
         //运行结束方法
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
             $clo = call_user_func_array([$cont, '_close'], [$action, $contReturn]);
-            if (!is_null($clo)) {
-                $contReturn = $clo;
-            }
-            if (!is_null($this->_debug)) {
-                $this->_debug->relay("[red;{$cName}->_close() ==================================]", []);
-            }
+            if (!is_null($clo)) $contReturn = $clo;
+            $this->relayDebug("[red;{$cName}->_close() ==================================]");
         }
 
         $rest = $cont->ReorganizeReturn($contReturn);
-        if (!is_null($rest)) {
-            return $rest;
-        }
+        if (!is_null($rest)) return $rest;
 
         return $contReturn;
     }
@@ -459,16 +422,9 @@ final class Dispatcher
 
     final private function err404(string $msg)
     {
-        if (!is_null($this->_debug)) {
-            $this->_debug->folder('error');
-        }
-        if (_DEBUG) {
-            return $msg;
-        }
+        if (!is_null($this->_debug)) $this->_debug->folder('error');
         $empty = $this->_config->get('frame.request.empty');
-        if (!empty($empty)) {
-            return $empty;
-        }
+        if (!empty($empty)) return $empty;
         return $msg;
     }
 }

@@ -56,7 +56,7 @@ final class Error
          * 严重错误
          * @param $error
          */
-        $handler_exception = function (\Error $error) use ($option) {
+        $handler_exception = function (\Throwable $error) use ($option) {
 //            Session::reset();
             $err = Array();
             $err['code'] = $error->getCode();
@@ -66,6 +66,8 @@ final class Error
 
             $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
 
+            $ajax = (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
+            $post = (strtolower(getenv('REQUEST_METHOD') ?: '') === 'post');
             switch (true) {
                 case _CLI:
                     echo json_encode($err, 256 | 128 | 64);
@@ -79,14 +81,12 @@ final class Error
                     }
                     break;
 
+                case ($ajax or $post):
+                    echo json_encode($err, 256 | 128 | 64);
+                    break;
+
                 case ($option['display'] === 'json'):
-                    //ajax方式下，都只显示简单信息
-                    if (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest' or
-                        strtolower(getenv('REQUEST_METHOD') ?: '') === 'post') {
-                        echo json_encode($err, 256 | 128 | 64);
-                    } else {
-                        echo '<pre>' . json_encode($err, 256 | 128 | 64) . '</pre>';
-                    }
+                    echo '<pre>' . json_encode($err, 256 | 128 | 64) . '</pre>';
                     break;
 
                 case ($option['display'] === 'html'):
@@ -222,7 +222,7 @@ HTML;
      * 显示并停止所有操作
      * @param $error
      */
-    private function displayError(\Error $error)
+    private function displayError(\Throwable $error)
     {
         $err = Array();
         $err['code'] = $error->getCode();

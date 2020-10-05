@@ -22,9 +22,16 @@ final class Debug
     private $_response;
     private $_redis;
     private $_errorText;
-    public $_save_type = 'shutdown';
     private $_ROOT_len = 0;
     private $_key;//保存记录的Key,要在控制器中->key($key)
+
+    /**
+     * 保存方式:
+     * shutdown(进程结束后),
+     * cgi(FastCGI中直接保存),
+     * rpc/redis/task(发送RPC.redis队列.后台task)
+     */
+    public $_save_mode = 'shutdown';
 
     public function __construct(Request $request, Response $response, Redis $redis, array &$config)
     {
@@ -38,11 +45,11 @@ final class Debug
             case 'rpc':
                 if (defined('_RPC')
                     and !in_array(getenv('SERVER_ADDR'), $conf['server'] ?? [_RPC['ip']])) {
-                    $this->_save_type = 'rpc';
+                    $this->_save_mode = 'rpc';
                 }
                 break;
             default:
-                $this->_save_type = $conf['api'] ?? 'file';
+                $this->_save_mode = $conf['api'] ?? 'cgi';
         }
 
         $this->_conf = $conf;
@@ -119,7 +126,7 @@ final class Debug
     public function save_file(string $filename, string $data)
     {
         $send = null;
-        if ($this->_save_type === 'redis' and defined('_DEBUG_PUSH_KEY')) {
+        if ($this->_save_mode === 'redis' and defined('_DEBUG_PUSH_KEY')) {
             //发送到队列，由后台写入实际文件
             $debug = [];
             $debug['filename'] = $filename;
@@ -128,7 +135,7 @@ final class Debug
             $send = $this->_redis->push(_DEBUG_PUSH_KEY, $debug);
             if ($send) return "redis:{$send}";
 
-        } else if ($this->_save_type === 'task') {
+        } else if ($this->_save_mode === 'task') {
             //发送到异步task任务，由后台写入实际文件
             $debug = [];
             $debug['filename'] = $filename;
@@ -139,7 +146,7 @@ final class Debug
         }
 //        $this->_run = false;//防止重复保存
 
-        if ($this->_save_type === 'rpc' or !is_null($send)) {
+        if ($this->_save_mode === 'rpc' or !is_null($send)) {
             //如果当前服务器是主服务器，则直接写入
             if (is_dir(_RUNTIME . '/debug/move/')) {
                 return 'Move:' . file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), $data, LOCK_EX);

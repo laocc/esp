@@ -43,21 +43,6 @@ abstract class Controller
         $this->_debug = &$dispatcher->_debug;
         $this->_buffer = $this->_config->Redis();
         $this->_cookies = &$dispatcher->_request->cookies;
-        if (_CLI) return;
-
-        if (defined('_DEBUG_PUSH_KEY')) {
-            register_shutdown_function(function (Request $request) {
-                //发送访问记录到redis队列管道中，后面由cli任务写入数据库
-                $debug = [];
-                $debug['time'] = time();
-                $debug['virtual'] = _VIRTUAL;
-                $debug['module'] = $request->module;
-                $debug['controller'] = $request->controller;
-                $debug['action'] = $request->action;
-                $debug['method'] = $request->method;
-                $this->_buffer->push(_DEBUG_PUSH_KEY, $debug);
-            }, $this->_request);
-        }
     }
 
     /**
@@ -356,13 +341,12 @@ abstract class Controller
                 $this->_debug->save_logs('Controller Redirect');
             });
         }
-//        return true;
         exit;
     }
 
-    final protected function exit(string $route = '')
+    final protected function exit(string $text = '')
     {
-        echo $route;
+        echo $text;
         fastcgi_finish_request();
         if (!is_null($this->_debug)) {
             register_shutdown_function(function () {
@@ -416,7 +400,6 @@ abstract class Controller
             and $controller == $this->_request->controller
             and $action == $this->_request->action
         ) return false;
-//        var_dump([$directory,$module,$controller,$action]);
 
         $this->_request->directory = $directory;
         $this->_request->module = $module;
@@ -636,7 +619,6 @@ abstract class Controller
     {
         $value = &$this->result;
         if (empty($value)) return null;
-//        if (!$this->getRequest()->isAjax()) return null;
 
         if (is_string($return)) {
             $value = ['success' => 0, 'message' => $return] + $value;
@@ -667,28 +649,6 @@ abstract class Controller
     {
         $this->result[$name] = $value;
         return $this;
-    }
-
-    final public function __set(string $name, $value): Controller
-    {
-        $this->result[$name] = $value;
-        return $this;
-    }
-
-    final protected function set(string $name, $value = null): Controller
-    {
-        $this->result[$name] = $value;
-        return $this;
-    }
-
-    final public function __get(string $name)
-    {
-        return $this->result[$name] ?? null;
-    }
-
-    final protected function get(string $name)
-    {
-        return $this->result[$name] ?? null;
     }
 
 }
