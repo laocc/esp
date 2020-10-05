@@ -10,46 +10,33 @@
 - 这是一个高效简洁的PHP框架。本框架的部分结构思路参考YAF框架`官网：http://yaf.laruence.com`。
 如果要追求极至性能，推荐使用yaf框架，ESP是在参考yaf的基础上，增加了很多yaf并未实现的方法。
 也打包了一些实际开发中常用的功能。
-实际上本人在以往的开发中基本上用的也是这套框架结构，只不过没有现在这么整洁规范，现在融入了yaf的结构思想，特别是Bootstrap及插件hook方法，让程序更可塑。
 
 # 一、安装
-- 网站核心文件加载机制为利用composer的autoload，另外程序所需要的一些插件也依赖于composer，所以关于composer部分，请参看[`composer.md`](./composer.md)文件。
-- 下载本系统源码，且也安装好composer后，在根目录中运行`composer install`。
-- Nginx（配置文件见[nginx.conf](./nginx.conf)），Apache，IIS下均可正常运行，PHP要求5.6以上，建议7.0以上。
+composer：
+```json
+{
+  "name": "mypro/1.1",
+  "require": {
+    "laocc/esp": "dev-master"
+  }
+}
+```
 
 ```
 composer install
 composer update
 composer dump-autoload
 composer dump-autoload --optimize
-```
 
-# 二、文件结构：
-```
-├── application     网站业务程序部分
-│   ├── admin       admin模块
-│   │   ├── controllers     控制器中心    
-│   │   ├── models          数据模数中心
-│   │   └── views           视图中心
-│   └── www         www模块
-├── config          系统定义
-├── config          系统定义
-├── core            *系统核心程序
-├── extend          *系统自带扩展程序          
-├── helper          辅助程序
-├── library         网站自定义增加的扩展程序
-├── plugins         网站自定义插件
-├── public      
-│   ├── admin       admin子站入口
-│   └── www         www子站入口
-└── vendor          composer创建的文件
+https://mirrors.aliyun.com/composer/
+https://packagist.phpcomposer.com/
+
 ```
 
 # 三、程序说明：
 - 程序结构为` 虚拟机 > 模块 > 控制器 - 数据模型 > 动作 > 视图 `，数据模型、视图，均由控制器派生出来。
-- 程序可以有任意多个虚拟机，一般情况下一个虚拟机对应一个子站，路由中可以任意指定模块，在控制器内也可以在`虚拟机>模块>控制器>动作`间切换；
-- 网站入口`/public/www/index.php`，其中`www`为对应的模块名，实际模块名由该文件中`_VIRTUAL`决定。
-- 关于文件名大小写：所有路径均为小写，表示为一个类的文件名须为首字母大写，如：`Article.php`，其他文件均为小写。虽然在win系统中大小写不敏感，但建议也严格按此约定命名。
+- 程序可以有任意多个虚拟机，一般情况下一个虚拟机对应一个子站；
+- 网站入口`/public/www/index.php`，其中`www`建议对应模块名，实际模块名由`_VIRTUAL`决定。
 
 index.php:
 ```
