@@ -56,14 +56,19 @@ final class Error
          * 严重错误
          * @param $error
          */
-        $handler_exception = function (EspError $error) use ($option) {
+        $handler_exception = function (\Error $error) use ($option) {
 //            Session::reset();
+            $err = Array();
+            $err['code'] = $error->getCode();
+            $err['message'] = $error->getMessage();
+            $err['file'] = $error->getFile() . '(' . $error->getLine() . ')';
+            $err['trace'] = $error->getTrace();
 
-            $this->error($error, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
 
             switch (true) {
                 case _CLI:
-                    echo json_encode($error->display(), 256 | 128 | 64);
+                    echo json_encode($err, 256 | 128 | 64);
                     break;
 
                 case is_int($option['display']):
@@ -78,9 +83,9 @@ final class Error
                     //ajax方式下，都只显示简单信息
                     if (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest' or
                         strtolower(getenv('REQUEST_METHOD') ?: '') === 'post') {
-                        echo json_encode($error->display(), 256 | 128 | 64);
+                        echo json_encode($err, 256 | 128 | 64);
                     } else {
-                        echo '<pre>' . json_encode($error->display(), 256 | 128 | 64) . '</pre>';
+                        echo '<pre>' . json_encode($err, 256 | 128 | 64) . '</pre>';
                     }
                     break;
 
@@ -130,12 +135,12 @@ final class Error
 
     /**
      * 仅记录错误，但不阻止程序继续运行
-     * @param EspError $error
+     * @param array $error
      * @param array $prev
      * @param string $path
      * @param string $filename
      */
-    private function error(EspError $error, array $prev, string $path, string $filename)
+    private function error(array $error, array $prev, string $path, string $filename)
     {
         $debug = Debug::class();
         $info = [
@@ -143,7 +148,7 @@ final class Error
             'HOST' => getenv('HTTP_HOST'),
             'Url' => _HTTP_ . _DOMAIN . _URI,
             'Debug' => !is_null($debug) ? $debug->filename() : '',
-            'Error' => $error->debug(),
+            'Error' => $error,
             'Server' => $_SERVER,
             'Post' => file_get_contents("php://input"),
             'prev' => $prev
@@ -217,13 +222,19 @@ HTML;
      * 显示并停止所有操作
      * @param $error
      */
-    private function displayError(EspError $error)
+    private function displayError(\Error $error)
     {
+        $err = Array();
+        $err['code'] = $error->getCode();
+        $err['message'] = $error->getMessage();
+        $err['file'] = $error->getFile() . '(' . $error->getLine() . ')';
+        $err['trace'] = $error->getTrace();
         if (_CLI) {
             echo "\n\e[40;31;m================ERROR=====================\e[0m\n";
-            print_r($error->display());
+            print_r($err);
             exit;
         }
+
         $trace = $error->getTrace();
         $traceHtml = '';
         foreach (array_reverse($trace) as $tr) {
@@ -254,7 +265,7 @@ HTML;
         $errValue['time'] = date('Y-m-d H:i:s');
         $errValue['title'] = $error->getMessage();
         $errValue['code'] = $error->getCode();
-        $errValue['file'] = $error->file();
+        $errValue['file'] = $err['file'];
         $errValue['trace'] = $traceHtml;
 
         ob_start();
