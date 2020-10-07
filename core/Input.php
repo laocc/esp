@@ -87,7 +87,7 @@ final class Input
             else if ($autoValue === 'date_time') return time();
             return $autoValue;
         }
-        $value = trim($data[$param]);
+        $value = ($data[$param]);
         if ($param === 'date_zone') {
             $date = $value;
             if (!empty($date)) {
@@ -115,7 +115,7 @@ final class Input
             case is_string($autoValue):
                 if ($autoValue === '') {
                     //\%\&\^\$\#\(\)\[\]\{\}\?
-                    $value = preg_replace('/[\"\']/', '', $value);
+                    $value = preg_replace('/[\"\']/', '', trim($value));
 //                    if ($value && self::_XSS_CLEAN) Xss::clear($value);
 
                 } elseif ($autoValue === 'real') {
@@ -150,25 +150,25 @@ final class Input
 
                 } else if (\esp\helper\is_match($autoValue)) {
                     //autoValue是一个正则表达式，常用的如：/^\w+$/
-                    if (!preg_match($autoValue, $value)) $value = null;
+                    if (!preg_match($autoValue, trim($value))) $value = null;
 
                 }
                 break;
 
             case is_int($autoValue):
-                $value = intval($value);
+                $value = intval(trim($value));
                 break;
 
             case is_float($autoValue):
-                $value = floatval($value);
+                $value = floatval(trim($value));
                 break;
 
             case is_bool($autoValue):
-                $value = boolval($value);
+                $value = boolval(trim($value));
                 break;
 
             case is_array($autoValue):
-                if (!is_array($value)) $value = json_decode($value, true);
+                if (!is_array($value)) $value = json_decode(trim($value), true);
                 if (isset($autoValue[1]) and ($autoValue[1] === 'bit')) {
                     $sum = 0;
                     foreach ($value as $v) $sum = $sum | intval($v);
@@ -181,11 +181,11 @@ final class Input
                 break;
 
             case is_array($value):
-                $value = json_encode($value, 256 | 64);
+                $value = json_encode(trim($value), 256 | 64);
                 break;
 
             default:
-                if (!is_null($autoValue) && $value && self::_XSS_CLEAN) Xss::clear($value);
+                if (!is_null($autoValue) && $value && self::_XSS_CLEAN) Xss::clear(trim($value));
 
         }
         return $value;
