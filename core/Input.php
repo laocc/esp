@@ -19,17 +19,17 @@ final class Input
      * @param null $autoValue 如果有指定默认值，则返回数据也根据该值类型强制转换：int,bool,或是正则表达式
      * @return bool|null|string
      */
-    public static function get($param, $autoValue = null)
+    public static function get(string $param, $autoValue = null)
     {
         return self::requestParam($_GET, $param, $autoValue);
     }
 
-    public static function post($param, $autoValue = null)
+    public static function post(string $param, $autoValue = null)
     {
         return self::requestParam($_POST, $param, $autoValue);
     }
 
-    public static function any($param, $autoValue = null)
+    public static function any(string $param, $autoValue = null)
     {
         return self::requestParam($_REQUEST, $param, $autoValue);
     }
@@ -84,38 +84,39 @@ final class Input
     {
         if (!isset($data[$param])) {
             if ($param === 'date_zone') return self::date_zone($autoValue);
-            if ($autoValue === 'date_time') return strtotime(date('Y-m-d'));
+            else if ($autoValue === 'date_time') return time();
             return $autoValue;
         }
-        $value = $data[$param];
+        $value = trim($data[$param]);
+        if ($param === 'date_zone') {
+            $date = $value;
+            if (!empty($date)) {
+                $date = str_replace('%3A', ':', $date);
+                $date = str_replace(['+~+', '+-+', ' - '], '~', $date);
+                $day = explode('~', $date);
+                if (!isset($day[1])) $day[1] = $day[0];
+                $day[0] = trim($day[0]);
+                $day[1] = trim($day[1]);
+                $time = [strtotime($day[0]), strtotime($day[1])];
+
+                if (!$time[0] or !$time[1]) {//可能是非法数据
+                    $value = self::date_zone($autoValue);
+                } else {
+                    $value = [$day[0], $day[1], $time[0], $time[1], 'auto' => false];
+                }
+            } else {//基本是初始页面状态
+                $value = self::date_zone($autoValue);
+            }
+            if (!isset($value['auto'])) $value['auto'] = true;
+            return $value;
+        }
 
         switch (true) {
-            case $param === 'date_zone':
-                $date = trim($value);
-                if (!empty($date)) {
-                    $date = str_replace('%3A', ':', $date);
-                    $date = str_replace(['+~+', '+-+', ' - '], '~', $date);
-                    $day = explode('~', $date);
-                    if (!isset($day[1])) $day[1] = $day[0];
-                    $day[0] = trim($day[0]);
-                    $day[1] = trim($day[1]);
-                    $time = [strtotime($day[0]), strtotime($day[1])];
-
-                    if (!$time[0] or !$time[1]) {//可能是非法数据
-                        $value = self::date_zone($autoValue);
-                    } else {
-                        $value = [$day[0], $day[1], $time[0], $time[1], 'auto' => false];
-                    }
-                } else {//基本是初始页面状态
-                    $value = self::date_zone($autoValue);
-                }
-                if (!isset($value['auto'])) $value['auto'] = true;
-                break;
-
             case is_string($autoValue):
                 if ($autoValue === '') {
                     //\%\&\^\$\#\(\)\[\]\{\}\?
-                    $value = preg_replace('/[\"\']/', '', trim($value));
+                    $value = preg_replace('/[\"\']/', '', $value);
+//                    if ($value && self::_XSS_CLEAN) Xss::clear($value);
 
                 } elseif ($autoValue === 'real') {
                 } elseif ($autoValue === 'html') {
@@ -124,14 +125,21 @@ final class Input
                     if (is_string($value)) $value = json_decode($value, true);
                     $value = json_encode(array_map(function ($v) {
                         return ($v);//trim
-                    }, $value), 256);
+                    }, $value), 256 | 64);
+
+                } elseif ($autoValue === 'sum') {
+                    if (is_string($value)) $value = json_decode($value, true);
+                    if (!is_array($value) or empty($value)) $value = [];
+                    $sum = 0;
+                    foreach ($value as $v) $sum = $sum | intval($v);
+                    $value = $sum;
 
                 } elseif ($autoValue === 'array') {
                     if (is_string($value)) $value = json_decode($value, true);
                     if (empty($value)) $value = [];
 
                 } else if ($autoValue === 'date_time') {
-                    $date = trim($value);
+                    $date = $value;
                     if (!!$date) {
                         $date = str_replace('+', ' ', $date);
                         $date = str_replace('%3A', ':', $date);
@@ -148,19 +156,19 @@ final class Input
                 break;
 
             case is_int($autoValue):
-                $value = intval(trim($value));
+                $value = intval($value);
                 break;
 
             case is_float($autoValue):
-                $value = floatval(trim($value));
+                $value = floatval($value);
                 break;
 
             case is_bool($autoValue):
-                $value = boolval(trim($value));
+                $value = boolval($value);
                 break;
 
             case is_array($autoValue):
-                if (!is_array($value)) $value = json_decode(trim($value), true);
+                if (!is_array($value)) $value = json_decode($value, true);
                 if (isset($autoValue[1]) and ($autoValue[1] === 'bit')) {
                     $sum = 0;
                     foreach ($value as $v) $sum = $sum | intval($v);
@@ -172,10 +180,12 @@ final class Input
                 }
                 break;
 
-            default:
-                if (is_array($value)) $value = json_encode($value, 256);
+            case is_array($value):
+                $value = json_encode($value, 256 | 64);
+                break;
 
-                if (self::_XSS_CLEAN) Xss::clear($value);
+            default:
+                if (!is_null($autoValue) && $value && self::_XSS_CLEAN) Xss::clear($value);
 
         }
         return $value;
