@@ -75,10 +75,8 @@ function load(string $file)
  */
 function root(string $path, bool $real = false): string
 {
-    if (stripos($path, '/home/') === 0) {
-        if ($real) $path = realpath($path);
-        return rtrim($path, '/');
-    } else if (stripos($path, '/mnt/') === 0) {
+    foreach (['home', 'mnt', 'mdb'] as $r) {
+        if (stripos($path, "/{$r}/") !== 0) continue;
         if ($real) $path = realpath($path);
         return rtrim($path, '/');
     }
@@ -201,7 +199,6 @@ function replace_array(string $str, array $arr): string
         return "{{$k}}";
     }, array_keys($arr)), array_values($arr), $str);
 }
-
 
 
 /**

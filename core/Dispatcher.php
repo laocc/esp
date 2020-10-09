@@ -62,11 +62,10 @@ final class Dispatcher
         if (!defined('_CIP')) define('_CIP', $ip);
 
         if (isset($option['before'])) $option['before']($option);
-        $option += ['error' => [], 'config' => []];
 
         //以下2项必须在`chdir()`之前，且顺序不可变
-        if (!_CLI) $err = new Error($this, $option['error']);
-        $this->_config = new Configure($option['config']);
+        if (!_CLI) $err = new Error($this, $option['error'] ?? []);
+        $this->_config = new Configure($option['config'] ?? []);
         chdir(_ROOT);
 
         $this->_request = new Request($this->_config->get('frame.request'));

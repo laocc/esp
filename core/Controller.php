@@ -615,7 +615,7 @@ abstract class Controller
      * 505或warn：出错
      * 400或login：进入登录页面
      */
-    public function ReorganizeReturn($return)
+    final public function ReorganizeReturn($return)
     {
         $value = &$this->result;
         if (empty($value)) return null;

@@ -9,7 +9,8 @@ class EspError extends \ErrorException
     public function debug()
     {
         $err = Array();
-        $err['code'] = $this->getCode();
+        $err['success'] = 0;
+        $err['error'] = $this->getCode();
         $err['message'] = $this->getMessage();
         $err['file'] = $this->file();
         $err['trace'] = $this->getTrace();
@@ -19,7 +20,8 @@ class EspError extends \ErrorException
     public function display()
     {
         $err = Array();
-        $err['code'] = $this->getCode();
+        $err['success'] = 0;
+        $err['error'] = $this->getCode();
         $err['message'] = $this->getMessage();
         $err['file'] = $this->file();
         $err['trace'] = array_map(function ($e) {
@@ -44,6 +46,19 @@ class EspError extends \ErrorException
         }
 
         return $err;
+    }
+
+    private $context = null;
+
+    public function setContext($cont)
+    {
+        $this->context = $cont;
+        return $this;
+    }
+
+    public function getContext()
+    {
+        return $this->context;
     }
 
     public function message()

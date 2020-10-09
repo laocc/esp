@@ -6,6 +6,7 @@ namespace esp\core;
 use esp\core\db\File;
 use esp\core\db\Redis;
 use esp\core\ext\EspError;
+use function esp\helper\root;
 
 /**
  * Class Config
@@ -25,9 +26,9 @@ final class Configure
     {
         $this->_token = md5(__FILE__);
         $conf += ['path' => '/common/config'];
-        $conf['path'] = \esp\helper\root($conf['path']);
+        $conf['path'] = root($conf['path']);
         if (isset($conf['buffer'])) {
-            $bFile = \esp\helper\root($conf['buffer']);
+            $bFile = root($conf['buffer']);
             if (!is_readable($bFile)) throw new EspError("指定的buffer文件({$bFile})不存在");
         } else {
             $bFile = "{$conf['path']}/buffer.ini";
@@ -120,7 +121,6 @@ final class Configure
         if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) {
             $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
         }
-//        print_r($this->_CONFIG_);
     }
 
     public function flush(int $lev = 0): void
@@ -224,13 +224,13 @@ final class Configure
                 if (is_array($fil)) {
                     $_config[$key] = array();
                     foreach ($fil as $l => $f) {
-                        $_inc = $this->loadFile(\esp\helper\root($f), $l);
+                        $_inc = $this->loadFile(root($f), $l);
                         if (!empty($_inc)) {
                             $_config[$key] = $_inc + $_config[$key];
                         }
                     }
                 } else {
-                    $_inc = $this->loadFile(\esp\helper\root($fil), $key);
+                    $_inc = $this->loadFile(root($fil), $key);
                     if (!empty($_inc)) {
                         $_config = $_inc + $_config;
                     }
@@ -253,7 +253,7 @@ final class Configure
      */
     public function load(string $file, string $key = null, $auto = null)
     {
-        $conf = parse_ini_file(\esp\helper\root($file), true);
+        $conf = parse_ini_file(root($file), true);
         $conf = $this->re_arr($conf);
         if (is_null($key)) {
             return $conf;

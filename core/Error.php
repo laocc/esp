@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\ext\EspError;
+use function esp\helper\replace_array;
 
 final class Error
 {
@@ -37,7 +38,6 @@ final class Error
     private function register_handler(array $option)
     {
         $option += ['display' => 'json', 'filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
-
         /**
          * 一般警告错误
          * @param int $errNo
@@ -49,7 +49,53 @@ final class Error
         $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $context = null)
         use ($option) {
             //($message = "", $code = 0, $severity = 1, $filename = __FILE__, $lineno = __LINE__, $previous)
-            throw new EspError($errStr, $errNo, 1, $errFile, $errLine);
+            $error = new EspError($errStr, $errNo, 1, $errFile, $errLine);
+
+            $err = Array();
+            $err['success'] = 0;
+            $err['time'] = date('Y-m-d H:i:s');
+            $err['error'] = $errNo;
+            $err['message'] = $errStr;
+            $err['file'] = $errFile . '(' . $errLine . ')';
+            $err['trace'] = $error->getTrace();
+            $err['context'] = print_r($context, true);
+
+            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+            $ajax = (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
+            $post = (strtolower(getenv('REQUEST_METHOD') ?: '') === 'post');
+
+            switch (true) {
+                case _CLI:
+                    echo json_encode($err, 256 | 128 | 64);
+                    break;
+
+                case is_int($option['display']):
+                    if ($option['display'] === 0) {
+                        $this->displayState($error->getCode());
+                    } else {
+                        $this->displayState($option['display']);
+                    }
+                    break;
+
+                case ($ajax or $post):
+                    echo json_encode($err, 256 | 128 | 64);
+                    break;
+
+                case ($option['display'] === 'json'):
+                    echo '<pre>' . json_encode($err, 256 | 128 | 64) . '</pre>';
+                    break;
+
+                case ($option['display'] === 'html'):
+                    $this->displayError($err);
+                    break;
+
+                default:
+                    echo $option['display'];
+            }
+
+            fastcgi_finish_request();
+
+            exit;
         };
 
         /**
@@ -59,7 +105,9 @@ final class Error
         $handler_exception = function (\Throwable $error) use ($option) {
 //            Session::reset();
             $err = Array();
-            $err['code'] = $error->getCode();
+            $err['success'] = 0;
+            $err['time'] = date('Y-m-d H:i:s');
+            $err['error'] = $error->getCode();
             $err['message'] = $error->getMessage();
             $err['file'] = $error->getFile() . '(' . $error->getLine() . ')';
             $err['trace'] = $error->getTrace();
@@ -90,7 +138,7 @@ final class Error
                     break;
 
                 case ($option['display'] === 'html'):
-                    $this->displayError($error);
+                    $this->displayError($err);
                     break;
 
                 default:
@@ -222,25 +270,19 @@ HTML;
      * 显示并停止所有操作
      * @param $error
      */
-    private function displayError(\Throwable $error)
+    private function displayError(array $error)
     {
-        $err = Array();
-        $err['code'] = $error->getCode();
-        $err['message'] = $error->getMessage();
-        $err['file'] = $error->getFile() . '(' . $error->getLine() . ')';
-        $err['trace'] = $error->getTrace();
         if (_CLI) {
             echo "\n\e[40;31;m================ERROR=====================\e[0m\n";
-            print_r($err);
+            print_r($error);
             exit;
         }
 
-        $trace = $error->getTrace();
         $traceHtml = '';
-        foreach (array_reverse($trace) as $tr) {
+        foreach (array_reverse($error['trace']) as $tr) {
             $str = '<tr><td class="l">';
             if (isset($tr['file'])) $str .= $this->filter_root($tr['file']);
-            if (isset($tr['line'])) $str .= " ({$tr['line']})";
+            if (isset($tr['line'])) $str .= "({$tr['line']})";
             $str .= '</td><td>';
 
             if (isset($tr['class'])) $str .= $tr['class'];
@@ -252,8 +294,8 @@ HTML;
                     foreach ($tr['args'] as $i => &$arr) {
                         if (is_array($arr)) $arr = json_encode($arr, 256 | 64);
                     }
-//                    $args = '"……"';
-                    $args = '"' . implode('", "', $tr['args']) . '"';
+                    $args = '"……"';
+//                    $args = '"' . implode('", "', $tr['args']) . '"';
                 }
                 $str .= "{$tr['function']}(<span style='color:#d00;'>{$args}</span>)";
             }
@@ -261,20 +303,103 @@ HTML;
             $traceHtml .= $str;
         }
 
-        $errValue = [];
-        $errValue['time'] = date('Y-m-d H:i:s');
-        $errValue['title'] = $error->getMessage();
-        $errValue['code'] = $error->getCode();
-        $errValue['file'] = $err['file'];
-        $errValue['trace'] = $traceHtml;
+        $error['trace'] = $traceHtml;
 
-        ob_start();
-        extract($errValue);
-        include('view/error.php');
-        $content = ob_get_contents();
-        ob_end_clean();
-        echo $content;
-        exit;
+        $html = <<<HTML
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0"/>
+    <meta name="format-detection" content="telephone=no"/>
+    <title>{message}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-size: 1em;
+            color: #555555;
+            font-family: "Source Code Pro", "Arial", "Microsoft YaHei", "msyh", "sans-serif";
+        }
+
+        table {
+            width: 80%;
+            margin: 1em auto;
+            border: 1px solid #456;
+            box-shadow: 5px 5px 2px #ccc;
+            border-radius: 4px;
+        }
+
+        tr, td {
+            overflow: hidden;
+        }
+
+        td {
+            text-indent: 0.5em;
+            line-height: 2em;
+        }
+
+        table.head {
+            background: #def;
+        }
+
+        table.head td.l {
+            width: 6em;
+            font-weight: bold;
+        }
+
+        td.msg {
+            color: red;
+        }
+
+        table.trade tr:nth-child(odd) {
+            background: #ffe;
+        }
+
+        table.trade tr.nav {
+            background: #f0c040;
+        }
+
+        td.time {
+            text-align: right;
+            padding-right: 1em;
+        }
+
+        table.trade td {
+            border-bottom: 1px solid #abc;
+        }
+
+        table.trade td.l {
+            width: 40%;
+        }
+
+    </style>
+</head>
+<body>
+<table class="head" cellpadding="0" cellspacing="0">
+<tr><td class="l">错误代码：</td><td>{error}</td></tr>
+<tr><td class="l">错误信息：</td><td class="msg">{message}</td></tr>
+<tr><td class="l">错误位置：</td><td>{file}</td></tr>
+<tr><td class="l">触发时间：</td><td>{time}</td></tr>
+</table>
+<table class="trade" cellpadding="0" cellspacing="0">
+    <tr class="nav">
+        <td><b>Trace</b> : (执行顺序从上往下)</td>
+        <td class="time">{time}</td>
+    </tr>
+    {trace}
+    <tr class="nav">
+    <td colspan="2">上下文</td>
+    </tr>
+    <tr>
+    <td colspan="2"><pre style="line-height:1em;">{context}</pre></td>
+    </tr>
+</table>
+</body>
+</html>
+HTML;
+        echo replace_array($html, $error);
     }
 
     private function filter_root($str)

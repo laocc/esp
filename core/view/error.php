@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0"/>
     <meta name="format-detection" content="telephone=no"/>
 
-    <title><?= $title ?></title>
+    <title><?= $message ?></title>
 
     <style>
         body {
@@ -73,11 +73,11 @@
 <table class="head" cellpadding="0" cellspacing="0">
     <tr>
         <td class="l">错误代码：</td>
-        <td><?= $code ?></td>
+        <td><?= $error ?></td>
     </tr>
     <tr>
         <td class="l">错误信息：</td>
-        <td class="msg"><?= $title ?></td>
+        <td class="msg"><?= $message ?></td>
     </tr>
     <tr>
         <td class="l">错误位置：</td>
