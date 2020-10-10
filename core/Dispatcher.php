@@ -419,7 +419,7 @@ final class Dispatcher
     }
 
 
-    final private function err404(string $msg)
+    private function err404(string $msg)
     {
         if (!is_null($this->_debug)) $this->_debug->folder('error');
         $empty = $this->_config->get('frame.request.empty');

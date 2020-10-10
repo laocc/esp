@@ -32,7 +32,7 @@ abstract class Controller
      * Controller constructor.
      * @param Dispatcher $dispatcher
      */
-    public function __construct(Dispatcher $dispatcher)
+    final public function __construct(Dispatcher $dispatcher)
     {
         $this->_dispatcher = &$dispatcher;
         $this->_config = &$dispatcher->_config;
@@ -250,7 +250,7 @@ abstract class Controller
     /**
      * 构造一个Debug空类
      */
-    private function anonymousDebug()
+    final private function anonymousDebug()
     {
         return new class()
         {

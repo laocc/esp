@@ -37,6 +37,15 @@ abstract class Model
     private $_Mongodb = array();
     private $_Redis = array();
 
+    private $_order = [];
+    private $_count = null;
+    protected $tableJoin = Array();
+    protected $tableJoinCount = 0;
+    protected $forceIndex = '';
+    protected $groupKey;
+    protected $selectKey = [];
+    protected $columnKey = null;
+
     use MysqlExt, PageExt;
 
     public function __construct(...$param)
@@ -429,7 +438,6 @@ abstract class Model
         return $this->checkRunData('in', $data) ?: $data->rows();
     }
 
-    private $_order = [];
 
     final public function order($key, string $sort = 'asc', bool $addProtect = true)
     {
@@ -506,8 +514,6 @@ abstract class Model
         return $data;
     }
 
-
-    private $_count = null;
 
     /**
      * 当前请求结果的总行数
@@ -592,12 +598,6 @@ abstract class Model
         return $this->Mysql()->quote($string);
     }
 
-    protected $tableJoin = Array();
-    protected $tableJoinCount = 0;
-    protected $forceIndex = '';
-    protected $groupKey;
-    protected $selectKey = [];
-    protected $columnKey = null;
 
     final public function join(...$data)
     {

@@ -66,7 +66,8 @@ final class Error
 
             switch (true) {
                 case _CLI:
-                    echo json_encode($err, 256 | 128 | 64);
+                    echo "\n\e[40;31;m================ERROR=====================\e[0m\n";
+                    print_r($error);
                     break;
 
                 case is_int($option['display']):
@@ -78,6 +79,7 @@ final class Error
                     break;
 
                 case ($ajax or $post):
+                    unset($err['trace'], $err['context']);
                     echo json_encode($err, 256 | 128 | 64);
                     break;
 
@@ -118,7 +120,8 @@ final class Error
             $post = (strtolower(getenv('REQUEST_METHOD') ?: '') === 'post');
             switch (true) {
                 case _CLI:
-                    echo json_encode($err, 256 | 128 | 64);
+                    echo "\n\e[40;31;m================ERROR=====================\e[0m\n";
+                    print_r($error);
                     break;
 
                 case is_int($option['display']):
@@ -130,6 +133,7 @@ final class Error
                     break;
 
                 case ($ajax or $post):
+                    unset($err['trace'], $err['context']);
                     echo json_encode($err, 256 | 128 | 64);
                     break;
 
@@ -201,7 +205,7 @@ final class Error
             'Post' => file_get_contents("php://input"),
             'prev' => $prev
         ];
-        if (strlen($info['Post']) > 1000) $info['Post'] = substr($info['Post'], 0, 1000);
+        if (strlen($info['Post']) > 10000) $info['Post'] = substr($info['Post'], 0, 10000);
         $filename = $path . "/" . date($filename) . mt_rand() . '.md';
 
         if (!is_null($debug)) {
@@ -272,12 +276,6 @@ HTML;
      */
     private function displayError(array $error)
     {
-        if (_CLI) {
-            echo "\n\e[40;31;m================ERROR=====================\e[0m\n";
-            print_r($error);
-            exit;
-        }
-
         $traceHtml = '';
         foreach (array_reverse($error['trace']) as $tr) {
             $str = '<tr><td class="l">';
