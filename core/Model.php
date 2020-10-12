@@ -621,7 +621,7 @@ abstract class Model
 
 
     /**
-     * 返回指定列
+     * 返回指定键列
      * @param string $field
      * @return $this
      */
@@ -690,7 +690,7 @@ abstract class Model
 
         } else if ($select and ($select[0] === '~' or $select[0] === '!') and $add_identifier) {
             //不含选择，只适合从单表取数据
-            $field = $this->field();
+            $field = $this->fields();
             $seKey = array_column($field, 'COLUMN_NAME');
             $kill = explode(',', substr($select, 1));
             $this->selectKey[] = [implode(',', array_diff($seKey, $kill)), $add_identifier];

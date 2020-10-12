@@ -8,7 +8,7 @@ use esp\core\db\ext\Builder;
 use esp\core\db\ext\Result;
 use esp\core\ext\EspError;
 
-class Mysql
+final class Mysql
 {
     private $_CONF;//配置定义
     private $_trans_run = Array();//事务状态
@@ -159,26 +159,6 @@ class Mysql
 
 
     /**
-     * 直接执行SQL
-     * @param string $sql
-     * @param array $param
-     * @return bool|Result|null
-     */
-    public function query(string $sql, array $param = [])
-    {
-        $option = [
-            'param' => $param,
-            'prepare' => true,
-            'count' => false,
-            'fetch' => 1,
-            'bind' => [],
-            'trans_id' => 0,
-            'action' => $this->sqlAction($sql),
-        ];
-        return $this->query_exec($sql, $option);
-    }
-
-    /**
      * 从SQL语句中提取该语句的执行性质
      * @param string $sql
      * @return mixed
@@ -200,21 +180,55 @@ class Mysql
 
 
     /**
+     * 直接执行SQL
+     * @param string $sql
+     * @param array $param
+     * @return bool|Result|null
+     */
+    private function query_dddd(string $sql, array $param = [])
+    {
+        $option = [
+            'param' => $param,
+            'prepare' => true,
+            'count' => false,
+            'fetch' => 1,
+            'bind' => [],
+            'trans_id' => 0,
+            'action' => $this->sqlAction($sql),
+        ];
+        return $this->query($sql, $option);
+    }
+
+    /**
+     * 执行sql
+     * 此方法内若发生错误，必须以string返回
      * @param string $sql
      * @param array $option
      * @param \PDO|null $CONN
      * @param null $pre
-     * @return false|string
+     * @return bool|string|Result|int
      * @throws EspError
-     * 此方法内若发生错误，必须以string返回
      */
-    public function query_exec(string $sql, array $option, \PDO $CONN = null, $pre = null)
+    public function query(string $sql, array $option = [], \PDO $CONN = null, $pre = null)
     {
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (empty($sql)) {
             throw new EspError("PDO_Error :  SQL语句不能为空");
         }
         if (_CLI and $this->_cli_print_sql) echo "{$sql}\n";
+
+        if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
+            $option = [
+                'param' => $option,
+                'prepare' => true,
+                'count' => false,
+                'fetch' => 1,
+                'bind' => [],
+                'trans_id' => 0,
+                'action' => $this->sqlAction($sql),
+            ];
+        }
+
         $action = strtolower($option['action']);
         $transID = ($option['trans_id']);
 
@@ -593,7 +607,7 @@ class Mysql
                     'trans_id' => $trans_id,
                     'action' => $action,
                 ];
-                $this->query_exec($sql, $option, $CONN);
+                $this->query($sql, $option, $CONN);
             }
             $this->_trans_run[$trans_id] = false;
             return $CONN->commit();

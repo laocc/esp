@@ -65,7 +65,11 @@ trait Mysql
     {
         //TRUNCATE TABLE dbAdmin;
         //alter table users AUTO_INCREMENT=10000;
-        return $this->Mysql()->query("alter table {$table} AUTO_INCREMENT={$id}");
+        /**
+         * @var $mysql \esp\core\db\Mysql
+         */
+        $mysql = $this->Mysql();
+        return $mysql->query("alter table {$table} AUTO_INCREMENT={$id}");
     }
 
     /**
@@ -76,9 +80,12 @@ trait Mysql
     final public function analyze(string $table)
     {
         $mysql = $this->Mysql();
+        /**
+         * @var $mysql \esp\core\db\Mysql
+         */
         $this->cache_set("{$mysql->dbName}.{$table}", '_field', []);
         $this->cache_set("{$mysql->dbName}.{$table}", '_title', []);
-        $val = $this->Mysql()->query("analyze table `{$table}`")->rows();
+        $val = $mysql->query("analyze table `{$table}`")->rows();
         if (isset($val[1])) {
             return $val[0]['Msg_text'];
         } else {
@@ -97,6 +104,9 @@ trait Mysql
         if (is_bool($table)) list($table, $html) = [null, $table];
         $table = $table ?: $this->table();
         if (!$table) throw new EspError('Unable to get table name');
+        /**
+         * @var $mysql \esp\core\db\Mysql
+         */
         $mysql = $this->Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('column_name as name,COLUMN_DEFAULT as default,column_type as type,column_key as key,column_comment as comment')
@@ -146,6 +156,9 @@ trait Mysql
      */
     final public function tables($html = false)
     {
+        /**
+         * @var $mysql \esp\core\db\Mysql
+         */
         $mysql = $this->Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.TABLES')
             ->select("TABLE_NAME as name,DATA_LENGTH as data,TABLE_ROWS as rows,AUTO_INCREMENT as increment,TABLE_COMMENT as comment,UPDATE_TIME as time")
@@ -167,12 +180,17 @@ trait Mysql
 
     /**
      * 列出表字段
-     * @return array
+     * @param string|null $table
+     * @return mixed
+     * @throws EspError
      */
-    final public function field(string $table = null)
+    final public function fields(string $table = null)
     {
         $table = $table ?: $this->table();
         if (!$table) throw new EspError('Unable to get table name');
+        /**
+         * @var $mysql \esp\core\db\Mysql
+         */
         $mysql = $this->Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
@@ -234,6 +252,9 @@ PHP;
     final public function title()
     {
         $mysql = $this->Mysql();
+        /**
+         * @var $mysql \esp\core\db\Mysql
+         */
         $table = $this->table();
         $data = $this->cache_get("{$mysql->dbName}.{$table}", '_title');
         if (!empty($data)) return $data;
@@ -249,15 +270,16 @@ PHP;
 
     /**
      * 新增行时，填充字段
+     * @param string $dbName
      * @param string $table
      * @param array $data
-     * @return array
+     * @return array|mixed
      */
     final private function _FillField(string $dbName, string $table, array $data)
     {
         $field = $this->cache_get("{$dbName}.{$table}", '_field');
         if (empty($field)) {
-            $field = $this->field($table);
+            $field = $this->fields($table);
             $s = $this->cache_set("{$dbName}.{$table}", '_field', $field);
         }
         if (isset($data[0])) {
@@ -291,7 +313,7 @@ PHP;
     {
         $field = $this->cache_get("{$dbName}.{$table}", '_field');
         if (empty($field)) {
-            $field = $this->field($table);
+            $field = $this->fields($table);
             $this->cache_set("{$dbName}.{$table}", '_field', $field);
         }
         if (isset($data[0])) {

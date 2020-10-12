@@ -1153,7 +1153,7 @@ final class Builder
             $this->replace_tempTable($option['_count_sql']);
         }
 
-        $get = $this->_MySQL->query_exec($_build_sql, $option, null, $pre);
+        $get = $this->_MySQL->query($_build_sql, $option, null, $pre);
         if (is_null($sql)) {
             $sql = $_build_sql;
             if (!empty($option['param'])) {
@@ -1236,8 +1236,8 @@ final class Builder
         if (!empty($this->_order_by)) $sql[] = "ORDER BY {$this->_order_by}";
         if (!empty($this->_limit)) $sql[] = "LIMIT {$this->_limit}";
         $sql = implode(' ', $sql);
-        return $this->_MySQL->query_exec($sql, $this->option('delete'), null, $pre);
-//        return $this->_MySQL->query_exec($sql, $this->option('delete'), $this->_MySQL->master[$this->_Trans_ID]);
+        return $this->_MySQL->query($sql, $this->option('delete'), null, $pre);
+//        return $this->_MySQL->query($sql, $this->option('delete'), $this->_MySQL->master[$this->_Trans_ID]);
     }
 
 
@@ -1302,8 +1302,8 @@ final class Builder
         }
         $value = $param ?: implode(', ', $values);
         $sql = "{$op} INTO {$this->_table} ({$keys}) VALUES {$value}";
-        return $this->_MySQL->query_exec($sql, $this->option($op));
-//        return $this->_MySQL->query_exec($sql, $this->option($op), $this->_MySQL->master[$this->_Trans_ID]);
+        return $this->_MySQL->query($sql, $this->option($op));
+//        return $this->_MySQL->query($sql, $this->option($op), $this->_MySQL->master[$this->_Trans_ID]);
     }
 
     /**
@@ -1390,7 +1390,7 @@ final class Builder
         //如果有抛错，则不执行，由后面记录sQL内容
         if (isset($Exception)) goto err;
 
-        $exe = $this->_MySQL->query_exec($sql, $this->option('update'), null, $pre);
+        $exe = $this->_MySQL->query($sql, $this->option('update'), null, $pre);
 
         if (is_string($exe)) {
             $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
@@ -1407,15 +1407,14 @@ final class Builder
 
     /**
      * 用于复杂的条件更新
-     * @param array $data
-     * @param $key
-     * @return mixed
+     * @param array $upData
+     * @return false|string
      * @throws EspError
      *
      * 此时外部where作为大条件，内部条件仅实现了根据name查询，更复杂的条件有待进一步设计
      *
-     * update_batch(['name' => ['张小三' => '张三', '李大牛' => '李四'],'add' => ['上海' => '江苏']]);
-     * 将：name=张小三改为张三，李大牛改为李四，同时将add=上海改为江苏，两者无关系。
+     * update_batch(['name' => ['张小三' => '张三', '李大牛' => '李四'],'address' => ['上海' => '江苏']]);
+     * 将：name=张小三改为张三，李大牛改为李四，同时将address=上海改为江苏，两者无关系。
      *
      */
     public function update_batch(array $upData)
@@ -1424,13 +1423,11 @@ final class Builder
             throw new EspError('DB_ERROR: 不能 update 空数据');
         }
         $sql = "UPDATE {$this->_table} SET ";
-        foreach ($upData as $key => &$data) {
+        foreach ($upData as $key => $data) {
             $protected_key = $this->protect_identifier($key);
             $sql .= $protected_key . ' = CASE ';
-            foreach ($data as $oldVal => &$newVal) {
-                if (is_array($newVal)) {
-
-                } else {
+            foreach ($data as $oldVal => $newVal) {
+                if (!is_array($newVal)) {
                     $oldVal = quotemeta($oldVal);
                     $newVal = quotemeta($newVal);
                     $sql .= "WHEN {$protected_key} = {$oldVal} THEN {$newVal} ";
@@ -1439,8 +1436,8 @@ final class Builder
             $sql .= "ELSE {$protected_key} END, ";
         }
         $sql = rtrim($sql, ', ') . ' WHERE ' . $this->_build_where();
-        return $this->_MySQL->query_exec($sql, $this->option('update'));
-//        return $this->_MySQL->query_exec($sql, $this->option('update'), $this->_MySQL->master[$this->_Trans_ID]);
+        return $this->_MySQL->query($sql, $this->option('update'));
+//        return $this->_MySQL->query($sql, $this->option('update'), $this->_MySQL->master[$this->_Trans_ID]);
     }
 
 
