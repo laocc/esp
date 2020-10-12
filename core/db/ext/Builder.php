@@ -190,17 +190,22 @@ final class Builder
 
     /**
      * 消除重复行
+     * @param bool $bool
+     * @return $this
      */
-    public function distinct($bool = true)
+    public function distinct(bool $bool = true)
     {
         $this->_distinct = $bool;
         return $this;
     }
 
     /**
-     * 返回的数据，是用1键值对方式，还是0数字下标，或2都要，默认1
+     * 返回的数据形式：
+     * 0：数字下标，
+     * 1：键值对方式，默认1
+     * 2：两者都要
      * [0=>\PDO::FETCH_NUM, 1=>\PDO::FETCH_ASSOC, 2=>\PDO::FETCH_BOTH];
-     * @param null $type
+     * @param int $type
      * @return $this
      */
     public function fetch(int $type = 1)

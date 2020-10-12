@@ -210,7 +210,7 @@ function replace_array(string $str, array $arr): string
  */
 function save_file(string $file, string $content, bool $append = false): int
 {
-    if (is_array($content)) $content = json_encode($content, 256);
+    if (is_array($content)) $content = json_encode($content, 256 | 64);
     mk_dir($file);
     return file_put_contents($file, $content, $append ? FILE_APPEND : LOCK_EX);
 }

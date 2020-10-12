@@ -476,7 +476,8 @@ class Mysql
 
             try {
                 //返回数据方式：数字索引值，键值对，两者都要
-                $stmt->setFetchMode($fetch[$option['fetch']]);//为语句设置默认的获取模式，也就是返回索引，还是键值对
+                //为语句设置默认的获取模式，也就是返回索引，还是键值对
+                $stmt->setFetchMode($fetch[$option['fetch']]);
 
                 //如果有字段绑定，输入
                 if (!empty($option['bind'])) {
@@ -502,7 +503,8 @@ class Mysql
                         return null;
                     }
                     $stmtC->execute($option['param']);
-                    $count = $stmtC->fetch()[0] ?? 0;
+                    $count = $stmtC->fetchColumn(0);
+//                    $count = $stmtC->fetch()[0] ?? 0;
                 }
 
 

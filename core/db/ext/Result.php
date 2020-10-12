@@ -47,37 +47,53 @@ final class Result
 
     /**
      * 从结果中返回一行
-     * @return array
+     * @param null $col
+     * @return mixed
      */
-    public function row()
+    public function row($col = null)
     {
-        return $this->rs->fetch();
+        if (is_null($col)) return $this->rs->fetch();
+
+        else if (is_int($col)) {
+            return $this->rs->fetchColumn($col);
+        } else {
+            return $this->rs->fetch()[$col] ?? null;
+        }
     }
 
     /**
-     * @return array
+     * @param null $col
+     * @return mixed|null
      */
-    public function fetch()
+    public function fetch($col = null)
     {
-        return $this->rs->fetch();
+        if (is_null($col)) return $this->rs->fetch();
+
+        else if (is_int($col)) {
+            return $this->rs->fetchColumn($col);
+        } else {
+            return $this->rs->fetch()[$col] ?? null;
+        }
     }
 
     /**
      * 以数组形式返回结果集中的所有行
      * @param int $row
-     * @param null $col 返回第x列
+     * @param int $col 返回第x列
      * @return array|mixed
      */
-    public function rows($row = 0, $col = null)
+    public function rows(int $row = 0, int $col = null)
     {
         if ($row === 0) {
+            //返回所有行，含数字下标和字段下标
             if (is_int($col)) {
-                $val = Array();
-                while ($val[] = $this->rs->fetchColumn($col)) $i = 0;
-                return $val;
+                return array_map(function ($v) {
+                    return $v;
+                }, $this->rs->fetchColumn($col));
             }
             return $this->rs->fetchAll();
         } elseif ($row === 1) {
+            //仅返回第1行
             if (is_int($col)) {
                 return $this->rs->fetchColumn($col);
             } else {

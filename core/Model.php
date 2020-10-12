@@ -360,6 +360,7 @@ abstract class Model
         }
 
         $obj = $mysql->table($table);
+        if (is_int($this->columnKey)) $obj->fetch(0);
 
         if (!empty($this->selectKey)) {
             foreach ($this->selectKey as $select) $obj->select(...$select);
@@ -385,7 +386,9 @@ abstract class Model
         $data = $obj->get(0, $sql, $pre);
         $c = $this->checkRunData('get', $data);
         if ($c) return $c;
-        $val = $data->row();
+
+        $val = $data->row($this->columnKey);
+
         if ($val === false) $val = null;
 
         if ($this->__cache === true and isset($kID) and !empty($val)) {
@@ -613,6 +616,19 @@ abstract class Model
     {
         if ($only) $this->columnKey = 0;
         $this->groupKey = $groupKey;
+        return $this;
+    }
+
+
+    /**
+     * 返回指定列
+     * @param string $field
+     * @return $this
+     */
+    final public function field(string $field)
+    {
+        $this->columnKey = 0;
+        $this->selectKey = [[$field, true]];
         return $this;
     }
 
