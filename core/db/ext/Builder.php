@@ -17,6 +17,7 @@ final class Builder
     private $_table_pre;
 
     private $_select = Array();//保存已经设置的选择字符串
+    private $_join_select = Array();//join表字段
 
     private $_where = '';//保存已经设置的Where子句
     private $_where_group_in = false;
@@ -68,7 +69,7 @@ final class Builder
     private function clean_builder($clean_all = true)
     {
         $this->_table = $this->_where = $this->_limit = $this->_having = $this->_order_by = '';
-        $this->_select = $this->_join = Array();
+        $this->_select = $this->_join = $this->_join_select = Array();
         $this->_where_group_in = 0;
 
         $this->_skip = 0;
@@ -366,7 +367,17 @@ final class Builder
     private function _build_select()
     {
         //($this->_count ? ' SQL_CALC_FOUND_ROWS ' : '') .
-        return (empty($this->_select) ? '*' : implode(',', $this->_select));
+        if (empty($this->_join)) {
+            return (empty($this->_select) ? '*' : implode(',', $this->_select));
+        } else {
+            if (empty($this->_join_select)) {
+                return (empty($this->_select) ? '*' : implode(',', $this->_select));
+            } else if (empty($this->_select)) {
+                return "{$this->_table}.*," . implode(',', $this->_join_select);
+            } else {
+                return implode(',', $this->_select) . ',' . implode(',', $this->_join_select);
+            }
+        }
     }
 
 
@@ -947,12 +958,13 @@ final class Builder
      * 创建一个联合查询
      * @param string $table 要联查的表的名称
      * @param null $_filter 条件
+     * @param null $select 选择字段
      * @param string $method 联查的类型，默认是NULL，可选值为'left','right','inner','outer','full','using'
      * @param bool $identifier 是否加保护符
      * @return $this
      * @throws EspError
      */
-    public function join($table, $_filter = null, $method = 'left', $identifier = true)
+    public function join(string $table, $_filter = null, string $select = null, string $method = 'left', bool $identifier = true)
     {
         $method = strtoupper($method);
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
@@ -993,6 +1005,7 @@ final class Builder
         } else {
             $this->_join[] = " {$method} JOIN {$table} ON ({$_filter_str}) ";
         }
+        if (!is_null($select)) $this->_join_select[] = $select;
 
         return $this;
     }
@@ -1426,14 +1439,20 @@ final class Builder
         foreach ($upData as $key => $data) {
             $protected_key = $this->protect_identifier($key);
             $sql .= $protected_key . ' = CASE ';
-            foreach ($data as $oldVal => $newVal) {
-                if (!is_array($newVal)) {
-                    $oldVal = quotemeta($oldVal);
-                    $newVal = quotemeta($newVal);
-                    $sql .= "WHEN {$protected_key} = {$oldVal} THEN {$newVal} ";
+
+            if (isset($data[0]) and isset($data[1])) {
+                $oldVal = quotemeta($data[0]);
+                $newVal = quotemeta($data[1]);
+            } else {
+                $oldVal = $newVal = '';
+                foreach ($data as $oldVal => $newVal) {
+                    if (!is_array($newVal)) {
+                        $oldVal = quotemeta($oldVal);
+                        $newVal = quotemeta($newVal);
+                    }
                 }
             }
-            $sql .= "ELSE {$protected_key} END, ";
+            $sql .= "WHEN {$protected_key} = {$oldVal} THEN {$newVal} ELSE {$protected_key} END, ";
         }
         $sql = rtrim($sql, ', ') . ' WHERE ' . $this->_build_where();
         return $this->_MySQL->query($sql, $this->option('update'));
