@@ -188,6 +188,7 @@ abstract class Model
 
     /**
      * 检查执行结果，所有增删改查的结果都不会是字串，所以，如果是字串，则表示出错了
+     * 非字串，即不是json格式的错误内容，退出
      * @param string $action
      * @param $data
      * @return null
@@ -195,20 +196,11 @@ abstract class Model
      */
     private function checkRunData(string $action, $data)
     {
-        /**
-         * 非字串，即json，退出
-         */
         if (!is_string($data)) return null;
         $json = json_decode($data, true);
-
-        /**
-         * 当前ajax中
-         */
-//        if (($ajax = getenv('HTTP_X_REQUESTED_WITH')) and strtolower($ajax) === 'xmlhttprequest') {
-//            $this->debug(null)->error($json);
-//            return $json[2];
-//        }
-
+        if (isset($json[2]) or isset($json['2'])) {
+            throw new EspError($action . ':' . ($json[2] ?? $json['2']));
+        }
         throw new EspError($data);
     }
 
