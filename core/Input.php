@@ -294,13 +294,34 @@ final class Input
     }
 
     /**
-     * 获取php:://input
+     * 读取post数据流
+     * @param string|null $type
+     * @return array
      */
-    public static function php($key = null)
+    public static function php(string $type = null): array
     {
-        $val = file_get_contents("php://input");
-        parse_str($val, $arr);
-        return $key ? $arr[$key] : $arr;
+        $input = file_get_contents('php://input');
+        if (empty($input)) return [];
+        switch (true) {
+            case $type === 'json':
+            case ($input[0] === '{' and $input[-1] === '}'):
+            case ($input[0] === '[' and $input[-1] === ']'):
+                $arr = json_decode($input, true);
+                break;
+
+            case $type === 'xml':
+            case ($input[0] === '<' and $input[-1] === '>'):
+                $arr = \esp\helper\xml_decode($input, true);
+                break;
+
+            case $type === 'string':
+                parse_str($input, $arr);
+                break;
+            default:
+                parse_str($input, $arr);
+        }
+
+        return $arr ?: [];
     }
 
     /**
@@ -309,9 +330,10 @@ final class Input
      * 这里检查点击时鼠标位置
      * 若都为0，则可能是由JS控制提交
      * $sub为 name="submit"的值
-     *
-     * */
-    public static function isClick($sub = 'submit')
+     * @param string $sub
+     * @return bool
+     */
+    public static function isClick(string $sub = 'submit')
     {
         if (isset($_POST[$sub . '_x']) and isset($_POST[$sub . '_y'])) {
             return $_POST[$sub . '_x'] > 0 or $_POST[$sub . '_y'] > 0;
@@ -322,7 +344,7 @@ final class Input
     /**
      * 目录
      * @param string $path
-     * @param string $ext 只读取指定文件类型
+     * @param bool $fullPath
      * @return array
      */
     public static function path(string $path, bool $fullPath = false)
