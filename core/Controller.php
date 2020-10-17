@@ -170,23 +170,6 @@ abstract class Controller
     }
 
     /**
-     * @param string $type json/string
-     * @return array
-     */
-    final protected function phpPost(string $type = 'json')
-    {
-        $post = file_get_contents("php://input");
-        if ($type === 'json') {
-            $arr = json_decode($post, true);
-        } else if ($type === 'xml') {
-            $arr = json_decode(json_encode(@simplexml_load_string($post, "SimpleXMLElement", LIBXML_NOCDATA)), true);
-        } else {
-            parse_str($post, $arr);
-        }
-        return $arr ?: [];
-    }
-
-    /**
      * @return Redis
      */
     final public function getBuffer()

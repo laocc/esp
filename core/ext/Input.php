@@ -191,15 +191,6 @@ final class Input
         return preg_replace('/[\"\'\%\&\^\$\#\(\)\[\]\{\}\?]/', '', trim($value));
     }
 
-    /**
-     * 获取php:://input
-     */
-    public function php($key = null)
-    {
-        $val = file_get_contents("php://input");
-        parse_str($val, $arr);
-        return $key ? $arr[$key] : $arr;
-    }
 
     /**
      * 在POST表单中，submit用
