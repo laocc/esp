@@ -602,18 +602,19 @@ abstract class Controller
     {
         $value = &$this->result;
         if (empty($value)) return null;
+        if (!is_array($value)) $value = ['data' => $value];
 
         if (is_string($return)) {
             $value = ['success' => 0, 'message' => $return] + $value;
 
         } else if (is_int($return)) {
-            $value = ['success' => 0, 'message' => $return] + $value;
+            $value = ['success' => 0, 'message' => strval($return)] + $value;
 
         } else if (is_array($return)) {
             $value = $return + $value + ['success' => 1, 'message' => 'OK'];
 
         } else if (is_float($return)) {
-            $value += ['success' => 1, 'message' => $return];
+            $value += ['success' => 1, 'message' => strval($return)];
 
         } else if ($return === true) {
             $value += ['success' => 1, 'message' => 'True'];

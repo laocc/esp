@@ -412,8 +412,10 @@ final class Dispatcher
             $this->relayDebug("[red;{$cName}->_close() ==================================]");
         }
 
-        $rest = $cont->ReorganizeReturn($contReturn);
-        if (!is_null($rest)) return $rest;
+        if ($this->_request->isAjax() or $this->_request->isPost()) {
+            $rest = $cont->ReorganizeReturn($contReturn);
+            if (!is_null($rest)) return $rest;
+        }
 
         return $contReturn;
     }

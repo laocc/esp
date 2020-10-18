@@ -29,7 +29,7 @@ final class Request
     public function __construct(array $conf = null)
     {
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
-        if ($this->isAjax() and !$this->isPost()) $this->method = 'AJAX';
+        if ($this->method === 'GET' and $this->isAjax()) $this->method = 'AJAX';
         if (!is_array($conf)) $conf = [];
         $conf += [
             'directory' => '/application',
@@ -144,7 +144,8 @@ final class Request
     }
 
     /**
-     * 含 Get和Post
+     * 含 Get和Post，但是：$this->method不含post
+     * $this->method 仅指get时的ajax
      * @return bool
      */
     public function isAjax()
@@ -392,8 +393,6 @@ final class Request
         }
         return false;
     }
-
-
 
 
     /**
