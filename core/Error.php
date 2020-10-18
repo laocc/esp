@@ -72,13 +72,14 @@ final class Error
 
                 case is_int($option['display']):
                     if ($option['display'] === 0) {
-                        $this->displayState($error->getCode());
+                        echo $this->displayState($error->getCode());
                     } else {
-                        $this->displayState($option['display']);
+                        echo $this->displayState($option['display']);
                     }
                     break;
 
                 case ($ajax or $post):
+                    $this->displayState(500, true);
                     unset($err['trace'], $err['context']);
                     echo json_encode($err, 256 | 128 | 64);
                     break;
@@ -126,13 +127,14 @@ final class Error
 
                 case is_int($option['display']):
                     if ($option['display'] === 0) {
-                        $this->displayState($error->getCode());
+                        echo $this->displayState($error->getCode());
                     } else {
-                        $this->displayState($option['display']);
+                        echo $this->displayState($option['display']);
                     }
                     break;
 
                 case ($ajax or $post):
+                    $this->displayState(500, true);
                     unset($err['trace'], $err['context']);
                     echo json_encode($err, 256 | 128 | 64);
                     break;
