@@ -26,7 +26,7 @@ abstract class Controller
      * 用于post,ajax的返回数据，只要启用此变量，最后_close之后会重新组织返回值
      * 对于get请求无效
      */
-    protected $result = [];
+    public $result = [];
 
     /**
      * Controller constructor.
