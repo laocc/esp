@@ -38,7 +38,7 @@ final class Builder
     private $_Trans_ID = 0;//多重事务ID，正常情况都=0，只有多重事务理才会大于0
 
     private $_count = false;//是否启用自动统计
-    private $_distinct = false;//消除重复行
+    private $_distinct = null;//消除重复行
     private $_fetch_type = 1;//返回的数据，是用1键值对方式，还是0数字下标，或3都要，默认1
 
     private $_dim_param = false;//系统是否定义了是否使用预处理
@@ -77,6 +77,7 @@ final class Builder
         $this->_object = null;
         $this->_count = false;
         $this->_group = null;
+        $this->_distinct = null;
 
         $this->_prepare = $this->_param = $this->_dim_param;
         $this->_bindKV = $this->_param_data = Array();
@@ -618,8 +619,11 @@ final class Builder
                         $in = 'not in';
                         $field = substr($field, 0, -1);
                     }
-
-                    if (!is_array($value)) {
+                    if (is_string($value) and $value[0] === '(' and $value[-1] === ')') {
+                        //in的结果是一个SQL语句
+                        $_where = "`{$field}` {$in} {$value}";
+                        break;
+                    } else if (!is_array($value)) {
                         throw new EspError("where in 的值必须为数组形式");
                     }
                     if (empty($value)) $value = [0, 0];
@@ -634,7 +638,7 @@ final class Builder
                         $key = implode(',', $keys);
                         $_where = "`{$field}` {$in} ({$key})";
                     } else {
-                        $_where = "`{$field}` ({$value})";
+                        $_where = "`{$field}` {$in} ({$value})";
                     }
                     break;
                 case '%'://mod
@@ -691,6 +695,12 @@ final class Builder
                     } else {
                         $_where = "{$field} {$findType} " . $this->quote($value);
                     }
+                    break;
+                case ':'://预留
+                    break;
+                case ';'://预留
+                    break;
+                case '?'://预留
                     break;
                 default:
                     if (in_array($findType, ['-', '+', ',', '.', '?', '/'])) {
@@ -1089,7 +1099,7 @@ final class Builder
 
         if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
 
-        if (!empty($this->_distinct)) $sql[] = "DISTINCT";
+        if (is_bool($this->_distinct)) $sql[] = "DISTINCT";
 
         if (!empty($this->_join)) $sql[] = implode(' ', $this->_join);
 
@@ -1118,7 +1128,7 @@ final class Builder
 
         if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
 
-        if (!empty($this->_distinct)) $sql[] = "DISTINCT";
+        if (is_bool($this->_distinct)) $sql[] = "DISTINCT";
         $where = $this->_build_where();
         if (!empty($this->_join) and !empty($where)) {
             foreach ($this->_join as $j => $join) {
@@ -1165,7 +1175,6 @@ final class Builder
             $option['_count_sql'] = $this->_build_count_sql();
             $this->replace_tempTable($option['_count_sql']);
         }
-
         $get = $this->_MySQL->query($_build_sql, $option, null, $pre);
         if (is_null($sql)) {
             $sql = $_build_sql;

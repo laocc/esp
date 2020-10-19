@@ -45,6 +45,7 @@ abstract class Model
     protected $groupKey;
     protected $selectKey = [];
     protected $columnKey = null;
+    private $_distinct = null;//消除重复行
 
     use MysqlExt, PageExt;
 
@@ -363,6 +364,7 @@ abstract class Model
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
+        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if (!empty($this->_order)) {
             foreach ($this->_order as $k => $a) {
@@ -425,6 +427,7 @@ abstract class Model
             }
         }
         if ($this->forceIndex) $obj->force($this->forceIndex);
+        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $obj = $obj->where_in($this->PRI(), $ids);
@@ -486,6 +489,7 @@ abstract class Model
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
+        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if (!empty($this->_order)) {
             foreach ($this->_order as $k => $a) {
@@ -522,6 +526,17 @@ abstract class Model
     }
 
     /**
+     * 消除重复行
+     * @param bool $bool
+     * @return $this
+     */
+    public function distinct(bool $bool = true)
+    {
+        $this->_distinct = $bool;
+        return $this;
+    }
+
+    /**
      * @param null $where
      * @param null $orderBy
      * @param string $sort
@@ -543,6 +558,7 @@ abstract class Model
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
         if ($this->forceIndex) $obj->force($this->forceIndex);
+        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
