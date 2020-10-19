@@ -469,8 +469,15 @@ final class Builder
                 $_where = $field;
             }
         } else {
+            $sqlVal = false;
+            $findType = strtolower($field[-1]);
+            if ($findType === '\\') {
+                $field = substr($field, 0, -1);
+                $findType = strtolower($field[-1]);
+                $sqlVal = true;
+            }
 
-            switch ($findType = strtolower($field[-1])) {
+            switch ($findType) {
                 case '~'://组合 like
                     $field = substr($field, 0, -1);
                     $pos = '';
@@ -535,7 +542,10 @@ final class Builder
                 case '!'://等同于 !=
                     $field = substr($field, 0, -1);
 
-                    if ($this->_param) {//采用占位符后置内容方式
+                    if ($sqlVal) {
+                        $_where = "`{$field}` != {$value}";
+
+                    } else if ($this->_param) {//采用占位符后置内容方式
                         $key = $this->paramKey($field);
                         $this->_param_data[$key] = $value;
                         $_where = "`{$field}` != {$key}";
@@ -619,7 +629,7 @@ final class Builder
                         $in = 'not in';
                         $field = substr($field, 0, -1);
                     }
-                    if (is_string($value) and $value[0] === '(' and $value[-1] === ')') {
+                    if ($sqlVal or (is_string($value) and $value[0] === '(' and $value[-1] === ')')) {
                         //in的结果是一个SQL语句
                         $_where = "`{$field}` {$in} {$value}";
                         break;
@@ -676,7 +686,10 @@ final class Builder
                         $field = substr($field, 0, -1);
                     }
 
-                    if ($this->_param) {
+                    if ($sqlVal) {
+                        $_where = "{$field} {$in} {$value}";
+
+                    } else if ($this->_param) {
                         $key = $this->paramKey($field);
                         $this->_param_data[$key] = $value;
                         $_where = "{$field} {$in} {$key}";
@@ -688,7 +701,10 @@ final class Builder
                 case '>':
                 case '<':
                     $field = substr($field, 0, -1);
-                    if ($this->_param) {
+                    if ($sqlVal) {
+                        $_where = "{$field} {$findType} {$value}";
+
+                    } else if ($this->_param) {
                         $key = $this->paramKey($field);
                         $this->_param_data[$key] = $value;
                         $_where = "{$field} {$findType} {$key}";
@@ -706,10 +722,14 @@ final class Builder
                     if (in_array($findType, ['-', '+', ',', '.', '?', '/'])) {
                         $field = substr($field, 0, -1);
                     }
-                    if ($this->_param) {//采用占位符后置内容方式
+                    if ($sqlVal) {
+                        $_where = "{$field} = {$value}";
+
+                    } else if ($this->_param) {//采用占位符后置内容方式
                         $key = $this->paramKey($field);
                         $this->_param_data[$key] = $value;
                         $_where = "{$field} = {$key}";
+
                     } else {
                         $_where = "{$field} = " . $this->quote($value);// 对 $value 进行安全转义
                     }
