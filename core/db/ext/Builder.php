@@ -1095,11 +1095,12 @@ final class Builder
     public function _build_get()
     {
         $sql = Array();
-        $sql[] = "SELECT {$this->_build_select()} FROM {$this->_table}";
+        $sql[] = "SELECT " . ($this->_distinct ? ' DISTINCT ' : '');
+
+        $sql[] = " {$this->_build_select()} FROM {$this->_table}";
 
         if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
 
-        if (is_bool($this->_distinct)) $sql[] = "DISTINCT";
 
         if (!empty($this->_join)) $sql[] = implode(' ', $this->_join);
 
@@ -1125,10 +1126,8 @@ final class Builder
     {
         $sql = Array();
         $sql[] = "SELECT count(1) FROM {$this->_table}";
-
         if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
 
-        if (is_bool($this->_distinct)) $sql[] = "DISTINCT";
         $where = $this->_build_where();
         if (!empty($this->_join) and !empty($where)) {
             foreach ($this->_join as $j => $join) {
