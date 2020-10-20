@@ -407,13 +407,16 @@ final class Builder
      */
     public function where($field = '', $value = null, $is_OR = null)
     {
-        if (empty($field)) {
-            return $this;
-        }
+        if (empty($field)) return $this;
 
         //省略了第三个参数，第二个是布尔型
         if (is_bool($value) and $is_OR === null) {
             list($is_OR, $value) = [$value, null];
+        }
+        if (is_bool($value)) {
+            throw new EspError("DB_ERROR: where 不支持Bool类型的值");
+        } else if (is_object($value)) {
+            throw new EspError("DB_ERROR: where 不支持Object类型的值");
         }
         if (is_string($is_OR)) {
             $is_OR = strtolower($is_OR) === 'or' ? true : false;
