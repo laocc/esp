@@ -139,7 +139,7 @@ final class Response
         if (is_array($value)) {//直接显示为json/jsonP
             $this->_Content_Type = 'application/json';
             header("Content-type: {$this->_Content_Type}; charset=UTF-8", true, 200);
-            $this->_display_Result = json_encode($value, 256);
+            $this->_display_Result = json_encode($value, 256 | 64);
             if (isset($_GET['callback']) and preg_match('/^(\w+)$/', $_GET['callback'], $match)) {
                 $this->_display_Result = "{$match[1]}({$this->_display_Result});";
             }
@@ -328,7 +328,7 @@ final class Response
 
         switch (strtolower($this->_display_type)) {
             case 'json':
-                $html = json_encode($this->_display_value, 256);
+                $html = json_encode($this->_display_value, 256 | 64);
                 if (isset($_GET['callback']) and preg_match('/^(\w+)$/', $_GET['callback'], $match)) {
                     $html = "{$match[1]}({$html});";
                 }
