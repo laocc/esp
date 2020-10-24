@@ -29,13 +29,14 @@ final class Request
     public function __construct(array $conf = null)
     {
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
+        if (_CLI) $this->method = 'CLI';
         if ($this->method === 'GET' and $this->isAjax()) $this->method = 'AJAX';
         if (!is_array($conf)) $conf = [];
         $conf += [
             'directory' => '/application',
-            'router' => '/config/routes',
+            'router' => '/common/routes',
             'controller' => '',
-            'suffix' => ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post'],
+            'suffix' => ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post', 'cli' => 'Cli'],
         ];
 
         $this->virtual = _VIRTUAL;//虚拟机
@@ -80,7 +81,7 @@ final class Request
         elseif ($this->isAjax() and ($p = $suffix['ajax'] ?? '')) $actionExt = $p;//必须放在isPost之后
         elseif (_CLI and ($p = $suffix['cli'] ?? '')) $actionExt = $p;
         else {
-            throw new EspError("非法访问请求：{$this->method}", 500);
+            throw new EspError("Prohibited Method[{$this->method}]", 500);
         }
         return ucfirst($actionExt);
     }

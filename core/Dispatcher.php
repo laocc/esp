@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-
 use esp\core\ext\EspError;
 
 final class Dispatcher
