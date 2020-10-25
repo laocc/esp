@@ -278,8 +278,8 @@ final class Configure
     private function re_key($value)
     {
         $value = preg_replace_callback('/\{(_[A-Z_]+)\}/', function ($matches) {
-            $search = array('_TIME', '_DATE', '_NOW');
-            $replace = array(date('H:i:s'), date('Ymd'), time());
+            $search = array('_TIME', '_DATE', '_NOW', '_ROOT', '_RUNTIME', '_DOMAIN', '_HOST');
+            $replace = array(date('H:i:s'), date('Ymd'), time(), _ROOT, _RUNTIME, _DOMAIN, _HOST);
             $re = str_ireplace($search, $replace, $matches[1]);
             if ($re !== $matches[1]) {
                 return $re;

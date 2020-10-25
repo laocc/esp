@@ -55,6 +55,7 @@ abstract class Model
         $this->_Mysql = &$GLOBALS['_Mysql'] ?? [];
         $this->_Mongodb = &$GLOBALS['_Mongodb'] ?? [];
         $this->_Redis = &$GLOBALS['_Redis'] ?? [];
+
         $this->_controller = &$GLOBALS['_Controller'];
         if (0) {
             $this->_Yac instanceof Yac and 1;
@@ -65,6 +66,7 @@ abstract class Model
         }
         $this->_config = $this->_controller->getConfig();
         $this->_buffer = $this->_controller->_buffer;
+        $this->_debug = $this->_controller->_debug;
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $param);
@@ -98,11 +100,6 @@ abstract class Model
     {
         if (_CLI) return false;
         if (0) $this->_debug instanceof Debug and 1;
-
-        if (is_null($this->_debug)) {
-            $this->_debug = $this->_controller->_debug;
-//            $this->_debug = Debug::class();
-        }
         if (is_null($value)) return $this->_debug;
         if (is_null($this->_debug)) return false;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
