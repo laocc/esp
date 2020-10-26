@@ -49,7 +49,7 @@ final class Debug
                 }
                 break;
             default:
-                $this->_save_mode = $conf['api'] ?? 'cgi';
+                $this->_save_mode = $conf['api'] ?? 'shutdown';
         }
 
         $this->_conf = $conf;

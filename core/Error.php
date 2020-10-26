@@ -97,8 +97,13 @@ final class Error
             }
 
             fastcgi_finish_request();
-
             exit;
+            /**
+             * 这里必须要结束，以阻止程序继续执行，
+             * 同时也是切断Dispatcher中shutdown中保存Debug，
+             * 由本类->error()执行保存
+             * 否则shutdown内的异常将无法被记录
+             */
         };
 
         /**
@@ -211,20 +216,18 @@ final class Error
         $filename = $path . "/" . date($filename) . mt_rand() . '.md';
 
         if (!is_null($debug)) {
-            register_shutdown_function(function (Debug $debug, $filename, $info) {
-                $err = $info['Error'];
-                if ($err['trace'] ?? []) {
-                    foreach ($err['trace'] as $i => $ii) {
-                        if ($i > 1) unset($err['trace'][$i]);
-                    }
+
+            //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
+            if ($info['Error']['trace'] ?? []) {
+                foreach ($info['Error']['trace'] as $i => $ii) {
+                    if ($i > 1) unset($info['Error']['trace'][$i]);
                 }
-                $debug->relay($err);
-                $sl = $debug->save_logs('Error Saved');
-                $info['save_logs'] = $sl;
-                if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
-            }, $debug, $filename, $info);
-            if (1) return;
-//            if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
+            }
+            $debug->relay($info['Error']);
+            $sl = $debug->save_logs('Error Saved');
+            $info['debugLogSaveRest:'] = $sl;
+            if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
+
         }
 
         if (!is_dir($path)) mkdir($path, 0740, true);

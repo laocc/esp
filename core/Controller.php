@@ -575,12 +575,12 @@ abstract class Controller
      * 注册关门后操作
      * 先注册的先执行，后注册的后执和，框架最后还有debug保存
      * @param callable $fun
-     * @param mixed ...$parameter
+     * @param mixed ...$params
      * @return Controller
      */
-    final protected function shutdown(callable $fun, ...$parameter): Controller
+    final protected function shutdown(callable $fun, ...$params): Controller
     {
-        register_shutdown_function($fun, ...$parameter);
+        register_shutdown_function($fun, ...$params);
         return $this;
     }
 

@@ -234,80 +234,80 @@ final class Dispatcher
     public function run(callable $callable = null): void
     {
         if ($callable and call_user_func($callable)) {
-            return;
+            goto end;
         }
 
         if ($this->run === false) {
-            return;
+            goto end;
         }
 
-        if ($this->_plugs_count and ($hook = $this->plugsHook('routeBefore')) and (is_array($hook) or is_string($hook))) {
+        if (!_CLI and $this->_plugs_count and ($hook = $this->plugsHook('routeBefore')) and (is_array($hook) or is_string($hook))) {
             $this->_response->display($hook);
-            return;
+            goto end;
         }
 
         (new Router($this->_config, $this->_request));
 
-        if ($this->_plugs_count and ($hook = $this->plugsHook('routeAfter')) and (is_array($hook) or is_string($hook))) {
-            $this->_response->display($hook);
-            return;
-        }
+        if (!_CLI) {
 
-        if (!_CLI and !is_null($this->_cache)) {
-            if ($this->_cache->Display()) {
+            if ($this->_plugs_count and ($hook = $this->plugsHook('routeAfter')) and (is_array($hook) or is_string($hook))) {
+                $this->_response->display($hook);
+                goto end;
+            }
+
+            if (!_CLI and !is_null($this->_cache)) {
+                if ($this->_cache->Display()) {
+                    fastcgi_finish_request();//运行结束，客户端断开
+                    $this->relayDebug("[blue;客户端已断开 =============================]");
+                    goto end;
+                }
+            }
+
+            if ($this->_plugs_count and ($hook = $this->plugsHook('dispatchBefore')) and (is_array($hook) or is_string($hook))) {
+                $this->_response->display($hook);
                 goto end;
             }
         }
 
-        if ($this->_plugs_count and ($hook = $this->plugsHook('dispatchBefore')) and (is_array($hook) or is_string($hook))) {
-            $this->_response->display($hook);
-            return;
-        }
-
         $value = $this->dispatch();//运行控制器->方法
-
-        if ($this->_plugs_count and ($hook = $this->plugsHook('dispatchAfter')) and (is_array($hook) or is_string($hook))) {
-            $this->_response->display($hook);
-            return;
-        }
-
-        if ($this->_plugs_count and ($hook = $this->plugsHook('displayBefore')) and (is_array($hook) or is_string($hook))) {
-            $this->_response->display($hook);
-            return;
-        }
 
         if (_CLI) {
             print_r($value);
+            return;
         } else {
-            if (!is_null($this->_session) and !is_null($this->_debug)) {
+
+            if ($this->_plugs_count and ($hook = $this->plugsHook('dispatchAfter')) and (is_array($hook) or is_string($hook))) {
+                $this->_response->display($hook);
+                goto end;
+            }
+
+            if ($this->_plugs_count and ($hook = $this->plugsHook('displayBefore')) and (is_array($hook) or is_string($hook))) {
+                $this->_response->display($hook);
+                goto end;
+            }
+
+            if (!is_null($this->_session)) {
                 $this->relayDebug(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
                 session_write_close();//立即保存并结束
             }
             $this->_response->display($value);
-        }
-        $this->_plugs_count and $hook = $this->plugsHook('displayAfter');
 
-        if (!_CLI and _DEBUG and !is_null($this->_debug) && $this->_debug->_save_mode !== 'cgi') {
+            $this->_plugs_count and $hook = $this->plugsHook('displayAfter');
+
             fastcgi_finish_request();//运行结束，客户端断开
-        }
+            $this->relayDebug("[blue;客户端已断开 =============================]");
 
-        if (!_CLI and !is_null($this->_cache)) {
-            $this->_cache->Save();
+            if (!is_null($this->_cache)) $this->_cache->Save();
         }
 
         end:
-        $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
-
-        if (!is_null($this->_debug)) {
-
-            if ($this->_debug->_save_mode === 'cgi') {
-                $this->_debug->save_logs('Dispatcher Debug');
-                return;
+        if (!_CLI) {
+            $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
+            if (!is_null($this->_debug)) {
+                register_shutdown_function(function () {
+                    $this->_debug->save_logs('Dispatcher');
+                });
             }
-
-            register_shutdown_function(function () {
-                $this->_debug->save_logs('Dispatcher');
-            });
         }
     }
 
