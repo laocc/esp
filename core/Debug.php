@@ -184,9 +184,10 @@ final class Debug
          * 控制器访问计数器
          * 键名及表名格式是固定的
          */
-        if ($this->_conf['counter'] ?? 0) {
+        $ck = $this->_conf['counter'] ?? null;
+        if ($ck) {
             $key = date('H/') . $this->_request->method . '/' . $this->_request->virtual . '/' . ($this->_request->module ?: 'auto') . '/' . $this->_request->controller . '/' . $this->_request->action;
-            $this->_redis->hIncrBy('counter_' . date('Y_m_d'), $key, 1);
+            $this->_redis->hIncrBy("{$ck}_counter_" . date('Y_m_d'), $key, 1);
         }
 
         if (empty($this->_node)) return 'empty node';
