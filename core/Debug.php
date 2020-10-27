@@ -186,7 +186,11 @@ final class Debug
          */
         $ck = $this->_conf['counter'] ?? null;
         if ($ck) {
-            $key = date('H/') . $this->_request->method . '/' . $this->_request->virtual . '/' . ($this->_request->module ?: 'auto') . '/' . $this->_request->controller . '/' . $this->_request->action;
+            $key = date('H/') . $this->_request->method .
+                '/' . $this->_request->virtual .
+                '/' . ($this->_request->module ?: 'auto') .
+                '/' . $this->_request->controller .
+                '/' . $this->_request->action;
             $this->_redis->hIncrBy("{$ck}_counter_" . date('Y_m_d'), $key, 1);
         }
 

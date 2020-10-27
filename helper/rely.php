@@ -214,3 +214,22 @@ function save_file(string $file, string $content, bool $append = false): int
     mk_dir($file);
     return file_put_contents($file, $content, $append ? FILE_APPEND : LOCK_EX);
 }
+
+/**
+ * 从arr内取出相关的字段组成一个新的数组
+ * @param array $arr
+ * @param mixed ...$key
+ * @return array
+ */
+function array_select(array $arr, ...$key)
+{
+    if (count($key) === 1) {
+        if (is_array($key[0])) $key = $key[0];
+        else if (is_string($key[0])) $key = explode(',', $key[0]);
+    }
+    if (is_string($key)) $key = explode(',', $key);
+    return array_filter($arr, function ($k) use ($key) {
+        return in_array($k, $key);
+    }, ARRAY_FILTER_USE_KEY);
+}
+
