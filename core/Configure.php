@@ -52,7 +52,7 @@ final class Configure
 
         //没有强制从文件加载
         if (!_CLI
-            and !defined('_CONFIG_LOAD')
+            and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD)
             and (!isset($_bufferConf['cache']) or $_bufferConf['cache'])
             and (!isset($conf['cache']) or $conf['cache'])
         ) {

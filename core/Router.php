@@ -25,7 +25,7 @@ final class Router
         ];
         $rdsKey = $configure->_token . '_ROUTES_' . _VIRTUAL;
         $redis = $configure->Redis();
-        $modRoute = (!_CLI and !defined('_CONFIG_LOAD') and $redis) ? $redis->get($rdsKey) : null;
+        $modRoute = (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and $redis) ? $redis->get($rdsKey) : null;
 
         if (empty($modRoute) or $modRoute === 'null') {
             $file = $request->router_path . '/' . _VIRTUAL . '.php';
