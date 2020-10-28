@@ -475,6 +475,11 @@ final class Builder
             $sqlVal = false;
             $findType = strtolower($field[-1]);
             if ($findType === '\\') {
+                //where字段后加\号，如：$where['value<=\\'] = "(select num from table where expID={$expID})";
+                $brackets = (is_string($value) and $value[0] === '(' and $value[-1] === ')');
+                if (!$brackets) {
+                    throw new EspError("DB_ERROR: where 直接引用SQL时，被引用的SQL要用括号圈定完整语句");
+                }
                 $field = substr($field, 0, -1);
                 $findType = strtolower($field[-1]);
                 $sqlVal = true;
@@ -632,7 +637,7 @@ final class Builder
                         $in = 'not in';
                         $field = substr($field, 0, -1);
                     }
-                    if ($sqlVal or (is_string($value) and $value[0] === '(' and $value[-1] === ')')) {
+                    if ($sqlVal) {
                         //in的结果是一个SQL语句
                         $_where = "`{$field}` {$in} {$value}";
                         break;
