@@ -4,6 +4,11 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\ext\EspError;
+use function esp\helper\is_match;
+use function esp\helper\is_uri;
+use function esp\helper\load;
+use function esp\helper\pre;
+use function esp\helper\root;
 
 final class Router
 {
@@ -25,12 +30,12 @@ final class Router
         if (empty($modRoute) or $modRoute === 'null') {
             $file = $request->router_path . '/' . _VIRTUAL . '.php';
             if (is_readable($file)) {
-                $modRoute = \esp\helper\load($file);
+                $modRoute = load($file);
                 if (!empty($modRoute)) {
                     foreach ($modRoute as $r => $route) {
-                        if (isset($route['match']) and !\esp\helper\is_match($route['match']))
+                        if (isset($route['match']) and !is_match($route['match']))
                             throw new EspError("Route[Match]：{$route['match']} 不是有效正则表达式", 505);
-                        if (isset($route['uri']) and !\esp\helper\is_uri($route['uri']))
+                        if (isset($route['uri']) and !is_uri($route['uri']))
                             throw new EspError("Route[uri]：{$route['uri']} 不是合法的URI格式", 505);
                         if (!isset($route['route'])) $route['route'] = [];
                     }
@@ -46,25 +51,28 @@ final class Router
         }
         if (is_string($modRoute) and !empty($modRoute)) $modRoute = json_decode($modRoute, true);
         if (empty($modRoute) or !is_array($modRoute)) $modRoute = Array();
-
-        foreach (array_merge($modRoute, $default) as $key => &$route) {
+        foreach (array_merge($modRoute, $default) as $key => $route) {
             $matches = [];
             if ((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0) or
                 (isset($route['match']) and preg_match($route['match'], $request->uri, $matches))) {
 
-                if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax()))
+                if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
                     throw new EspError('非法Method请求', 404);
+                }
 
                 if ($key === '_default') {
                     $matches = explode('/', $request->uri);
                     $matches[0] = $request->uri;
                 }
 
-                //MVC位置，不含模块
-                if (isset($route['directory'])) $request->directory = \esp\helper\root($route['directory']);
+                if (isset($route['route']['virtual'])) $request->virtual = $route['route']['virtual'];
+                else if (isset($route['virtual'])) $request->virtual = $route['virtual'];
+
+                if (isset($route['route']['directory'])) $request->directory = root($route['route']['directory']);
+                else if (isset($route['directory'])) $request->directory = root($route['directory']);
 
                 //分别获取模块、控制器、动作的实际值
-                list($module, $controller, $action, $param) = $this->fill_route($request->directory, $matches, $route['route']);
+                list($module, $controller, $action, $param) = $this->fill_route($request->virtual, $request->directory, $matches, $route['route']);
 
                 if ($controller === 'base') throw new EspError('控制器名不可以为Base，这是系统保留公共控制器名', 505);
 
@@ -100,7 +108,6 @@ final class Router
 
                 //路由器对视图的定义
                 if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
-
                 unset($modRoute, $default);
                 return;
             }
@@ -111,12 +118,14 @@ final class Router
 
     /**
      * 分别获取模块、控制器、动作的实际值
+     * @param string $virtual
      * @param string $directory
      * @param array $matches 正则匹配结果
      * @param array $route
      * @return array
+     * @throws EspError
      */
-    private function fill_route(string &$directory, array $matches, array $route): array
+    private function fill_route(string $virtual, string $directory, array $matches, array $route): array
     {
         $module = $controller = $action = '';
         $param = Array();
@@ -126,7 +135,7 @@ final class Router
 
         //未指定MCA
         if (empty($route)) {
-            if (($matches[1] ?? '') and is_dir("{$directory}/" . _VIRTUAL . "/{$matches[1]}")) {
+            if (($matches[1] ?? '') and is_dir("{$directory}/{$virtual}/{$matches[1]}")) {
                 $module = strtolower($matches[1]);
                 $controller = ($matches[2] ?? 'index');
                 $action = ($matches[3] ?? 'index');

@@ -54,6 +54,36 @@ final class Request
         $this->cookies = new Cookies();
     }
 
+    public function __debugInfo()
+    {
+        return ([
+            'method' => $this->method,
+            'virtual' => $this->virtual,
+            'module' => $this->module,
+            'directory' => $this->directory,
+            'router_path' => $this->router_path,
+            'contFix' => $this->contFix,
+            'suffix' => $this->suffix,
+            'referer' => $this->referer,
+            'uri' => $this->uri,
+        ]);
+    }
+
+    public function __toString()
+    {
+        return json_encode([
+            'method' => $this->method,
+            'virtual' => $this->virtual,
+            'module' => $this->module,
+            'directory' => $this->directory,
+            'router_path' => $this->router_path,
+            'contFix' => $this->contFix,
+            'suffix' => $this->suffix,
+            'referer' => $this->referer,
+            'uri' => $this->uri,
+        ], 256 | 64);
+    }
+
     public function id()
     {
         return getenv('REQUEST_ID') ?: md5(mt_rand() . print_r($_SERVER, true));
