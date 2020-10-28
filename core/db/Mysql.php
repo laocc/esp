@@ -284,7 +284,7 @@ final class Mysql
 
         //数据操作时，若当前`trans_run`=false，则说明刚才被back过了或已经commit，后面的数据不再执行
         //更新操作，有事务ID，在运行中，且已被标识为false
-        if ($upData and $transID and (!($this->_trans_run[$transID] ?? 0) and $this->trans_in($CONN, $transID))) {
+        if ($upData and $transID and (!($this->_trans_run[$transID] ?? 0) or !$this->trans_in($CONN, $transID))) {
             return null;
         }
 
