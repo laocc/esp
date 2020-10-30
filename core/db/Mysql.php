@@ -644,7 +644,7 @@ final class Mysql
      * @param null $error
      * @return bool
      */
-    public function trans_back(\PDO $CONN, $trans_id = 0, &$error = null)
+    public function trans_back(\PDO $CONN, $trans_id = 0, $error = null)
     {
         $this->_trans_run[$trans_id] = false;
         if (!$CONN->inTransaction()) {

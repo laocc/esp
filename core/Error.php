@@ -202,6 +202,15 @@ final class Error
     private function error(array $error, array $prev, string $path, string $filename)
     {
         $debug = Debug::class();
+        if ($error['trace'] ?? []) {
+            foreach ($error['trace'] as $i => &$trace) {
+                if ($i > 1) unset($error['trace'][$i]);
+                foreach ($trace['args'] as $lin => &$pam) {
+                    if (is_resource($pam)) $pam = print_r($pam, true);
+                }
+            }
+        }
+
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('HTTP_HOST'),
@@ -216,18 +225,11 @@ final class Error
         $filename = $path . "/" . date($filename) . mt_rand() . '.md';
 
         if (!is_null($debug)) {
-
             //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
-            if ($info['Error']['trace'] ?? []) {
-                foreach ($info['Error']['trace'] as $i => $ii) {
-                    if ($i > 1) unset($info['Error']['trace'][$i]);
-                }
-            }
             $debug->relay($info['Error']);
             $sl = $debug->save_logs('Error Saved');
             $info['debugLogSaveRest:'] = $sl;
             if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
-
         }
 
         if (!is_dir($path)) mkdir($path, 0740, true);
@@ -295,7 +297,8 @@ HTML;
                     $args = null;
                 } else {
                     foreach ($tr['args'] as $i => &$arr) {
-                        if (is_array($arr)) $arr = json_encode($arr, 256 | 64);
+                        if (is_resource($arr)) $arr = print_r($arr, true);
+                        else if (is_array($arr)) $arr = json_encode($arr, 256 | 64);
                     }
                     $args = '"……"';
 //                    $args = '"' . implode('", "', $tr['args']) . '"';
