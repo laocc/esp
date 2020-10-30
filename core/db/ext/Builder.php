@@ -1423,6 +1423,19 @@ final class Builder
                 }
                 $value = $this->protect_identifier($key) . " {$kFH} {$value}";
 
+            } else if ($kFH === '.') {//.号为拼接
+                $key = substr($key, 0, -1);
+
+                if ($this->_param) {
+                    $pKey = $this->paramKey($key);
+                    $this->_param_data[$pKey] = $value;
+                    $value = "CONCAT(`{$key}`,{$pKey})";
+
+                } else {
+                    $value = "CONCAT(`{$key}`,'{$value}')";
+                }
+
+
             } elseif ($this->_param) {
                 $pKey = $this->paramKey($key);
                 $this->_param_data[$pKey] = $value;
