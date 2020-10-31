@@ -401,9 +401,10 @@ final class Output
     {
         $response = [];
         $response['error'] = 100;
+        $response['array'] = [];
 
         if (empty($url)) {
-            $response['message'] = 'empty API url';
+            $response['message'] = '目标API为空';
             return $response;
         }
 
@@ -427,7 +428,7 @@ final class Output
                 $cOption[CURLOPT_RESOLVE] = $option['host'];
             } else {
                 if (!\esp\helper\is_ip($option['host'])) {
-                    $response['message'] = 'host must be a IP address';
+                    $response['message'] = 'Host必须是IP格式';
                     return $response;
                 }
                 $urlDom = explode('/', $url);
@@ -594,7 +595,7 @@ final class Output
 
         $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
         if ($cURL === false) {
-            $response['message'] = 'Create Protocol Object Error';
+            $response['message'] = 'cUrl初始化错误';
             return $response;
         }
         if ($option['type'] === 'POST') {
@@ -644,33 +645,53 @@ final class Output
             $response['error'] = intval($response['info']['http_code']);
             if ($response['error'] === 0) $response['error'] = 10;
             $response['message'] = $response['html'];
-//            unset($response['html']);
-//            return $response;
         }
 
-        if (isset($option['encode']) and in_array($option['encode'], ['json', 'xml'])) {
-            if (!empty($response['html'])) {
-                if ($option['encode'] === 'json') {
-                    $response['array'] = json_decode($response['html'], true);
-                    if (empty($response['array'])) {
-                        $response['array'] = [];
-                        $response['error'] = 500;
-                    }
-                } else if ($option['encode'] === 'xml') {
-                    $response['array'] = (array)simplexml_load_string(trim($response['html']), 'SimpleXMLElement', LIBXML_NOCDATA);
-                    if (empty($response['array'])) {
-                        $response['array'] = [];
-                        $response['error'] = 500;
-                    }
+        if (empty($response['html'])) {
+            $response['message'] = '请求目标结果为空';
+            $response['error'] = 400;
+            return $response;
+        }
+
+        if (!isset($option['encode'])) return $response;;
+        if ($option['encode'] === 'json') {
+            if ($response['html'][0] === '{' or $response['html'][0] === '[') {
+                $response['array'] = json_decode($response['html'], true);
+                if (empty($response['array'])) {
+                    $response['array'] = [];
+                    $response['error'] = 500;
                 }
             } else {
-                $response['error'] = 400;
-                $response['array'] = [];
+                $response['message'] = '请求结果不是json格式';
+                $response['error'] = 500;
+            }
+        } else if ($option['encode'] === 'xml') {
+            if ($response['html'][0] === '<') {
+                $response['array'] = (array)simplexml_load_string(trim($response['html']), 'SimpleXMLElement', LIBXML_NOCDATA);
+                if (empty($response['array'])) {
+                    $response['array'] = [];
+                    $response['error'] = 500;
+                }
+            } else {
+                $response['message'] = '请求结果不是xml格式';
+                $response['error'] = 500;
+            }
+        } else {
+            if ($response['html'][0] === '{' or $response['html'][0] === '[') {
+                $response['array'] = json_decode($response['html'], true);
+                if (empty($response['array'])) {
+                    $response['array'] = [];
+                    $response['error'] = 500;
+                }
+            } else if ($response['html'][0] === '<') {
+                $response['array'] = (array)simplexml_load_string(trim($response['html']), 'SimpleXMLElement', LIBXML_NOCDATA);
+                if (empty($response['array'])) {
+                    $response['array'] = [];
+                    $response['error'] = 500;
+                }
             }
         }
 
-
-        end:
         return $response;
     }
 
