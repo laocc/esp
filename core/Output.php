@@ -401,6 +401,8 @@ final class Output
     {
         $response = [];
         $response['error'] = 100;
+        $response['message'] = '';
+        $response['html'] = '';
         $response['array'] = [];
 
         if (empty($url)) {
@@ -653,7 +655,9 @@ final class Output
             return $response;
         }
 
-        if (!isset($option['encode'])) return $response;;
+        if (!isset($option['encode'])) return $response;
+
+
         if ($option['encode'] === 'json') {
             if ($response['html'][0] === '{' or $response['html'][0] === '[') {
                 $response['array'] = json_decode($response['html'], true);
