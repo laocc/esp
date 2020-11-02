@@ -454,7 +454,7 @@ final class Debug
      */
     public function relay($msg, array $prev = null): Debug
     {
-        if (_CLI || !$this->_run) return $this;
+        if (!$this->_run) return $this;
         $prev = is_null($prev) ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0] : $prev;
         if (isset($prev['file'])) {
             $file = substr($prev['file'], $this->_ROOT_len) . " [{$prev['line']}]";

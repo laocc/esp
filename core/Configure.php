@@ -32,10 +32,14 @@ final class Configure
             if (!is_readable($bFile)) throw new EspError("指定的buffer文件({$bFile})不存在");
         } else {
             $bFile = "{$conf['path']}/buffer.ini";
+            if (!is_readable($bFile)) $bFile = "{$conf['path']}/buffer.json";
+            if (!is_readable($bFile)) $bFile = "{$conf['path']}/buffer.php";
             if (!is_readable($bFile)) $bFile = _ESP_ROOT . "/common/config/buffer.ini";
         }
 
-        $_bufferConf = parse_ini_file($bFile, true);
+        $_bufferConf = $this->loadFile($bFile, 'buffer');
+        $_bufferConf = $_bufferConf['buffer'] ?? [];
+//        $_bufferConf = parse_ini_file($bFile, true);
         if (isset($conf['folder'])) {
             $_bufferConf = $_bufferConf[$conf['folder']] ?? [];
         } elseif (_DEBUG and isset($_bufferConf['debug'])) {
@@ -102,7 +106,7 @@ final class Configure
         $config[] = ['file' => _ESP_ROOT . '/common/static/state.ini', 'name' => 'state.ini'];
 
         $this->_CONFIG_ = array();
-        $this->_CONFIG_[] = date('Y-m-d H:i:s');
+        $this->_CONFIG_['_lastLoad'] = date('Y-m-d H:i:s');
         foreach ($config as $fn => $cf) {
             $_config = $this->loadFile($cf['file'], $fn);
             //查找子目录下相同文件，如果存在，则覆盖相关值
@@ -112,6 +116,17 @@ final class Configure
                     $_config = array_replace_recursive($_config, $this->loadFile($tmp, $fn));
                 }
             }
+
+            if (isset($conf['extra'])) {
+                if (!is_array($conf['extra'])) $conf['extra'] = [$conf['extra']];
+                foreach ($conf['extra'] as $ext) {
+                    $tmp = "{$conf['path']}/{$ext}/{$cf['name']}";
+                    if (is_readable($tmp)) {
+                        $_config = array_replace_recursive($_config, $this->loadFile($tmp, $fn));
+                    }
+                }
+            }
+
             if (!empty($_config)) {
                 $this->_CONFIG_ = array_merge($this->_CONFIG_, $_config);
             }

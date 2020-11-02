@@ -26,7 +26,7 @@ final class Dispatcher
     public function __construct(array $option, string $virtual = 'www')
     {
         if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
-        if (!getenv('HTTP_HOST') && !_CLI) die();
+        if (!getenv('HTTP_HOST') && !_CLI) die('unknown host');
         if (!defined('_ROOT')) define('_ROOT', dirname(\esp\helper\same_first(__DIR__, getenv('DOCUMENT_ROOT'))));//网站根目录
         if (!defined('_ESP_ROOT')) define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
@@ -39,6 +39,7 @@ final class Dispatcher
         if (!defined('_HTTP_')) define('_HTTP_', (_HTTPS ? 'https://' : 'http://'));
         if (!defined('_URL')) define('_URL', _HTTP_ . _DOMAIN . getenv('REQUEST_URI'));
 
+        $ip = '127.0.0.1';
         if (_CLI) {
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
@@ -47,10 +48,6 @@ final class Dispatcher
                 header('Content-type: image/x-icon', true);
                 exit('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAQSURBVHjaYvj//z8DQIABAAj8Av7bok0WAAAAAElFTkSuQmCC');
             }
-        }
-
-        $ip = '127.0.0.1';
-        if (!_CLI) {
             foreach (['X-REAL-IP', 'X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'REMOTE_ADDR'] as $k) {
                 if (!empty($ip = ($_SERVER[$k] ?? null))) {
                     if (strpos($ip, ',')) $ip = explode(',', $ip)[0];
@@ -66,7 +63,6 @@ final class Dispatcher
         if (!_CLI) $err = new Error($this, $option['error'] ?? []);
         $this->_config = new Configure($option['config'] ?? []);
         chdir(_ROOT);
-
         $this->_request = new Request($this->_config->get('frame.request'));
         if (_CLI) return;
 
@@ -77,7 +73,7 @@ final class Dispatcher
             $GLOBALS['_Debug'] = $this->_debug;
         }
 
-        if (($session = $this->_config->get('session')) and !_CLI) {
+        if ($session = $this->_config->get('session')) {
             $config = $session['default'] + ['run' => 1];
             if (isset($session[_VIRTUAL])) {
                 $config = $session[_VIRTUAL] + $config;

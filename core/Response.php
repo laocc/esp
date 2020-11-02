@@ -46,7 +46,6 @@ final class Response
         $this->_config = $configure;
         $this->_request = $request;
         $this->_resource = new Resources($configure);
-        $this->_autoRun = !_CLI;
     }
 
     /**
