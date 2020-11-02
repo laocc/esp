@@ -102,6 +102,19 @@ final class Configure
                 $config[] = ['file' => $f->getPathname(), 'name' => $fn];
             }
         }
+        if (isset($conf['extra'])) {
+            if (!is_array($conf['extra'])) $conf['extra'] = [$conf['extra']];
+            foreach ($conf['extra'] as $ext) {
+                if ($ext[0] !== '/') $ext = "{$conf['path']}/{$ext}";
+                $dir = new \DirectoryIterator($ext);
+                foreach ($dir as $f) {
+                    if ($f->isFile()) {
+                        $fn = $f->getFilename();
+                        $config[] = ['file' => $f->getPathname(), 'name' => $fn];
+                    }
+                }
+            }
+        }
         $config[] = ['file' => _ESP_ROOT . '/common/static/mime.ini', 'name' => 'mime.ini'];
         $config[] = ['file' => _ESP_ROOT . '/common/static/state.ini', 'name' => 'state.ini'];
 
@@ -116,17 +129,6 @@ final class Configure
                     $_config = array_replace_recursive($_config, $this->loadFile($tmp, $fn));
                 }
             }
-
-            if (isset($conf['extra'])) {
-                if (!is_array($conf['extra'])) $conf['extra'] = [$conf['extra']];
-                foreach ($conf['extra'] as $ext) {
-                    $tmp = "{$conf['path']}/{$ext}/{$cf['name']}";
-                    if (is_readable($tmp)) {
-                        $_config = array_replace_recursive($_config, $this->loadFile($tmp, $fn));
-                    }
-                }
-            }
-
             if (!empty($_config)) {
                 $this->_CONFIG_ = array_merge($this->_CONFIG_, $_config);
             }
