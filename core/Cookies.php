@@ -3,14 +3,31 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use function esp\helper\host;
+
 final class Cookies
 {
     public $domain;
 
-    public function __construct()
+    public function __construct(array $cookies)
     {
         if (_CLI) return;
-        $this->domain = $this->getDomain();
+
+        $config = ($cookies['default'] ?? []) + ['run' => false, 'domain' => 'host'];
+        if (isset($cookies[_VIRTUAL])) $config = $cookies[_VIRTUAL] + $config;
+        if (isset($cookies[_HOST])) $config = $cookies[_HOST] + $config;
+        if (isset($cookies[_DOMAIN])) $config = $cookies[_DOMAIN] + $config;
+        if (!($config['run'] ?? false)) return;
+
+        $this->domain = getenv('HTTP_HOST');
+        if ($config['domain'] === 'host') $this->domain = host($this->domain);
+    }
+
+    public function get($key = null, $autoValue = null)
+    {
+        if (_CLI) return null;
+        if (is_null($key)) return $_COOKIE;
+        return $_COOKIE[strtolower($key)] ?? $autoValue;
     }
 
     public function set($key, $value, $ttl = null)
@@ -37,17 +54,6 @@ final class Cookies
         return setcookie(strtolower($key), $value, $ttl, '/', $this->domain, _HTTPS, true);
     }
 
-    private function getDomain()
-    {
-        $cookies = $GLOBALS['cookies'] ?? [];
-        $config = ($cookies['default'] ?? []) + ['run' => 1, 'domain' => 'host'];
-        if (isset($cookies[_VIRTUAL])) $config = $cookies[_VIRTUAL] + $config;
-        if (isset($cookies[_HOST])) $config = $cookies[_HOST] + $config;
-        if (isset($cookies[_DOMAIN])) $config = $cookies[_DOMAIN] + $config;
-        $domain = getenv('HTTP_HOST');
-        return $config['domain'] === 'host' ? \esp\helper\host($domain) : getenv('HTTP_HOST');
-    }
-
     public function del($key)
     {
         if (_CLI) return null;
@@ -62,13 +68,6 @@ final class Cookies
             return setcookie(strtolower($key), null, $option);
         }
         return setcookie(strtolower($key), null, -1, '/', $this->domain, _HTTPS, true);
-    }
-
-    public function get($key = null, $autoValue = null)
-    {
-        if (_CLI) return null;
-        if (is_null($key)) return $_COOKIE;
-        return $_COOKIE[strtolower($key)] ?? $autoValue;
     }
 
     public function disable()

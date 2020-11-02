@@ -63,7 +63,7 @@ final class Dispatcher
         if (!_CLI) $err = new Error($this, $option['error'] ?? []);
         $this->_config = new Configure($option['config'] ?? []);
         chdir(_ROOT);
-        $this->_request = new Request($this->_config->get('frame.request'));
+        $this->_request = new Request($this->_config);
         if (_CLI) return;
 
         $this->_response = new Response($this->_config, $this->_request);
@@ -102,7 +102,7 @@ final class Dispatcher
 
         if (isset($option['after'])) $option['after']($option);
 
-        $GLOBALS['cookies'] = $this->_config->get('cookies');
+//        $GLOBALS['cookies'] = $this->_config->get('cookies');
         unset($GLOBALS['option']);
         if (headers_sent($file, $line)) {
             throw new EspError("在{$file}[{$line}]行已有数据输出，系统无法启动");
