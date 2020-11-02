@@ -12,6 +12,7 @@ final class Dispatcher
     public $_request;
     public $_response;
     public $_session;
+    public $_cookies;
     public $_config;
     public $_debug;
     public $_cache;
@@ -63,8 +64,9 @@ final class Dispatcher
         if (!_CLI) $err = new Error($this, $option['error'] ?? []);
         $this->_config = new Configure($option['config'] ?? []);
         chdir(_ROOT);
-        $this->_request = new Request($this->_config);
+        $this->_request = new Request($this, $this->_config);
         if (_CLI) return;
+
 
         $this->_response = new Response($this->_config, $this->_request);
 
@@ -73,18 +75,22 @@ final class Dispatcher
             $GLOBALS['_Debug'] = $this->_debug;
         }
 
-        if ($session = $this->_config->get('session')) {
-            $config = $session['default'] + ['run' => 1];
-            if (isset($session[_VIRTUAL])) {
-                $config = $session[_VIRTUAL] + $config;
+        if ($cookies = $this->_config->get('cookies') ?: $this->_config->get('frame.request')) {
+            $cokConf = ($cookies['default'] ?? []) + ['run' => false, 'domain' => 'host'];
+            if (isset($cookies[_VIRTUAL])) $cokConf = $cookies[_VIRTUAL] + $cokConf;
+            if (isset($cookies[_HOST])) $cokConf = $cookies[_HOST] + $cokConf;
+            if (isset($cookies[_DOMAIN])) $cokConf = $cookies[_DOMAIN] + $cokConf;
+            if ($cokConf['run'] ?? false) {
+                $this->_cookies = new Cookies($cookies);
             }
-            if (isset($session[_HOST])) {
-                $config = $session[_HOST] + $config;
-            }
-            if (isset($session[_DOMAIN])) {
-                $config = $session[_DOMAIN] + $config;
-            }
-            if ($config['run']) {
+        }
+
+        if ($session = ($this->_config->get('session') ?: $this->_config->get('frame.session'))) {
+            $config = $session['default'] + ['run' => false];
+            if (isset($session[_VIRTUAL])) $config = $session[_VIRTUAL] + $config;
+            if (isset($session[_HOST])) $config = $session[_HOST] + $config;
+            if (isset($session[_DOMAIN])) $config = $session[_DOMAIN] + $config;
+            if ($config['run'] ?? false) {
                 $this->_session = new Session($config, $this->_debug);
                 $this->relayDebug(['cookies' => $_COOKIE, 'session' => $_SESSION]);
             }
@@ -102,7 +108,6 @@ final class Dispatcher
 
         if (isset($option['after'])) $option['after']($option);
 
-//        $GLOBALS['cookies'] = $this->_config->get('cookies');
         unset($GLOBALS['option']);
         if (headers_sent($file, $line)) {
             throw new EspError("在{$file}[{$line}]行已有数据输出，系统无法启动");

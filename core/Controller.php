@@ -40,9 +40,9 @@ abstract class Controller
         $this->_request = &$dispatcher->_request;
         $this->_response = &$dispatcher->_response;
         $this->_session = &$dispatcher->_session;
+        $this->_cookies = &$dispatcher->_cookies;
         $this->_debug = &$dispatcher->_debug;
         $this->_buffer = $this->_config->Redis();
-        $this->_cookies = &$dispatcher->_request->cookies;
     }
 
     /**

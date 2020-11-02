@@ -11,16 +11,8 @@ final class Cookies
 
     public function __construct(array $cookies)
     {
-        if (_CLI) return;
-
-        $config = ($cookies['default'] ?? []) + ['run' => false, 'domain' => 'host'];
-        if (isset($cookies[_VIRTUAL])) $config = $cookies[_VIRTUAL] + $config;
-        if (isset($cookies[_HOST])) $config = $cookies[_HOST] + $config;
-        if (isset($cookies[_DOMAIN])) $config = $cookies[_DOMAIN] + $config;
-        if (!($config['run'] ?? false)) return;
-
         $this->domain = getenv('HTTP_HOST');
-        if ($config['domain'] === 'host') $this->domain = host($this->domain);
+        if ($cookies['domain'] === 'host') $this->domain = host($this->domain);
     }
 
     public function get($key = null, $autoValue = null)

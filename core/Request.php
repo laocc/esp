@@ -13,7 +13,6 @@ final class Request
     public $router = null;//实际生效的路由器名称
     public $params = Array();
 
-    public $cookies;
     public $virtual;
     public $module;
     public $controller;//控制器名，不含后缀
@@ -25,8 +24,9 @@ final class Request
     public $suffix;
     public $contFix;
     public $route_view;
+    public $cookies;
 
-    public function __construct(Configure $config)
+    public function __construct(Dispatcher $dispatcher, Configure $config)
     {
         $request = ($config->get('frame.request') ?: $config->get('request')) ?: [];
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
@@ -40,6 +40,7 @@ final class Request
             'suffix' => ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post', 'cli' => 'Cli'],
         ];
 
+        $this->cookies = $dispatcher->_cookies;
         $this->virtual = _VIRTUAL;//虚拟机
         $this->module = '';//虚拟机下模块
         $this->directory = \esp\helper\root($request['directory']);
@@ -50,11 +51,6 @@ final class Request
         $this->uri = _CLI ? //CLI模式下 取参数作为路由
             ('/' . trim(implode('/', array_slice($GLOBALS["argv"], 1)), '/')) :
             parse_url(getenv('REQUEST_URI'), PHP_URL_PATH);
-
-        if (_CLI) return;
-
-        $cookies = ($config->get('cookies') ?: $config->get('frame.request')) ?: [];
-        $this->cookies = new Cookies($cookies);
     }
 
     public function __debugInfo()
@@ -201,6 +197,10 @@ final class Request
      */
     public function cid(string $key = '_SSI', bool $number = false)
     {
+        if (is_null($this->cookies)) {
+            throw new EspError("当前站点未启用Cookies，无法获取CID", 505);
+        }
+
         $key = strtolower($key);
         $unique = $_COOKIE[$key] ?? null;
         if (!$unique) {
