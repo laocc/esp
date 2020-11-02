@@ -82,17 +82,18 @@ final class Dispatcher
             if (isset($cookies[_DOMAIN])) $cokConf = $cookies[_DOMAIN] + $cokConf;
             if ($cokConf['run'] ?? false) {
                 $this->_cookies = new Cookies($cookies);
-            }
-        }
 
-        if ($session = ($this->_config->get('session') ?: $this->_config->get('frame.session'))) {
-            $config = $session['default'] + ['run' => false];
-            if (isset($session[_VIRTUAL])) $config = $session[_VIRTUAL] + $config;
-            if (isset($session[_HOST])) $config = $session[_HOST] + $config;
-            if (isset($session[_DOMAIN])) $config = $session[_DOMAIN] + $config;
-            if ($config['run'] ?? false) {
-                $this->_session = new Session($config, $this->_debug);
-                $this->relayDebug(['cookies' => $_COOKIE, 'session' => $_SESSION]);
+                //若不启用Cookies，则也不启用Session
+                if ($session = ($this->_config->get('session') ?: $this->_config->get('frame.session'))) {
+                    $config = $session['default'] + ['run' => false];
+                    if (isset($session[_VIRTUAL])) $config = $session[_VIRTUAL] + $config;
+                    if (isset($session[_HOST])) $config = $session[_HOST] + $config;
+                    if (isset($session[_DOMAIN])) $config = $session[_DOMAIN] + $config;
+                    if ($config['run'] ?? false) {
+                        $this->_session = new Session($config, $this->_debug);
+                        $this->relayDebug(['cookies' => $_COOKIE, 'session' => $_SESSION]);
+                    }
+                }
             }
         }
 
