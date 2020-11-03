@@ -205,7 +205,7 @@ final class Error
         if ($error['trace'] ?? []) {
             foreach ($error['trace'] as $i => &$trace) {
                 if ($i > 1) unset($error['trace'][$i]);
-                if (!is_array($trace['args'])) continue;
+                if (!isset($trace['args']) or !is_array($trace['args'])) continue;
                 foreach ($trace['args'] as $lin => &$pam) {
                     if (is_resource($pam)) $pam = print_r($pam, true);
                 }
