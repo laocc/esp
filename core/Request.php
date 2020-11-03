@@ -7,6 +7,7 @@ use esp\core\ext\EspError;
 
 final class Request
 {
+    private $_dispatcher;
     private $_var = Array();
     public $loop = false;//控制器间跳转循环标识
     public $router_path = null;//路由配置目录
@@ -24,7 +25,6 @@ final class Request
     public $suffix;
     public $contFix;
     public $route_view;
-    public $cookies;
 
     public function __construct(Dispatcher $dispatcher, Configure $config)
     {
@@ -40,7 +40,7 @@ final class Request
             'suffix' => ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post', 'cli' => 'Cli'],
         ];
 
-        $this->cookies = $dispatcher->_cookies;
+        $this->_dispatcher = $dispatcher;
         $this->virtual = _VIRTUAL;//虚拟机
         $this->module = '';//虚拟机下模块
         $this->directory = \esp\helper\root($request['directory']);
@@ -197,7 +197,7 @@ final class Request
      */
     public function cid(string $key = '_SSI', bool $number = false)
     {
-        if (is_null($this->cookies)) {
+        if (is_null($this->_dispatcher->_cookies)) {
             throw new EspError("当前站点未启用Cookies，无法获取CID", 505);
         }
 
@@ -209,7 +209,7 @@ final class Request
                 throw new EspError("Header be Send:{$file}[{$line}]", 505);
             }
             $time = time() + 86400 * 365;
-            $dom = $this->cookies->domain;
+            $dom = $this->_dispatcher->_cookies->domain;
 
             if (version_compare(PHP_VERSION, '7.3', '>')) {
                 $option = [];
