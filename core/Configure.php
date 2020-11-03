@@ -16,6 +16,7 @@ final class Configure
 {
     private $_CONFIG_ = null;
     private $_Redis;
+    private $_rpc;
     public $_token;
 
     /**
@@ -75,7 +76,7 @@ final class Configure
              * 并且主服务器返回的是`success`，如果返回的不是这个，就是出错了。
              * 然后，再次goto tryGet;从redis中读取config
              */
-            $get = Output::new()->rpc('/debug/config')->get('json');
+            $get = Output::new()->rpc('/debug/config', $this->_rpc)->get('json');
             if (!($get['success'] ?? 0)) {
                 if ($tryCount > 1) {
                     throw new EspError("rpc config fail:" . var_export($get, true), 505);

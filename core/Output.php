@@ -45,17 +45,16 @@ final class Output
 
     /**
      * @param string $uri
+     * @param array $rpc
      * @return $this
-     * @throws \Exception
+     * @throws EspError
      */
-    public function rpc(string $uri)
+    public function rpc(string $uri, array $rpc)
     {
         if (_VIRTUAL === 'rpc') throw new EspError('RPC内不能请求rpc', 505);
-        if (!defined('_RPC')) throw new EspError("未定义_RPC");
-
-        $this->url = sprintf('http://%s:%s/%s', _RPC['host'], _RPC['port'], ltrim($uri, '/'));
-
-        $this->option['host'] = [implode(':', _RPC)];
+        $host = ['host' => $rpc['host'], 'port' => $rpc['port'], 'ip' => $rpc['ip']];
+        $this->url = sprintf('http://%s:%s/%s', $host['host'], $host['port'], ltrim($uri, '/'));
+        $this->option['host'] = [implode(':', $host)];
         $this->option['timeout'] = 3;
         $this->option['encode'] = 'json';
         return $this;

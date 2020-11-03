@@ -24,6 +24,7 @@ final class Debug
     private $_errorText;
     private $_ROOT_len = 0;
     private $_key;//保存记录的Key,要在控制器中->key($key)
+    private $_rpc = [];
 
     /**
      * 保存方式:
@@ -38,19 +39,24 @@ final class Debug
         $this->_star = [$_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true), memory_get_usage()];
 
         $conf = $config['default'];
-        if (isset($config[_VIRTUAL])) {
-            $conf = $config[_VIRTUAL] + $conf;
-        }
-        switch ($conf['api'] ?? '') {
-            case 'rpc':
-                if (defined('_RPC')
-                    and !in_array(getenv('SERVER_ADDR'), $conf['server'] ?? [_RPC['ip']])) {
-                    $this->_save_mode = 'rpc';
+        if (isset($config[_VIRTUAL])) $conf = $config[_VIRTUAL] + $conf;
+
+        if (($conf['api'] ?? '') === 'rpc') {
+            $this->_save_mode = 'rpc';
+            $this->_rpc = $conf['rpc'];
+
+            //当前是主服务器，还在继续判断保存方式
+            if (is_file(_RUNTIME . '/master.lock')) {
+                if (isset($conf['rpc']['task'])) {
+                    //指定了rpc内采用task方式保存，则这里也要用task方式
+                    $this->_save_mode = 'task';
+                } else {
+                    //否则还用shutdown方式，实际上也就是直接保存
+                    $this->_save_mode = 'shutdown';
                 }
-                break;
-            default:
-                $this->_save_mode = $conf['api'] ?? 'shutdown';
+            }
         }
+
 
         $this->_conf = $conf;
         $this->_redis = $redis;
@@ -125,32 +131,22 @@ final class Debug
      */
     public function save_file(string $filename, string $data)
     {
+        //        $this->_run = false;//防止重复保存
+
         $send = null;
         //以前通过redis做中转已取消，若日志量大的时候，redis会被塞满
 
         if ($this->_save_mode === 'task') {
-            //发送到异步task任务，由后台写入实际文件
-            $debug = [];
-            $debug['filename'] = $filename;
-            $debug['recode'] = $this->_key;
-            $debug['data'] = $data;
-            $send = $this->_redis->publish('order', 'saveDebug', $debug);
-            if ($send) return "task:{$send}";
-        }
-//        $this->_run = false;//防止重复保存
 
-        if ($this->_save_mode === 'rpc' or !is_null($send)) {
-            //如果当前服务器是主服务器，则直接写入
-            if (is_file(_RUNTIME . '/master.lock')) {
-                return 'Move:' . file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), $data, LOCK_EX);
-            }
+            //发送到异步task任务，由后台写入实际文件
+            //如果当前服务器是主服务器，则直接写到move中
+            return 'Move:' . file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), $data, LOCK_EX);
+
+        } else if ($this->_save_mode === 'rpc') {
 
             //发到RPC，写入move专用目录，然后由后台移到实际目录
-            $send = Output::new()->rpc('/debug/move')
-                ->data(['filename' => $filename, 'data' => $data])
-                ->post('json');
-
-            if ($send) return "Rpc:{$send['length']}";
+            $send = Output::new()->rpc($this->_rpc['api'], $this->_rpc)->data(['filename' => $filename, 'data' => $data])->post('json');
+            return "Rpc:{$send['length']}";
         }
 
         $p = dirname($filename);
