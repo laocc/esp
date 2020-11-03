@@ -3,16 +3,14 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use function esp\helper\host;
-
 final class Cookies
 {
     public $domain;
 
     public function __construct(array $cookies)
     {
-        $this->domain = getenv('HTTP_HOST');
-        if ($cookies['domain'] === 'host') $this->domain = host($this->domain);
+        $this->domain = _DOMAIN;
+        if (($cookies['domain'] ?? '') === 'host') $this->domain = _HOST;
     }
 
     public function get($key = null, $autoValue = null)
