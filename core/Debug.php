@@ -144,7 +144,8 @@ final class Debug
         } else if ($this->_save_mode === 'rpc' and $this->_rpc) {
 
             //发到RPC，写入move专用目录，然后由后台移到实际目录
-            $send = Output::new()->rpc($this->_rpc['debug'], $this->_rpc)->data(['filename' => $filename, 'data' => $data])->post('json');
+            $send = Output::new()->rpc($this->_rpc['debug'], $this->_rpc)
+                ->data(json_encode(['filename' => $filename, 'data' => $data], 256 | 64))->post('json');
             return "Rpc:{$send['length']}";
         }
 
