@@ -126,16 +126,9 @@ final class Debug
     public function save_file(string $filename, string $data)
     {
         $send = null;
-        if ($this->_save_mode === 'redis' and defined('_DEBUG_PUSH_KEY')) {
-            //发送到队列，由后台写入实际文件
-            $debug = [];
-            $debug['filename'] = $filename;
-            $debug['recode'] = $this->_key;
-            $debug['data'] = $data;
-            $send = $this->_redis->push(_DEBUG_PUSH_KEY, $debug);
-            if ($send) return "redis:{$send}";
+        //以前通过redis做中转已取消，若日志量大的时候，redis会被塞满
 
-        } else if ($this->_save_mode === 'task') {
+        if ($this->_save_mode === 'task') {
             //发送到异步task任务，由后台写入实际文件
             $debug = [];
             $debug['filename'] = $filename;
@@ -148,7 +141,7 @@ final class Debug
 
         if ($this->_save_mode === 'rpc' or !is_null($send)) {
             //如果当前服务器是主服务器，则直接写入
-            if (is_dir(_RUNTIME . '/debug/move/')) {
+            if (is_file(_RUNTIME . '/master.lock')) {
                 return 'Move:' . file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), $data, LOCK_EX);
             }
 

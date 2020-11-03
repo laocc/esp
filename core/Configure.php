@@ -67,8 +67,8 @@ final class Configure
         }
 
         if (!_DEBUG and !_CLI and
-            defined('_RPC') and _RPC and _RPC['ip'] !== getenv('SERVER_ADDR')
-            and ($_bufferConf['rpc'] ?? true)) {
+            (defined('_RPC') and !is_file(_RUNTIME . '/master.lock')) //不是主服务器
+            and ($_bufferConf['rpc'] ?? true)) { //buffer没有禁止从rpc读取
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
@@ -78,12 +78,10 @@ final class Configure
             $get = Output::new()->rpc('/debug/config')->get('json');
             if (!($get['success'] ?? 0)) {
                 if ($tryCount > 1) {
-                    throw new EspError("系统出错." . var_export($get, true), 505);
+                    throw new EspError("rpc config fail:" . var_export($get, true), 505);
                 }
                 $tryCount++;
                 goto tryGet;
-            } else {
-                throw new EspError("系统出错." . var_export($get, true), 505);
             }
         }
 
