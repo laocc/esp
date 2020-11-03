@@ -34,16 +34,16 @@ final class Debug
      */
     public $_save_mode = 'shutdown';
 
-    public function __construct(Request $request, Response $response, Redis $redis, array &$config)
+    public function __construct(Request $request, Response $response, Configure $config, array &$setting)
     {
         $this->_star = [$_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true), memory_get_usage()];
 
-        $conf = $config['default'];
-        if (isset($config[_VIRTUAL])) $conf = $config[_VIRTUAL] + $conf;
+        $conf = $setting['default'];
+        if (isset($setting[_VIRTUAL])) $conf = $setting[_VIRTUAL] + $conf;
 
         if (($conf['api'] ?? '') === 'rpc') {
             $this->_save_mode = 'rpc';
-            $this->_rpc = $conf['rpc'];
+            $this->_rpc = $config->_rpc;
 
             //当前是主服务器，还在继续判断保存方式
             if (is_file(_RUNTIME . '/master.lock')) {
@@ -57,9 +57,8 @@ final class Debug
             }
         }
 
-
         $this->_conf = $conf;
-        $this->_redis = $redis;
+        $this->_redis = $config->_Redis;
         $this->_ROOT_len = strlen(_ROOT);
         $this->_run = boolval($conf['run'] ?? false);
         $this->_time = time();
@@ -142,10 +141,10 @@ final class Debug
             //如果当前服务器是主服务器，则直接写到move中
             return 'Move:' . file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), $data, LOCK_EX);
 
-        } else if ($this->_save_mode === 'rpc') {
+        } else if ($this->_save_mode === 'rpc' and $this->_rpc) {
 
             //发到RPC，写入move专用目录，然后由后台移到实际目录
-            $send = Output::new()->rpc($this->_rpc['api'], $this->_rpc)->data(['filename' => $filename, 'data' => $data])->post('json');
+            $send = Output::new()->rpc($this->_rpc['debug'], $this->_rpc)->data(['filename' => $filename, 'data' => $data])->post('json');
             return "Rpc:{$send['length']}";
         }
 

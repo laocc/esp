@@ -15,8 +15,8 @@ use function esp\helper\root;
 final class Configure
 {
     private $_CONFIG_ = null;
-    private $_Redis;
-    private $_rpc;
+    public $_Redis;
+    public $_rpc;
     public $_token;
 
     /**
@@ -53,6 +53,7 @@ final class Configure
             $this->_Redis = new Redis($_bufferConf);
         }
         $tryCount = 0;
+        $this->_rpc = $_bufferConf['rpc'] ?? null;
         tryGet:
 
         //没有强制从文件加载
@@ -67,16 +68,14 @@ final class Configure
             }
         }
 
-        if (!_DEBUG and !_CLI and
-            (defined('_RPC') and !is_file(_RUNTIME . '/master.lock')) //不是主服务器
-            and ($_bufferConf['rpc'] ?? true)) { //buffer没有禁止从rpc读取
+        if (!_DEBUG and !_CLI and !is_file(_RUNTIME . '/master.lock') and $this->_rpc) {
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
              * 并且主服务器返回的是`success`，如果返回的不是这个，就是出错了。
              * 然后，再次goto tryGet;从redis中读取config
              */
-            $get = Output::new()->rpc('/debug/config', $this->_rpc)->get('json');
+            $get = Output::new()->rpc($this->_rpc['config'], $this->_rpc)->get('json');
             if (!($get['success'] ?? 0)) {
                 if ($tryCount > 1) {
                     throw new EspError("rpc config fail:" . var_export($get, true), 505);

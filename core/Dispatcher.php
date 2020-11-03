@@ -67,11 +67,10 @@ final class Dispatcher
         $this->_request = new Request($this, $this->_config);
         if (_CLI) return;
 
-
         $this->_response = new Response($this->_config, $this->_request);
 
         if ($debug = $this->_config->get('debug')) {
-            $this->_debug = new Debug($this->_request, $this->_response, $this->_config->Redis(), $debug);
+            $this->_debug = new Debug($this->_request, $this->_response, $this->_config, $debug);
             $GLOBALS['_Debug'] = $this->_debug;
         }
 
