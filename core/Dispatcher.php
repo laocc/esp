@@ -82,6 +82,7 @@ final class Dispatcher
             if (isset($cookies[_DOMAIN])) $cokConf = $cookies[_DOMAIN] + $cokConf;
             if ($cokConf['run'] ?? false) {
                 $this->_cookies = new Cookies($cokConf);
+                $this->relayDebug(['cookies' => $_COOKIE]);
 
                 //若不启用Cookies，则也不启用Session
                 if ($session = ($this->_config->get('session') ?: $this->_config->get('frame.session'))) {
@@ -91,7 +92,7 @@ final class Dispatcher
                     if (isset($session[_DOMAIN])) $sseConf = $session[_DOMAIN] + $sseConf;
                     if ($sseConf['run'] ?? false) {
                         $this->_session = new Session($sseConf, $this->_debug);
-                        $this->relayDebug(['cookies' => $_COOKIE, 'session' => $_SESSION]);
+                        $this->relayDebug(['session' => $_SESSION]);
                     }
                 }
             }
