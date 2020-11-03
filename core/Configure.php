@@ -69,6 +69,14 @@ final class Configure
         }
 
         if (!_DEBUG and !_CLI and !is_file(_RUNTIME . '/master.lock') and $this->_rpc) {
+
+            //先读redis，若读不到，再进行后面的，这个虽然在前面也有读取，但是，若在从服务器，且也符合强制从文件加载时，上面的是不会执行的
+            //所在在这里要先读redis，也就是说，从服务器无论什么情况，都是先读redis，读不到时请求rpc往redis里写
+            $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
+            if (!empty($this->_CONFIG_)) {
+                return;
+            }
+
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
@@ -83,6 +91,7 @@ final class Configure
                 $tryCount++;
                 goto tryGet;
             }
+            return;
         }
 
         $config = [];
