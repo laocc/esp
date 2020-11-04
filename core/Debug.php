@@ -524,7 +524,7 @@ final class Debug
     }
 
     /**
-     * 修改前置目录
+     * 修改前置目录，前置目录从域名或module之后开始
      * @param string|null $path
      * @return $this|string
      */
@@ -532,14 +532,15 @@ final class Debug
     {
         $m = $this->_request->module;
         if (!empty($m)) $m = strtoupper($m) . "/";
+
         if (is_null($path)) {
             if (is_null($this->_folder)) {
-                return $this->_folder = "/{$m}{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
+                return $this->_folder = '/' . _DOMAIN . "/{$m}{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
             }
             return $this->_folder;
         }
         $path = trim($path, '/');
-        $this->_folder = "/{$path}/{$m}{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
+        $this->_folder = '/' . _DOMAIN . "/{$m}{$path}/{$this->_request->controller}/{$this->_request->action}" . ucfirst($this->_request->method);
         return $this;
     }
 
@@ -565,7 +566,7 @@ final class Debug
         if (is_null($file)) {
             if (is_null($this->_file)) {
                 list($s, $c) = explode('.', microtime(true) . '.0');
-                return $this->_file = date($this->_conf['rules']['filename'], intval($s)) . "_{$c}_" . mt_rand(100, 999);
+                return date($this->_conf['rules']['filename'], intval($s)) . "_{$c}_" . mt_rand(100, 999);
             }
             return $this->_file;
         }
