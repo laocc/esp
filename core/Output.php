@@ -102,13 +102,13 @@ final class Output
      */
     public function post(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml', 'html', 'array'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'post';
         $this->value = $this->request($this->url, $this->data, $this->option);
         if (!$encode) return $this->value;
-        if ('html' === $encode) return $this->value['html'];
-        return $this->value['array'] ?? [];
+        if (in_array($encode, ['json', 'xml'])) return $this->value['array'] ?: [];
+        return $this->value['html'];
     }
 
     /**
