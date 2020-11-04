@@ -229,17 +229,18 @@ final class Error
         ];
         if (strlen($info['Post']) > 10000) $info['Post'] = substr($info['Post'], 0, 10000);
         $filename = date($filename) . mt_rand() . '.md';
+        $filename = trim($filename, '/');
 
         if (!is_null($debug)) {
             //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
             $debug->relay($info['Error']);
             $sl = $debug->save_logs('by Error Saved');
             $info['debugLogSaveRest:'] = $sl;
-            if ($debug->save_file(ltrim($filename, '/'), json_encode($info, 256 | 128 | 64))) return;
+            if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
         }
 
         if (!is_dir($path)) mkdir($path, 0740, true);
-        if (is_readable($path)) file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
+        if (is_readable($path)) file_put_contents("{$path}/{$filename}", json_encode($info, 64 | 128 | 256), LOCK_EX);
     }
 
     /**

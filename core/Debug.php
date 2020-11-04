@@ -547,12 +547,17 @@ final class Debug
     /**
      * 修改后置目录
      * @param string|null $path
+     * @param bool $append
      * @return $this|string
      */
-    public function path(string $path = null)
+    public function path(string $path = null, bool $append = false)
     {
         if (is_null($path)) return $this->_path;
-        $this->_path = '/' . trim($path, '/');
+        if ($append) {
+            $this->_path = '/' . trim($path, '/');
+        } else {
+            $this->_path .= '/' . trim($path, '/');
+        }
         return $this;
     }
 
