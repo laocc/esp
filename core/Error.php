@@ -42,7 +42,7 @@ final class Error
          * 如果是在Debug生成之后产生的错误，保存在debug.ini中指定的位置
          */
         $option += ['display' => 'json', 'filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
-        
+
         /**
          * 一般警告错误
          * @param int $errNo

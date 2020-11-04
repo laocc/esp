@@ -86,13 +86,14 @@ final class Output
      */
     public function get(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml', 'html', 'array', 'text'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'get';
         $this->value = $this->request($this->url, null, $this->option);
+        if ($this->value['error']) return $this->value['message'];
         if (!$encode) return $this->value;
-        if (in_array($encode, ['html', 'text'])) return $this->value['html'];
-        return $this->value['array'] ?? [];
+        if (in_array($encode, ['json', 'xml'])) return $this->value['array'] ?: [];
+        return $this->value['html'];
     }
 
     /**
@@ -106,6 +107,7 @@ final class Output
         $this->option['encode'] = $encode;
         $this->option['type'] = 'post';
         $this->value = $this->request($this->url, $this->data, $this->option);
+        if ($this->value['error']) return $this->value['message'];
         if (!$encode) return $this->value;
         if (in_array($encode, ['json', 'xml'])) return $this->value['array'] ?: [];
         return $this->value['html'];
@@ -122,9 +124,10 @@ final class Output
         $this->option['encode'] = $encode;
         $this->option['type'] = 'upload';
         $this->value = $this->request($this->url, null, $this->option);
+        if ($this->value['error']) return $this->value['message'];
         if (!$encode) return $this->value;
-        if ('html' === $encode) return $this->value['html'];
-        return $this->value['array'] ?? [];
+        if (in_array($encode, ['json', 'xml'])) return $this->value['array'] ?: [];
+        return $this->value['html'];
     }
 
     /**
