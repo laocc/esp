@@ -52,12 +52,11 @@ final class Configure
         } else {
             $this->_Redis = new Redis($_bufferConf);
         }
-        $tryCount = 0;
+
         $this->_rpc = $_bufferConf['rpc'] ?? null;
         if ($this->_rpc) {
             $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
         }
-        tryGet:
 
         //没有强制从文件加载
         if (!_CLI
@@ -73,7 +72,8 @@ final class Configure
 
         $awakenURI = '/_esp_config_awaken_';
         if (!_DEBUG and !_CLI and $this->_rpc and !is_file(_RUNTIME . '/master.lock')) {
-
+            $tryCount = 0;
+            tryReadRedis:
             //先读redis，若读不到，再进行后面的，这个虽然在前面也有读取，但是，若在从服务器，且也符合强制从文件加载时，上面的是不会执行的
             //所在在这里要先读redis，也就是说，从服务器无论什么情况，都是先读redis，读不到时请求rpc往redis里写
             $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
@@ -85,14 +85,14 @@ final class Configure
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
              * 并且主服务器返回的是`success`，如果返回的不是这个，就是出错了。
-             * 然后，再次goto tryGet;从redis中读取config
+             * 然后，再次goto trySelf;从redis中读取config
              */
             $get = Output::new()->rpc($awakenURI, $this->_rpc)->get('html');
             if ($tryCount > 1) {
-                throw new EspError("rpc config fail:" . var_export($get, true), 505);
+                throw new EspError("rpc fail:{$this->_token}/{$get}/", 505);
             }
             $tryCount++;
-            goto tryGet;
+            goto tryReadRedis;
         }
 
         $config = [];
@@ -148,7 +148,7 @@ final class Configure
         }
 
         //负载从服务器唤醒，直接退出
-        if (_URI === $awakenURI) exit('success');
+        if (_URI === $awakenURI) exit($this->_token);
     }
 
     public function flush(int $lev = 0): void
