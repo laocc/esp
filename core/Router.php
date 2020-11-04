@@ -53,16 +53,16 @@ final class Router
         if (empty($modRoute) or !is_array($modRoute)) $modRoute = Array();
         foreach (array_merge($modRoute, $default) as $key => $route) {
             $matches = [];
-            if ((isset($route['uri']) and stripos($request->uri, $route['uri']) === 0) or
-                (isset($route['match']) and preg_match($route['match'], $request->uri, $matches))) {
+            if ((isset($route['uri']) and stripos(_URI, $route['uri']) === 0) or
+                (isset($route['match']) and preg_match($route['match'], _URI, $matches))) {
 
                 if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
                     throw new EspError('非法Method请求', 404);
                 }
 
                 if ($key === '_default') {
-                    $matches = explode('/', $request->uri);
-                    $matches[0] = $request->uri;
+                    $matches = explode('/', _URI);
+                    $matches[0] = _URI;
                 }
 
                 if (isset($route['route']['virtual'])) $request->virtual = $route['route']['virtual'];

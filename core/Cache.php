@@ -123,7 +123,7 @@ final class Cache
         if (empty($pattern) or !$pattern) return false;
         $filename = null;
         foreach ($pattern as &$ptn) {
-            if (preg_match($ptn, $this->request->uri)) {
+            if (preg_match($ptn, _URI)) {
                 $filename = dirname(getenv('SCRIPT_FILENAME')) . getenv('REQUEST_URI');
                 break;
             }

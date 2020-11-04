@@ -48,9 +48,6 @@ final class Request
         $this->contFix = $request['controller'];//控制器后缀，固定的
         $this->suffix = $request['suffix'];//数组，方法名后缀，在总控中根据不同请求再取值
         $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
-        $this->uri = _CLI ? //CLI模式下 取参数作为路由
-            ('/' . trim(implode('/', array_slice($GLOBALS["argv"], 1)), '/')) :
-            parse_url(getenv('REQUEST_URI'), PHP_URL_PATH);
     }
 
     public function __debugInfo()
@@ -64,7 +61,7 @@ final class Request
             'contFix' => $this->contFix,
             'suffix' => $this->suffix,
             'referer' => $this->referer,
-            'uri' => $this->uri,
+            'uri' => _URI,
         ]);
     }
 
@@ -79,7 +76,7 @@ final class Request
             'contFix' => $this->contFix,
             'suffix' => $this->suffix,
             'referer' => $this->referer,
-            'uri' => $this->uri,
+            'uri' => _URI,
         ], 256 | 64);
     }
 
