@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\ext\EspError;
+use function esp\helper\text;
 
 final class Output
 {
@@ -93,6 +94,7 @@ final class Output
         if ($this->value['error']) return $this->value['message'];
         if (!$encode) return $this->value;
         if (in_array($encode, ['json', 'xml', 'auto'])) return $this->value['array'] ?: [];
+        if ($encode === 'text') return text($this->value['html']);
         return $this->value['html'];
     }
 
@@ -110,6 +112,7 @@ final class Output
         if ($this->value['error']) return $this->value['message'];
         if (!$encode) return $this->value;
         if (in_array($encode, ['json', 'xml', 'auto'])) return $this->value['array'] ?: [];
+        if ($encode === 'text') return text($this->value['html']);
         return $this->value['html'];
     }
 
@@ -127,6 +130,7 @@ final class Output
         if ($this->value['error']) return $this->value['message'];
         if (!$encode) return $this->value;
         if (in_array($encode, ['json', 'xml', 'auto'])) return $this->value['array'] ?: [];
+        if ($encode === 'text') return text($this->value['html']);
         return $this->value['html'];
     }
 

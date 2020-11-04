@@ -74,7 +74,7 @@ final class Dispatcher
             $GLOBALS['_Debug'] = $this->_debug;
         }
 
-        if ($cookies = $this->_config->get('cookies') ?: $this->_config->get('frame.request')) {
+        if ($cookies = $this->_config->get('cookies') ?: $this->_config->get('frame.cookies')) {
             $cokConf = ($cookies['default'] ?? []) + ['run' => false, 'domain' => 'host'];
             if (isset($cookies[_VIRTUAL])) $cokConf = $cookies[_VIRTUAL] + $cokConf;
             if (isset($cookies[_HOST])) $cokConf = $cookies[_HOST] + $cokConf;
