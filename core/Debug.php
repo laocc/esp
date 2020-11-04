@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\core\db\Redis;
+use function esp\helper\mk_dir;
+use function esp\helper\root;
 
 final class Debug
 {
@@ -25,12 +26,14 @@ final class Debug
     private $_ROOT_len = 0;
     private $_key;//保存记录的Key,要在控制器中->key($key)
     private $_rpc = [];
+    private $_transfer_uri = '/_esp_debug_transfer';
+    private $_transfer_path = '';
 
     /**
      * 保存方式:
-     * shutdown(进程结束后),
-     * cgi(FastCGI中直接保存),
-     * rpc/redis/task(发送RPC.redis队列.后台task)
+     * shutdown：进程结束后
+     * rpc：发送RPC
+     * transfer：只在主服器内，文件中转，然后由后台机器人移走
      */
     public $_save_mode = 'shutdown';
 
@@ -45,14 +48,17 @@ final class Debug
             $this->_save_mode = 'rpc';
             $this->_rpc = $config->_rpc;
 
-            //当前是主服务器，还在继续判断保存方式
+            //当前是主服务器，还继续判断保存方式
             if (is_file(_RUNTIME . '/master.lock')) {
-                if (isset($conf['rpc']['task'])) {
-                    //指定了rpc内采用task方式保存，则这里也要用task方式
-                    $this->_save_mode = 'task';
-                } else {
-                    //否则还用shutdown方式，实际上也就是直接保存
-                    $this->_save_mode = 'shutdown';
+                $this->_save_mode = $conf['rpc'] ?? 'shutdown';
+                $this->_transfer_path = $conf['transfer'] ?? '';
+                if (empty($this->_transfer_path)) $this->_transfer_path = _RUNTIME . '/debug/move';
+                $this->_transfer_path = root($this->_transfer_path);
+
+                //保存从服务器发来的日志
+                if (_URI === $this->_transfer_uri) {
+                    $save = $this->transferDebug();
+                    exit(getenv('SERVER_ADDR') . ";Length={$save};Time:" . microtime(true));
                 }
             }
         }
@@ -73,6 +79,26 @@ final class Debug
         $this->relay('START', []);
         $this->_request = $request;
         $this->_response = $response;
+    }
+
+    private function transferDebug()
+    {
+        $input = file_get_contents("php://input");
+        if (empty($input)) return 'null';
+
+        $array = json_decode($input, true);
+        if (empty($array['data'])) $array['data'] = 'NULL Data';
+        if (is_array($array['data'])) $array['data'] = print_r($array['data'], true);
+
+        //临时中转文件
+        if ($this->_save_mode === 'transfer') {
+            $move = $this->_transfer_path . '/' . urlencode(base64_encode($array['filename']));
+            mk_dir($this->_transfer_path);
+            return file_put_contents($move, $array['data'], LOCK_EX);
+        }
+
+        mk_dir($array['filename']);
+        return file_put_contents($array['filename'], $array['data'], LOCK_EX);
     }
 
     /**
@@ -135,18 +161,17 @@ final class Debug
         $send = null;
         //以前通过redis做中转已取消，若日志量大的时候，redis会被塞满
 
-        if ($this->_save_mode === 'task') {
-
-            //发送到异步task任务，由后台写入实际文件
-            //如果当前服务器是主服务器，则直接写到move中
-            return 'Move:' . file_put_contents(_RUNTIME . '/debug/move/' . urlencode(base64_encode($filename)), $data, LOCK_EX);
+        if ($this->_save_mode === 'transfer') {
+            return 'Transfer:' . file_put_contents($this->_transfer_path . '/' . urlencode(base64_encode($filename)), $data, LOCK_EX);
 
         } else if ($this->_save_mode === 'rpc' and $this->_rpc) {
 
-            //发到RPC，写入move专用目录，然后由后台移到实际目录
-            $send = Output::new()->rpc($this->_rpc['debug'], $this->_rpc)
-                ->data(json_encode(['filename' => $filename, 'data' => $data], 256 | 64))->post('json');
-            return "Rpc:{$send['length']}";
+            /**
+             * 发到RPC，写入move专用目录，然后由后台移到实际目录
+             */
+            $send = Output::new()->rpc($this->_transfer_uri, $this->_rpc)
+                ->data(json_encode(['filename' => $filename, 'data' => $data], 256 | 64))->post('text');
+            return "Rpc:{$send}";
         }
 
         $p = dirname($filename);
@@ -168,7 +193,6 @@ final class Debug
      */
     public function save_logs(string $pre = '')
     {
-
         /**
          * 控制器访问计数器
          * 键名及表名格式是固定的
