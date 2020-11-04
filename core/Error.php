@@ -228,7 +228,7 @@ final class Error
         if (!is_null($debug)) {
             //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
             $debug->relay($info['Error']);
-            $sl = $debug->save_logs('Error Saved');
+            $sl = $debug->save_logs('by Error Saved');
             $info['debugLogSaveRest:'] = $sl;
             if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
         }
