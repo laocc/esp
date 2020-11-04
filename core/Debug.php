@@ -176,7 +176,7 @@ final class Debug
              * 发到RPC，写入move专用目录，然后由后台移到实际目录
              */
             $send = Output::new()->rpc($this->_transfer_uri, $this->_rpc)
-                ->data(json_encode(['filename' => $filename, 'data' => $data], 256 | 64))->post('text');
+                ->data(json_encode(['filename' => $filename, 'data' => $data], 256 | 64))->post('html');
             if (is_array($send)) $send = json_encode($send, 256 | 64);
             return "Rpc:{$send}";
         }

@@ -86,7 +86,7 @@ final class Output
      */
     public function get(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml', 'html', 'auto'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html', 'text', 'auto'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'get';
         $this->value = $this->request($this->url, null, $this->option);
@@ -103,7 +103,7 @@ final class Output
      */
     public function post(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml', 'html', 'auto'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html', 'text', 'auto'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'post';
         $this->value = $this->request($this->url, $this->data, $this->option);
@@ -120,7 +120,7 @@ final class Output
      */
     public function upload(string $encode = '')
     {
-        if (!in_array($encode, ['json', 'xml', 'html', 'auto'])) $encode = '';
+        if (!in_array($encode, ['json', 'xml', 'html', 'text', 'auto'])) $encode = '';
         $this->option['encode'] = $encode;
         $this->option['type'] = 'upload';
         $this->value = $this->request($this->url, null, $this->option);

@@ -84,7 +84,7 @@ final class Configure
              * 并且主服务器返回的是`success`，如果返回的不是这个，就是出错了。
              * 然后，再次goto tryGet;从redis中读取config
              */
-            $get = Output::new()->rpc($awakenURI, $this->_rpc)->get('text');
+            $get = Output::new()->rpc($awakenURI, $this->_rpc)->get('html');
             if ($get !== 'success') {
                 if ($tryCount > 1) {
                     throw new EspError("rpc config fail:" . var_export($get, true), 505);
