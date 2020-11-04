@@ -54,6 +54,9 @@ final class Configure
         }
         $tryCount = 0;
         $this->_rpc = $_bufferConf['rpc'] ?? null;
+        if ($this->_rpc) {
+            $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
+        }
         tryGet:
 
         //没有强制从文件加载
