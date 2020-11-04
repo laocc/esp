@@ -37,7 +37,12 @@ final class Error
      */
     private function register_handler(array $option)
     {
+        /**
+         * 这里的path是在Debug没有生成之前发生错误，所保存的位置
+         * 如果是在Debug生成之后产生的错误，保存在debug.ini中指定的位置
+         */
         $option += ['display' => 'json', 'filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
+        
         /**
          * 一般警告错误
          * @param int $errNo
@@ -101,7 +106,7 @@ final class Error
             /**
              * 这里必须要结束，以阻止程序继续执行，
              * 同时也是切断Dispatcher中shutdown中保存Debug，
-             * 由本类->error()执行保存
+             * 由本类->error执行保存
              * 否则shutdown内的异常将无法被记录
              */
         };
@@ -223,14 +228,14 @@ final class Error
             'prev' => $prev
         ];
         if (strlen($info['Post']) > 10000) $info['Post'] = substr($info['Post'], 0, 10000);
-        $filename = $path . "/" . date($filename) . mt_rand() . '.md';
+        $filename = date($filename) . mt_rand() . '.md';
 
         if (!is_null($debug)) {
             //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
             $debug->relay($info['Error']);
             $sl = $debug->save_logs('by Error Saved');
             $info['debugLogSaveRest:'] = $sl;
-            if ($debug->save_file($filename, json_encode($info, 256 | 128 | 64))) return;
+            if ($debug->save_file(ltrim($filename, '/'), json_encode($info, 256 | 128 | 64))) return;
         }
 
         if (!is_dir($path)) mkdir($path, 0740, true);

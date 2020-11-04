@@ -63,10 +63,10 @@ final class Debug
             }
         }
 
-        $this->_conf = $conf;
+        $this->_conf = $conf + ['path' => _RUNTIME, 'run' => false, 'host' => [], 'counter' => false];
         $this->_redis = $config->_Redis;
         $this->_ROOT_len = strlen(_ROOT);
-        $this->_run = boolval($conf['run'] ?? false);
+        $this->_run = boolval($conf['run']);
         $this->_time = time();
         $this->prevTime = microtime(true) - $this->_star[0];
         $this->memory = memory_get_usage();
@@ -121,7 +121,7 @@ final class Debug
             'Error' => $error,
             'Server' => $_SERVER,
         ];
-        $conf = ['filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
+        $conf = ['filename' => 'YmdHis', 'path' => $this->_conf['error'] ?? (_RUNTIME . '/error')];
         $filename = $conf['path'] . "/" . date($conf['filename']) . mt_rand() . '.md';
         return $this->save_file($filename, json_encode($info, 64 | 128 | 256));
     }
@@ -138,7 +138,7 @@ final class Debug
             'Error' => $error,
             'Server' => $_SERVER,
         ];
-        $conf = ['filename' => 'YmdHis', 'path' => _RUNTIME . "/warn"];
+        $conf = ['filename' => 'YmdHis', 'path' => $this->_conf['error'] ?? (_RUNTIME . '/warn')];
         $filename = $conf['path'] . "/" . date($conf['filename']) . mt_rand() . '.md';
         return $this->save_file($filename, json_encode($info, 64 | 128 | 256));
     }
@@ -157,6 +157,12 @@ final class Debug
     public function save_file(string $filename, string $data)
     {
         //        $this->_run = false;//防止重复保存
+
+        if ($filename[0] !== '/') {
+            //这是从Error中发来的保存错误日志
+            $path = $this->_conf['error'] ?? (_RUNTIME . '/error');
+            $filename = "{$path}/{$filename}";
+        }
 
         $send = null;
         //以前通过redis做中转已取消，若日志量大的时候，redis会被塞满
@@ -198,14 +204,13 @@ final class Debug
          * 控制器访问计数器
          * 键名及表名格式是固定的
          */
-        $ck = $this->_conf['counter'] ?? null;
-        if ($ck) {
+        if ($this->_conf['counter']) {
             $key = date('H/') . $this->_request->method .
                 '/' . $this->_request->virtual .
                 '/' . ($this->_request->module ?: 'auto') .
                 '/' . $this->_request->controller .
                 '/' . $this->_request->action;
-            $this->_redis->hIncrBy("{$ck}_counter_" . date('Y_m_d'), $key, 1);
+            $this->_redis->hIncrBy("{$this->_conf['counter']}_counter_" . date('Y_m_d'), $key, 1);
         }
 
         if (empty($this->_node)) return 'empty node';
@@ -508,12 +513,13 @@ final class Debug
         if (is_null($path)) {
             if (is_null($this->_root))
                 return $this->_root = str_replace(
-                    ['{RUNTIME}', '{ROOT}', '{VIRTUAL}', '{DOMAIN}', '{DATE}'],
-                    [_RUNTIME, _ROOT, _VIRTUAL, _DOMAIN, date('Y_m_d')],
+                    ['{RUNTIME}', '{ROOT}', '{VIRTUAL}', '{DATE}'],
+                    [_RUNTIME, _ROOT, _VIRTUAL, date('Y_m_d')],
                     $this->_conf['path']);
             return $this->_root;
         }
         $this->_root = '/' . trim($path, '/');
+        if (!in_array(_HOST, $this->_conf['host'])) $this->_root .= "/hackers";
         return $this;
     }
 
