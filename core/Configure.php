@@ -85,14 +85,11 @@ final class Configure
              * 然后，再次goto tryGet;从redis中读取config
              */
             $get = Output::new()->rpc($awakenURI, $this->_rpc)->get('html');
-            if ($get !== 'success') {
-                if ($tryCount > 1) {
-                    throw new EspError("rpc config fail:" . var_export($get, true), 505);
-                }
-                $tryCount++;
-                goto tryGet;
+            if ($tryCount > 1) {
+                throw new EspError("rpc config fail:" . var_export($get, true), 505);
             }
-            return;
+            $tryCount++;
+            goto tryGet;
         }
 
         $config = [];
