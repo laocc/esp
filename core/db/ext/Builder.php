@@ -434,6 +434,12 @@ final class Builder
                         $this->where_group_start();
                         foreach ($val as $k => $v) {
                             if (is_int($k) and is_array($v)) {
+                                /**
+                                 * 条件或
+                                 * $where = [];
+                                 * $where['labID'] = [1, 2];     //同一字段
+                                 * $where[] = [['labID' => 1], ['labKey' => 2]]; //* 不同字段
+                                 */
                                 foreach ($v as $vk => $vv) {
                                     $this->where($vk, $vv, true);
                                 }
@@ -781,11 +787,12 @@ final class Builder
      *
      * @param string $field 字段名
      * @param array $data IN的内容，必须是一个数组
-     * @param bool|FALSE $is_OR
+     * @param bool $is_OR
+     * @param bool $isNot
      * @return $this
      * @throws EspError
      */
-    public function where_in($field, $data, $is_OR = FALSE, $isNot = false)
+    public function where_in(string $field, array $data, bool $is_OR = FALSE, bool $isNot = false)
     {
         if (empty($field)) {
             throw new EspError('DB_ERROR: where in 条件不可为空');
@@ -863,7 +870,7 @@ final class Builder
         return $this;
     }
 
-    private function _where_insert($_where, $ao)
+    private function _where_insert(string $_where, string $ao): void
     {
         if (empty($this->_where)) {
             $this->_where = $_where;
@@ -885,10 +892,8 @@ final class Builder
      * @return $this
      * @throws EspError
      */
-    public function where_group_start($is_OR = FALSE)
+    public function where_group_start(bool $is_OR = false)
     {
-        if (!is_bool($is_OR)) $is_OR = (strtolower($is_OR) === 'or') ? true : false;
-
         if ($this->_where_group_in) {
             throw new EspError('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end');
         }
@@ -1197,6 +1202,7 @@ final class Builder
         $option = $this->option('select');
         $_build_sql = $this->_build_get();
         $this->replace_tempTable($_build_sql);
+        var_dump($_build_sql);
 
         if ($option['count']) {
             $option['_count_sql'] = $this->_build_count_sql();
@@ -1446,8 +1452,13 @@ final class Builder
             $sets[] = $this->protect_identifier($key) . " = {$value}";
         }
 
+        $where = $this->_build_where();
+        if (empty($where)) {//禁止无where时更新数据
+            throw new EspError('DB_ERROR: 禁止无where时更新数据');
+        }
+
         $sets = implode(', ', $sets);
-        $sql = "UPDATE {$this->_table} SET {$sets} WHERE {$this->_build_where()}";
+        $sql = "UPDATE {$this->_table} SET {$sets} WHERE {$where}";
 
         //如果有抛错，则不执行，由后面记录sQL内容
         if (isset($Exception)) goto err;
@@ -1503,7 +1514,12 @@ final class Builder
             }
             $sql .= "WHEN {$protected_key} = {$oldVal} THEN {$newVal} ELSE {$protected_key} END, ";
         }
-        $sql = rtrim($sql, ', ') . ' WHERE ' . $this->_build_where();
+        $where = $this->_build_where();
+        if (empty($where)) {//禁止无where时更新数据
+            throw new EspError('DB_ERROR: 禁止无where时更新数据');
+        }
+
+        $sql = rtrim($sql, ', ') . ' WHERE ' . $where;
         return $this->_MySQL->query($sql, $this->option('update'));
 //        return $this->_MySQL->query($sql, $this->option('update'), $this->_MySQL->master[$this->_Trans_ID]);
     }

@@ -554,10 +554,26 @@ final class Debug
     {
         if (is_null($path)) return $this->_path;
         if ($append) {
-            $this->_path = '/' . trim($path, '/');
-        } else {
             $this->_path .= '/' . trim($path, '/');
+        } else {
+            $this->_path = '/' . trim($path, '/');
         }
+        return $this;
+    }
+
+
+    /**
+     * 指定完整的目录，也就是不采用控制器名称
+     * @param string|null $path
+     * @return $this|string
+     */
+    public function fullPath(string $path = null)
+    {
+        if (is_null($path)) return $this->folder() . $this->path();
+        $m = $this->_request->module;
+        $path = trim($path, '/');
+        $this->_folder = '/' . _DOMAIN . "/{$m}/{$path}";
+        $this->_path = '';
         return $this;
     }
 
