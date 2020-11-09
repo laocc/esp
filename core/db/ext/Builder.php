@@ -1202,7 +1202,6 @@ final class Builder
         $option = $this->option('select');
         $_build_sql = $this->_build_get();
         $this->replace_tempTable($_build_sql);
-        var_dump($_build_sql);
 
         if ($option['count']) {
             $option['_count_sql'] = $this->_build_count_sql();
