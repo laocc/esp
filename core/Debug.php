@@ -571,8 +571,9 @@ final class Debug
     {
         if (is_null($path)) return $this->folder() . $this->path();
         $m = $this->_request->module;
+        if ($m) $m = "/{$m}";
         $path = trim($path, '/');
-        $this->_folder = '/' . _DOMAIN . "/{$m}/{$path}";
+        $this->_folder = '/' . _DOMAIN . "{$m}/{$path}";
         $this->_path = '';
         return $this;
     }
