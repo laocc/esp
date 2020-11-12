@@ -313,6 +313,10 @@ final class Mysql
             $errState = intval($error[1]);
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
+            if ($debug and !_CLI) {
+                $this->debug($debugOption + $debugVal, $pre)->error($error);
+            }
+
             if ($try++ < 2 and in_array($errState, [2002, 2006, 2013])) {
                 if (_CLI) {
                     print_r($debugVal);

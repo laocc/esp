@@ -406,6 +406,7 @@ final class Debug
     {
         if ($mt > 1 && mt_rand(0, $mt) === 1) return $this;
         $this->_run = false;
+        return $this;
     }
 
     /**
@@ -455,6 +456,7 @@ final class Debug
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
         $this->relay("Mysql[" . (++$count) . '] = ' . print_r($val, true) . str_repeat('-', 10) . '>', $pre);
+        return $this;
     }
 
     public static function recode($data)
