@@ -19,7 +19,7 @@ final class Response
     private $_save_cache = false;
     private $_header = [];
 
-    private $_view_val = Array();
+    private $_view_val = array();
     private $_layout_val = [
         '_js_foot' => [],
         '_js_head' => [],
@@ -121,9 +121,9 @@ final class Response
 
     /**
      * 渲染视图并返回
-     * @param void $value 控制器返回的值
+     * @param string|array|int|bool $value 控制器返回的值
      */
-    public function display(&$value): void
+    public function display($value): void
     {
         if ($this->_autoRun === false) return;
 //        if (!headers_sent()) header('sid: ' . ip2long(getenv('SERVER_ADDR')));
@@ -474,8 +474,8 @@ final class Response
             foreach (['foot', 'head', 'body', 'defer'] as $pos) {
                 if (!empty($this->_layout_val["_js_{$pos}"])) {
                     $defer = ($pos === 'defer') ? ' defer="defer"' : null;
-                    $conJS = Array();
-                    $http = Array();
+                    $conJS = array();
+                    $http = array();
                     foreach ($this->_layout_val["_js_{$pos}"] as &$js) {
                         if ($js === 'jquery') $js = $this->_resource->get('jquery');
                         if (substr($js, 0, 4) === 'http') {
@@ -493,8 +493,8 @@ final class Response
                 }
             }
             if (!empty($this->_layout_val['_css'])) {
-                $conCSS = Array();
-                $http = Array();
+                $conCSS = array();
+                $http = array();
                 foreach ($this->_layout_val['_css'] as &$css) {
                     if (substr($css, 0, 4) === 'http') {
                         $http[] = "<link rel=\"stylesheet\" href=\"{$css}\" charset=\"utf-8\" />";

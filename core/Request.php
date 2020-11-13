@@ -8,11 +8,11 @@ use esp\core\ext\EspError;
 final class Request
 {
     private $_dispatcher;
-    private $_var = Array();
+    private $_var = array();
     public $loop = false;//控制器间跳转循环标识
     public $router_path = null;//路由配置目录
     public $router = null;//实际生效的路由器名称
-    public $params = Array();
+    public $params = array();
 
     public $virtual;
     public $module;
@@ -30,15 +30,23 @@ final class Request
     {
         $request = ($config->get('frame.request') ?: $config->get('request')) ?: [];
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
-        if (_CLI) $this->method = 'CLI';
-        if ($this->method === 'GET' and $this->isAjax()) $this->method = 'AJAX';
+        if (_CLI) {
+            $this->method = 'CLI';
+        } else if ($this->method === 'GET' and (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest')) {
+            $this->method = 'AJAX';
+        } else if ($this->method !== 'POST') {
+            //仅支持：get/post/ajax/cli 四种请求
+            throw new EspError("Prohibited Method[{$this->method}]", 500);
+        }
+
         if (!is_array($request)) $request = [];
         $request += [
             'directory' => '/application',
             'router' => '/common/routes',
             'controller' => '',
-            'suffix' => ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post', 'cli' => 'Cli'],
+            'suffix' => [],//'auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post', 'cli' => 'Cli'
         ];
+        $request['suffix'] += ['auto' => 'Action'];
 
         $this->_dispatcher = $dispatcher;
         $this->virtual = _VIRTUAL;//虚拟机
@@ -101,17 +109,9 @@ final class Request
      */
     public function getActionExt()
     {
-        $suffix = $this->suffix;
-        if ($this->isGet() and ($p = $suffix['get'] ?? '')) $actionExt = $p;
-        elseif ($this->isPost() and ($p = $suffix['post'] ?? '')) $actionExt = $p;
-        elseif ($this->isAjax() and ($p = $suffix['ajax'] ?? '')) $actionExt = $p;//必须放在isPost之后
-        elseif (_CLI and ($p = $suffix['cli'] ?? '')) $actionExt = $p;
-        else {
-            throw new EspError("Prohibited Method[{$this->method}]", 500);
-        }
+        $actionExt = $this->suffix[strtolower($this->method)] ?? ($this->suffix['auto'] ?? 'action');
         return ucfirst($actionExt);
     }
-
 
     public function __get(string $name)
     {
