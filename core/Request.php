@@ -28,17 +28,17 @@ final class Request
 
     public function __construct(Dispatcher $dispatcher, Configure $config)
     {
-        $request = ($config->get('frame.request') ?: $config->get('request')) ?: [];
-        $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
+        $this->method = strtoupper(getenv('REQUEST_METHOD') ?: 'UNKNOWN');
         if (_CLI) {
             $this->method = 'CLI';
-        } else if ($this->method === 'GET' and (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest')) {
-            $this->method = 'AJAX';
+        } else if ($this->method === 'GET') {
+            if (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest') $this->method = 'AJAX';
         } else if ($this->method !== 'POST') {
             //仅支持：get/post/ajax/cli 四种请求
             throw new EspError("Prohibited Method[{$this->method}]", 500);
         }
 
+        $request = ($config->get('request') ?: $config->get('frame.request')) ?: [];
         if (!is_array($request)) $request = [];
         $request += [
             'directory' => '/application',
