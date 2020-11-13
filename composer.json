@@ -1,0 +1,35 @@
+{
+  "name": "laocc/esp",
+  "description": "(esp)Efficient Simple PHP",
+  "homepage": "https://github.com/laocc/esp",
+  "authors": [
+    {
+      "name": "fazo",
+      "email": "fazo@qq.com"
+    }
+  ],
+  "require": {
+    "php": ">7.0",
+    "ext-json": "*",
+    "ext-curl": "*",
+    "ext-libxml": "*",
+    "ext-xml": "*",
+    "ext-gd": "*",
+    "ext-redis": "*",
+    "ext-simplexml": "*",
+    "ext-mbstring": "*",
+    "ext-pdo": "*"
+  },
+  "autoload": {
+    "files": [
+      "helper/rely.php",
+      "helper/judge.php",
+      "helper/time.php",
+      "helper/tools.php"
+    ],
+    "psr-4": {
+      "esp\\core\\": "core/",
+      "esp\\library\\": "library/"
+    }
+  }
+}
