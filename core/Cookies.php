@@ -10,7 +10,7 @@ final class Cookies
     public function __construct(array $cookies)
     {
         $this->domain = _DOMAIN;
-        if (($cookies['domain'] ?? '') === 'host') $this->domain = _HOST;
+        if ($cookies['domain'] === 'host') $this->domain = _HOST;
     }
 
     public function get($key = null, $autoValue = null)
@@ -39,8 +39,6 @@ final class Cookies
             $option['samesite'] = 'Lax';
             return setcookie(strtolower($key), $value, $option);
         }
-
-        //function setcookie ($name, $value = "", $expire = 0, $path = "", $domain = "", $secure = false, $httponly = false) {}
         return setcookie(strtolower($key), $value, $ttl, '/', $this->domain, _HTTPS, true);
     }
 
