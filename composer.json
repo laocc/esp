@@ -18,6 +18,7 @@
     "ext-redis": "*",
     "ext-simplexml": "*",
     "ext-mbstring": "*",
+    "ext-zlib": "*",
     "ext-pdo": "*"
   },
   "autoload": {
