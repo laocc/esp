@@ -59,7 +59,7 @@ final class Error
             $err = array();
             $err['success'] = 0;
             $err['time'] = date('Y-m-d H:i:s');
-            $err['error'] = $errNo;
+            $err['error'] = $errNo ?: 500;
             $err['message'] = $errStr;
             $err['file'] = $errFile . '(' . $errLine . ')';
             $err['trace'] = $error->getTrace();
@@ -120,7 +120,7 @@ final class Error
             $err = array();
             $err['success'] = 0;
             $err['time'] = date('Y-m-d H:i:s');
-            $err['error'] = $error->getCode();
+            $err['error'] = $error->getCode() ?: 500;
             $err['message'] = $error->getMessage();
             $err['file'] = $error->getFile() . '(' . $error->getLine() . ')';
             $err['trace'] = $error->getTrace();

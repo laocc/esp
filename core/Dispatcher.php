@@ -85,7 +85,7 @@ final class Dispatcher
 
                 //若不启用Cookies，则也不启用Session
                 if ($session = ($this->_config->get('session') ?: $this->_config->get('frame.session'))) {
-                    $sseConf = ($session['default'] ?? []) + ['run' => false];
+                    $sseConf = ($session['default'] ?? []) + ['run' => false, 'domain' => $cokConf['domain']];
                     if (isset($session[_VIRTUAL])) $sseConf = $session[_VIRTUAL] + $sseConf;
                     if (isset($session[_HOST])) $sseConf = $session[_HOST] + $sseConf;
                     if (isset($session[_DOMAIN])) $sseConf = $session[_DOMAIN] + $sseConf;

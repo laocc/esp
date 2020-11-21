@@ -138,7 +138,7 @@ final class Debug
             'Error' => $error,
             'Server' => $_SERVER,
         ];
-        $conf = ['filename' => 'YmdHis', 'path' => $this->_conf['error'] ?? (_RUNTIME . '/warn')];
+        $conf = ['filename' => 'YmdHis', 'path' => $this->_conf['warn'] ?? (_RUNTIME . '/warn')];
         $filename = $conf['path'] . "/" . date($conf['filename']) . mt_rand() . '.md';
         return $this->save_file($filename, json_encode($info, 64 | 128 | 256));
     }

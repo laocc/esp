@@ -341,7 +341,7 @@ final class Configure
 
     /**
      * 读取config，可以用get('key1.key2')的方式读取多维数组值
-     * @param string ...$key
+     * @param array ...$key
      * @return null|array|string
      */
     public function get(...$key)
