@@ -101,7 +101,7 @@ final class Result
             }
         } else {
             $i = 0;
-            $val = Array();
+            $val = array();
             if (is_int($col)) {
                 while ($i < $row and $val[] = $this->rs->fetchColumn($col)) $i++;
             } else {

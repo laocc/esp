@@ -48,7 +48,7 @@ class Memcache implements KeyValue
             return $this->keys($try - 1);
         }
 
-        $keys = Array();
+        $keys = array();
         foreach ($all_items as $host => &$client) {
             if ($host === $this->host and isset($client['items'])) {
                 foreach ($client['items'] as $area => &$array) {
@@ -77,8 +77,8 @@ class Memcache implements KeyValue
             list($whereKey, $whereType, $whereValue, $keys) = [$keys, $whereKey, $whereType, $this->keys()];
         }
 
-        $data = Array();
-        $value = Array();
+        $data = array();
+        $value = array();
         $keys = $keys ?: $this->keys();
 
         foreach ($keys as $i => &$key) {

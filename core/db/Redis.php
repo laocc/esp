@@ -97,7 +97,7 @@ final class Redis implements KeyValue
      */
     public function list(string $tabName)
     {
-        static $list = Array();
+        static $list = array();
         if (!isset($list[$tabName])) {
             $list[$tabName] = new RedisList($this->redis, $tabName);
         }
@@ -111,7 +111,7 @@ final class Redis implements KeyValue
      */
     public function hash(string $tabName)
     {
-        static $list = Array();
+        static $list = array();
         if (!isset($list[$tabName])) {
             $list[$tabName] = new RedisHash($this->redis, $tabName);
         }

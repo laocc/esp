@@ -143,12 +143,12 @@ final class Cache
      */
     private function build_cache_key($_cache_set)
     {
-        $bud = Array();
+        $bud = array();
         //共公key
         if (!empty($_GET)) {
             $param = $this->_option['param'] ?? [];
-            if (!is_array($param)) $param = Array();
-            if (!is_array($_cache_set)) $_cache_set = Array();
+            if (!is_array($param)) $param = array();
+            if (!is_array($_cache_set)) $_cache_set = array();
             //合并需要请求的值，并反转数组，最后获取与$_GET的交集
             $bud = array_intersect_key($_GET, array_flip(array_merge($param, $_cache_set)));
         }

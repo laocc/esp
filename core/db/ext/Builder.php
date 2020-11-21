@@ -16,8 +16,8 @@ final class Builder
     private $_table = '';//使用的表名称
     private $_table_pre;
 
-    private $_select = Array();//保存已经设置的选择字符串
-    private $_join_select = Array();//join表字段
+    private $_select = array();//保存已经设置的选择字符串
+    private $_join_select = array();//join表字段
 
     private $_where = '';//保存已经设置的Where子句
     private $_where_group_in = false;
@@ -25,8 +25,8 @@ final class Builder
     private $_limit = '';//LIMIT组合串
     private $_skip = 0;//跳过行数
 
-    private $_join = Array();//保存已经应用的join字符串，数组内保存解析好的完整字符串
-    private $_joinTable = Array();
+    private $_join = array();//保存已经应用的join字符串，数组内保存解析好的完整字符串
+    private $_joinTable = array();
 
     private $_order_by = '';//保存已经解析的排序字符串
 
@@ -44,9 +44,9 @@ final class Builder
     private $_dim_param = false;//系统是否定义了是否使用预处理
     private $_prepare = false;//是否启用预处理
     private $_param = false;//预处理中，是否启用参数占位符方式
-    private $_param_data = Array();//占位符的事后填充内容
+    private $_param_data = array();//占位符的事后填充内容
 
-    private $_bindKV = Array();
+    private $_bindKV = array();
     private $_object = null;
 
     private $_gzLevel = 5;//压缩比
@@ -69,7 +69,7 @@ final class Builder
     private function clean_builder($clean_all = true)
     {
         $this->_table = $this->_where = $this->_limit = $this->_having = $this->_order_by = '';
-        $this->_select = $this->_join = $this->_join_select = Array();
+        $this->_select = $this->_join = $this->_join_select = array();
         $this->_where_group_in = 0;
 
         $this->_skip = 0;
@@ -80,7 +80,7 @@ final class Builder
         $this->_distinct = null;
 
         $this->_prepare = $this->_param = $this->_dim_param;
-        $this->_bindKV = $this->_param_data = Array();
+        $this->_bindKV = $this->_param_data = array();
 
         //清除全部数据
         if ($clean_all === false) return;
@@ -926,10 +926,10 @@ final class Builder
     }
 
     /**
-     * @see $this->where_group_start
      * @return Builder
      * @return Builder
      * @throws EspError
+     * @see $this->where_group_start
      */
     public function or_where_group_start()
     {
@@ -1048,8 +1048,13 @@ final class Builder
         } else {
             $this->_join[] = " {$method} JOIN {$table} ON ({$_filter_str}) ";
         }
-        if (!is_null($select)) $this->_join_select[] = $select;
-
+        if (!is_null($select)) {
+            if ($select === '*') {
+                $this->_join_select[] = "{$table}.*";
+            } else {
+                $this->_join_select[] = $select;
+            }
+        }
         return $this;
     }
 
@@ -1127,7 +1132,7 @@ final class Builder
      */
     public function _build_get()
     {
-        $sql = Array();
+        $sql = array();
         $sql[] = "SELECT " . ($this->_distinct ? ' DISTINCT ' : '');
 
         $sql[] = " {$this->_build_select()} FROM {$this->_table}";
@@ -1157,7 +1162,7 @@ final class Builder
 
     public function _build_count_sql()
     {
-        $sql = Array();
+        $sql = array();
         $sql[] = "SELECT count(1) FROM {$this->_table}";
         if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
 
@@ -1242,7 +1247,7 @@ final class Builder
         return $tmpID;
     }
 
-    private $_temp_table = Array();
+    private $_temp_table = array();
 
 
     /**
@@ -1285,7 +1290,7 @@ final class Builder
             throw new EspError('DB_ERROR: 禁止无where时删除数据，如果要清空表，请采用：id>0的方式');
         }
 
-        $sql = Array();
+        $sql = array();
         $sql[] = "DELETE FROM {$this->_table} WHERE {$where}";
         if (!empty($this->_order_by)) $sql[] = "ORDER BY {$this->_order_by}";
         if (!empty($this->_limit)) $sql[] = "LIMIT {$this->_limit}";
@@ -1309,12 +1314,12 @@ final class Builder
         if (empty($data)) {
             throw new EspError('DB_ERROR: 无法 insert/replace 空数据');
         }
-        $this->_param_data = Array();
+        $this->_param_data = array();
 
         //非多维数组，转换成多维
         if (!(isset($data[0]) and is_array($data[0]))) $data = [$data];
 
-        $values = Array();
+        $values = array();
         $keys = null;
         $param = null;
         $op = $is_REPLACE ? 'REPLACE' : 'INSERT';
@@ -1330,7 +1335,7 @@ final class Builder
                     $valKey = array_keys($item);
                     $param = '(:' . implode(',:', $valKey) . ')';
                 }
-                $nv = Array();
+                $nv = array();
                 foreach ($item as $k => &$v) {
                     if (is_array($v)) $v = json_encode($v, 256 | 64);
                     if (substr($k, -1) === '#') {
@@ -1389,7 +1394,7 @@ final class Builder
         if (empty($data)) {
             $Exception = 'DB_ERROR: 不能 update 空数据';
         }
-        $sets = Array();
+        $sets = array();
         foreach ($data as $key => &$value) {
             if (is_int($key)) {
                 $sets[] = $value;
@@ -1541,7 +1546,7 @@ final class Builder
          * 处理数组形式传入参数
          */
         if (is_array($clause)) {
-            $r = Array();
+            $r = array();
             foreach ($clause as &$cls) {
                 $r[] = $this->protect_identifier($cls);
             }

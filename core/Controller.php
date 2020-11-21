@@ -235,8 +235,7 @@ abstract class Controller
      */
     final private function anonymousDebug()
     {
-        return new class()
-        {
+        return new class() {
             public function relay(...$a)
             {
             }

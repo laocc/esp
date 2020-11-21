@@ -56,7 +56,7 @@ final class Error
             //($message = "", $code = 0, $severity = 1, $filename = __FILE__, $lineno = __LINE__, $previous)
             $error = new EspError($errStr, $errNo, 1, $errFile, $errLine);
 
-            $err = Array();
+            $err = array();
             $err['success'] = 0;
             $err['time'] = date('Y-m-d H:i:s');
             $err['error'] = $errNo;
@@ -117,7 +117,7 @@ final class Error
          */
         $handler_exception = function (\Throwable $error) use ($option) {
 //            Session::reset();
-            $err = Array();
+            $err = array();
             $err['success'] = 0;
             $err['time'] = date('Y-m-d H:i:s');
             $err['error'] = $error->getCode();

@@ -60,7 +60,7 @@ function load(string $file)
 {
     $file = root($file);
     if (!$file or !is_readable($file)) return false;
-    static $recode = Array();
+    static $recode = array();
     $md5 = md5($file);
     if (isset($recode[$md5])) return $recode[$md5];
     $recode[$md5] = include $file;

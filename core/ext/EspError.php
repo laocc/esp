@@ -8,7 +8,7 @@ class EspError extends \ErrorException
 
     public function debug()
     {
-        $err = Array();
+        $err = array();
         $err['success'] = 0;
         $err['error'] = $this->getCode();
         $err['message'] = $this->getMessage();
@@ -19,7 +19,7 @@ class EspError extends \ErrorException
 
     public function display()
     {
-        $err = Array();
+        $err = array();
         $err['success'] = 0;
         $err['error'] = $this->getCode();
         $err['message'] = $this->getMessage();

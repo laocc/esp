@@ -200,7 +200,7 @@ final class Input
      */
     private static function requestParams(array &$data, $params, $autoValue = null)
     {
-        $value = Array();
+        $value = array();
         $index = 0;
         if (!is_array($params)) $params = [$params => $autoValue];
         foreach ($params as $param => $autoValue) {
@@ -350,7 +350,7 @@ final class Input
     public static function path(string $path, bool $fullPath = false)
     {
         if (!is_dir($path)) return [];
-        $array = Array();
+        $array = array();
         $dir = new \DirectoryIterator($path);
         foreach ($dir as $f) {
             $name = $f->getFilename();
@@ -375,7 +375,7 @@ final class Input
     public static function file(string $path, string $ext = '')
     {
         if (!is_dir($path)) return [];
-        $array = Array();
+        $array = array();
         $dir = new \DirectoryIterator($path);
         if ($ext) $ext = ltrim($ext, '.');
         foreach ($dir as $f) {

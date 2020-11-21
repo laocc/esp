@@ -214,8 +214,7 @@ final class Dispatcher
      */
     public function anonymousDebug()
     {
-        return new class()
-        {
+        return new class() {
             public function relay(...$a)
             {
             }

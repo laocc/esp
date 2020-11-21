@@ -39,7 +39,7 @@ abstract class Model
 
     private $_order = [];
     private $_count = null;
-    protected $tableJoin = Array();
+    protected $tableJoin = array();
     protected $tableJoinCount = 0;
     protected $forceIndex = '';
     protected $groupKey;
@@ -610,7 +610,7 @@ abstract class Model
     final public function join(...$data)
     {
         if (empty($data)) {
-            $this->tableJoin = Array();
+            $this->tableJoin = array();
             return $this;
         }
         $this->tableJoin[] = $data;

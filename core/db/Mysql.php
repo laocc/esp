@@ -11,16 +11,16 @@ use esp\core\ext\EspError;
 final class Mysql
 {
     private $_CONF;//配置定义
-    private $_trans_run = Array();//事务状态
-    private $_trans_error = Array();//事务出错状态
-    private $connect_time = Array();//连接时间
+    private $_trans_run = array();//事务状态
+    private $_trans_error = array();//事务出错状态
+    private $connect_time = array();//连接时间
     private $transID;
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
     private $_debug;
-    public $slave = Array();//从库连接
-    public $master = Array();//主库连接
-    public $_error = Array();//每个连接的错误信息
+    public $slave = array();//从库连接
+    public $master = array();//主库连接
+    public $_error = array();//每个连接的错误信息
     public $dbName;
 
     /**
@@ -288,7 +288,7 @@ final class Mysql
             return null;
         }
 
-        $error = Array();//预置的错误信息
+        $error = array();//预置的错误信息
 
         $debugOption = [
             'trans' => var_export($transID, true),
@@ -406,7 +406,7 @@ final class Mysql
     private function insert(\PDO $CONN, string $sql, array &$option, &$error)
     {
         if (!empty($option['param']) or $option['prepare']) {
-            $result = Array();
+            $result = array();
             try {
                 $stmt = $CONN->prepare($sql);
                 if ($stmt === false) {

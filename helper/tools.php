@@ -162,7 +162,7 @@ function gid($fh = null, $format = 0)
         if (intval($format) < 10) return wordwrap($md, $format, $fh, true);
         $format = str_split((string)$format);
     }
-    $str = Array();
+    $str = array();
     $j = 0;
     for ($i = 0; $i < count($format); $i++) {
         if ($format[$i] > 0) {
@@ -285,7 +285,7 @@ function array_sort(array &$array, string $key, string $order = 'desc')
  */
 function str_cut(string $str): array
 {
-    $arr = Array();
+    $arr = array();
     for ($i = 0; $i < mb_strlen($str); $i++) {
         $arr[] = mb_substr($str, $i, 1, "utf8");
     }

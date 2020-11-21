@@ -50,7 +50,7 @@ final class Router
             }
         }
         if (is_string($modRoute) and !empty($modRoute)) $modRoute = json_decode($modRoute, true);
-        if (empty($modRoute) or !is_array($modRoute)) $modRoute = Array();
+        if (empty($modRoute) or !is_array($modRoute)) $modRoute = array();
         foreach (array_merge($modRoute, $default) as $key => $route) {
             $matches = [];
             if ((isset($route['uri']) and stripos(_URI, $route['uri']) === 0) or
@@ -77,7 +77,7 @@ final class Router
                 if ($controller === 'base') throw new EspError('控制器名不可以为Base，这是系统保留公共控制器名', 505);
 
                 //分别获取各个指定参数
-                $params = Array();
+                $params = array();
                 if (isset($route['map'])) {
                     foreach ($route['map'] as $mi => $mk) {
                         $params[$mi] = isset($matches[$mk]) ? $matches[$mk] : null;
@@ -128,7 +128,7 @@ final class Router
     private function fill_route(string $virtual, string $directory, array $matches, array $route): array
     {
         $module = $controller = $action = '';
-        $param = Array();
+        $param = array();
 
         //正则结果中没有指定结果集
         if (empty($matches) or !isset($matches[0])) return [null, null, null, null];
