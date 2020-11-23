@@ -217,7 +217,7 @@ final class Input
     public function path(string $path, bool $fullPath = false)
     {
         if (!is_dir($path)) return [];
-        $array = Array();
+        $array = array();
         $dir = new \DirectoryIterator($path);
         foreach ($dir as $f) {
             $name = $f->getFilename();
@@ -242,7 +242,7 @@ final class Input
     public function file(string $path, string $ext = '')
     {
         if (!is_dir($path)) return [];
-        $array = Array();
+        $array = array();
         $dir = new \DirectoryIterator($path);
         if ($ext) $ext = ltrim($ext, '.');
         foreach ($dir as $f) {

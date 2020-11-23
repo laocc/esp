@@ -164,8 +164,8 @@ class RedisHash
     /**
      * Adds a value to the hash stored at key only if this field isn't already in the hash.
      *
-     * @param   string $hashKey
-     * @param   string $value
+     * @param string $hashKey
+     * @param string $value
      * @return  bool    TRUE if the field was set, FALSE if it was already present.
      * @link    http://redis.io/commands/hsetnx
      * @example
@@ -203,7 +203,7 @@ class RedisHash
      * Removes a values from the hash stored at key.
      * If the hash table doesn't exist, or the key doesn't exist, FALSE is returned.
      *
-     * @param   string ...$hashKey
+     * @param string ...$hashKey
      * @return  int     Number of deleted fields
      * @link    http://redis.io/commands/hdel
      * @example
@@ -270,7 +270,7 @@ class RedisHash
     /**
      * Returns the values in a hash, as an array of strings.
      *
-     * @param   string $key
+     * @param string $key
      * @return  array   An array of elements, the values of the hash. This works like PHP's array_values().
      * @link    http://redis.io/commands/hvals
      * @example
@@ -304,7 +304,7 @@ class RedisHash
     /**
      * Returns the whole hash, as an array of strings indexed by strings.
      *
-     * @param   string $key
+     * @param string $key
      * @return  array   An array of elements, the contents of the hash.
      * @link    http://redis.io/commands/hgetall
      * @example
@@ -338,8 +338,8 @@ class RedisHash
     /**
      * Verify if the specified member exists in a key.
      *
-     * @param   string $key
-     * @param   string $hashKey
+     * @param string $key
+     * @param string $hashKey
      * @return  bool    If the member exists in the hash table, return TRUE, otherwise return FALSE.
      * @link    http://redis.io/commands/hexists
      * @example
@@ -357,9 +357,9 @@ class RedisHash
     /**
      * Increments the value of a member from a hash by a given amount.
      *
-     * @param   string $key
-     * @param   string $hashKey
-     * @param   int $value (integer) value that will be added to the member's value
+     * @param string $key
+     * @param string $hashKey
+     * @param int $value (integer) value that will be added to the member's value
      * @return  int     the new value
      * @link    http://redis.io/commands/hincrby
      * @example
@@ -376,9 +376,9 @@ class RedisHash
 
     /**
      * Increment the float value of a hash field by the given amount
-     * @param   string $key
-     * @param   string $field
-     * @param   float $increment
+     * @param string $key
+     * @param string $field
+     * @param float $increment
      * @return  float
      * @link    http://redis.io/commands/hincrbyfloat
      * @example
@@ -409,8 +409,8 @@ class RedisHash
      * Fills in a whole hash. Non-string values are converted to string, using the standard (string) cast.
      * NULL values are stored as empty strings
      *
-     * @param   string $key
-     * @param   array $hashKeys key → value array
+     * @param string $key
+     * @param array $hashKeys key → value array
      * @return  bool
      * @link    http://redis.io/commands/hmset
      * @example
@@ -428,8 +428,8 @@ class RedisHash
     /**
      * Retirieve the values associated to the specified fields in the hash.
      *
-     * @param   string $key
-     * @param   array $hashKeys
+     * @param string $key
+     * @param array $hashKeys
      * @return  array   Array An array of elements, the values of the specified fields in the hash,
      * with the hash keys as array keys.
      * @link    http://redis.io/commands/hmget

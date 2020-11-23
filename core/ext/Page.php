@@ -28,7 +28,7 @@ trait Page
     }
 
     /**
-     * @param int $size  >=2
+     * @param int $size >=2
      * @param int $index
      * @param int $lftRit
      * @return $this
@@ -89,7 +89,7 @@ trait Page
         if ($info['next'] > $info['page']) $info['next'] = $info['page'];
         if (empty($class)) $class = 'pageForm';
         if ($class[0] === '+') $class = "pageForm " . substr($class, 1);
-        $link = Array();
+        $link = array();
         $link[] = "<form method='get' action='?' autocomplete='off' class='{$class}'><ul>";
         $link[] = "<li><a href='?{$key}=1&[QueryString]' class='first'>&lt;&lt;</a></li>";
         $link[] = "<li><a href='?{$key}={$info['prev']}&[QueryString]' class='prev'>&lt;</a></li>";
@@ -101,7 +101,7 @@ trait Page
             $link[] = "<input type='hidden' name='{$_k}' value='{$_v}'>";
         }
 
-        $page = Array();
+        $page = array();
 
         //页面导航的起止点
         $star = $info['index'] - $_show;
@@ -168,7 +168,7 @@ trait Page
             if ($info['next'] > $info['page']) $info['next'] = $info['page'];
             if (empty($class)) $class = 'pageForm';
             if ($class[0] === '+') $class = "pageForm " . substr($class, 1);
-            $link = Array();
+            $link = array();
             $link[] = "<form method='get' action='?' autocomplete='off' class='{$class}'><ul>";
             if ($notice and $notice[0] === '<') $link[] = "<li style='padding-right: 3px;'>{$notice}</li>";
             $link[] = "<li><a href='?{$key}=1&[QueryString]' class='page first'>&lt;&lt;</a></li>";
@@ -181,7 +181,7 @@ trait Page
                 $link[] = "<input type='hidden' name='{$_k}' value='{$_v}'>";
             }
 
-            $page = Array();
+            $page = array();
 
             //页面导航的起止点
             $star = $info['index'] - $_show;

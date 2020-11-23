@@ -41,7 +41,7 @@ class Yac implements KeyValue
         $keys = array_column($dump, 'key');
         $ttls = array_column($dump, 'ttl');
         $time = time();
-        $value = Array();
+        $value = array();
         foreach ($keys as $index => &$key) {
             $title = explode('_', $key);
             if ($title[0] !== $this->table) continue;

@@ -14,7 +14,7 @@ final class View
         'dir' => null,
         'file' => null,
     ];
-    private $_view_val = Array();
+    private $_view_val = array();
     private $_layout;//框架对象
     private $_adapter;//标签解析器对象
     private $_adapter_use;

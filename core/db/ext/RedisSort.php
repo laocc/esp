@@ -22,7 +22,7 @@ class RedisSort
         };
 
         if (is_array($value)) {
-            $nVal = Array();
+            $nVal = array();
             foreach ($value as $k => &$v) {
                 $nVal[] = $timeKey($k);
                 $nVal[] = ($v);

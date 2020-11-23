@@ -417,7 +417,7 @@ final class Output
         }
 
         if (is_array($data) and empty($option)) [$data, $option] = [null, $data];
-        if (!isset($option['headers'])) $option['headers'] = Array();
+        if (!isset($option['headers'])) $option['headers'] = array();
         if (!is_array($option['headers'])) $option['headers'] = [$option['headers']];
 
         $cOption = [];
@@ -709,7 +709,7 @@ final class Output
     private static function header(string $text)
     {
         $line = explode("\r\n", trim($text));
-        $arr = Array();
+        $arr = array();
         foreach ($line as $i => $ln) {
             if (strpos($ln, ':')) {
                 $tmp = explode(':', $ln, 2);

@@ -24,7 +24,7 @@ class Mongodb
     private $_conn = null;
     private $_db = null;
     private $_table = null;
-    private $_where = Array();
+    private $_where = array();
     private $_order = ['_id' => -1];
     private $_select = null;
     public $_build_where = '';
@@ -87,7 +87,7 @@ class Mongodb
     public function table($table = null)
     {
         $this->_table = $this->_db . '.' . ($table ?: 'test');
-        $this->_where = Array();
+        $this->_where = array();
         $this->_select = null;
         $this->_order = ['_id' => -1];
         return $this;
@@ -236,7 +236,7 @@ class Mongodb
      */
     public function where_or($array)
     {
-        $or = Array();
+        $or = array();
         foreach ($array as $key => &$value) {
             if (!is_array($value)) {
                 $or[$key] = $value;
@@ -382,7 +382,7 @@ class Mongodb
 
         $query = new Query($where, $options);
         $RS = $this->_conn->executeQuery($this->_table, $query)->toArray();
-        $value = Array();
+        $value = array();
         foreach ($RS as &$rs) {
             $array = json_decode(json_encode($rs, 256), true);
             $array['_id'] = $rs->_id->__toString();

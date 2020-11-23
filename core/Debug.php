@@ -13,11 +13,11 @@ final class Debug
     private $_run;
     private $_star;
     private $_time;
-    private $_value = Array();
+    private $_value = array();
     private $_print_format = '% 9.3f';
-    private $_node = Array();
+    private $_node = array();
     private $_node_len = 0;
-    private $_mysql = Array();
+    private $_mysql = array();
     private $_conf;
     private $_request;
     private $_response;
@@ -221,7 +221,7 @@ final class Debug
         $this->relay('END:save_logs', []);
         $rq = $this->_request;
         $method = $rq->getMethod();
-        $data = Array();
+        $data = array();
         $data[] = "## 请求数据\n```\n";
         $data[] = " - CallBy:\t{$pre}\n";
         $data[] = " - METHOD:\t{$method}\n";
@@ -271,7 +271,7 @@ final class Debug
 
         if (1 and $this->_conf['print']['mysql'] ?? 0) {
             if (is_array($this->_mysql)) {
-                $slow = Array();
+                $slow = array();
                 foreach ($this->_mysql as $i => $sql) {
                     if (intval($sql['wait']) > 20) $slow[] = $i;
                 }
@@ -322,7 +322,7 @@ final class Debug
     {
 //        if ($show) echo "moveDebug:\t" . _RUNTIME . "/debug/move\n";
 
-        $array = Array();
+        $array = array();
         $dir = new \DirectoryIterator(_RUNTIME . '/debug/move');
 
         foreach ($dir as $i => $f) {
@@ -350,7 +350,7 @@ final class Debug
     {
         if ($show) echo "moveDebug:\t" . _RUNTIME . "/debug/cache\n";
 
-        $array = Array();
+        $array = array();
         $dir = new \DirectoryIterator(_RUNTIME . '/debug/cache');
 
         foreach ($dir as $i => $f) {

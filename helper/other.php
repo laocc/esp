@@ -1,4 +1,5 @@
 <?php
+
 namespace esp\helper;
 
 /**
@@ -33,7 +34,7 @@ function between_value($value, $min, $max)
  */
 function image_type(string $ext): int
 {
-    $file = Array();
+    $file = array();
     $file['gif'] = IMAGETYPE_GIF;
     $file['jpg'] = IMAGETYPE_JPEG;
     $file['jpeg'] = IMAGETYPE_JPEG;
