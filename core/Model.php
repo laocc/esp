@@ -113,8 +113,8 @@ abstract class Model
      */
     final public function debug_file(string $filename = null)
     {
-        $file = $this->debug(null)->filename($filename);
-        return substr($file, strlen(_ROOT));
+        if (is_null($this->_debug)) return 'null';
+        return $this->_debug->filename($filename);
     }
 
     final protected function config(...$key)

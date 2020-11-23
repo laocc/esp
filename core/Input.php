@@ -115,7 +115,7 @@ final class Input
             case is_string($autoValue):
                 if ($autoValue === '') {
                     //\%\&\^\$\#\(\)\[\]\{\}\?
-                    $value = preg_replace('/[\"\']/', '', trim($value));
+                    $value = preg_replace('#["\']#', '', trim($value));
 //                    if ($value && self::_XSS_CLEAN) Xss::clear($value);
 
                 } elseif ($autoValue === 'real') {
