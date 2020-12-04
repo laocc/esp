@@ -53,8 +53,8 @@ final class Error
          */
         $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $context = null)
         use ($option) {
-            //($message = "", $code = 0, $severity = 1, $filename = __FILE__, $lineno = __LINE__, $previous)
-            $error = new EspError($errStr, $errNo, 1, $errFile, $errLine);
+            $prev = ['message' => $errStr, 'code' => $errNo, 'file' => $errFile, 'line' => $errLine];
+            $error = new EspError($prev);
 
             $err = array();
             $err['success'] = 0;
@@ -65,7 +65,7 @@ final class Error
             $err['trace'] = $error->getTrace();
             $err['context'] = print_r($context, true);
 
-            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+            $this->error($err, $prev, $option['path'], $option['filename']);
             $ajax = (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
             $post = (strtolower(getenv('REQUEST_METHOD') ?: '') === 'post');
 

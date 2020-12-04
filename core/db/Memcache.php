@@ -17,7 +17,7 @@ class Memcache implements KeyValue
         $conf += ['host' => '127.0.0.1', 'port' => 11211, 'table' => $this->table];
         $this->conn = new \Memcache();
         if (!@$this->conn->connect($conf['host'], $conf['port'])) {
-            throw new EspError('Memcache 连接失败');
+            throw new EspError('Memcache 连接失败', 1);
         }
         $this->table = ($table ?: $conf['table']) ?: $this->table;
         $this->host = "{$conf['host']}:{$conf['port']}";
@@ -30,7 +30,7 @@ class Memcache implements KeyValue
      */
     public function table(string $table)
     {
-        if (empty($table) or !is_string($table)) throw new EspError('DB_MemCache ERROR: Table 不可为空，只可为字符串');
+        if (empty($table) or !is_string($table)) throw new EspError('DB_MemCache ERROR: Table 不可为空，只可为字符串', 1);
         $this->table = $table;
         return $this;
     }
@@ -201,7 +201,7 @@ class Memcache implements KeyValue
      */
     public function counter(string $TabKey = 'count', int $incrby = 1)
     {
-        if (!is_int($incrby)) throw new EspError('DB_MemCache ERROR: incrby只能是整型');
+        if (!is_int($incrby)) throw new EspError('DB_MemCache ERROR: incrby只能是整型', 1);
 
         if ($incrby >= 0) {
             return $this->conn->increment($this->table . '.' . $TabKey, $incrby);

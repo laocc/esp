@@ -10,35 +10,10 @@ trait Mysql
     /**
      * select * from INFORMATION_SCHEMA.Columns where table_name='tabAdmin' and table_schema='dbPayCenter';
      * 当前模型表对应的主键字段名，即自增字段
-     * @return null
-     *************************** 1. row ***************************
-     * TABLE_CATALOG: def
-     * TABLE_SCHEMA: dbPlatform
-     * TABLE_NAME: tabAdmin
-     * COLUMN_NAME: adminID
-     * ORDINAL_POSITION: 1
-     * COLUMN_DEFAULT: NULL
-     * IS_NULLABLE: NO
-     * DATA_TYPE: int
-     * CHARACTER_MAXIMUM_LENGTH: NULL
-     * CHARACTER_OCTET_LENGTH: NULL
-     * NUMERIC_PRECISION: 10
-     * NUMERIC_SCALE: 0
-     * DATETIME_PRECISION: NULL
-     * CHARACTER_SET_NAME: NULL
-     * COLLATION_NAME: NULL
-     * COLUMN_TYPE: int(10) unsigned
-     * COLUMN_KEY: PRI
-     * EXTRA: auto_increment
-     * PRIVILEGES: select,insert,update,references
-     * COLUMN_COMMENT: ID
-     * GENERATION_EXPRESSION:
-     */
-    /**
      * @param string|null $table
-     * @return null
+     * @return string
      */
-    final public function PRI(string $table = null)
+    final public function PRI(string $table = null): string
     {
         if (isset($this->_id) and !empty($this->_id)) return $this->_id;
         if (!is_null($this->__pri)) return $this->__pri;
@@ -50,7 +25,7 @@ trait Mysql
             ->select('COLUMN_NAME')
             ->where(['table_name' => $table, 'EXTRA' => 'auto_increment'])
             ->get()->row();
-        if (empty($val)) return null;
+        if (empty($val)) return '';
         $this->__pri = $val['COLUMN_NAME'];
         return $this->__pri;
     }
@@ -69,7 +44,7 @@ trait Mysql
          * @var $mysql \esp\core\db\Mysql
          */
         $mysql = $this->Mysql();
-        return $mysql->query("alter table {$table} AUTO_INCREMENT={$id}");
+        return $mysql->query("alter table {$table} AUTO_INCREMENT={$id}", [], null, 1);
     }
 
     /**
@@ -85,7 +60,7 @@ trait Mysql
          */
         $this->cache_set("{$mysql->dbName}.{$table}", '_field', []);
         $this->cache_set("{$mysql->dbName}.{$table}", '_title', []);
-        $val = $mysql->query("analyze table `{$table}`")->rows();
+        $val = $mysql->query("analyze table `{$table}`", [], null, 1)->rows();
         if (isset($val[1])) {
             return $val[0]['Msg_text'];
         } else {

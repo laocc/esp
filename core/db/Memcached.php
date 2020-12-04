@@ -39,7 +39,7 @@ class Memcached implements KeyValue
         $this->server->setOption(\Memcached::OPT_PREFIX_KEY, $conf['table'] . '_');
         $this->server->addServers($conf['host']);
         if (!$this->server->getStats()) {
-            throw new EspError('Memcached 连接失败');
+            throw new EspError('Memcached 连接失败', 1);
         }
     }
 

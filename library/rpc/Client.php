@@ -141,9 +141,9 @@ class Client
 
                 if (!$fp) {//连接失败
                     if (!is_null($callback)) {
-                        $callback($index, new EspError($err_str, $err_no));
+                        $callback($index, new EspError($err_str));
                     } else {//异步时，直接抛错
-                        throw new EspError($err_str, $err_no);
+                        throw new EspError($err_str);
                     }
                 } else {
                     $_data = http_build_query($item['data']);

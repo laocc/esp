@@ -52,7 +52,7 @@ final class Output
      */
     public function rpc(string $uri, array $rpc)
     {
-        if (_VIRTUAL === 'rpc') throw new EspError('RPC内不能请求rpc', 505);
+        if (_VIRTUAL === 'rpc') throw new EspError('RPC内不能请求rpc', 1);
         $host = ['host' => $rpc['host'], 'port' => $rpc['port'], 'ip' => $rpc['ip']];
         $this->url = sprintf('http://%s:%s/%s', $host['host'], $host['port'], ltrim($uri, '/'));
         $this->option['host'] = [implode(':', $host)];

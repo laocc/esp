@@ -89,7 +89,7 @@ final class Configure
              */
             $get = Output::new()->rpc($awakenURI, $this->_rpc)->get('html');
             if ($tryCount > 1) {
-                throw new EspError("rpc fail:{$this->_token}/{$get}/", 505);
+                throw new EspError("rpc fail:{$this->_token}/{$get}/");
             }
             $tryCount++;
             goto tryReadRedis;

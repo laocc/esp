@@ -30,7 +30,7 @@ final class Redis implements KeyValue
         $conf += ['host' => '/tmp/redis.sock', 'port' => 0, 'db' => 1];
         if (is_null($db)) $db = intval($conf['db'] ?? 1);
         if (!($db >= 0 and $db <= 16)) {
-            throw new EspError('Redis库ID选择错误，0库为系统库不可直接调用，暂不支持大于16的库');
+            throw new EspError('Redis库ID选择错误，0库为系统库不可直接调用，暂不支持大于16的库', 1);
         }
         if (isset($conf['self']) and getenv('REMOTE_ADDR') === '127.0.0.1') {
             $conf['host'] = $conf['self'];
@@ -44,25 +44,25 @@ final class Redis implements KeyValue
             if (isset($conf['pconnect']) and $conf['pconnect']) {
                 if ($conf['host'][0] === '/') {
                     if (!$this->redis->pconnect($conf['host'])) {
-                        throw new EspError("Redis服务器【{$conf['host']}】无法连接。");
+                        throw new EspError("Redis服务器【{$conf['host']}】无法连接。", 1);
                     }
                 } else if (!$this->redis->pconnect($conf['host'], intval($conf['port']))) {
-                    throw new EspError("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
+                    throw new EspError("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1);
                 }
             } else {
                 if ($conf['host'][0] === '/') {
                     if (!$this->redis->connect($conf['host'])) {
-                        throw new EspError("Redis服务器【{$conf['host']}】无法连接。");
+                        throw new EspError("Redis服务器【{$conf['host']}】无法连接。", 1);
                     }
                 } else if (!$this->redis->connect($conf['host'], intval($conf['port']))) {
-                    throw new EspError("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
+                    throw new EspError("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1);
                 }
             }
         } catch (EspError $e) {
             if ($tryCont++ > 2) {
                 if (_DEBUG) print_r($conf);
                 $err = base64_encode(print_r($conf, true));
-                throw new EspError($e->getMessage() . '/' . $err, $e->getCode());
+                throw new EspError($e->getMessage() . '/' . $err, $e->getCode(), 1);
             }
             usleep(10000);
             goto tryCont;
@@ -71,7 +71,7 @@ final class Redis implements KeyValue
 
         //用密码登录
         if (isset($conf['password']) and !empty($conf['password']) and !$this->redis->auth($conf['password'])) {
-            throw new EspError("Redis密码错误，无法连接服务器。");
+            throw new EspError("Redis密码错误，无法连接服务器。", 1);
         }
 
         if (isset($conf['timeout'])) {
@@ -85,7 +85,7 @@ final class Redis implements KeyValue
         }
 
         if (!$this->redis->select((int)$db)) {
-            throw new EspError("Redis选择库【{$db}】失败。");
+            throw new EspError("Redis选择库【{$db}】失败。", 1);
         }
         if (isset($conf['flush']) and $conf['flush']) $this->redis->flushDB();
     }

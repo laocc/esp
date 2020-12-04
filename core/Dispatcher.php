@@ -147,7 +147,7 @@ final class Dispatcher
     {
         if (is_string($class)) {
             if (!class_exists($class)) {
-                throw new EspError("Bootstrap类不存在，请检查{$class}.php文件", 404);
+                throw new EspError("Bootstrap类不存在，请检查{$class}.php文件");
             }
             $class = new $class();
         }
@@ -173,7 +173,7 @@ final class Dispatcher
         $name = get_class($class);
         $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
         if (isset($this->_plugs[$name])) {
-            throw new EspError("插件名{$name}已被注册过", 404);
+            throw new EspError("插件名{$name}已被注册过");
         }
         $this->_plugs[$name] = $class;
         $this->_plugs_count++;
@@ -359,7 +359,7 @@ final class Dispatcher
 
         $cont = new $cName($this);
         if (!$cont instanceof Controller) {
-            throw new EspError("{$cName} 须继承自 \\esp\\core\\Controller", 404);
+            throw new EspError("{$cName} 须继承自 \\esp\\core\\Controller");
         }
 
         if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {

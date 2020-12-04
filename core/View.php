@@ -129,7 +129,7 @@ final class View
             $this->_adapter_use = false;
         } elseif ($use === true) {
             if (is_null($this->_adapter)) {
-                throw new EspError('标签解析器没有注册，请在已注册过的插中注册标签解析器');
+                throw new EspError('标签解析器没有注册，请在已注册过的插中注册标签解析器', 1);
             }
             $this->_adapter_use = true;
         }
@@ -179,7 +179,7 @@ final class View
 
         if (!is_readable($fileV)) {
             if (!is_readable($fileT = "{$dir}/view.php")) {
-                throw new EspError("视图文件({$fileV})不存在", 400);
+                throw new EspError("视图文件({$fileV})不存在", 1);
             } else {
                 $fileV = $fileT;
             }
@@ -199,7 +199,7 @@ final class View
             $layout = '/layout.php';
             $layout_file = $dir . $layout;
             if (!is_readable($layout_file)) $layout_file = dirname($dir) . $layout;//上一级目录
-            if (!is_readable($layout_file)) throw new EspError("框架视图文件({$layout_file})不存在");
+            if (!is_readable($layout_file)) throw new EspError("框架视图文件({$layout_file})不存在", 1);
             return $this->_layout->render($layout_file, ['_view_html' => &$html]);
         }
         return $this->fetch($fileV, $value + $this->_view_val);

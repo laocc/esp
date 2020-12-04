@@ -106,7 +106,7 @@ final class Response
                 break;
 
             default:
-                throw new EspError("不接受{$name}类型的值");
+                throw new EspError("不接受{$name}类型的值", 1);
 
         }
         return true;
@@ -208,7 +208,7 @@ final class Response
         if (!$this->_view_set['view_use']) return null;
 
         if (!$this->_request->virtual) {
-            throw new EspError("registerAdapter要在routeAfter之后执行", 500);
+            throw new EspError("registerAdapter要在routeAfter之后执行", 1);
         }
         return $this->getView()->registerAdapter($adapter);
     }

@@ -930,7 +930,6 @@ class MarkdownObject
      */
     private function parseMh(array $lines, $num)
     {
-//        var_dump(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]);
         return $this->parseSh($lines, $num);
     }
 

@@ -107,7 +107,7 @@ final class Request
         elseif ($this->isAjax() and ($p = $suffix['ajax'] ?? '')) $actionExt = $p;//必须放在isPost之后
         elseif (_CLI and ($p = $suffix['cli'] ?? '')) $actionExt = $p;
         else {
-            throw new EspError("Prohibited Method[{$this->method}]", 500);
+            throw new EspError("Prohibited Method[{$this->method}]");
         }
         return ucfirst($actionExt);
     }
@@ -195,7 +195,7 @@ final class Request
     public function cid(string $key = '_SSI', bool $number = false)
     {
         if (is_null($this->_dispatcher->_cookies)) {
-            throw new EspError("当前站点未启用Cookies，无法获取CID", 505);
+            throw new EspError("当前站点未启用Cookies，无法获取CID", 1);
         }
 
         $key = strtolower($key);
@@ -203,7 +203,8 @@ final class Request
         if (!$unique) {
             $unique = $number ? mt_rand() : \esp\helper\str_rand(20);
             if (headers_sent($file, $line)) {
-                throw new EspError("Header be Send:{$file}[{$line}]", 505);
+                $err = ['message' => "Header be Send:{$file}[{$line}]", 'code' => 500, 'file' => $file, 'line' => $line];
+                throw new EspError($err);
             }
             $time = time() + 86400 * 365;
             $dom = $this->_dispatcher->_cookies->domain;

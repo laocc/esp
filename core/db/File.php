@@ -71,12 +71,12 @@ final class File
 
     public function host()
     {
-        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 505);
+        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 1);
     }
 
     public function publish(string $channel, string $action, $message)
     {
-        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 505);
+        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 1);
     }
 
 }

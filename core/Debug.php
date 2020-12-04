@@ -111,13 +111,18 @@ final class Debug
 
     public function error($error, $tract = null)
     {
+        if (is_null($tract)) {
+            $tract = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        } else if (is_int($tract)) {
+            $tract = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $tract + 1)[$tract] ?? [];
+        }
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('SERVER_ADDR'),
             'Url' => _HTTP_ . _DOMAIN . _URI,
             'Referer' => getenv("HTTP_REFERER"),
             'Debug' => $this->filename(),
-            'Trace' => $tract ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
+            'Trace' => $tract,
             'Error' => $error,
             'Server' => $_SERVER,
         ];
@@ -128,13 +133,19 @@ final class Debug
 
     public function warn($error, $tract = null)
     {
+        if (is_null($tract)) {
+            $tract = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        } else if (is_int($tract)) {
+            $tract = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $tract + 1)[$tract] ?? [];
+        }
+
         $info = [
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('SERVER_ADDR'),
             'Url' => _HTTP_ . _DOMAIN . _URI,
             'Referer' => getenv("HTTP_REFERER"),
             'Debug' => $this->filename(),
-            'Trace' => $tract ?: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
+            'Trace' => $tract,
             'Error' => $error,
             'Server' => $_SERVER,
         ];
@@ -451,7 +462,7 @@ final class Debug
 
     public function mysql_log($val, $pre = null)
     {
-        if ($this->_run === false or !($this->_conf['print']['mysql'] ?? 0)) return;
+        if ($this->_run === false or !($this->_conf['print']['mysql'] ?? 0)) return $this;
         static $count = 0;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
@@ -471,7 +482,6 @@ final class Debug
      * @param $msg
      * @param array|null $prev 调用的位置，若是通过中间件调用，请在调用此函数时提供下面的内容：
      * @return $this|bool
-     * $pre=debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
      */
     public function relay($msg, array $prev = null): Debug
     {

@@ -100,7 +100,7 @@ class Mongodb
      */
     public function insert(array $value, $batch = false)
     {
-        if (!$this->_table) throw new EspError('未指定表名');
+        if (!$this->_table) throw new EspError('未指定表名', 1);
         $bulk = new BulkWrite;
         $writeConcern = new WriteConcern(WriteConcern::MAJORITY, self::_TIME_OUT);
 
@@ -371,7 +371,7 @@ class Mongodb
             'skip' => $skip ?: $this->_skip,
             'limit' => $limit ?: $this->_limit,
         ];
-        if (empty($this->_table)) throw new EspError('未指定表名');
+        if (empty($this->_table)) throw new EspError('未指定表名', 1);
 
         //过滤字段=0，仅过滤过该段，但若有任一个=1，则不显示其他没定义的字段
         if (!!$this->_select) {

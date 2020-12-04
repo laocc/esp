@@ -30,6 +30,7 @@ abstract class Model
 
     private $_debug;
     private $_print_sql;
+    private $_traceLevel = 1;
 
     //=========数据相关===========
     private $_Yac = array();
@@ -93,17 +94,23 @@ abstract class Model
 
     /**
      * @param $value
-     * @param array|null $pre
+     * @param $prevTrace
      * @return bool|Debug
      */
-    final public function debug($value, array $pre = null)
+    final public function debug($value, $prevTrace = 0)
     {
         if (_CLI) return false;
         if (0) $this->_debug instanceof Debug and 1;
         if (is_null($value)) return $this->_debug;
         if (is_null($this->_debug)) return false;
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        return $this->_debug->relay($value, $pre);
+        if (!(is_int($prevTrace) or is_array($prevTrace))) $prevTrace = 0;
+        if (is_int($prevTrace)) {
+            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($prevTrace + 1));
+            $trace = $trace[$prevTrace] ?? [];
+        } else {
+            $trace = $prevTrace;
+        }
+        return $this->_debug->relay($value, $trace);
     }
 
     /**
@@ -197,28 +204,28 @@ abstract class Model
         if (!is_string($data)) return null;
         $json = json_decode($data, true);
         if (isset($json[2]) or isset($json['2'])) {
-            throw new EspError($action . ':' . ($json[2] ?? $json['2']));
+            throw new EspError($action . ':' . ($json[2] ?? $json['2']),  $this->_traceLevel);
         }
-        throw new EspError($data);
+        throw new EspError($data, $this->_traceLevel);
     }
 
     /**
      * 增
      * @param array $data
      * @param bool $full 传入的数据是否已经是全部字段，如果不是，则要从表中拉取所有字段
-     * @param bool $returnID 返回新ID,false时返回刚刚添加的数据
-     * @param null $pre
+     * @param bool $replace
+     *  bool $returnID 返回新ID,false时返回刚刚添加的数据
      * @return int|null
      * @throws EspError
      */
-    final public function insert(array $data, bool $full = false, bool $returnID = true, $pre = null)
+    final public function insert(array $data, bool $full = false, bool $replace = false)
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name');
-        $mysql = $this->Mysql();
+        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        $mysql = $this->Mysql(0, [], 1);
         $data = $full ? $data : $this->_FillField($mysql->dbName, $table, $data);
         $obj = $mysql->table($table);
-        $val = $obj->insert($data);
+        $val = $obj->insert($data, $replace, $this->_traceLevel);
         $ck = $this->checkRunData('insert', $val);
         if ($ck) return $ck;
         return $val;
@@ -226,7 +233,7 @@ abstract class Model
 
     final public function unset_cache(...$where)
     {
-        $mysql = $this->Mysql();
+        $mysql = $this->Mysql(0, [], 1);
         $table = $this->table();
 
         foreach ($where as $w) {
@@ -240,22 +247,19 @@ abstract class Model
     /**
      * 删
      * @param $where
-     * @param string $sql
-     * @param null $pre
      * @return mixed
      * @throws EspError
      */
-    final public function delete($where, &$sql = '', $pre = null)
+    final public function delete($where)
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
-        $mysql = $this->Mysql();
-        $val = $mysql->table($table)->where($where)->delete($sql, $pre);
+        $mysql = $this->Mysql(0, [], 1);
+        $val = $mysql->table($table)->where($where)->delete($this->_traceLevel);
 
         if ($this->__cache === true) {
             $kID = md5(serialize($where));
@@ -269,28 +273,25 @@ abstract class Model
      * 改
      * @param $where
      * @param array $data
-     * @param string $sql
-     * @param null $pre
      * @return bool|db\ext\Result|null
      * @throws EspError
      */
-    final public function update($where, array $data, &$sql = '', $pre = null)
+    final public function update($where, array $data)
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        if (empty($where)) throw new EspError('Update Where 禁止为空');
-        $mysql = $this->Mysql();
+        if (empty($where)) throw new EspError('Update Where 禁止为空', $this->_traceLevel);
+        $mysql = $this->Mysql(0, [], 1);
 
         if ($this->__cache === true) {
             $kID = md5(serialize($where));
             $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
         }
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
-        $val = $mysql->table($table)->where($where)->update($data, true, $sql, $pre);
+        $val = $mysql->table($table)->where($where)->update($data, true, $this->_traceLevel);
         return $this->checkRunData('update', $val) ?: $val;
     }
 
@@ -327,22 +328,21 @@ abstract class Model
      * @param $where
      * @param string|null $orderBy
      * @param string $sort
-     * @param string $sql
-     * @param null $pre
      * @return mixed|null
      */
-    final public function get($where, string $orderBy = null, string $sort = 'asc', &$sql = '', $pre = null)
+    final public function get($where, string $orderBy = null, string $sort = 'asc')
     {
-        $mysql = $this->Mysql();
+        $mysql = $this->Mysql(0, [], 1);
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
         if ($this->__cache === true) {
             $kID = md5(serialize($where));
             $data = $this->cache_get("{$mysql->dbName}.{$table}", "_id_{$kID}");
-            $this->debug('getCache = ' . print_r(['table' => $table, 'where' => $where, 'key' => $kID, 'value' => !empty($data)], true));
+            $dbg = ['table' => $table, 'where' => $where, 'key' => $kID, 'value' => !empty($data)];
+            $this->debug($dbg, 1);
             if (!empty($data)) {
                 $this->clear_initial();
                 return $data;
@@ -373,8 +373,7 @@ abstract class Model
             if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
             $obj->order($orderBy, $sort);
         }
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $data = $obj->get(0, $sql, $pre);
+        $data = $obj->get(0, $this->_traceLevel);
         $c = $this->checkRunData('get', $data);
         if ($c) return $c;
 
@@ -396,16 +395,14 @@ abstract class Model
      * @param null $where
      * @param null $orderBy
      * @param string $sort
-     * @param string $sql
-     * @param null $pre
      * @return array|mixed
      * @throws EspError
      */
-    final public function in(array $ids, $where = null, $orderBy = null, $sort = 'asc', &$sql = '', $pre = null)
+    final public function in(array $ids, $where = null, $orderBy = null, $sort = 'asc')
     {
         if (empty($ids)) return [];
         $table = $this->table();
-        $obj = $this->Mysql()->table($table);
+        $obj = $this->Mysql(0, [], 1)->table($table);
 
         if (!empty($this->selectKey)) {
             foreach ($this->selectKey as $select) $obj->select(...$select);
@@ -425,15 +422,20 @@ abstract class Model
         }
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
-
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $obj = $obj->where_in($this->PRI(), $ids);
         if ($where) $obj->where($where);
-        $data = $obj->get(0, $sql, $pre);
+        $data = $obj->get(0, $this->_traceLevel);
         return $this->checkRunData('in', $data) ?: $data->rows();
     }
 
 
+    /**
+     * 设置排序字段，优先级高于函数中指定的方式
+     * @param $key
+     * @param string $sort
+     * @param bool $addProtect
+     * @return $this
+     */
     final public function order($key, string $sort = 'asc', bool $addProtect = true)
     {
         if (is_array($key)) {
@@ -464,11 +466,11 @@ abstract class Model
      * @param int $limit
      * @return array
      */
-    final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0, &$sql = '', $pre = null)
+    final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name');
-        $obj = $this->Mysql()->table($table)->prepare();
+        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        $obj = $this->Mysql(0, [], 1)->table($table)->prepare();
         if ($orderBy === 'PRI') {
             $orderBy = $this->PRI($table);
             if (isset($where['PRI'])) {
@@ -499,9 +501,8 @@ abstract class Model
         }
 
 
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (is_bool($this->_count)) $obj->count($this->_count);
-        $data = $obj->get($limit, $sql, $pre);
+        $data = $obj->get($limit, $this->_traceLevel);
         $v = $this->checkRunData('all', $data);
         if ($v) return $v;
 
@@ -537,17 +538,15 @@ abstract class Model
      * @param null $where
      * @param null $orderBy
      * @param string $sort
-     * @param string $sql
-     * @param null $pre
      * @return array|mixed|null
      * @throws EspError
      */
-    final public function list($where = null, $orderBy = null, string $sort = 'desc', &$sql = '', $pre = null)
+    final public function list($where = null, $orderBy = null, string $sort = 'desc')
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name');
+        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
         if ($this->pageSize === 0) $this->pageSet();
-        $obj = $this->Mysql()->table($table);
+        $obj = $this->Mysql(0, [], 1)->table($table);
         if (!empty($this->selectKey)) {
             foreach ($this->selectKey as $select) $obj->select(...$select);
         }
@@ -573,8 +572,7 @@ abstract class Model
 
         if (is_null($this->_count)) $this->_count = true;
         $obj->count($this->_count);
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $data = $obj->limit($this->pageSize, $this->pageSkip)->get(0, $sql, $pre);
+        $data = $obj->limit($this->pageSize, $this->pageSkip)->get(0, $this->_traceLevel);
         $v = $this->checkRunData('list', $data);
         if ($v) return $v;
         $this->dataCount = $data->count();
@@ -603,7 +601,7 @@ abstract class Model
      */
     final public function quote(string $string)
     {
-        return $this->Mysql()->quote($string);
+        return $this->Mysql(0, [], 1)->quote($string);
     }
 
 
@@ -709,15 +707,14 @@ abstract class Model
 
     /**
      * @param string $tab
+     * @param int $traceLevel
      * @return Yac
      */
-    final public function Yac(string $tab = 'tmp')
+    final public function Yac(string $tab = 'tmp', int $traceLevel = 0): Yac
     {
         if (!isset($this->_Yac[$tab])) {
             $this->_Yac[$tab] = new Yac($tab);
-            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-
-            $this->debug("New Yac({$tab});", $pre);
+            $this->debug("New Yac({$tab});", $traceLevel + 1);
         }
         return $this->_Yac[$tab];
     }
@@ -725,10 +722,11 @@ abstract class Model
     /**
      * 创建一个Mysql实例
      * @param int $tranID
+     * @param int $traceLevel
      * @param array $_conf 如果要创建一个持久连接，则$_conf需要传入参数：persistent=true，
      * @return Mysql
      */
-    final public function Mysql(int $tranID = 0, array $_conf = []): Mysql
+    final public function Mysql(int $tranID = 0, array $_conf = [], int $traceLevel = 0): Mysql
     {
         $branchName = $this->_branch ?? 'auto';
 
@@ -745,7 +743,7 @@ abstract class Model
         if (isset($this->_branch) and !empty($this->_branch)) {
             $_branch = $this->_config->get($this->_branch);
             if (empty($_branch) or !is_array($_branch)) {
-                throw new EspError("Model中`_branch`指向内容非Mysql配置信息", 501);
+                throw new EspError("Model中`_branch`指向内容非Mysql配置信息", $traceLevel+1);
             }
             $conf = $_branch + $conf;
         }
@@ -754,12 +752,10 @@ abstract class Model
         }
 
         if (empty($conf) or !is_array($conf)) {
-            throw new EspError("`Database.Mysql`配置信息错误", 501);
+            throw new EspError("`Database.Mysql`配置信息错误", $traceLevel+1);
         }
-//            if (defined('_DISABLED_PARAM') and _DISABLED_PARAM) $_conf['param'] = false;
         $this->_Mysql[$branchName][$tranID] = new Mysql($tranID, ($_conf + $conf));
-        $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $this->debug("New Mysql({$branchName}-{$tranID});", $pre);
+        $this->debug("New Mysql({$branchName}-{$tranID});", $traceLevel + 1);
         return $this->_Mysql[$branchName][$tranID];
     }
 
@@ -767,35 +763,35 @@ abstract class Model
     /**
      * @param string $db
      * @param array $_conf
+     * @param int $traceLevel
      * @return Mongodb
      */
-    final public function Mongodb(string $db = 'temp', array $_conf = [])
+    final public function Mongodb(string $db = 'temp', array $_conf = [], int $traceLevel = 0): Mongodb
     {
         if (!isset($this->_Mongodb[$db])) {
             $conf = $this->_config->get('database.mongodb');
             if (empty($conf)) {
-                throw new EspError('无法读取mongodb配置信息', 501);
+                throw new EspError('无法读取mongodb配置信息', $traceLevel + 1);
             }
             $this->_Mongodb[$db] = new Mongodb($_conf + $conf, $db);
-            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
 
-            $this->debug("New Mongodb({$db});", $pre);
+            $this->debug("New Mongodb({$db});", $traceLevel + 1);
         }
         return $this->_Mongodb[$db];
     }
 
     /**
      * @param array $_conf
+     * @param int $traceLevel
      * @return Redis
      */
-    final public function Redis(array $_conf = []): Redis
+    final public function Redis(array $_conf = [], int $traceLevel = 0): Redis
     {
         $conf = $this->_config->get('database.redis');
         $conf = $_conf + $conf + ['db' => 1];
         if (!isset($this->_Redis[$conf['db']])) {
             $this->_Redis[$conf['db']] = new Redis($conf);
-            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-            $this->debug("create Redis({$conf['db']});", $pre);
+            $this->debug("create Redis({$conf['db']});", $traceLevel + 1);
         }
         return $this->_Redis[$conf['db']];
     }

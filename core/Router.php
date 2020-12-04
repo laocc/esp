@@ -34,9 +34,9 @@ final class Router
                 if (!empty($modRoute)) {
                     foreach ($modRoute as $r => $route) {
                         if (isset($route['match']) and !is_match($route['match']))
-                            throw new EspError("Route[Match]：{$route['match']} 不是有效正则表达式", 505);
+                            throw new EspError("Route[Match]：{$route['match']} 不是有效正则表达式");
                         if (isset($route['uri']) and !is_uri($route['uri']))
-                            throw new EspError("Route[uri]：{$route['uri']} 不是合法的URI格式", 505);
+                            throw new EspError("Route[uri]：{$route['uri']} 不是合法的URI格式");
                         if (!isset($route['route'])) $route['route'] = [];
                     }
                     $saveRoute = $modRoute;
@@ -57,7 +57,7 @@ final class Router
                 (isset($route['match']) and preg_match($route['match'], _URI, $matches))) {
 
                 if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
-                    throw new EspError('非法Method请求', 404);
+                    throw new EspError('非法Method请求');
                 }
 
                 if ($key === '_default') {
@@ -74,7 +74,7 @@ final class Router
                 //分别获取模块、控制器、动作的实际值
                 list($module, $controller, $action, $param) = $this->fill_route($request->virtual, $request->directory, $matches, $route['route']);
 
-                if ($controller === 'base') throw new EspError('控制器名不可以为Base，这是系统保留公共控制器名', 505);
+                if ($controller === 'base') throw new EspError('控制器名不可以为Base，这是系统保留公共控制器名');
 
                 //分别获取各个指定参数
                 $params = array();
@@ -112,7 +112,7 @@ final class Router
                 return;
             }
         }
-        throw new EspError('系统路由没有获取到相应内容', 404);
+        throw new EspError('系统路由没有获取到相应内容');
     }
 
 
@@ -155,7 +155,7 @@ final class Router
             foreach (['module', 'controller', 'action'] as $key) {
                 ${$key} = $route[$key] ?? null;
                 if (is_numeric(${$key})) {
-                    if (!isset($matches[${$key}])) throw new EspError("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。", 500);
+                    if (!isset($matches[${$key}])) throw new EspError("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。");
                     ${$key} = $matches[${$key}];
                 }
             }
