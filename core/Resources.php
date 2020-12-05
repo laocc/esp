@@ -83,7 +83,12 @@ final class Resources
 
     public function replace(string $html): string
     {
-        $nc = $this->conf['nterchange'] ?? [];
+        /**
+         * interchange：目标替换设置
+         * interchange[/public/resource] = //resource.domain.com
+         * interchange[/public/res] = //res.domain.com
+         */
+        $nc = $this->conf['interchange'] ?? [];
         $path = $this->path();//resource文件路径
         $host = $this->host() ?: $path;
         $face = substr(getenv('DOCUMENT_ROOT'), strlen(_ROOT));//站点入口位置

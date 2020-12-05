@@ -161,7 +161,7 @@ abstract class Controller
     /**
      * @return Input
      */
-    final protected function input()
+    final protected function input(): Input
     {
         if (is_null($this->_input)) {
             $this->_input = new Input();
@@ -172,7 +172,7 @@ abstract class Controller
     /**
      * @return Redis
      */
-    final public function getBuffer()
+    final public function getBuffer(): Redis
     {
         return $this->_buffer;
     }
@@ -181,7 +181,7 @@ abstract class Controller
      * @return Session
      * @throws \Exception
      */
-    final public function getSession()
+    final public function getSession(): Session
     {
         if (is_null($this->_session)) throw new EspError('当前站点未开启session');
         return $this->_session;
@@ -190,7 +190,7 @@ abstract class Controller
     /**
      * @return Request
      */
-    final public function getRequest()
+    final public function getRequest(): Request
     {
         return $this->_request;
     }
@@ -198,7 +198,7 @@ abstract class Controller
     /**
      * @return Configure
      */
-    final public function getConfig()
+    final public function getConfig(): Configure
     {
         return $this->_config;
     }
@@ -214,7 +214,7 @@ abstract class Controller
     /**
      * @return Resources
      */
-    final public function getResource()
+    final public function getResource(): Resources
     {
         return $this->_response->getResource();
     }
@@ -235,7 +235,8 @@ abstract class Controller
      */
     final private function anonymousDebug()
     {
-        return new class() {
+        return new class()
+        {
             public function relay(...$a)
             {
             }
@@ -255,8 +256,10 @@ abstract class Controller
     final public function debug($data = '_R_DEBUG_', $pre = null)
     {
         if (_CLI) return false;
-        if (is_null($this->_debug)) return $this->anonymousDebug();
-        if ($data === '_R_DEBUG_') return $this->_debug;
+        if ($data === '_R_DEBUG_') {
+            if (is_null($this->_debug)) return $this->anonymousDebug();
+            return $this->_debug;
+        }
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $this->_debug->relay($data, $pre);
         return $this->_debug;
@@ -269,8 +272,10 @@ abstract class Controller
     final public function debug_mysql($data = null)
     {
         if (_CLI) return false;
-        if (is_null($this->_debug)) return $this->anonymousDebug();
-        if (is_null($data)) return $this->_debug;
+        if (is_null($data)) {
+            if (is_null($this->_debug)) return $this->anonymousDebug();
+            return $this->_debug;
+        }
         $this->_debug->mysql_log($data);
         return $this->_debug;
     }
@@ -284,17 +289,6 @@ abstract class Controller
     {
         $this->_response->header(...$kv);
         return $this;
-    }
-
-    /**
-     * 冲刷(flush)所有响应的数据给客户端
-     * 此函数冲刷(flush)所有响应的数据给客户端并结束请求。这使得客户端结束连接后，需要大量时间运行的任务能够继续运行。
-     * @return bool
-     */
-    final protected function finish()
-    {
-        $this->debug('fastcgi_finish_request');
-        return fastcgi_finish_request();
     }
 
     /**
@@ -319,9 +313,7 @@ abstract class Controller
         header("Location: {$url}", true, $code);
         fastcgi_finish_request();
         if (!is_null($this->_debug)) {
-            register_shutdown_function(function () {
-                $this->_debug->save_logs('Controller Redirect');
-            });
+            $this->_debug->save_logs('Controller Redirect');
         }
         exit;
     }
@@ -331,11 +323,31 @@ abstract class Controller
         echo $text;
         fastcgi_finish_request();
         if (!is_null($this->_debug)) {
-            register_shutdown_function(function () {
-                $this->_debug->save_logs('Controller Exit');
-            });
+            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+            $this->_debug->relay(['控制器主动调用 exit()结束客户端', $text], $pre);
+            $this->_debug->save_logs('Controller Exit');
         }
         exit;
+    }
+
+    /**
+     * 冲刷(flush)所有响应的数据给客户端，与exit有所不同，
+     * exit：是结束之后所有操作，
+     * finish：只是结束客户端，后面所有工作都会执行
+     *
+     * 此函数冲刷(flush)所有响应的数据给客户端并结束请求。这使得客户端结束连接后，需要大量时间运行的任务能够继续运行。
+     * 在mvc结构下，不能在控制器中结束客户端，否则视图不会渲染
+     * @return bool
+     * @param string $notes
+     * @return bool
+     */
+    final protected function finish(string $notes = null)
+    {
+        if (!is_null($this->_debug)) {
+            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+            $this->_debug->relay(['控制器主动调用finish()结束客户端', $notes], $pre);
+        }
+        return fastcgi_finish_request();
     }
 
     final protected function jump($route)

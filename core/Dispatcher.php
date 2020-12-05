@@ -74,7 +74,7 @@ final class Dispatcher
             $GLOBALS['_Debug'] = $this->_debug;
         }
 
-        if ($cookies = $this->_config->get('cookies') ?: $this->_config->get('frame.cookies')) {
+        if ($cookies = $this->_config->get('cookies')) {
             $cokConf = ($cookies['default'] ?? []) + ['run' => false, 'domain' => 'host'];
             if (isset($cookies[_VIRTUAL])) $cokConf = $cookies[_VIRTUAL] + $cokConf;
             if (isset($cookies[_HOST])) $cokConf = $cookies[_HOST] + $cokConf;
@@ -84,7 +84,7 @@ final class Dispatcher
                 $this->relayDebug(['cookies' => $_COOKIE]);
 
                 //若不启用Cookies，则也不启用Session
-                if ($session = ($this->_config->get('session') ?: $this->_config->get('frame.session'))) {
+                if ($session = ($this->_config->get('session'))) {
                     $sseConf = ($session['default'] ?? []) + ['run' => false, 'domain' => $cokConf['domain']];
                     if (isset($session[_VIRTUAL])) $sseConf = $session[_VIRTUAL] + $sseConf;
                     if (isset($session[_HOST])) $sseConf = $session[_HOST] + $sseConf;
@@ -358,7 +358,7 @@ final class Dispatcher
         if (!class_exists($cName)) return $this->err404("[{$cName}] not exists.");
 
         $cont = new $cName($this);
-        if (!$cont instanceof Controller) {
+        if (!($cont instanceof Controller)) {
             throw new EspError("{$cName} 须继承自 \\esp\\core\\Controller");
         }
 
@@ -424,7 +424,7 @@ final class Dispatcher
     private function err404(string $msg)
     {
         if (!is_null($this->_debug)) $this->_debug->folder('error');
-        $empty = $this->_config->get('frame.request.empty');
+        $empty = $this->_config->get('request.empty');
         if (!empty($empty)) return $empty;
         return $msg;
     }

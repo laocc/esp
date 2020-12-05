@@ -5,7 +5,6 @@ namespace esp\core;
 
 use esp\core\ext\EspError;
 use esp\core\face\Adapter;
-use esp\library\ext\Markdown;
 use esp\library\ext\MarkdownObject;
 
 final class View
@@ -16,6 +15,9 @@ final class View
     ];
     private $_view_val = array();
     private $_layout;//框架对象
+    /**
+     * @var $_adapter Adapter
+     */
     private $_adapter;//标签解析器对象
     private $_adapter_use;
     private $_controller;
@@ -225,7 +227,6 @@ final class View
     private function fetch(string $__file__, array $__value__): string
     {
         if ($this->_adapter_use and !is_null($this->_adapter)) {
-            $this->_adapter instanceof Adapter and 1;
             $this->_adapter->assign($this->_view_val);
             return $this->_adapter->fetch($__file__, $__value__);
         }

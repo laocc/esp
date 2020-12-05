@@ -140,6 +140,8 @@ final class Cache
 
     /**
      * 创建用于缓存的key
+     * @param $_cache_set
+     * @return string
      */
     private function build_cache_key($_cache_set)
     {
@@ -161,6 +163,7 @@ final class Cache
 
     /**
      * 设置缓存的HTTP头
+     * @param string|null $label
      */
     private function setHeader(string $label = null)
     {
@@ -184,6 +187,7 @@ final class Cache
 
     /**
      * 禁止向浏览器缓存
+     * @param null $label
      */
     private function disable_header($label = null)
     {

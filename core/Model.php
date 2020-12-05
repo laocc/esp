@@ -26,13 +26,25 @@ abstract class Model
 
     protected $_buffer;
     protected $_config;
+    /**
+     * @var $_controller Controller
+     */
     protected $_controller;
 
+    /**
+     * @var $_debug Debug
+     */
     private $_debug;
     private $_print_sql;
     private $_traceLevel = 1;
 
     //=========数据相关===========
+    /**
+     * @var $_Yac Yac
+     * @var $_Mysql Mysql
+     * @var $_Redis Redis
+     * @var $_Mongodb Mongodb
+     */
     private $_Yac = array();
     private $_Mysql = array();
     private $_Mongodb = array();
@@ -40,13 +52,13 @@ abstract class Model
 
     private $_order = [];
     private $_count = null;
+    private $_distinct = null;//消除重复行
     protected $tableJoin = array();
     protected $tableJoinCount = 0;
     protected $forceIndex = '';
     protected $groupKey;
     protected $selectKey = [];
     protected $columnKey = null;
-    private $_distinct = null;//消除重复行
 
     use MysqlExt, PageExt;
 
@@ -58,13 +70,6 @@ abstract class Model
         $this->_Redis = &$GLOBALS['_Redis'] ?? [];
 
         $this->_controller = &$GLOBALS['_Controller'];
-        if (0) {
-            $this->_Yac instanceof Yac and 1;
-            $this->_Mysql instanceof Mysql and 1;
-            $this->_Mongodb instanceof Mongodb and 1;
-            $this->_Redis instanceof Redis and 1;
-            $this->_controller instanceof Controller and 1;
-        }
         $this->_config = $this->_controller->getConfig();
         $this->_buffer = $this->_controller->_buffer;
         $this->_debug = $this->_controller->_debug;
@@ -100,7 +105,6 @@ abstract class Model
     final public function debug($value, $prevTrace = 0)
     {
         if (_CLI) return false;
-        if (0) $this->_debug instanceof Debug and 1;
         if (is_null($value)) return $this->_debug;
         if (is_null($this->_debug)) return false;
         if (!(is_int($prevTrace) or is_array($prevTrace))) $prevTrace = 0;
@@ -172,14 +176,17 @@ abstract class Model
      * 指定当前模型的表
      * 或，返回当前模型对应的表名
      * @param string|null $table
+     * @param string|null $pri
      * @return $this|null|string
      */
-    final public function table(string $table = null)
+    final public function table(string $table = null, string $pri = null)
     {
-        if (!is_null($table)) {//指定表名
+        if (!is_null($table)) {
             $this->__table = $table;
+            if (!is_null($pri)) $this->__pri = $pri;
             return $this;
         }
+
         //有指定表名
         if (!is_null($this->__table)) return $this->__table;
 
@@ -204,7 +211,7 @@ abstract class Model
         if (!is_string($data)) return null;
         $json = json_decode($data, true);
         if (isset($json[2]) or isset($json['2'])) {
-            throw new EspError($action . ':' . ($json[2] ?? $json['2']),  $this->_traceLevel);
+            throw new EspError($action . ':' . ($json[2] ?? $json['2']), $this->_traceLevel);
         }
         throw new EspError($data, $this->_traceLevel);
     }
@@ -585,12 +592,10 @@ abstract class Model
      */
     final public function clear_initial()
     {
-        $this->__table = null;
+//        $this->__table = null;//= $this->__pri
         $this->columnKey = null;
-        $this->groupKey
-            = $this->__pri
-            = $this->forceIndex
-            = '';
+        $this->groupKey = '';
+        $this->forceIndex = '';
         $this->tableJoin = [];
         $this->selectKey = [];
     }
@@ -743,7 +748,7 @@ abstract class Model
         if (isset($this->_branch) and !empty($this->_branch)) {
             $_branch = $this->_config->get($this->_branch);
             if (empty($_branch) or !is_array($_branch)) {
-                throw new EspError("Model中`_branch`指向内容非Mysql配置信息", $traceLevel+1);
+                throw new EspError("Model中`_branch`指向内容非Mysql配置信息", $traceLevel + 1);
             }
             $conf = $_branch + $conf;
         }
@@ -752,7 +757,7 @@ abstract class Model
         }
 
         if (empty($conf) or !is_array($conf)) {
-            throw new EspError("`Database.Mysql`配置信息错误", $traceLevel+1);
+            throw new EspError("`Database.Mysql`配置信息错误", $traceLevel + 1);
         }
         $this->_Mysql[$branchName][$tranID] = new Mysql($tranID, ($_conf + $conf));
         $this->debug("New Mysql({$branchName}-{$tranID});", $traceLevel + 1);

@@ -166,7 +166,7 @@ final class Configure
         }
     }
 
-    public function all(bool $showAll = false)
+    public function all(bool $showAll = false): array
     {
         $rds = $this->Redis();
         $config = $rds->keys('*');
@@ -243,6 +243,8 @@ final class Configure
             $_config = file_get_contents($file);
             $_config = json_decode($_config, true);
             if (!is_array($_config)) $_config = [];
+        } else {
+            throw new EspError("未知的配置文件类型({$info['extension']})");
         }
 
         if (isset($_config['include'])) {
@@ -303,7 +305,7 @@ final class Configure
     }
 
 
-    private function re_key($value)
+    private function re_key(string $value)
     {
         $value = preg_replace_callback('/\{(_[A-Z_]+)\}/', function ($matches) {
             $search = array('_TIME', '_DATE', '_NOW', '_ROOT', '_RUNTIME', '_DOMAIN', '_HOST');
@@ -386,9 +388,6 @@ final class Configure
     public function states(int $code): string
     {
         $state = $this->get('state', $code);
-        if (!$state) {
-            $state = 'Unexpected';
-        }
-        return $state;
+        return $state ?: 'Unexpected';
     }
 }

@@ -28,7 +28,7 @@ final class Request
 
     public function __construct(Dispatcher $dispatcher, Configure $config)
     {
-        $request = ($config->get('frame.request') ?: $config->get('request')) ?: [];
+        $request = $config->get('request');
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
         if (_CLI) $this->method = 'CLI';
         if ($this->method === 'GET' and $this->isAjax()) $this->method = 'AJAX';
@@ -65,7 +65,7 @@ final class Request
         ]);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return json_encode([
             'method' => $this->method,
@@ -80,7 +80,7 @@ final class Request
         ], 256 | 64);
     }
 
-    public function id()
+    public function id(): string
     {
         return getenv('REQUEST_ID') ?: md5(mt_rand() . print_r($_SERVER, true));
     }
@@ -89,7 +89,7 @@ final class Request
      * 用于缓存组KEY用
      * @return string
      */
-    public function getControllerKey()
+    public function getControllerKey(): string
     {
         return $this->virtual . $this->directory . $this->module . $this->controller . $this->action . json_encode($this->params);
     }
@@ -99,7 +99,7 @@ final class Request
      * @return mixed
      * @throws \Exception
      */
-    public function getActionExt()
+    public function getActionExt(): string
     {
         $suffix = $this->suffix;
         if ($this->isGet() and ($p = $suffix['get'] ?? '')) $actionExt = $p;
@@ -118,6 +118,10 @@ final class Request
         return isset($this->_var[$name]) ? $this->_var[$name] : null;
     }
 
+    /**
+     * @param string $name
+     * @return string|null
+     */
     public function get(string $name)
     {
         return isset($this->_var[$name]) ? $this->_var[$name] : null;
@@ -150,22 +154,22 @@ final class Request
     }
 
 
-    public function getMethod()
+    public function getMethod(): string
     {
         return $this->method;
     }
 
-    public function isGet()
+    public function isGet(): bool
     {
         return $this->method === 'GET' && strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') !== 'xmlhttprequest';
     }
 
-    public function isPost()
+    public function isPost(): bool
     {
         return $this->method === 'POST';
     }
 
-    public function isCli()
+    public function isCli(): bool
     {
         return _CLI;
     }
@@ -175,12 +179,12 @@ final class Request
      * $this->method 仅指get时的ajax
      * @return bool
      */
-    public function isAjax()
+    public function isAjax(): bool
     {
         return _CLI ? false : strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest';
     }
 
-    public function ua()
+    public function ua(): string
     {
         return getenv('HTTP_USER_AGENT') ?: '';
     }
@@ -192,7 +196,7 @@ final class Request
      * @param bool $number
      * @return int|mixed|null|string
      */
-    public function cid(string $key = '_SSI', bool $number = false)
+    public function cid(string $key = '_SSI', bool $number = false): string
     {
         if (is_null($this->_dispatcher->_cookies)) {
             throw new EspError("当前站点未启用Cookies，无法获取CID", 1);
@@ -233,7 +237,7 @@ final class Request
      * @param string $agent
      * @return array ['agent' => '', 'browser' => '', 'version' => '', 'os' => '']
      */
-    public function agent(string $agent = null)
+    public function agent(string $agent = null): array
     {
         $u_agent = $agent ?: ($_SERVER['HTTP_USER_AGENT'] ?? '');
         if (!$u_agent) return ['agent' => '', 'browser' => '', 'version' => '', 'os' => ''];
@@ -303,7 +307,7 @@ final class Request
             'os' => $os];
     }
 
-    public function key()
+    public function key(): string
     {
         return md5($this->ip() . getenv('HTTP_USER_AGENT') . _DOMAIN);
     }
@@ -312,10 +316,11 @@ final class Request
      * 客户端IP
      * @return string
      */
-    public function ip()
+    public function ip(): string
     {
         if (_CLI) return '127.0.0.1';
         if (defined('_CIP')) return _CIP;
+        $ip = '127.0.0.1';
         foreach (['X-REAL-IP', 'X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'REMOTE_ADDR'] as $k) {
             if (!empty($ip = ($_SERVER[$k] ?? null))) {
                 if (strpos($ip, ',')) $ip = explode(',', $ip)[0];
@@ -426,76 +431,5 @@ final class Request
         return false;
     }
 
-
-    /**
-     * 从ua中提取手机品牌
-     * @param null $ua
-     * @return string
-     */
-    public function brand($ua = null)
-    {
-        if (is_null($ua)) $ua = (getenv('HTTP_USER_AGENT') ?: '');
-
-        if (stripos($ua, 'Android') === false and stripos($ua, 'Windows') > 0) return 'windows';
-
-        $OPPO_MOBILE_UA = ['oppo', "PAAM00", "PAAT00", "PACM00", "PACT00", "PADM00", "PADT00", "PAFM00", "PAFT00", "PAHM00",
-            "PAHM00", "PAFT10", "PBAT00", "PBAM00", "PBAM00", "PBBM30", "PBBT30", "PBEM00", "PBET00", "PBBM00",
-            "PBBT00", "PBCM10", "PBCT10", "PBCM30", "PBDM00", "PBDT00", "PBFM00", "PBFT00", "PCDM00", "PCDT00",
-            "PCAM00", "PCAT00", "PCDM10", "PCDM10", "PCGM00", "PCGT00", "PCCM00", "PCCT00", "PCCT30", "PCCT40",
-            "PCAM10", "PCAT10", "PCEM00", "PCET00", "PCKM00", "PCKT00", "PCHM00", "PCHT00", "PCHM10", "PCHT10",
-            "PCHM30", "PCHT30", "PCLM10", "PCNM00", "PCKM00", "PCKM00", "RMX1901", "RMX1851", "RMX1971", "RMX1901",
-            "RMX1851", "RMX1901", "RMX1991", "RMX1971", "RMX1931"];
-        $xiaoMi = ['xiaomi', 'MIUI', 'redmi', 'MIX 2', 'MIX 3', 'MI CC', 'AWM-A0', 'SKR-A0', 'Mi-4c', 'Mi Note', 'MI PLAY', 'MI MAX', 'MI PAD', 'Mi9 Pro'];
-        $huaEei = ['huawei', 'emui', 'honor'];
-        $smartisan = ['smartisan', 'OD103'];//锤子手机
-        $meizu = ['meizu', 'MX4 Pro'];//魅族
-        $vivo = ['vivo'];
-        $apple = ['Mac OS', 'iPad', 'iPhone'];//AppleWebKit
-
-        $op = implode('|', $OPPO_MOBILE_UA);
-        $xm = implode('|', $xiaoMi);
-        $hw = implode('|', $huaEei);
-        $cz = implode('|', $smartisan);
-        $mz = implode('|', $meizu);
-        $vv = implode('|', $vivo);
-        $ap = implode('|', $apple);
-
-        $auto = 'ONEPLUS|gionee|lenovo|meitu|MicroMessenger';
-
-        if (preg_match("/(Dalvik|okhttp)/i", $ua, $mua)) {
-            return 'robot';
-
-        } else if (preg_match("/({$ap})/i", $ua, $mua)) {
-            return 'apple';
-
-        } else if (preg_match("/({$op})/i", $ua, $mua)) {
-            return 'oppo';
-
-        } else if (preg_match("/({$hw})/i", $ua, $mua)) {
-            return 'huawei';
-
-        } else if (preg_match("/({$mz})/i", $ua, $mua)) {
-            return 'meizu';
-
-        } else if (preg_match("/({$vv})/i", $ua, $mua)) {
-            return 'vivo';
-
-        } else if (preg_match("/({$cz})/i", $ua, $mua)) {
-            return 'smartisan';
-
-        } else if (preg_match("/({$xm}|mi \d)/i", $ua, $mua)) {
-            return 'xiaomi';
-
-        } elseif (preg_match("/({$auto})/i", $ua, $mua)) {
-            return strtolower($mua[1]);
-
-        } else if (preg_match('/; (v\d{4}[a-z]{1,2});? Build\/\w+/i', $ua, $mua)) {
-            return 'vivo';
-
-        } else if (preg_match('/; ([\w|\020]+?);? Build\/\w+/i', $ua, $mua)) {
-            return strtolower(trim($mua[1]));
-        }
-        return 'unknown';
-    }
 
 }
