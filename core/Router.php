@@ -7,7 +7,6 @@ use esp\core\ext\EspError;
 use function esp\helper\is_match;
 use function esp\helper\is_uri;
 use function esp\helper\load;
-use function esp\helper\pre;
 use function esp\helper\root;
 
 final class Router
@@ -35,8 +34,10 @@ final class Router
                     foreach ($modRoute as $r => $route) {
                         if (isset($route['match']) and !is_match($route['match']))
                             throw new EspError("Route[Match]：{$route['match']} 不是有效正则表达式");
+
                         if (isset($route['uri']) and !is_uri($route['uri']))
                             throw new EspError("Route[uri]：{$route['uri']} 不是合法的URI格式");
+
                         if (!isset($route['route'])) $route['route'] = [];
                     }
                     $saveRoute = $modRoute;
@@ -167,15 +168,17 @@ final class Router
 
     /**
      * 访问请求类型判断
-     * @param string $mode 路由中指定的类型
-     * @param string $method 当前请求的实际类型，get,post,put,head,delete之一
-     * @return bool
      *
      * $mode格式 ：
      * ALL,HTTP,AJAX,CLI，这四项只能选一个，且必须是第一项
      * ALL  =   仅指get,post,cli这三种模式
      * HTTP/AJAX两项后可以跟具体的method类型，如：HTTP,GET,POST
      * CLI  =   只能单独出现
+     *
+     * @param string $mode 路由中指定的类型
+     * @param string $method 当前请求的实际类型，get,post,put,head,delete之一
+     * @param bool $ajax
+     * @return bool
      */
     private function method_check(string $mode, string $method, bool $ajax): bool
     {
@@ -188,11 +191,11 @@ final class Router
             if (count($modes) === 1) $modes = ['GET', 'POST'];
             $check = in_array($method, $modes) or _CLI;
 
-        } elseif ($modes[0] === 'HTTP') {//限HTTP时，不是_AJAX
+        } elseif ($modes[0] === 'HTTP') {//限HTTP时，只能GET或POST，且不能是ajax
             if (count($modes) === 1) $modes = ['GET', 'POST'];
             $check = !$ajax and in_array($method, $modes);
 
-        } elseif ($modes[0] === 'AJAX') {//限AJAX状态
+        } elseif ($modes[0] === 'AJAX') {//限AJAX时，只能GET或POST
             if (count($modes) === 1) $modes = ['GET', 'POST'];
             $check = $ajax and in_array($method, $modes);
 

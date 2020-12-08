@@ -10,7 +10,6 @@ use esp\library\ext\Xml;
 final class Response
 {
     private $_display_value;
-    private $_config;
     private $_request;
     private $_resource;
     private $_display_type = '';
@@ -41,11 +40,10 @@ final class Response
 
     private $_autoRun = true;
 
-    public function __construct(Configure $configure, Request $request)
+    public function __construct(Request $request, array $resource)
     {
-        $this->_config = $configure;
         $this->_request = $request;
-        $this->_resource = new Resources($configure);
+        $this->_resource = new Resources($resource);
     }
 
     /**
@@ -128,9 +126,7 @@ final class Response
         if ($this->_autoRun === false) return;
 //        if (!headers_sent()) header('sid: ' . ip2long(getenv('SERVER_ADDR')));
         if (!empty($this->_header)) {
-            foreach ($this->_header as $kv) {
-                header("{$kv[0]}: {$kv[1]}");
-            }
+            foreach ($this->_header as $kv) header("{$kv[0]}: {$kv[1]}");
         }
 
         if (is_null($value)) goto display;
@@ -324,29 +320,36 @@ final class Response
     {
         static $html;
         if (!is_null($html)) return $html;
-
+        $this->_Content_Type = 'text/html';
         switch (strtolower($this->_display_type)) {
             case 'json':
                 $html = json_encode($this->_display_value, 256 | 64);
                 if (isset($_GET['callback']) and preg_match('/^(\w+)$/', $_GET['callback'], $match)) {
                     $html = "{$match[1]}({$html});";
                 }
+                $this->_Content_Type = 'application/json';
                 break;
 
             case 'php':
                 $html = serialize($this->_display_value);
+                $this->_Content_Type = 'application/octet-stream';
                 break;
 
             case 'html':
+                $html = print_r($this->_display_value, true);
+                $this->_Content_Type = 'text/html';
+                break;
+
             case 'text':
                 $html = print_r($this->_display_value, true);
+                $this->_Content_Type = 'text/plain';
                 break;
 
             case 'png':
                 $this->_display_value = preg_replace('/data:image\/[a-z0-9]+?;base64,/i', '', $this->_display_value);
                 $html = base64_decode($this->_display_value);
+                $this->_Content_Type = 'image/png';
                 break;
-
 
             case 'xml':
                 if (is_array($this->_display_value[1])) {
@@ -354,6 +357,7 @@ final class Response
                 } else {
                     $html = $this->_display_value[1];
                 }
+                $this->_Content_Type = 'text/xml';
                 break;
 
             case 'md':
@@ -363,8 +367,6 @@ final class Response
         if (is_null($html)) return '';
 
         if (empty($this->_display_type)) $this->_display_type = 'html';
-
-        $this->_Content_Type = $this->_config->mime($this->_display_type);
 
         if (!headers_sent()) {
             header("Content-type: {$this->_Content_Type}; charset=UTF-8", true, 200);

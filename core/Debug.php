@@ -37,7 +37,7 @@ final class Debug
      */
     public $_save_mode = 'shutdown';
 
-    public function __construct(Request $request, Response $response, Configure $config, array &$setting)
+    public function __construct(Request $request, Response $response, Configure $config, array $setting)
     {
         $this->_star = [$_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true), memory_get_usage()];
 

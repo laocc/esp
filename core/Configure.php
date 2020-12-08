@@ -35,16 +35,16 @@ final class Configure
             $bFile = "{$conf['path']}/buffer.ini";
             if (!is_readable($bFile)) $bFile = "{$conf['path']}/buffer.json";
             if (!is_readable($bFile)) $bFile = "{$conf['path']}/buffer.php";
-            if (!is_readable($bFile)) $bFile = _ESP_ROOT . "/common/config/buffer.ini";
+            if (!is_readable($bFile)) throw new EspError("未定义buffer文件");
         }
 
         $_bufferConf = $this->loadFile($bFile, 'buffer');
         $_bufferConf = $_bufferConf['buffer'] ?? [];
-//        $_bufferConf = parse_ini_file($bFile, true);
-        if (isset($conf['folder'])) {
-            $_bufferConf = $_bufferConf[$conf['folder']] ?? [];
-        } elseif (_DEBUG and isset($_bufferConf['debug'])) {
+
+        if (_DEBUG and isset($_bufferConf['debug'])) {
             $_bufferConf = $_bufferConf['debug'];
+        } else if (isset($conf['folder']) and isset($_bufferConf[$conf['folder']])) {
+            $_bufferConf = $_bufferConf[$conf['folder']];
         }
 
         if (($_bufferConf['medium'] ?? 'redis') === 'file') {
@@ -65,33 +65,30 @@ final class Configure
             and (!isset($conf['cache']) or $conf['cache'])
         ) {
             $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
-            if (!empty($this->_CONFIG_)) {
-                return;
-            }
+            if (!empty($this->_CONFIG_)) return;
         }
 
         $awakenURI = '/_esp_config_awaken_';
         if (!_DEBUG and !_CLI and $this->_rpc and !is_file(_RUNTIME . '/master.lock')) {
             $tryCount = 0;
             tryReadRedis:
-            //先读redis，若读不到，再进行后面的，这个虽然在前面也有读取，但是，若在从服务器，且也符合强制从文件加载时，上面的是不会执行的
-            //所在在这里要先读redis，也就是说，从服务器无论什么情况，都是先读redis，读不到时请求rpc往redis里写
+            /**
+             * 先读redis，若读不到，再进行后面的，这个虽然在前面也有读取，但是，若在从服务器，且也符合强制从文件加载时，上面的是不会执行的
+             * 所在在这里要先读redis，也就是说，从服务器无论什么情况，都是先读redis，读不到时请求rpc往redis里写
+             */
             $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
-            if (!empty($this->_CONFIG_)) {
-                return;
-            }
+            if (!empty($this->_CONFIG_)) return;
 
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
              * 并且主服务器返回的是`success`，如果返回的不是这个，就是出错了。
              * 然后，再次goto trySelf;从redis中读取config
+             * 这里请求$awakenURI，在主服务器中实际上会被当前文件也就是当前构造函数中最后一行拦截并返回success
              */
             $get = Output::new()->rpc($awakenURI, $this->_rpc)->get('html');
-            if ($tryCount > 1) {
-                throw new EspError("rpc fail:{$this->_token}/{$get}/");
-            }
-            $tryCount++;
+            if ($tryCount++ > 1) throw new EspError("多次请求RPC获取到数据不合法，期望值({$this->_token})，实际获取:{$get}");
+
             goto tryReadRedis;
         }
 
@@ -123,8 +120,8 @@ final class Configure
                 }
             }
         }
-        $config[] = ['file' => _ESP_ROOT . '/common/static/mime.ini', 'name' => 'mime.ini'];
-        $config[] = ['file' => _ESP_ROOT . '/common/static/state.ini', 'name' => 'state.ini'];
+//        $config[] = ['file' => _ESP_ROOT . '/common/static/mime.ini', 'name' => 'mime.ini'];
+//        $config[] = ['file' => _ESP_ROOT . '/common/static/state.ini', 'name' => 'state.ini'];
 
         $this->_CONFIG_ = array();
         $this->_CONFIG_['_lastLoad'] = date('Y-m-d H:i:s');
@@ -158,6 +155,7 @@ final class Configure
         if ($lev === 0) {
             //清空config本身
             $rds->set($this->_token . '_CONFIG_', null);
+
         } else {
             //清空整个redis表
             $rand = $rds->get('resourceRand');
@@ -372,20 +370,17 @@ final class Configure
      * @param $type
      * @return string
      */
-    public function mime(string $type): string
+    private function mime(string $type): string
     {
         $mime = $this->get('mime', $type);
-        if (!$mime) {
-            $mime = 'text/html';
-        }
-        return $mime;
+        return $mime ?: 'text/html';
     }
 
     /**
      * @param $code
      * @return null|string
      */
-    public function states(int $code): string
+    private function states(int $code): string
     {
         $state = $this->get('state', $code);
         return $state ?: 'Unexpected';

@@ -11,13 +11,11 @@ namespace esp\core;
 final class Resources
 {
     private $conf;
-    private $config;
 
-    public function __construct(Configure $configure)
+    public function __construct(array $_config)
     {
-        $this->config = $configure;
-        $_config = $configure->get('resource');
-        $this->conf = $_config['default'];
+        if (!is_array($_config) or empty($_config)) $_config = [];
+        $this->conf = $_config['default'] ?? [];
         if (isset($_config[_VIRTUAL])) {
             $this->conf = array_replace_recursive($this->conf, $_config[_VIRTUAL]);
         }
@@ -29,6 +27,17 @@ final class Resources
         } else {
             $this->conf['host'] = '';
         }
+
+        $this->conf += [
+            'host' => '',
+            'path' => '',
+            'rand' => '',
+            'title' => '',
+            'keywords' => '',
+            'description' => '',
+            'concat' => false,
+            'interchange' => [],
+        ];
     }
 
     public function host(): string
@@ -38,12 +47,12 @@ final class Resources
 
     public function path(): string
     {
-        return $this->conf['path'] ?? '';
+        return $this->conf['path'];
     }
 
     public function concat(bool $run = null): bool
     {
-        if (is_null($run)) return boolval($this->conf['concat'] ?? false);
+        if (is_null($run)) return boolval($this->conf['concat']);
         $this->conf['concat'] = $run;
         return $run;
     }
@@ -55,28 +64,26 @@ final class Resources
 
     public function rand(): string
     {
-        $res_rand = $this->config->Redis()->get('resourceRand');
-        if (!$res_rand) $res_rand = $this->conf['rand'] ?? '';
-        return strval($res_rand);
+        return strval($this->conf['rand']);
     }
 
     public function title(string $title = null): string
     {
-        if (is_null($title)) return $this->conf['title'] ?? '';
+        if (is_null($title)) return $this->conf['title'];
         $this->conf['title'] = $title;
         return $title;
     }
 
     public function keywords(string $keywords = null): string
     {
-        if (is_null($keywords)) return $this->conf['keywords'] ?? '';
+        if (is_null($keywords)) return $this->conf['keywords'];
         $this->conf['keywords'] = $keywords;
         return $keywords;
     }
 
     public function description(string $description = null): string
     {
-        if (is_null($description)) return $this->conf['description'] ?? '';
+        if (is_null($description)) return $this->conf['description'];
         $this->conf['description'] = $description;
         return $description;
     }
@@ -88,15 +95,20 @@ final class Resources
          * interchange[/public/resource] = //resource.domain.com
          * interchange[/public/res] = //res.domain.com
          */
-        $nc = $this->conf['interchange'] ?? [];
-        $path = $this->path();//resource文件路径
+        $path = $this->conf['path'];  //resource文件路径
         $host = $this->host() ?: $path;
-        $face = substr(getenv('DOCUMENT_ROOT'), strlen(_ROOT));//站点入口位置
-        if (!empty($nc)) {
-            $html = str_replace(array_keys($nc), array_values($nc), $html);
-        }
 
-        return str_replace([$path, '__RAND__', $face], [$host, $this->rand(), ''], $html);
+        if (!empty($this->conf['interchange'])) {
+            $html = str_replace(
+                array_keys($this->conf['interchange']),
+                array_values($this->conf['interchange']),
+                $html);
+        }
+        $root = substr(getenv('DOCUMENT_ROOT'), strlen(_ROOT));//站点入口位置
+        return str_replace(
+            [$path, '__RAND__', $root],
+            [$host, strval($this->conf['rand']), ''],
+            $html);
     }
 
 }

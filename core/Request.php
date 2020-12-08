@@ -26,14 +26,13 @@ final class Request
     public $contFix;
     public $route_view;
 
-    public function __construct(Dispatcher $dispatcher, Configure $config)
+    public function __construct(Dispatcher $dispatcher, array $config)
     {
-        $request = $config->get('request');
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
         if (_CLI) $this->method = 'CLI';
         if ($this->method === 'GET' and $this->isAjax()) $this->method = 'AJAX';
-        if (!is_array($request)) $request = [];
-        $request += [
+        if (!is_array($config) or empty($config)) $config = [];
+        $config += [
             'directory' => '/application',
             'router' => '/common/routes',
             'controller' => '',
@@ -43,10 +42,10 @@ final class Request
         $this->_dispatcher = $dispatcher;
         $this->virtual = _VIRTUAL;//虚拟机
         $this->module = '';//虚拟机下模块
-        $this->directory = \esp\helper\root($request['directory']);
-        $this->router_path = \esp\helper\root($request['router']);
-        $this->contFix = $request['controller'];//控制器后缀，固定的
-        $this->suffix = $request['suffix'];//数组，方法名后缀，在总控中根据不同请求再取值
+        $this->directory = \esp\helper\root($config['directory']);
+        $this->router_path = \esp\helper\root($config['router']);
+        $this->contFix = $config['controller'];//控制器后缀，固定的
+        $this->suffix = $config['suffix'];//数组，方法名后缀，在总控中根据不同请求再取值
         $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
     }
 

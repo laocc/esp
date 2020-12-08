@@ -63,7 +63,7 @@ final class Error
             $err['message'] = $errStr;
             $err['file'] = $errFile . '(' . $errLine . ')';
             $err['trace'] = $error->getTrace();
-            $err['context'] = print_r($context, true);
+//            $err['context'] = print_r($context, true);
 
             $this->error($err, $prev, $option['path'], $option['filename']);
             $ajax = (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');

@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\ext\EspError;
+use function esp\helper\same_first;
+use function esp\helper\host;
+use function esp\helper\load;
 
 final class Dispatcher
 {
@@ -28,14 +31,14 @@ final class Dispatcher
     {
         if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!getenv('HTTP_HOST') && !_CLI) die('unknown host');
-        if (!defined('_ROOT')) define('_ROOT', dirname(\esp\helper\same_first(__DIR__, getenv('DOCUMENT_ROOT'))));//网站根目录
+        if (!defined('_ROOT')) define('_ROOT', dirname(same_first(__DIR__, getenv('DOCUMENT_ROOT'))));//网站根目录
         if (!defined('_ESP_ROOT')) define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
         if (!defined('_DAY_TIME')) define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
         if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
         if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
-        if (!defined('_HOST')) define('_HOST', \esp\helper\host(_DOMAIN));//域名的根域
+        if (!defined('_HOST')) define('_HOST', host(_DOMAIN));//域名的根域
         if (!defined('_HTTPS')) define('_HTTPS', (getenv('HTTP_HTTPS') === 'on' or getenv('HTTPS') === 'on'));
         if (!defined('_HTTP_')) define('_HTTP_', (_HTTPS ? 'https://' : 'http://'));
         if (!defined('_URL')) define('_URL', _HTTP_ . _DOMAIN . getenv('REQUEST_URI'));
@@ -61,13 +64,13 @@ final class Dispatcher
         if (isset($option['before'])) $option['before']($option);
 
         //以下2项必须在`chdir()`之前，且顺序不可变
-        if (!_CLI) $err = new Error($this, $option['error'] ?? []);
+        if (!_CLI) new Error($this, $option['error'] ?? []);
         $this->_config = new Configure($option['config'] ?? []);
         chdir(_ROOT);
-        $this->_request = new Request($this, $this->_config);
+        $this->_request = new Request($this, $this->_config->get('request'));
         if (_CLI) return;
 
-        $this->_response = new Response($this->_config, $this->_request);
+        $this->_response = new Response($this->_request, $this->_config->get('resource'));
 
         if ($debug = $this->_config->get('debug')) {
             $this->_debug = new Debug($this->_request, $this->_response, $this->_config, $debug);
@@ -214,7 +217,8 @@ final class Dispatcher
      */
     public function anonymousDebug()
     {
-        return new class() {
+        return new class()
+        {
             public function relay(...$a)
             {
             }
@@ -341,10 +345,10 @@ final class Dispatcher
         if (defined('_PSR4') and !_PSR4) {
             $base = $this->_request->directory . "/{$virtual}/controllers/Base{$contExt}.php";
             $file = $this->_request->directory . "/{$virtual}/controllers/{$cFile}.php";
-            if (is_readable($base)) \esp\helper\load($base);
+            if (is_readable($base)) load($base);
 
             //加载控制器公共类，有可能不存在
-            if (!\esp\helper\load($file)) {
+            if (!load($file)) {
                 return $this->err404("[{$this->_request->directory}/{$virtual}/controllers/{$cFile}.php] not exists.");
             }
 
@@ -412,7 +416,7 @@ final class Dispatcher
             $this->relayDebug("[red;{$cName}->_close() ==================================]");
         }
 
-        if (!empty($cont->result) and $this->_request->isAjax() or $this->_request->isPost()) {
+        if (!empty($cont->result) and ($this->_request->method === 'AJAX' or $this->_request->method === 'POST')) {
             $rest = $cont->ReorganizeReturn($contReturn);
             if (!is_null($rest)) return $rest;
         }
