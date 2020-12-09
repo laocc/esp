@@ -319,7 +319,7 @@ final class Post
             $val = $this->_data[$param] ?? null;
         }
 
-        if ($val === '' && $force) $this->recodeError($key);
+        if (is_null($val) && $force) $this->recodeError($key);
 
         return $val;
     }
