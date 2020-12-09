@@ -47,6 +47,13 @@ final class Post
         return $value;
     }
 
+    /**
+     * 按规则检查，若不为空则必须要符合规则
+     * @param string $key
+     * @param string $type
+     * @return string
+     * @throws EspError
+     */
     public function filter(string $key, string $type): string
     {
         $value = $this->getData($key, $force);
@@ -135,6 +142,13 @@ final class Post
                     return '';
                 }
                 break;
+            default:
+
+                if (\esp\helper\is_match($type) and !preg_match($type, $value)) {
+                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值不是指定格式的数据");
+                    return '';
+                }
+
         }
 
         if (empty($value) && $force) $this->recodeError($key);
