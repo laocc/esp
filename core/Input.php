@@ -296,6 +296,12 @@ final class Input
     /**
      * 读取post数据流
      * @param string|null $type
+     *
+     * $type: 指受理的数据是什么类型，
+     * json/xml将按相应格式解析
+     * 其他类型都按parse_str方式解析
+     * 如果解析失败，返回的是空数组
+     *
      * @return array
      */
     public static function php(string $type = null): array
@@ -322,23 +328,6 @@ final class Input
         }
 
         return $arr ?: [];
-    }
-
-    /**
-     * 在POST表单中，submit用
-     * <input type="image" src="<?=Url::admin()?>res/img/credit/visa.png" name="submit" />
-     * 这里检查点击时鼠标位置
-     * 若都为0，则可能是由JS控制提交
-     * $sub为 name="submit"的值
-     * @param string $sub
-     * @return bool
-     */
-    public static function isClick(string $sub = 'submit')
-    {
-        if (isset($_POST[$sub . '_x']) and isset($_POST[$sub . '_y'])) {
-            return $_POST[$sub . '_x'] > 0 or $_POST[$sub . '_y'] > 0;
-        }
-        return true;
     }
 
     /**

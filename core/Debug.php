@@ -486,7 +486,7 @@ final class Debug
     public function relay($msg, array $prev = null): Debug
     {
         if (!$this->_run) return $this;
-        $prev = is_null($prev) ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0] : $prev;
+        if (is_null($prev)) $prev = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         if (isset($prev['file'])) {
             $file = substr($prev['file'], $this->_ROOT_len) . " [{$prev['line']}]";
         } else {
@@ -495,6 +495,7 @@ final class Debug
         if (is_array($msg)) $msg = "\n" . print_r($msg, true);
         elseif (is_object($msg)) $msg = "\n" . print_r($msg, true);
         elseif (is_null($msg)) $msg = "\n" . var_export($msg, true);
+        elseif (is_bool($msg)) $msg = "\n" . var_export($msg, true);
         elseif (!is_string($msg)) $msg = strval($msg);
 
         $this->_node_len = max(iconv_strlen($msg), $this->_node_len);

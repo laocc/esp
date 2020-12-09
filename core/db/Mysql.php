@@ -299,26 +299,25 @@ final class Mysql
         ];
         $result = $this->{$action}($CONN, $sql, $option, $error);//执行
         $time_b = microtime(true);
-        $debugVal = [
+        $debugOption += [
             'finish' => $time_b,
             'runTime' => ($time_b - $debugOption['ready']) * 1000 . ' Ms',
-            'error' => empty($error) ? null : $error,
-            'sql' => $sql,
-            'param' => json_encode($option['param'], 256 | 64),
-            'result' => is_object($result) ? 'OBJECT' : var_export($result, true),
+            'result' => is_object($result) ? 'Result' : var_export($result, true),
         ];
 
         if (!empty($error)) {
+            $debugOption['error'] = $error;
+
             $errState = intval($error[1]);
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
             if ($debug and !_CLI) {
-                $this->debug($debugOption + $debugVal, $traceLevel + 1)->error($error, $traceLevel + 1);
+                $this->debug($debugOption, $traceLevel + 1)->error($error, $traceLevel + 1);
             }
 
             if ($try++ < 2 and in_array($errState, [2002, 2006, 2013])) {
                 if (_CLI) {
-                    print_r($debugVal);
+                    print_r($debugOption);
                     print_r([
                         'id' => $transID,
                         'connect_time' => $this->connect_time[$transID],
@@ -327,7 +326,7 @@ final class Mysql
                     ]);
                     print_r($this->PdoAttribute($CONN));
                 } else {
-                    ($debug and !_CLI) and $this->debug($debugOption + $debugVal, $traceLevel + 1);
+                    ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
                 }
 
                 unset($this->{$real}[$transID]);
@@ -338,11 +337,11 @@ final class Mysql
                 $this->trans_back($CONN, $transID, $error);//回滚事务
             }
             if ($debug) $error['sql'] = $sql;
-            if (_CLI) print_r($debugVal);
-            ($debug and !_CLI) and $this->debug($debugOption + $debugVal, $traceLevel + 1);
+            if (_CLI) print_r($debugOption);
+            ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
             return json_encode($error, 256 | 64);
         }
-        ($debug and !_CLI) and $this->debug($debugOption + $debugVal, $traceLevel + 1);
+        ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
         return $result;
     }
 

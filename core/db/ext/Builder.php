@@ -223,7 +223,6 @@ final class Builder
     {
         return [
             'param' => ($this->_param or $this->_prepare) ? $this->_param_data : [],
-//            'param' => $this->_param_data,
             'prepare' => $this->_param ?: $this->_prepare,
             'count' => $this->_count,
             'fetch' => $this->_fetch_type,
@@ -247,7 +246,7 @@ final class Builder
      * 暂不支持函数式
      *
      *
-     * @param void $fields 选择子句字符串，可以是多个子句用逗号分开的格式
+     * @param string|array $fields 选择子句字符串，可以是多个子句用逗号分开的格式
      * @param bool $add_identifier 是否自动添加标识符，默认是TRUE，对于复杂查询及带函数的查询请设置为FALSE
      * @return $this
      */
@@ -1292,18 +1291,23 @@ final class Builder
             }
 
             if ($this->_param) {
-                if ($param === null) {
-                    $valKey = array_keys($item);
-                    $param = '(:' . implode(',:', $valKey) . ')';
-                }
+//                $valKey = array_keys($item);
+                $valKey = [];
                 $nv = array();
                 foreach ($item as $k => &$v) {
                     if (is_array($v)) $v = json_encode($v, 256 | 64);
-                    if (substr($k, -1) === '#') {
+                    $fh = substr($k, -1);
+                    if ($fh === '#') {                        //压缩数据
                         $k = substr($k, 0, -1);
                         $v = gzcompress($v, $this->_gzLevel);
+                    } else if ($fh === '\\') {
+                        $k = substr($k, 0, -1);
                     }
+                    $valKey[] = ":{$k}";
                     $nv[":{$k}"] = $v;
+                }
+                if ($param === null) {
+                    $param = '(' . implode(',', $valKey) . ')';
                 }
                 $this->_param_data[] = $nv;
 
@@ -1311,7 +1315,7 @@ final class Builder
                 $values = array_values($item);
                 foreach ($values as $k => $val) {
                     if (is_array($val)) $val = json_encode($val, 256 | 64);
-                    if (substr($k, -1) === '#') {
+                    if (substr($k, -1) === '#') {                        //压缩数据
                         $k = substr($k, 0, -1);
                         $val = gzcompress($val, $this->_gzLevel);
                     }
@@ -1361,9 +1365,6 @@ final class Builder
             }
             if (is_array($value)) $value = json_encode($value, 256 | 64);
             $kFH = substr($key, -1);
-            if (isset($value[0]) and in_array($value[0], ['+', '-']) and in_array($kFH, ['+', '-'])) {
-                throw new EspError("DB_ERROR: [{$key}]键值不可同时带有符号", $tractLevel + 1);
-            }
 
             if ($kFH === '#') { //字段以#结束，表示此字段值要压缩
                 /**
