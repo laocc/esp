@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace library;
+namespace esp\core;
 
 use esp\core\ext\EspError;
 use esp\library\ext\Xss;
@@ -296,14 +296,27 @@ final class Post
     }
 
 
-    public function error()
+    /**
+     * @param int $option
+     * @return false|mixed|string|null
+     *
+     * $option:
+     * 1：仅显示第一条错误，否则显示全部
+     * 2：转为json
+     * 4：按行显示
+     * 8：加<br>显示
+     */
+    public function error(int $option = 1)
     {
         $this->_off = true;
         if (empty($this->_error)) return null;
         if (count($this->_error) === 1) return $this->_error[0];
-        return json_encode($this->_error, 256 | 64);
+        if ($option & 1) return $this->_error[0];
+        if ($option & 2) return json_encode($this->_error, 256 | 64);
+        if ($option & 4) return implode("\r\n", $this->_error);
+        if ($option & 8) return implode("<br>", $this->_error);
+        return $this->_error;
     }
-
 
     private function getData(string &$key, &$force)
     {
@@ -327,7 +340,7 @@ final class Post
             $val = $this->_data;
             foreach (explode('.', $param) as $k) {
                 $val = $val[$k] ?? null;
-                if (is_null(null)) break;
+                if (is_null($val)) break;
             }
         } else {
             $val = $this->_data[$param] ?? null;

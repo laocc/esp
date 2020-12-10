@@ -1296,6 +1296,8 @@ final class Builder
                 $nv = array();
                 foreach ($item as $k => &$v) {
                     if (is_array($v)) $v = json_encode($v, 256 | 64);
+                    if (is_null($v)) throw new EspError('DB_ERROR: INSERT 值不可为NULL', $tractLevel + 1);
+
                     $fh = substr($k, -1);
                     if ($fh === '#') {                        //压缩数据
                         $k = substr($k, 0, -1);
@@ -1364,6 +1366,8 @@ final class Builder
                 continue;
             }
             if (is_array($value)) $value = json_encode($value, 256 | 64);
+            if (is_null($value)) throw new EspError('DB_ERROR: Update值不可为NULL', $tractLevel + 1);
+
             $kFH = substr($key, -1);
 
             if ($kFH === '#') { //字段以#结束，表示此字段值要压缩

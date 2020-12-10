@@ -211,9 +211,9 @@ abstract class Model
         if (!is_string($data)) return null;
         $json = json_decode($data, true);
         if (isset($json[2]) or isset($json['2'])) {
-            throw new EspError($action . ':' . ($json[2] ?? $json['2']), $this->_traceLevel);
+            throw new EspError($action . ':' . ($json[2] ?? $json['2']), $this->_traceLevel + 1);
         }
-        throw new EspError($data, $this->_traceLevel);
+        throw new EspError($data, $this->_traceLevel + 1);
     }
 
     /**
