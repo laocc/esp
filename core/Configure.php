@@ -53,7 +53,11 @@ final class Configure
             $this->_Redis = new Redis($_bufferConf);
         }
 
-        $this->_rpc = $_bufferConf['rpc'] ?? null;
+        if (defined('_RPC')) {
+            $this->_rpc = _RPC;
+        } else {
+            $this->_rpc = $_bufferConf['rpc'] ?? null;
+        }
         if ($this->_rpc) {
             $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
         }
