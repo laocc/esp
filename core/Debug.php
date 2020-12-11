@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\library\Output;
 use function esp\helper\mk_dir;
 use function esp\helper\root;
 

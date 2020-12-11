@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\library\Output;
 use esp\core\db\File;
 use esp\core\db\Redis;
 use esp\core\ext\EspError;

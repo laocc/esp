@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace esp\core\ext;
 
 
-use esp\core\Input;
-
 trait Page
 {
     private $_page_key = 'page';       //分页，页码键名，可以任意命名，只要不和常用的别的键冲突就可以
@@ -35,7 +33,7 @@ trait Page
      */
     final public function pageSet(int $size = 10, int $index = 0, int $lftRit = 5)
     {
-        $this->pageIndex = $index ?: Input::get($this->_page_key, 1);
+        $this->pageIndex = $index ?: intval($_GET[$this->_page_key] ?? 1);
         if ($this->pageIndex < 1) $this->pageIndex = 1;
         $this->pageSize = max(2, $size);
         $this->lftRit = max(2, $lftRit);
@@ -52,7 +50,7 @@ trait Page
             'index' => $this->pageIndex,//当前页码
             'key' => $this->_page_key,
         ];
-        $info['index'] = $info['index'] ?: Input::get($info['key'], 1);//当前页码
+        $info['index'] = $info['index'] ?: intval($_GET[$info['key']] ?? 1);//当前页码
         $info['last'] = (int)($info['recode'] % $info['size']);//最后一页数
         $info['page'] = (int)($info['recode'] / $info['size']);
         $info['page'] += !!$info['last'] ? 1 : 0;//总页数
@@ -77,7 +75,7 @@ trait Page
         $key = $this->_page_key;  //URL中标识页码的键名，可以任意指定，但不要和网站其他可能的参数重名
         $_show = $this->lftRit;             //页码显示为当前页前后页数
 
-        $info['index'] = $info['index'] ?: Input::get($key, 1);//当前页码
+        $info['index'] = $info['index'] ?: intval($_GET[$key] ?? 1);//当前页码
 
         $info['last'] = (int)($info['recode'] % $info['size']);//最后一页数
         $info['page'] = (int)($info['recode'] / $info['size']);
@@ -156,7 +154,7 @@ trait Page
             $key = $this->_page_key;  //URL中标识页码的键名，可以任意指定，但不要和网站其他可能的参数重名
             $_show = $this->lftRit;             //页码显示为当前页前后页数
 
-            $info['index'] = $info['index'] ?: Input::get($key, 1);//当前页码
+            $info['index'] = $info['index'] ?: intval($_GET[$key] ?? 1);//当前页码
 
             $info['last'] = (int)($info['recode'] % $info['size']);//最后一页数
             $info['page'] = (int)($info['recode'] / $info['size']);
