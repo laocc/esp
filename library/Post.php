@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\core;
+namespace esp\library;
 
 use esp\core\ext\EspError;
 use esp\library\ext\Xss;
