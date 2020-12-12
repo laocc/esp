@@ -10,7 +10,7 @@ trait Page
     private $_size_key = 'size';       //分页，每页数量
 
     protected $dataCount = 0;
-    protected $pageSize = 1;
+    protected $pageSize = 0;
     protected $pageIndex = 1;
     protected $pageSkip = 0;
     protected $lftRit = 5;
