@@ -12,21 +12,31 @@ class Result
     private $_page = null;
     private $_append = [];
 
+    /**
+     * @param bool $value 可以是bool或int
+     * @return $this
+     */
     public function success($value = true): Result
     {
         $this->_success = $value;
         return $this;
     }
 
+    /**
+     * @param int $value 错误代码
+     * @return $this
+     */
     public function error(int $value = 1): Result
     {
         $this->_error = $value;
         return $this;
     }
 
-    public function message(string $msg = 'ok'): Result
+    public function message($msg = 'ok'): Result
     {
-        $this->_message = $msg;
+        if (is_array($msg)) $msg = json_encode($msg, 256 | 64);
+        else if (is_object($msg)) $msg = var_export($msg, true);
+        $this->_message = strval($msg);
         return $this;
     }
 
