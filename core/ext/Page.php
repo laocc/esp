@@ -42,8 +42,9 @@ trait Page
         return $this;
     }
 
-    final public function pageValue()
+    final public function pageValue(): array
     {
+        if ($this->pageSize === 0) return [];
         $info = [
             'recode' => $this->dataCount,//记录数
             'size' => $this->pageSize,//每页数量
@@ -66,6 +67,7 @@ trait Page
      */
     final public function pageGet(string $class = 'pageForm'): string
     {
+        if ($this->pageSize === 0) return '';
         $info = [
             'recode' => $this->dataCount,//记录数
             'size' => $this->pageSize,//每页数量
@@ -136,6 +138,7 @@ trait Page
 
     final public function pageForm($callBack = true)
     {
+        if ($this->pageSize === 0) return '';
         $call = function (string $class = 'pageForm', string $notice = null) {
             $info = [
                 'recode' => $this->dataCount,//记录数
