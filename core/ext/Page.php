@@ -7,6 +7,7 @@ namespace esp\core\ext;
 trait Page
 {
     private $_page_key = 'page';       //分页，页码键名，可以任意命名，只要不和常用的别的键冲突就可以
+    private $_size_key = 'size';       //分页，每页数量
 
     protected $dataCount = 0;
     protected $pageSize = 1;
@@ -19,9 +20,10 @@ trait Page
         return $this->dataCount;
     }
 
-    final public function pageKey(string $key)
+    final public function pageKeyword(string $page, string $size)
     {
-        $this->_page_key = $key;
+        $this->_page_key = $page;
+        $this->_size_key = $size;
         return $this;
     }
 
@@ -31,10 +33,11 @@ trait Page
      * @param int $lftRit
      * @return $this
      */
-    final public function pageSet(int $size = 10, int $index = 0, int $lftRit = 5)
+    final public function pageSet(int $size = 0, int $index = 0, int $lftRit = 5)
     {
         $this->pageIndex = $index ?: intval($_GET[$this->_page_key] ?? 1);
         if ($this->pageIndex < 1) $this->pageIndex = 1;
+        if (!$size) $size = intval($_GET[$this->_size_key] ?? 10);
         $this->pageSize = max(2, $size);
         $this->lftRit = max(2, $lftRit);
         $this->pageSkip = ($this->pageIndex - 1) * $this->pageSize;
