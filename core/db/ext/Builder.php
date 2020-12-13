@@ -14,7 +14,7 @@ use esp\core\ext\EspError;
 final class Builder
 {
     private $_table = '';//使用的表名称
-    private $_table_pre;
+    private $_table_prefix;//表前缀
 
     private $_select = array();//保存已经设置的选择字符串
     private $_join_select = array();//join表字段
@@ -50,12 +50,13 @@ final class Builder
     private $_object = null;
 
     private $_gzLevel = 5;//压缩比
+    private $_protect = true;//默认加保护符
 
-    public function __construct(Mysql $mysql, $table_pre, bool $param, int $trans_id = 0)
+    public function __construct(Mysql $mysql, string $table_prefix, bool $param, int $trans_id = 0)
     {
         $this->_MySQL = $mysql;
         $this->_dim_param = $param;
-        $this->_table_pre = $table_pre;
+        $this->_table_prefix = $table_prefix;
         $this->clean_builder();
 
         //必须在clean_builder后执行
@@ -78,6 +79,8 @@ final class Builder
         $this->_count = false;
         $this->_group = null;
         $this->_distinct = null;
+        $this->_protect = true;
+        $this->_gzLevel = 5;
 
         $this->_prepare = $this->_param = $this->_dim_param;
         $this->_bindKV = $this->_param_data = array();
@@ -90,16 +93,19 @@ final class Builder
 
     /**
      * 设置，或获取表名
-     * @param null $tableName
+     * @param string $tableName
+     * @param bool $_protect
      * @return $this
      */
-    public function table($tableName = null)
+    public function table(string $tableName = null, bool $_protect = null)
     {
         $this->clean_builder(false);
-        if ($this->_table_pre and stripos($tableName, $this->_table_pre) === false) {
-            $tableName = "{$this->_table_pre}{$tableName}";
+        if ($this->_table_prefix and stripos($tableName, $this->_table_prefix) === false) {
+            $tableName = "{$this->_table_prefix}{$tableName}";
         }
-        $this->_table = $this->protect_identifier($tableName);
+        if (is_bool($_protect)) $this->_protect = $_protect;
+        $this->_table = $tableName;
+        if ($this->_protect) $this->_table = $this->protect_identifier($this->_table);
         return $this;
     }
 
@@ -236,7 +242,7 @@ final class Builder
     /**
      * 执行一个选择子句，并进行简单的标识符转义
      * 标识符转义只能处理简单的选择子句，对于复杂的选择子句
-     * 请设置第二个参数为 FALSE
+     * 请设置第二个参数为 false
      *
      * 自动保护标识符目前可以处理以下情况：
      *      1. 简单的选择内容
@@ -247,10 +253,10 @@ final class Builder
      *
      *
      * @param string|array $fields 选择子句字符串，可以是多个子句用逗号分开的格式
-     * @param bool $add_identifier 是否自动添加标识符，默认是TRUE，对于复杂查询及带函数的查询请设置为FALSE
+     * @param bool $add_identifier 是否自动添加标识符，默认是true，对于复杂查询及带函数的查询请设置为false
      * @return $this
      */
-    public function select($fields, bool $add_identifier = TRUE)
+    public function select($fields, bool $add_identifier = null)
     {
         if (is_array($fields) and !empty($fields)) {
             foreach ($fields as $field) {
@@ -267,14 +273,17 @@ final class Builder
          * 或：选择*所有
          * 直接设置当前内容到选择数组，不再进行下面的操作
          */
-        if (!$add_identifier or $fields === '*') {
+        if ($add_identifier === false or $fields === '*') {
             $this->_select[] = $fields;
             return $this;
         }
 
-        //先去除已存在的`号
-        $select = explode(',', $fields);
-        $this->_select += $this->protect_identifier($select);
+        if ($this->_protect) {
+            $select = explode(',', $fields);
+            array_push($this->_select, ...$this->protect_identifier($select));
+        } else {
+            $this->_select[] = $fields;
+        }
 
         return $this;
     }
@@ -763,7 +772,7 @@ final class Builder
      */
     public function or_where($field, $value = null)
     {
-        return $this->where($field, $value, TRUE);
+        return $this->where($field, $value, true);
     }
 
     /**
@@ -773,7 +782,7 @@ final class Builder
      */
     public function where_or($field, $value = null)
     {
-        return $this->where($field, $value, TRUE);
+        return $this->where($field, $value, true);
     }
 
     /**
@@ -785,7 +794,7 @@ final class Builder
      * @param bool $isNot
      * @return $this
      */
-    public function where_in(string $field, array $data, bool $is_OR = FALSE, bool $isNot = false)
+    public function where_in(string $field, array $data, bool $is_OR = false, bool $isNot = false)
     {
         if (empty($field)) {
             throw new EspError('DB_ERROR: where in 条件不可为空', 1);
@@ -815,7 +824,7 @@ final class Builder
      * @param bool $is_OR
      * @return Builder
      */
-    public function where_not_in($field, $data, $is_OR = FALSE)
+    public function where_not_in($field, $data, $is_OR = false)
     {
         return $this->where_in($field, $data, $is_OR, true);
     }
@@ -829,7 +838,7 @@ final class Builder
      */
     public function or_where_in($field, array $data)
     {
-        return $this->where_in($field, $data, TRUE);
+        return $this->where_in($field, $data, true);
     }
 
     /**
@@ -840,7 +849,7 @@ final class Builder
      * @param bool $is_OR
      * @return $this
      */
-    public function where_like($field, $value, $is_OR = FALSE)
+    public function where_like($field, $value, $is_OR = false)
     {
         if (empty($field) || empty($value)) {
             throw new EspError('DB_ERROR: where like 条件不能为空', 1);
@@ -920,7 +929,7 @@ final class Builder
      */
     public function or_where_group_start()
     {
-        return $this->where_group_start(TRUE);
+        return $this->where_group_start(true);
     }
 
     /**
@@ -967,8 +976,8 @@ final class Builder
     /**
      * 执行Limit查询
      *
-     * @param int $count 要获取的记录数
-     * @param int $offset 偏移
+     * @param int $size 要获取的记录数
+     * @param int $skip 偏移
      * @return $this
      */
     public function limit(int $size, int $skip = 0)
@@ -1117,12 +1126,11 @@ final class Builder
     public function _build_get()
     {
         $sql = array();
-        $sql[] = "SELECT " . ($this->_distinct ? ' DISTINCT ' : '');
+        $sql[] = "SELECT " . ($this->_distinct ? 'DISTINCT ' : '') . $this->_build_select();
 
-        $sql[] = " {$this->_build_select()} FROM {$this->_table}";
+        $sql[] = "FROM {$this->_table}";
 
-        if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
-
+        if (!empty($this->_forceIndex)) $sql[] = "FORCE index({$this->_forceIndex})";
 
         if (!empty($this->_join)) $sql[] = implode(' ', $this->_join);
 
@@ -1147,7 +1155,8 @@ final class Builder
     public function _build_count_sql()
     {
         $sql = array();
-        $sql[] = "SELECT count(1) FROM {$this->_table}";
+        $sql[] = "SELECT";
+        $sql[] = "count(1) FROM {$this->_table}";
         if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
 
         $where = $this->_build_where();
@@ -1252,7 +1261,8 @@ final class Builder
         }
 
         $sql = array();
-        $sql[] = "DELETE FROM {$this->_table} WHERE {$where}";
+        $sql[] = "DELETE";
+        $sql[] = "FROM {$this->_table} WHERE {$where}";
         if (!empty($this->_order_by)) $sql[] = "ORDER BY {$this->_order_by}";
         if (!empty($this->_limit)) $sql[] = "LIMIT {$this->_limit}";
         $sql = implode(' ', $sql);
@@ -1389,13 +1399,16 @@ final class Builder
                     $value = $this->quote($value);
                 }
 
-            } elseif (in_array($kFH, ['+', '-', '|'])) { //键以+-结束，或以|结束的位运算
+            } elseif (in_array($kFH, ['+', '-', '|', '&', '$'])) { //键以+-结束，或以|&结束的位运算
                 $key = substr($key, 0, -1);
                 if (!is_numeric($value)) {
-                    if (!preg_match('/^\w+[\+\-\*\/]\w+$/', $value))
-                        throw new EspError("DB_ERROR: [{$key}]加减操作时，其值必须为数字", $tractLevel + 1);
+                    throw new EspError("DB_ERROR: [{$key}]加减操作时，其值必须为数字", $tractLevel + 1);
                 }
-                $value = $this->protect_identifier($key) . " {$kFH} {$value}";
+                if ($kFH === '$') {
+                    $value = $this->protect_identifier($key) . " - ({$key} & {$value})";
+                } else {
+                    $value = $this->protect_identifier($key) . " {$kFH} {$value}";
+                }
 
             } else if ($kFH === '.') {//.号为拼接
                 $key = substr($key, 0, -1);
@@ -1452,10 +1465,10 @@ final class Builder
         if (empty($upData)) {
             throw new EspError('DB_ERROR: 不能 update 空数据', $tractLevel + 1);
         }
-        $sql = "UPDATE {$this->_table} SET ";
+        $sql = $when = [];
+        $sql[] = "UPDATE {$this->_table} SET";
         foreach ($upData as $key => $data) {
-            $protected_key = $this->protect_identifier($key);
-            $sql .= $protected_key . ' = CASE ';
+            if ($this->_protect) $key = $this->protect_identifier($key);
 
             if (isset($data[0]) and isset($data[1])) {
                 $oldVal = quotemeta($data[0]);
@@ -1469,17 +1482,29 @@ final class Builder
                     }
                 }
             }
-            $sql .= "WHEN {$protected_key} = {$oldVal} THEN {$newVal} ELSE {$protected_key} END, ";
+            $when[] = "{$key} = CASE WHEN {$key} = {$oldVal} THEN {$newVal} ELSE {$key} END";
         }
+
+        $sql[] = implode(',', $when);
         $where = $this->_build_where();
         if (empty($where)) {//禁止无where时更新数据
             throw new EspError('DB_ERROR: 禁止无where时更新数据', $tractLevel + 1);
         }
+        $sql[] = "WHERE {$where}";
 
-        $sql = rtrim($sql, ', ') . ' WHERE ' . $where;
-        return $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
+        return $this->_MySQL->query(implode(' ', $sql), $this->option('update'), null, $tractLevel + 1);
     }
 
+    /**
+     * 是否加保护符，默认加
+     * @param bool $protect
+     * @return $this
+     */
+    public function protect(bool $protect)
+    {
+        $this->_protect = $protect;
+        return $this;
+    }
 
     /**
      * 保护标识符
@@ -1494,6 +1519,7 @@ final class Builder
      */
     private function protect_identifier($clause)
     {
+        if (!$this->_protect) return $clause;
         /**
          * 处理数组形式传入参数
          */
@@ -1506,8 +1532,13 @@ final class Builder
         }
         if (!is_string($clause)) return $clause;
         if ($clause === '*') return '*';
-        $clause = trim(str_replace('`', '', $clause));
-        if (preg_match('/^([\w\-]+)\.([\w\-]+)$/i', $clause, $m)) {
+        $clause = trim(str_replace('`', '', $clause));//先去除已存在的`号
+
+        if (preg_match('/^([\w\-]+)$/i', $clause, $m)) {
+            //userName => `userName`
+            return "`{$m[1]}`";
+
+        } else if (preg_match('/^([\w\-]+)\.([\w\-]+)$/i', $clause, $m)) {
             //tabUser.userName => `tabUser`.`userName`
             return "`{$m[1]}`.`{$m[2]}`";
 
@@ -1518,10 +1549,6 @@ final class Builder
         } else if (preg_match('/^([\w\-]+\.?[\w\-]+\,[\w\-]+.+)$/i', $clause, $m)) {
             //tabUser.userName,userMobile like
             return "CONCAT({$m[1]})";
-
-        } else if (preg_match('/^([\w\-]+)$/i', $clause, $m)) {
-            //userName => `userName`
-            return "`{$m[1]}`";
 
         } else if (preg_match('/^([\w\-]+)\s+AS\s+([\w\-]+)$/i', $clause, $m)) {
             //userName as name => `userName` as `name`
@@ -1545,9 +1572,7 @@ final class Builder
     {
         if (is_array($data)) {
             foreach ($data as $i => $v) {
-                if (is_string($v)) {
-                    $data[$i] = "'" . quotemeta($v) . "'";//转义元字符集
-                }
+                if (is_string($v)) $data[$i] = "'" . quotemeta($v) . "'";//转义元字符集
             }
             return $data;
         } elseif (is_string($data)) {

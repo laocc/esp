@@ -50,16 +50,18 @@ final class Mysql
     }
 
     /**
-     * @param $tabName
+     * @param string $tabName
+     * @param bool|null $_protect
      * @return Builder
+     * @throws EspError
      */
-    public function table(string $tabName)
+    public function table(string $tabName, bool $_protect = null)
     {
         if (!is_string($tabName) || empty($tabName)) {
             throw new EspError('PDO_Error :  数据表名错误', 1);
         }
         return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? false), $this->transID))
-            ->table($tabName);
+            ->table($tabName, $_protect);
     }
 
     public function print(bool $boolPrint = false)

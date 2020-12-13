@@ -52,6 +52,7 @@ abstract class Model
 
     private $_order = [];
     private $_count = null;
+    private $_protect = null;
     private $_distinct = null;//消除重复行
     protected $tableJoin = array();
     protected $tableJoinCount = 0;
@@ -231,8 +232,7 @@ abstract class Model
         if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
         $mysql = $this->Mysql(0, [], 1);
         $data = $full ? $data : $this->_FillField($mysql->dbName, $table, $data);
-        $obj = $mysql->table($table);
-        $val = $obj->insert($data, $replace, $this->_traceLevel);
+        $val = $mysql->table($table, $this->_protect)->insert($data, $replace, $this->_traceLevel);
         $ck = $this->checkRunData('insert', $val);
         if ($ck) return $ck;
         return $val;
@@ -266,8 +266,7 @@ abstract class Model
         }
 
         $mysql = $this->Mysql(0, [], 1);
-        $val = $mysql->table($table)->where($where)->delete($this->_traceLevel);
-
+        $val = $mysql->table($table, $this->_protect)->where($where)->delete($this->_traceLevel);
         if ($this->__cache === true) {
             $kID = md5(serialize($where));
             $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
@@ -298,7 +297,7 @@ abstract class Model
             $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
         }
 
-        $val = $mysql->table($table)->where($where)->update($data, true, $this->_traceLevel);
+        $val = $mysql->table($table, $this->_protect)->where($where)->update($data, true, $this->_traceLevel);
         return $this->checkRunData('update', $val) ?: $val;
     }
 
@@ -356,7 +355,7 @@ abstract class Model
             }
         }
 
-        $obj = $mysql->table($table);
+        $obj = $mysql->table($table, $this->_protect);
         if (is_int($this->columnKey)) $obj->fetch(0);
 
         if (!empty($this->selectKey)) {
@@ -409,8 +408,7 @@ abstract class Model
     {
         if (empty($ids)) return [];
         $table = $this->table();
-        $obj = $this->Mysql(0, [], 1)->table($table);
-
+        $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect);
         if (!empty($this->selectKey)) {
             foreach ($this->selectKey as $select) $obj->select(...$select);
         }
@@ -443,7 +441,7 @@ abstract class Model
      * @param bool $addProtect
      * @return $this
      */
-    final public function order($key, string $sort = 'asc', bool $addProtect = true)
+    final public function order($key, string $sort = 'asc', bool $addProtect = null)
     {
         if (is_array($key)) {
             foreach ($key as $ks) {
@@ -455,6 +453,7 @@ abstract class Model
             return $this;
         }
         if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
+        if (is_null($addProtect)) $addProtect = $this->_protect;
         $this->_order[] = ['key' => $key, 'sort' => $sort, 'pro' => $addProtect];
         return $this;
     }
@@ -477,7 +476,7 @@ abstract class Model
     {
         $table = $this->table();
         if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
-        $obj = $this->Mysql(0, [], 1)->table($table)->prepare();
+        $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect)->prepare();
         if ($orderBy === 'PRI') {
             $orderBy = $this->PRI($table);
             if (isset($where['PRI'])) {
@@ -531,6 +530,17 @@ abstract class Model
     }
 
     /**
+     * 是否加保护符，默认加
+     * @param bool $protect
+     * @return $this
+     */
+    final public function protect(bool $protect)
+    {
+        $this->_protect = $protect;
+        return $this;
+    }
+
+    /**
      * 消除重复行
      * @param bool $bool
      * @return $this
@@ -553,13 +563,14 @@ abstract class Model
         $table = $this->table();
         if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
         if ($this->pageSize === 0) $this->pageSet();
-        $obj = $this->Mysql(0, [], 1)->table($table);
+        $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect);
         if (!empty($this->selectKey)) {
             foreach ($this->selectKey as $select) $obj->select(...$select);
         }
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
+        if (is_bool($this->_protect)) $obj->protect($this->_protect);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
@@ -689,22 +700,25 @@ abstract class Model
      * @return $this
      * @throws EspError
      */
-    final public function select($select, $add_identifier = true)
+    final public function select($select, $add_identifier = null)
     {
         if (is_int($add_identifier)) {
             //当$add_identifier是整数时，表示返回第x列数据
             $this->columnKey = $add_identifier;
             $this->selectKey[] = [$select, true];
 
-        } else if ($select and ($select[0] === '~' or $select[0] === '!') and $add_identifier) {
-            //不含选择，只适合从单表取数据
-            $field = $this->fields();
-            $seKey = array_column($field, 'COLUMN_NAME');
-            $kill = explode(',', substr($select, 1));
-            $this->selectKey[] = [implode(',', array_diff($seKey, $kill)), $add_identifier];
-
         } else {
-            $this->selectKey[] = [$select, $add_identifier];
+            if (is_null($add_identifier)) $add_identifier = $this->_protect;
+            if ($select and ($select[0] === '~' or $select[0] === '!') and $add_identifier) {
+                //不含选择，只适合从单表取数据
+                $field = $this->fields();
+                $seKey = array_column($field, 'COLUMN_NAME');
+                $kill = explode(',', substr($select, 1));
+                $this->selectKey[] = [implode(',', array_diff($seKey, $kill)), $add_identifier];
+
+            } else {
+                $this->selectKey[] = [$select, $add_identifier];
+            }
         }
         return $this;
     }
