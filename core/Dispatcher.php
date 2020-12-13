@@ -29,6 +29,13 @@ final class Dispatcher
      */
     public function __construct(array $option, string $virtual = 'www')
     {
+        /**
+         * 最好在nginx server中加以下其中之一：
+         * if ($request_method ~ ^(HEAD)$ ) { return 200 "OK"; }
+         * if ($request_method !~ ^(GET|POST)$ ) { return 200 "OK"; }
+         */
+        if (getenv('REQUEST_METHOD') === 'HEAD') die('OK');
+
         if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!getenv('HTTP_HOST') && !_CLI) die('unknown host');
         if (!defined('_ROOT')) define('_ROOT', dirname(same_first(__DIR__, getenv('DOCUMENT_ROOT'))));//网站根目录
