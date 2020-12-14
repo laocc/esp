@@ -26,6 +26,7 @@
       "helper/rely.php",
       "helper/judge.php",
       "helper/time.php",
+      "helper/other.php",
       "helper/tools.php"
     ],
     "psr-4": {
