@@ -329,24 +329,48 @@ final class Post
             $force = false;
             $key = substr($key, 1);
         }
+
+        $keyName = $key;
         $param = $key;
-        if (strpos($key, ':')) {
+        $default = null;
+        $f = strpos($key, ':');
+        $d = strpos($key, '=');
+        if ($f && $d === false) {
             $ka = explode(':', $key);
-            $key = $ka[1];
             $param = $ka[0];
+            $keyName = $ka[1];
+        } else if ($d && $f === false) {
+            $ka = explode('=', $key);
+            $param = $ka[0];
+            $keyName = $ka[0];
+            $default = $ka[1];
+        } else if ($d && $f) {
+            $ka = explode(':', $key);
+            if ($d > $f) {//分号在前： 键名:参数名=默认值
+                $param = $ka[0];
+                $den = explode('=', $key[1]);
+                $keyName = $den[0];
+                $default = $den[1];
+            } else {
+                //分号在后： 键名=默认值:参数名
+                $keyName = $ka[1];
+                $den = explode('=', $key[0]);
+                $param = $den[0];
+                $default = $den[1];
+            }
         }
 
         if (strpos($param, '.') > 0) {
             $val = $this->_data;
             foreach (explode('.', $param) as $k) {
-                $val = $val[$k] ?? null;
-                if (is_null($val)) break;
+                $val = $val[$k] ?? $default;
+                if (is_null($val) or $default === $val) break;
             }
         } else {
-            $val = $this->_data[$param] ?? null;
+            $val = $this->_data[$param] ?? $default;
         }
 
-        if (is_null($val) && $force) $this->recodeError($key);
+        if (is_null($val) && $force) $this->recodeError($keyName);
 
         return $val;
     }
