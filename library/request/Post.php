@@ -327,42 +327,7 @@ final class Post extends Request
                 $value = json_decode($value, true);
 
             } else if ($encode === "ini") {
-                //ini 格式
-                $linStr = explode("\n", str_replace("\r", '', $value));
-                $value = [];
-                $child = null;
-                foreach ($linStr as $line) {
-                    if (empty($line)) continue;
-                    if ($line[0] === '[') {
-                        $child = substr($line, 1, -1);
-                        $value[$child] = [];
-                        continue;
-                    }
-                    $row = explode('=', $line);
-                    $item = trim($row[0]);
-                    if (strpos($item, '[')) {
-                        $item = explode('[', $item);
-                        $item[1] = substr($item[1], 0, 1);
-                    }
-                    $val = trim($row[1]);
-                    if (is_numeric($val)) {
-                        if (isInteger($val)) $val = intval($val);
-                        elseif (isFloat($val)) $val = floatval($val);
-                    }
-                    if (is_null($child)) {
-                        if (is_array($item)) {
-                            $value[$item[0]][$item[1]] = $val;
-                        } else {
-                            $value[$item] = $val;
-                        }
-                    } else {
-                        if (is_array($item)) {
-                            $value[$child][$item[0]][$item[1]] = $val;
-                        } else {
-                            $value[$child][$item] = $val;
-                        }
-                    }
-                }
+                $value = parse_ini_string($value, true);
 
             } else {
                 parse_str($value, $value);
