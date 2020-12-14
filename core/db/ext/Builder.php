@@ -1061,7 +1061,7 @@ final class Builder
      * @return $this
      * @throws EspError
      */
-    public function order($field, $method = 'ASC', bool $addProtect = true)
+    public function order($field, $method = 'ASC', bool $addProtect = null)
     {
         /**
          * 检查传入的排序方式是否被支持
