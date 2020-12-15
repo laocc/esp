@@ -279,6 +279,34 @@ function array_sort(array &$array, string $key, string $order = 'desc')
 }
 
 /**
+ * 数组转为ini字符串
+ * @param $arr
+ * @return string
+ */
+function array_ini($arr)
+{
+    $ini = [];
+    foreach ($arr as $k => $a) {
+        if (is_array($a)) {
+            $ini[] = "[{$k}]";
+            foreach ($a as $kk => $aa) {
+                if (is_array($aa)) {
+                    foreach ($aa as $ak => $av) {
+                        if (is_array($av)) $av = "'" . json_encode($av, 256 | 64) . "'";
+                        $ini[] = "{$kk}[{$ak}] = {$av}";
+                    }
+                } else {
+                    $ini[] = "{$kk} = {$aa}";
+                }
+            }
+        } else {
+            $ini[] = "{$k} = {$a}";
+        }
+    }
+    return implode("\n", $ini);
+}
+
+/**
  * 将字符串分割成1个字的数组，主要用于中英文混合时，将中英文安全的分割开
  * @param $str
  * @return array
