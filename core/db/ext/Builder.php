@@ -758,10 +758,10 @@ final class Builder
         return $this;
     }
 
-    private function paramKey($field)
+    private function paramKey(string $field): string
     {
-        $key = ':' . preg_replace('/[^\w]/i', '', $field) . uniqid();
-        return $key;
+        if (strlen($field) > 32) $field = md5($field);
+        return ':' . preg_replace('/[^\w]/i', '', $field) . uniqid();
     }
 
     /**
