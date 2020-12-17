@@ -603,7 +603,8 @@ abstract class Model
      */
     final public function clear_initial()
     {
-//        $this->__table = null;//= $this->__pri
+        //这两个值是程序临时指定的，与model自身的_table和_pri用处相同，优先级高
+        $this->__table = $this->__pri = null;
         $this->columnKey = null;
         $this->groupKey = '';
         $this->forceIndex = '';
