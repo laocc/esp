@@ -1,9 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\library;
+namespace esp\library\request;
 
 use esp\core\ext\EspError;
+use function esp\helper\isFloat;
+use function esp\helper\isInteger;
 use esp\library\ext\Xss;
 use function esp\helper\is_card;
 use function esp\helper\is_date;
@@ -15,12 +17,8 @@ use function esp\helper\is_url;
 use function esp\helper\xml_encode;
 use function esp\helper\xml_decode;
 
-final class Post
+final class Post extends Request
 {
-    private $_data = array();
-    private $_raw = '';
-    private $_error = [];
-    private $_off = false;
 
 
     public function string(string $key, int $xssLevel = 1): string
@@ -43,6 +41,7 @@ final class Post
         }
 
         if (empty($value) && $force) $this->recodeError($key);
+        if ($chk = $this->errorString($value)) $this->recodeError($key . $chk);
 
         return $value;
     }
@@ -56,6 +55,8 @@ final class Post
      */
     public function filter(string $key, string $type): string
     {
+        $this->_min = null;
+        $this->_max = null;
         $value = $this->getData($key, $force);
         if (is_null($value)) return '';
         $value = trim($value);
@@ -172,7 +173,10 @@ final class Post
         if (is_null($value)) return 0;
         $value = str_replace(['+', '%3A'], [' ', ':'], $value);
         if (empty($value) && $force) $this->recodeError($key);
-        return strtotime($value);
+
+        $value = strtotime($value);
+        if ($chk = $this->errorNumber($value, 1)) $this->recodeError($key . $chk);
+        return $value;
     }
 
     public function int(string $key, bool $ceil = false): int
@@ -182,9 +186,10 @@ final class Post
         if (is_array($value)) $value = array_sum($value);
 
         if ($value === '' && $force) $this->recodeError($key);
-
-        if ($ceil) return (int)ceil($value);
-        return intval($value);
+        if ($ceil) $value = (int)ceil($value);
+        $value = intval($value);
+        if ($chk = $this->errorNumber($value)) $this->recodeError($key . $chk);
+        return $value;
     }
 
     public function float(string $key): float
@@ -192,11 +197,15 @@ final class Post
         $value = $this->getData($key, $force);
         if (is_null($value)) return floatval(0);
         if ($value === '' && $force) $this->recodeError($key);
-        return floatval($value);
+        $value = floatval($value);
+        if ($chk = $this->errorNumber($value)) $this->recodeError($key . $chk);
+        return $value;
     }
 
     public function bool(string $key): bool
     {
+        $this->_min = null;
+        $this->_max = null;
         $value = $this->getData($key, $force);
         if (is_null($value)) return false;
         if ($value === '' && $force) $this->recodeError($key);
@@ -216,11 +225,15 @@ final class Post
         $value = $this->getData($key, $force);
         if (is_null($value)) return 0;
         if ($value === '' && $force) $this->recodeError($key);
-        return intval(floatval($value) * 100);
+        $value = intval(floatval($value) * 100);
+        if ($chk = $this->errorNumber($value, 2)) $this->recodeError($key . $chk);
+        return $value;
     }
 
     public function match(string $key, string $pnt): string
     {
+        $this->_min = null;
+        $this->_max = null;
         if (!\esp\helper\is_match($pnt)) throw new EspError('传入的表达式不合法', 1);
         $value = $this->getData($key, $force);
         if (is_null($value)) return '';
@@ -234,8 +247,19 @@ final class Post
     }
 
 
+    /**
+     * 获取json格式值，若收到数组，转换为json
+     *
+     * @param string $key
+     * @param int $options
+     * @return string
+     * @throws EspError
+     */
     public function json(string $key, int $options = 256 | 64): string
     {
+        $this->_min = null;
+        $this->_max = null;
+
         $value = $this->getData($key, $force);
         if (is_null($value)) return '';
 
@@ -252,8 +276,18 @@ final class Post
     }
 
 
+    /**
+     * 获取xml，如果收到的是数组，转换为xml
+     * @param string $key
+     * @param string $root
+     * @return string
+     * @throws EspError
+     */
     public function xml(string $key, string $root = 'xml'): string
     {
+        $this->_min = null;
+        $this->_max = null;
+
         $value = $this->getData($key, $force);
         if (is_null($value)) return '';
 
@@ -269,16 +303,34 @@ final class Post
     }
 
 
+    /**
+     * 获取数组，若收到的是json或xml，则转换
+     *
+     * @param string $key
+     * @param string $encode
+     * @return array
+     * @throws EspError
+     */
     public function array(string $key, string $encode = 'json'): array
     {
+        $this->_min = null;
+        $this->_max = null;
+
         $value = $this->getData($key, $force);
         if (is_null($value)) return [];
 
         if (is_string($value)) {
             if ($encode === 'xml') {
                 $value = xml_decode($value, true);
-            } else {
+
+            } else if ($encode === 'json') {
                 $value = json_decode($value, true);
+
+            } else if ($encode === "ini") {
+                $value = parse_ini_string($value, true);
+
+            } else {
+                parse_str($value, $value);
             }
         }
 
@@ -289,12 +341,6 @@ final class Post
 
         return $value;
     }
-
-    public function data()
-    {
-        return $this->_data;
-    }
-
 
     /**
      * @param int $option
@@ -318,47 +364,9 @@ final class Post
         return $this->_error;
     }
 
-    private function getData(string &$key, &$force)
-    {
-        if ($this->_off) throw new EspError('POST已被注销，不能再次引用，请在调用error()之前读取所有数据。', 2);
-
-        if (empty($key)) throw new EspError('参数必须明确指定', 2);
-
-        $force = true;
-        if ($key[0] === '?') {
-            $force = false;
-            $key = substr($key, 1);
-        }
-        $param = $key;
-        if (strpos($key, ':')) {
-            $ka = explode(':', $key);
-            $key = $ka[1];
-            $param = $ka[0];
-        }
-
-        if (strpos($param, '.') > 0) {
-            $val = $this->_data;
-            foreach (explode('.', $param) as $k) {
-                $val = $val[$k] ?? null;
-                if (is_null($val)) break;
-            }
-        } else {
-            $val = $this->_data[$param] ?? null;
-        }
-
-        if (is_null($val) && $force) $this->recodeError($key);
-
-        return $val;
-    }
-
-    private function recodeError(string $key, string $message = null)
-    {
-        if (is_null($message)) $message = "{$key}-值不能为空";
-        $this->_error[] = $message;
-    }
-
     public function __construct(string $type = null)
     {
+        $this->_isPost = true;
         if (is_null($type) or $type === 'post') {
             $this->_data = $_POST;
             return;
@@ -398,20 +406,6 @@ final class Post
 
 
         if (!is_array($this->_data) or empty($this->_data)) $this->_data = [];
-    }
-
-    public function __debugInfo()
-    {
-        return [
-            'data' => $this->_data,
-            'error' => $this->_error,
-            'referer' => $_SERVER['HTTP_REFERER']
-        ];
-    }
-
-    public function __toString(): string
-    {
-        return json_encode($this->_data, 256 | 64);
     }
 
 

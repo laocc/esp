@@ -49,6 +49,19 @@ function is_url(string $url): bool
 }
 
 
+function isInteger($val)
+{
+    if (!is_scalar($val) || is_bool($val)) return false;
+    if (is_float($val + 0) && ($val + 0) > PHP_INT_MAX) return false;
+    return is_float($val) ? false : preg_match('~^((?:\+|-)?[0-9]+)$~', $val);
+}
+
+function isFloat($val)
+{
+    if (!is_scalar($val)) return false;
+    return is_float($val + 0);
+}
+
 /**
  * 是否URI格式
  * @param string $string

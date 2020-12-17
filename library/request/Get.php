@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\library;
+namespace esp\library\request;
 
 use esp\core\ext\EspError;
 use esp\library\ext\Xss;
@@ -14,10 +14,8 @@ use function esp\helper\is_time;
 use function esp\helper\is_url;
 use function esp\helper\xml_decode;
 
-class Get
+class Get extends Request
 {
-    private $_data = array();
-
 
     public function string(string $key, int $xssLevel = 1): string
     {
@@ -187,59 +185,10 @@ class Get
         return $value;
     }
 
-    public function data()
-    {
-        return $this->_data;
-    }
-
-
-    private function getData(string &$key, &$force)
-    {
-        if (empty($key)) throw new EspError('参数必须明确指定', 2);
-
-        $force = true;
-        if ($key[0] === '?') {
-            $force = false;
-            $key = substr($key, 1);
-        }
-        $param = $key;
-        if (strpos($key, ':')) {
-            $ka = explode(':', $key);
-            $key = $ka[1];
-            $param = $ka[0];
-        }
-
-        if (strpos($param, '.') > 0) {
-            $val = $this->_data;
-            foreach (explode('.', $param) as $k) {
-                $val = $val[$k] ?? null;
-                if (is_null($val)) break;
-            }
-        } else {
-            $val = $this->_data[$param] ?? null;
-        }
-
-
-        return $val;
-    }
-
 
     public function __construct()
     {
         $this->_data = $_GET ?: [];
-    }
-
-    public function __debugInfo()
-    {
-        return [
-            'data' => $this->_data,
-            'referer' => $_SERVER['HTTP_REFERER']
-        ];
-    }
-
-    public function __toString(): string
-    {
-        return json_encode($this->_data, 256 | 64);
     }
 
 }
