@@ -661,7 +661,7 @@ final class Output
             return $response;
         }
 
-        if (!isset($option['encode'])) return $response;
+        if (!isset($option['encode']) or empty($option['encode'])) return $response;
 
 
         if ($option['encode'] === 'json') {
@@ -686,7 +686,7 @@ final class Output
                 $response['message'] = '请求结果不是xml格式';
                 $response['error'] = 500;
             }
-        } else {
+        } else if ($option['encode'] === 'array') {
             if ($response['html'][0] === '{' or $response['html'][0] === '[') {
                 $response['array'] = json_decode($response['html'], true);
                 if (empty($response['array'])) {
