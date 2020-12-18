@@ -115,9 +115,10 @@ class Get extends Request
     public function date_zone(string $key, string $symbol = ','): array
     {
         $value = $this->getData($key, $force);
-        if (is_null($value)) return ['', '', 0, 0];
+        if (is_null($value)) return [];
         $time = explode($symbol, $value);
-        if (count($time) !== 2) return ['', '', 0, 0];
+        if (count($time) !== 2) return [];
+
         $time[0] = str_replace(['+', '%3A'], [' ', ':'], $time[0]);
         $time[1] = str_replace(['+', '%3A'], [' ', ':'], $time[1]);
         $time[2] = strtotime($time[0]);
