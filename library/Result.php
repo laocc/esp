@@ -64,12 +64,12 @@ class Result
 
     public function __debugInfo()
     {
-        return json_encode($this->display(null), 256 | 64);
+        return $this->display();
     }
 
     public function __toString(): string
     {
-        return json_encode($this->display(null), 256 | 64);
+        return json_encode($this->display(), 256 | 64);
     }
 
     public function display($return = null): array
