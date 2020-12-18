@@ -52,7 +52,7 @@ abstract class Model
 
     private $_order = [];
     private $_count = null;
-    private $_protect = null;
+    private $_protect = true;//是否加保护符，默认加
     private $_distinct = null;//消除重复行
     protected $tableJoin = array();
     protected $tableJoinCount = 0;
@@ -710,7 +710,7 @@ abstract class Model
 
         } else {
             if (is_null($add_identifier)) $add_identifier = $this->_protect;
-            if ($select and ($select[0] === '~' or $select[0] === '!') and $add_identifier) {
+            if ($select and ($select[0] === '~' or $select[0] === '!')) {
                 //不含选择，只适合从单表取数据
                 $field = $this->fields();
                 $seKey = array_column($field, 'COLUMN_NAME');
