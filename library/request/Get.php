@@ -101,6 +101,30 @@ class Get extends Request
         return $value;
     }
 
+    /**
+     * 获取一个时间区间，如：
+     * date=2020-12-17%2000:00:00,2020-12-18%2014:15:34
+     * date=2020-12-17%2000:00:00~2020-12-18%2014:15:34
+     * date=2020-12-17 00:00:00 , 2020-12-18 14:15:34
+     * date=2020-12-17 00:00:00 ~ 2020-12-18 14:15:34
+     * @param string $key
+     * @param string $symbol
+     * @return array
+     * @throws EspError
+     */
+    public function date_zone(string $key, string $symbol = ','): array
+    {
+        $value = $this->getData($key, $force);
+        if (is_null($value)) return ['', '', 0, 0];
+        $time = explode($symbol, $value);
+        if (count($time) !== 2) return ['', '', 0, 0];
+        $time[0] = str_replace(['+', '%3A'], [' ', ':'], $time[0]);
+        $time[1] = str_replace(['+', '%3A'], [' ', ':'], $time[1]);
+        $time[2] = strtotime($time[0]);
+        $time[3] = strtotime($time[1]);
+        return $time;
+    }
+
     public function date(string $key): int
     {
         return $this->datetime($key);
