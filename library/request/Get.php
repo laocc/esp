@@ -92,7 +92,7 @@ class Get extends Request
                 if (!is_time($value)) return '';
                 break;
             case 'datetime':
-                if (strtotime($value) < 1) return '';
+                if (!strtotime($value)) return '';
                 break;
             default:
                 if (\esp\helper\is_match($type) and !preg_match($type, $value)) return '';
@@ -121,8 +121,8 @@ class Get extends Request
 
         $time[0] = str_replace(['+', '%3A'], [' ', ':'], $time[0]);
         $time[1] = str_replace(['+', '%3A'], [' ', ':'], $time[1]);
-        $time[2] = strtotime($time[0]);
-        $time[3] = strtotime($time[1]);
+        $time[2] = strtotime($time[0]) ?: 0;
+        $time[3] = strtotime($time[1]) ?: 0;
         return $time;
     }
 
@@ -141,7 +141,7 @@ class Get extends Request
         $value = $this->getData($key, $force);
         if (is_null($value)) return 0;
         $value = str_replace(['+', '%3A'], [' ', ':'], $value);
-        return strtotime($value);
+        return strtotime($value) ?: 0;
     }
 
     public function int(string $key, bool $ceil = false): int

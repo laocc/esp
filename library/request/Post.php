@@ -138,7 +138,7 @@ final class Post extends Request
                 }
                 break;
             case 'datetime':
-                if (strtotime($value) < 1) {
+                if (!strtotime($value)) {
                     if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为日期时间格式");
                     return '';
                 }
@@ -174,7 +174,7 @@ final class Post extends Request
         $value = str_replace(['+', '%3A'], [' ', ':'], $value);
         if (empty($value) && $force) $this->recodeError($key);
 
-        $value = strtotime($value);
+        $value = strtotime($value) ?: 0;
         if ($chk = $this->errorNumber($value, 1)) $this->recodeError($key . $chk);
         return $value;
     }
