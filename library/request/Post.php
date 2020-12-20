@@ -4,9 +4,8 @@ declare(strict_types=1);
 namespace esp\library\request;
 
 use esp\core\ext\EspError;
-use function esp\helper\isFloat;
-use function esp\helper\isInteger;
 use esp\library\ext\Xss;
+use function esp\helper\is_mob;
 use function esp\helper\is_card;
 use function esp\helper\is_date;
 use function esp\helper\is_domain;
@@ -95,7 +94,7 @@ final class Post extends Request
                 }
                 break;
             case 'mobile':
-                if (!preg_match('/^1\d{10}$/', $value)) {
+                if (!is_mob($value)) {
                     if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为手机号码格式");
                     return '';
                 }
