@@ -12,6 +12,7 @@ use function esp\helper\is_ip;
 use function esp\helper\is_mail;
 use function esp\helper\is_time;
 use function esp\helper\is_url;
+use function esp\helper\is_match;
 use function esp\helper\xml_decode;
 
 class Get extends Request
@@ -95,7 +96,7 @@ class Get extends Request
                 if (!strtotime($value)) return '';
                 break;
             default:
-                if (\esp\helper\is_match($type) and !preg_match($type, $value)) return '';
+                if (is_match($type) and !preg_match($type, $value)) return '';
         }
 
         return $value;
@@ -185,7 +186,7 @@ class Get extends Request
 
     public function match(string $key, string $pnt): string
     {
-        if (!\esp\helper\is_match($pnt)) throw new EspError('传入的表达式不合法', 1);
+        if (!is_match($pnt)) throw new EspError('传入的表达式不合法', 1);
         $value = $this->getData($key, $force);
         if (is_null($value)) return '';
 

@@ -12,6 +12,7 @@ use function esp\helper\is_domain;
 use function esp\helper\is_ip;
 use function esp\helper\is_mail;
 use function esp\helper\is_time;
+use function esp\helper\is_match;
 use function esp\helper\is_url;
 use function esp\helper\xml_encode;
 use function esp\helper\xml_decode;
@@ -64,7 +65,7 @@ final class Post extends Request
 
         switch ($type) {
             case 'cn':
-                if (!preg_match('/^[\x{4e00}-\x{9fa5}]{$n}$/u', $value)) {
+                if (!preg_match('/^[\x{4e00}-\x{9fa5}]+$/u', $value)) {
                     if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为全中文");
                     return '';
                 }
@@ -144,7 +145,7 @@ final class Post extends Request
                 break;
             default:
 
-                if (\esp\helper\is_match($type) and !preg_match($type, $value)) {
+                if (is_match($type) and !preg_match($type, $value)) {
                     if ($force or !empty($value)) $this->recodeError($key, "{$key}-值不是指定格式的数据");
                     return '';
                 }
@@ -233,7 +234,7 @@ final class Post extends Request
     {
         $this->_min = null;
         $this->_max = null;
-        if (!\esp\helper\is_match($pnt)) throw new EspError('传入的表达式不合法', 1);
+        if (!is_match($pnt)) throw new EspError('传入的表达式不合法', 1);
         $value = $this->getData($key, $force);
         if (is_null($value)) return '';
         if (empty($value) && $force) $this->recodeError($key);
