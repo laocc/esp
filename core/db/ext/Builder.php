@@ -1405,10 +1405,16 @@ final class Builder
                     throw new EspError("DB_ERROR: [{$key}]加减操作时，其值必须为数字", $tractLevel + 1);
                 }
                 if ($kFH === '$') {
+                    //位运算：减法，值为自己先异或value
                     $value = $this->protect_identifier($key) . " - ({$key} & {$value})";
                 } else {
                     $value = $this->protect_identifier($key) . " {$kFH} {$value}";
                 }
+
+            } else if ($kFH === '\\') {// \\ 的值为表达式或另一个字段
+                $key = substr($key, 0, -1);
+
+//                $value = $this->protect_identifier($key) . " = {$value}";
 
             } else if ($kFH === '.') {//.号为拼接
                 $key = substr($key, 0, -1);
@@ -1422,14 +1428,17 @@ final class Builder
                     $value = "CONCAT(`{$key}`,'{$value}')";
                 }
 
-
             } elseif ($this->_param) {
                 $pKey = $this->paramKey($key);
                 $this->_param_data[$pKey] = $value;
                 $value = $pKey;
+
             } elseif ($add_identifier) {
                 $value = $this->quote($value);
+
             }
+
+
             $sets[] = $this->protect_identifier($key) . " = {$value}";
         }
 

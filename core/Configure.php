@@ -346,8 +346,8 @@ final class Configure
 
     /**
      * 读取config，可以用get('key1.key2')的方式读取多维数组值
-     * @param array ...$key
-     * @return null|array|string
+     * @param mixed ...$key
+     * @return array|mixed|null
      */
     public function get(...$key)
     {
