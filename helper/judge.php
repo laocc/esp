@@ -49,16 +49,26 @@ function is_url($value): bool
 }
 
 
-function is_integer($value): bool
+/**
+ * 是否整形，含纯字串的数字也视作整型，如果单纯只判断是否===整型，直接用is_int
+ * @param $value
+ * @return bool
+ */
+function is_integers($value): bool
 {
-    if (empty($value) || !is_scalar($value) || is_bool($value)) return false;
-    if (\is_float($value + 0) && ($value + 0) > PHP_INT_MAX) return false;
-    return \is_float($value) ? false : preg_match('~^((?:\+|-)?[0-9]+)$~', $value);
+    if (!is_scalar($value) || is_bool($value) || \is_float($value + 0)) return false;
+    if (($value + 0) > PHP_INT_MAX) return false;
+    return (bool)preg_match('/^(\+|\-)?\d+$/', $value);
 }
 
-function is_float($value): bool
+/**
+ * 是否浮点型，包括可以转换为浮点的字串
+ * @param $value
+ * @return bool
+ */
+function is_floats($value): bool
 {
-    if (empty($value) || !is_scalar($value)) return false;
+    if (!is_scalar($value)) return false;
     return \is_float($value + 0);
 }
 
