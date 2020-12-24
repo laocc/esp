@@ -209,6 +209,7 @@ abstract class Model
      */
     private function checkRunData(string $action, $data)
     {
+        $this->clear_initial();
         if (!is_string($data)) return null;
         $json = json_decode($data, true);
         if (isset($json[2]) or isset($json['2'])) {
@@ -391,7 +392,6 @@ abstract class Model
             $this->cache_set("{$mysql->dbName}.{$table}", "_id_{$kID}", $val);
             $this->__cache = false;
         }
-        $this->clear_initial();
         return $val;
     }
 
@@ -513,7 +513,6 @@ abstract class Model
         if ($v) return $v;
 
         $data = $data->rows(0, $this->columnKey);
-        $this->clear_initial();
         return $data;
     }
 
@@ -594,7 +593,6 @@ abstract class Model
         $v = $this->checkRunData('list', $data);
         if ($v) return $v;
         $this->dataCount = $data->count();
-        $this->clear_initial();
         return $data->rows();
     }
 
