@@ -87,7 +87,7 @@ function root(string $path, bool $real = false): string
 
 
 /**
- * @param $path
+ * @param string $path 若不是以/结尾，则会向上缩一级
  * @param int $mode
  * @return bool
  * 文件权限：
@@ -100,7 +100,7 @@ function root(string $path, bool $real = false): string
 function mk_dir(string $path, int $mode = 0740): bool
 {
     if (!$path) return false;
-    if (strrchr($path, '/')) $path = dirname($path);
+    if (strrchr($path, '/') !== '/') $path = dirname($path);
     try {
         if (!is_dir($path)) {
             @mkdir($path, $mode ?: 0740, true);
