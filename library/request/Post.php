@@ -161,7 +161,7 @@ final class Post extends Request
                 break;
             case 'phone':
                 if (!is_phone($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为手机号码格式");
+                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为电话号码格式");
                     return '';
                 }
                 break;
