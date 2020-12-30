@@ -122,7 +122,7 @@ final class Post extends Request
             }
         }
 
-        switch ($type) {
+        switch ($type[0]) {
             case 'cn':
                 if (!preg_match('/^[\x{4e00}-\x{9fa5}]+$/u', $value)) {
                     if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为全中文");
