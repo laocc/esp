@@ -11,6 +11,7 @@ use function esp\helper\is_date;
 use function esp\helper\is_domain;
 use function esp\helper\is_ip;
 use function esp\helper\is_mail;
+use function esp\helper\is_phone;
 use function esp\helper\is_time;
 use function esp\helper\is_match;
 use function esp\helper\is_url;
@@ -46,6 +47,47 @@ final class Post extends Request
         return $value;
     }
 
+    private function checkString(string $type, $value)
+    {
+        switch ($type) {
+            case 'mobile':
+                return is_mob($value);
+            case 'phone':
+                return is_phone($value);
+            case 'card':
+                return is_card($value);
+            case 'url':
+                return is_url($value) || is_domain($value);
+            case 'mail':
+            case 'email':
+                return is_mail($value);
+            case 'ip':
+            case 'ip4':
+                return is_ip($value, 'ipv4');
+            case 'ip6':
+                return is_ip($value, 'ipv6');
+            case 'date':
+                return is_date($value);
+            case 'time':
+                return is_time($value);
+            case 'datetime':
+                return strtotime($value);
+            case 'cn':
+                return preg_match('/^[\x{4e00}-\x{9fa5}]+$/u', $value);
+            case 'en':
+                return preg_match('/^[a-zA-Z]+$/', $value);
+            case 'number':
+                return preg_match('/^\d+$/', $value);
+            case 'decimal':
+                return preg_match('/^\d+(\.\d+)?$/', $value);
+            case 'alphanumeric':
+                return preg_match('/^[a-zA-Z0-9]+$/', $value);
+            default:
+                if (is_match($type)) return preg_match($type, $value);
+        }
+        return false;
+    }
+
     /**
      * 按规则检查，若不为空则必须要符合规则
      * @param string $key
@@ -53,7 +95,7 @@ final class Post extends Request
      * @return string
      * @throws EspError
      */
-    public function filter(string $key, string $type): string
+    public function filter(string $key, string ...$type): string
     {
         $this->_min = null;
         $this->_max = null;
@@ -62,6 +104,23 @@ final class Post extends Request
         $value = trim($value);
 
         if ($value === '' && !$force) return '';
+
+        $len = count($type);
+        if ($len > 1) {
+            $isTrue = 0;
+            foreach ($type as $t) {
+                if ($this->checkString($t, $value)) {
+                    $isTrue++;
+                    continue;
+                }
+            }
+            if ($isTrue === 0) {
+                if ($force or !empty($value)) $this->recodeError($key, "{$key}-值不符合规则要求");
+                return '';
+            } else {
+                return $value;
+            }
+        }
 
         switch ($type) {
             case 'cn':
@@ -100,6 +159,12 @@ final class Post extends Request
                     return '';
                 }
                 break;
+            case 'phone':
+                if (!is_phone($value)) {
+                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为手机号码格式");
+                    return '';
+                }
+                break;
             case 'card':
                 if (!is_card($value)) {
                     if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为符合规则的身份证号码");
@@ -120,8 +185,15 @@ final class Post extends Request
                 }
                 break;
             case 'ip':
+            case 'ip4':
                 if (!is_ip($value)) {
                     if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为IP4格式");
+                    return '';
+                }
+                break;
+            case 'ip6':
+                if (!is_ip($value, 'ipv6')) {
+                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为IP6格式");
                     return '';
                 }
                 break;

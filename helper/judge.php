@@ -15,6 +15,21 @@ function is_mob($value): bool
 }
 
 /**
+ * 电话号码格式
+ * @param $value
+ * @return bool
+ */
+function is_phone($value): bool
+{
+    if (empty($value) or !is_scalar($value)) return false;
+    return (boolean)preg_match('/^1[3456789]\d{9}$/', $value) or //手机号格式
+        (boolean)preg_match('/^0\d{2,3}(-|\x20)?\d{7,8}$/', $value) or //010-12388855
+        (boolean)preg_match('/^0\d{2,3}(-|\x20)?\d{7,8}(-|\x20)\d{1,5}$/', $value) or //区号+号码+分号
+        (boolean)preg_match('/^0\d{10,11}$/', $value) or //01025456365
+        (boolean)preg_match('/^400(-|\x20)?\d{7,8}$/', $value); //400电话
+}
+
+/**
  * @param string $value
  * @param bool $canEmpty
  * @return bool
