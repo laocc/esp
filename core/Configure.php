@@ -144,6 +144,10 @@ final class Configure
             }
         }
 
+        if (isset($conf['merge']) and !empty($conf['merge'])) {
+            $this->_CONFIG_ = array_merge($this->_CONFIG_, $conf['merge']);
+        }
+
         $this->_CONFIG_ = $this->re_arr($this->_CONFIG_);
         if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) {
             $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
