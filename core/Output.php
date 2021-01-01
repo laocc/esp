@@ -18,7 +18,6 @@ final class Output
         $this->option = $option;
     }
 
-
     /**
      * @param array $option
      * @return Output

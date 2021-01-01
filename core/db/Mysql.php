@@ -127,7 +127,11 @@ final class Mysql
             try {
                 $pdo = new \PDO($conStr, $cnf['username'], $cnf['password'], $opts);
             } catch (\PDOException $PdoError) {
-                throw new EspError("Mysql Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage());
+                $err = [];
+                $err['code'] = $PdoError->getCode();
+                $err['msg'] = $PdoError->getMessage();
+                $err['host'] = $host;
+                throw new EspError("Mysql Connection failed:" . json_encode($err, 256 | 64));
             }
             $this->connect_time[$trans_id] = time();
             $this->{$real}[$trans_id] = $pdo;

@@ -122,13 +122,13 @@ abstract class Request
             $ka = explode(':', $key);
             if ($d > $f) {//分号在前： 键名:参数名=默认值
                 $param = $ka[0];
-                $den = explode('=', $key[1]);
+                $den = explode('=', $ka[1]);
                 $keyName = $den[0];
                 $default = $den[1];
             } else {
                 //分号在后： 键名=默认值:参数名
                 $keyName = $ka[1];
-                $den = explode('=', $key[0]);
+                $den = explode('=', $ka[0]);
                 $param = $den[0];
                 $default = $den[1];
             }
