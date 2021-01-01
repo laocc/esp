@@ -43,6 +43,15 @@ class Result
     public function data($key, $value = null): Result
     {
         if (is_string($key) and !is_null($value)) {
+            if (strpos($key, '.') > 0) {
+                $obj = &$this->_data;
+                foreach (explode('.', $key) as $k) {
+                    if (!isset($obj[$k])) $obj[$k] = [];
+                    $obj = &$obj[$k];
+                }
+                $obj = $value;
+                return $this;
+            }
             $this->_data[$key] = $value;
         } else {
             $this->_data = $key;
