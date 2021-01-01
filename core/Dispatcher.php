@@ -401,8 +401,7 @@ final class Dispatcher
         }
 
         if (!empty($cont->result) and (!is_object($contReturn)) and ($this->_request->method === 'AJAX' or $this->_request->method === 'POST')) {
-            $rest = $cont->ReorganizeReturn($contReturn);
-            if (!is_null($rest)) return $rest;
+            $contReturn = $cont->ReorganizeReturn($contReturn);
         }
 
         if ($contReturn instanceof Result) return $contReturn->display();
