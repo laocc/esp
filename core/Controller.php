@@ -8,6 +8,7 @@ use esp\core\ext\EspError;
 use esp\core\face\Adapter;
 use esp\core\ext\Input;
 use esp\library\ext\Markdown;
+use esp\library\Result;
 
 abstract class Controller
 {
@@ -611,6 +612,8 @@ abstract class Controller
      */
     final public function ReorganizeReturn($return)
     {
+        if ($return instanceof Result) return $return->display();
+
         $value = &$this->result;
         if (empty($value)) return null;
         if (!is_array($value)) $value = ['data' => $value];

@@ -74,6 +74,8 @@ class Result
 
     public function display($return = null): array
     {
+        if ($return instanceof Result) return $return->display();
+
         $value = [
             'success' => $this->_success,
             'error' => $this->_error,

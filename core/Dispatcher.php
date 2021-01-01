@@ -6,6 +6,7 @@ namespace esp\core;
 use esp\core\ext\EspError;
 use function esp\helper\same_first;
 use function esp\helper\host;
+use esp\library\Result;
 
 final class Dispatcher
 {
@@ -284,7 +285,12 @@ final class Dispatcher
         }
     }
 
-    public function min()
+    /**
+     * 不运行plugs，不执行缓存，不执行session保存
+     *
+     * @throws EspError
+     */
+    public function simple()
     {
         (new Router($this->_config, $this->_request));
 
@@ -293,8 +299,6 @@ final class Dispatcher
             print_r($value);
             return;
         }
-
-        if (!is_null($this->_session)) session_write_close();
 
         $this->_response->display($value);
 
@@ -305,6 +309,12 @@ final class Dispatcher
         register_shutdown_function(function () {
             $this->_debug->save_logs('minDispatcher');
         });
+
+    }
+
+    public function min()
+    {
+        $this->simple();
     }
 
     /**
@@ -381,6 +391,8 @@ final class Dispatcher
         }
 
         close:
+        if ($contReturn instanceof Result) $contReturn = $contReturn->display();
+
         //运行结束方法
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
             $clo = call_user_func_array([$cont, '_close'], [$action, $contReturn]);
@@ -388,10 +400,13 @@ final class Dispatcher
             $this->relayDebug("[red;{$class}->_close() ==================================]");
         }
 
-        if (!empty($cont->result) and ($this->_request->method === 'AJAX' or $this->_request->method === 'POST')) {
+        if (!empty($cont->result) and (!is_object($contReturn)) and ($this->_request->method === 'AJAX' or $this->_request->method === 'POST')) {
             $rest = $cont->ReorganizeReturn($contReturn);
             if (!is_null($rest)) return $rest;
         }
+
+        if ($contReturn instanceof Result) return $contReturn->display();
+        else if (is_object($contReturn)) return (string)$contReturn;
 
         return $contReturn;
     }
