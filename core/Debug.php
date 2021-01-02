@@ -103,6 +103,52 @@ final class Debug
     }
 
     /**
+     * 将move里的临时文件移入真实目录
+     * 在并发较大时，需要将日志放入临时目录，由后台移到目标目录中
+     * 因为在大并发时，创建新目录的速度可能跟不上系统请求速度，有时候发生目录已存在的错误
+     * @param bool $show
+     * @param string|null $path
+     */
+    public function move(bool $show = false, string $path = null)
+    {
+        if (!_CLI) throw new \Error('debug->move() 只能运行于CLI环境');
+
+        if (is_null($path)) $path = $this->_transfer_path;
+        $time = 0;
+
+        reMove:
+        $time++;
+        if ($show) echo date('Y-m-d H:i:s') . "\tmoveDebug:\t{$path}\t({$time})\n";
+        $dir = new \DirectoryIterator($path);
+        $array = array();
+        foreach ($dir as $i => $f) {
+            if ($i > 100) break;
+            if ($f->isFile()) $array[] = $f->getFilename();
+        }
+        if (empty($array)) return;
+
+        if ($show) echo "DEBUG:\t" . json_encode($array, 256 | 64) . "\n";
+
+        foreach ($array as $file) {
+            try {
+                $move = base64_decode(urldecode($file));
+                if (empty($move) or $move[0] !== '/') {
+                    @unlink("{$path}/{$file}");
+                    continue;
+                }
+
+                $p = dirname($move);
+                if (!is_readable($p)) @mkdir($p, 0740, true);
+                else if (!is_dir($p)) @mkdir($p, 0740, true);
+                rename("{$path}/{$file}", $move);
+            } catch (\Exception $e) {
+                print_r(['moveDebug' => $e]);
+            }
+        }
+        goto reMove;
+    }
+
+    /**
      * @return Debug
      */
     public static function class()
@@ -324,46 +370,6 @@ final class Debug
         }
 
         return $this->save_file($filename, implode($data));
-    }
-
-    /**
-     * 将move里的临时文件移入真实目录
-     * @param bool $show
-     * @param string|null $path
-     */
-    public static function move(bool $show = false, string $path = null)
-    {
-        if (is_null($path)) $path = _RUNTIME . '/debug/move';
-        $time = 0;
-
-        reMove:
-        $time++;
-        if ($show) echo "moveDebug:\t{$path}\t({$time})\n";
-
-        $dir = new \DirectoryIterator($path);
-        if (empty($dir)) return;
-
-        $array = array();
-        foreach ($dir as $i => $f) {
-            if ($i > 100) break;
-            if ($f->isFile()) $array[] = $f->getFilename();
-        }
-        if (!empty($array)) {
-            if ($show) echo "DEBUG:\t" . json_encode($array, 256 | 64) . "\n";
-
-            foreach ($array as $file) {
-                try {
-                    $move = base64_decode(urldecode($file));
-                    $p = dirname($move);
-                    if (!is_readable($p)) @mkdir($p, 0740, true);
-                    else if (!is_dir($p)) @mkdir($p, 0740, true);
-                    rename("{$path}/{$file}", $move);
-                } catch (\Exception $e) {
-                    print_r(['moveDebug' => $e]);
-                }
-            }
-        }
-        goto reMove;
     }
 
     /**
