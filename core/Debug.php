@@ -109,16 +109,15 @@ final class Debug
      * @param bool $show
      * @param string|null $path
      */
-    public function move(bool $show = false, string $path = null)
+    public static function move(bool $show = false, string $path = null)
     {
         if (!_CLI) throw new \Error('debug->move() 只能运行于CLI环境');
 
-        if (is_null($path)) $path = $this->_transfer_path;
+        if (is_null($path)) $path = _RUNTIME . '/debug/move';
         $time = 0;
 
         reMove:
         $time++;
-        if ($show) echo date('Y-m-d H:i:s') . "\tmoveDebug:\t{$path}\t({$time})\n";
         $dir = new \DirectoryIterator($path);
         $array = array();
         foreach ($dir as $i => $f) {
@@ -127,7 +126,7 @@ final class Debug
         }
         if (empty($array)) return;
 
-        if ($show) echo "DEBUG:\t" . json_encode($array, 256 | 64) . "\n";
+        if ($show) echo date('Y-m-d H:i:s') . "\tmoveDEBUG({$time}):\t" . json_encode($array, 256 | 64) . "\n";
 
         foreach ($array as $file) {
             try {
