@@ -329,16 +329,23 @@ final class Debug
     /**
      * 将move里的临时文件移入真实目录
      * @param bool $show
+     * @param string|null $path
      */
-    public static function move(bool $show = false)
+    public static function move(bool $show = false, string $path = null)
     {
-//        if ($show) echo "moveDebug:\t" . _RUNTIME . "/debug/move\n";
+        if (is_null($path)) $path = _RUNTIME . '/debug/move';
+        $time = 0;
+
+        reMove:
+        $time++;
+        if ($show) echo "moveDebug:\t{$path}\t({$time})\n";
+
+        $dir = new \DirectoryIterator($path);
+        if (empty($dir)) return;
 
         $array = array();
-        $dir = new \DirectoryIterator(_RUNTIME . '/debug/move');
-
         foreach ($dir as $i => $f) {
-            if ($i > 1000) break;
+            if ($i > 100) break;
             if ($f->isFile()) $array[] = $f->getFilename();
         }
         if (!empty($array)) {
@@ -349,42 +356,14 @@ final class Debug
                     $move = base64_decode(urldecode($file));
                     $p = dirname($move);
                     if (!is_readable($p)) @mkdir($p, 0740, true);
-                    if (!is_dir($p)) @mkdir($p, 0740, true);
-                    rename(_RUNTIME . "/debug/move/{$file}", $move);
+                    else if (!is_dir($p)) @mkdir($p, 0740, true);
+                    rename("{$path}/{$file}", $move);
                 } catch (\Exception $e) {
                     print_r(['moveDebug' => $e]);
                 }
             }
         }
-    }
-
-    public static function copy(bool $show = false)
-    {
-        if ($show) echo "moveDebug:\t" . _RUNTIME . "/debug/cache\n";
-
-        $array = array();
-        $dir = new \DirectoryIterator(_RUNTIME . '/debug/cache');
-
-        foreach ($dir as $i => $f) {
-            if ($i > 1000) break;
-            if ($f->isFile()) $array[] = $f->getFilename();
-        }
-        if (!empty($array)) {
-            if ($show) print_r($array);
-
-            foreach ($array as $file) {
-                try {
-                    $data = file_get_contents(_RUNTIME . "/debug/cache/{$file}");
-                    $data = json_decode($data, true);
-                    $p = dirname($data['filename']);
-                    if (!is_dir($p)) @mkdir($p, 0740, true);
-                    file_put_contents($data['filename'], $data['data'], LOCK_EX);
-                    @unlink(_RUNTIME . "/debug/cache/{$file}");
-                } catch (\Exception $e) {
-                    print_r(['moveDebug' => $e]);
-                }
-            }
-        }
+        goto reMove;
     }
 
     /**
