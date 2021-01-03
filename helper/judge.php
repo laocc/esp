@@ -63,6 +63,38 @@ function is_url($value): bool
     return (bool)filter_var($value, FILTER_VALIDATE_URL);
 }
 
+/**
+ * 是否英文或数字组合
+ * @param $value
+ * @return bool
+ */
+function is_alphanumeric($value): bool
+{
+    if (empty($value) or !is_string($value)) return false;
+    return (bool)preg_match("/^[a-z0-9]+$/i", $value);
+}
+
+/**
+ * 是否中文
+ * @param $value
+ * @return bool
+ */
+function is_cn($value): bool
+{
+    if (empty($value) or !is_string($value)) return false;
+    return (bool)preg_match("/^[\x{4e00}-\x{9fa5}]+$/u", $value);
+}
+
+/**
+ * 是否中英文，即是否含有符号
+ * @param $value
+ * @return bool
+ */
+function is_cen($value): bool
+{
+    if (empty($value) or !is_string($value)) return false;
+    return (bool)preg_match("/^[\x{4e00}-\x{9fa5}a-z0-9]+$/iu", $value);
+}
 
 /**
  * 是否整形，含纯字串的数字也视作整型，如果单纯只判断是否===整型，直接用is_int
