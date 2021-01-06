@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core\db\ext;
 
+use function esp\helper\xml_decode;
+
 final class Result
 {
 
@@ -44,36 +46,55 @@ final class Result
         return $this->sql;
     }
 
+    private function decode($data, $decode)
+    {
+        if (isset($decode['json'])) {
+            foreach ($decode['json'] as $k) $data[$k[0]] = json_decode(($data[$k[1]] ?? ''), true) ?: [];
+        }
+        if (isset($decode['xml'])) {
+            foreach ($decode['xml'] as $k) $data[$k[0]] = xml_decode(($data[$k[1]] ?? ''), true) ?: [];
+        }
+        if (isset($decode['time'])) {
+            foreach ($decode['time'] as $k) $data[$k[0]] = date('Y-m-d H:i:s', ($data[$k[1]] ?? 0));
+        }
+        return $data;
+    }
+
 
     /**
      * 从结果中返回一行
      * @param null $col
-     * @return mixed
+     * @param array $decode
+     * @return mixed|null
      */
-    public function row($col = null)
+    public function row($col = null, array $decode = [])
     {
-        if (is_null($col)) return $this->rs->fetch();
-
-        else if (is_int($col)) {
-            return $this->rs->fetchColumn($col);
+        if (is_null($col)) {
+            $data = $this->rs->fetch();
+        } else if (is_int($col)) {
+            $data = $this->rs->fetchColumn($col);
         } else {
-            return $this->rs->fetch()[$col] ?? null;
+            $data = $this->rs->fetch()[$col] ?? null;
         }
+        if (empty($decode)) return $data;
+        return $this->decode($data, $decode);
     }
 
     /**
      * @param null $col
      * @return mixed|null
      */
-    public function fetch($col = null)
+    public function fetch($col = null, array $decode = [])
     {
-        if (is_null($col)) return $this->rs->fetch();
-
-        else if (is_int($col)) {
-            return $this->rs->fetchColumn($col);
+        if (is_null($col)) {
+            $data = $this->rs->fetch();
+        } else if (is_int($col)) {
+            $data = $this->rs->fetchColumn($col);
         } else {
-            return $this->rs->fetch()[$col] ?? null;
+            $data = $this->rs->fetch()[$col] ?? null;
         }
+        if (empty($decode)) return $data;
+        return $this->decode($data, $decode);
     }
 
     /**
@@ -82,35 +103,37 @@ final class Result
      * @param int $col 返回第x列
      * @return array|mixed
      */
-    public function rows(int $row = 0, int $col = null)
+    public function rows(int $row = 0, int $col = null, array $decode = [])
     {
         if ($row === 0) {
             //返回所有行，含数字下标和字段下标
             if (is_int($col)) {
-                return array_map(function ($v) {
-                    return $v;
-                }, $this->rs->fetchColumn($col));
+                $data = $this->rs->fetchColumn($col);
+            } else {
+                $data = $this->rs->fetchAll();
             }
-            return $this->rs->fetchAll();
         } elseif ($row === 1) {
             //仅返回第1行
             if (is_int($col)) {
-                return $this->rs->fetchColumn($col);
+                $data = $this->rs->fetchColumn($col);
             } else {
-                return $this->rs->fetch();
+                $data = $this->rs->fetch();
             }
         } else {
             $i = 0;
-            $val = array();
+            $data = array();
             if (is_int($col)) {
-                while ($i < $row and $val[] = $this->rs->fetchColumn($col)) $i++;
+                while ($i < $row and $data[] = $this->rs->fetchColumn($col)) $i++;
             } else {
-                while ($i < $row and (!!($r = $this->rs->fetch()) and $val[] = $r)) {
-                    $i++;
-                }
+                while ($i < $row and (!!($r = $this->rs->fetch()) and $data[] = $r)) $i++;
             }
-            return $val;
         }
+
+        if (empty($decode)) return $data;
+
+        return array_map(function ($rs) use ($decode) {
+            return $this->decode($rs, $decode);
+        }, $data);
     }
 
 

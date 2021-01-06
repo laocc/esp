@@ -52,6 +52,7 @@ abstract class Model
 
     private $_order = [];
     private $_count = null;
+    private $_decode = [];
     private $_protect = true;//是否加保护符，默认加
     private $_distinct = null;//消除重复行
     protected $tableJoin = array();
@@ -63,12 +64,31 @@ abstract class Model
 
     use MysqlExt, PageExt;
 
+    /**
+     * 清除自身的一些对象变量
+     */
+    final public function clear_initial()
+    {
+        //这两个值是程序临时指定的，与model自身的_table和_pri用处相同，优先级高
+        $this->__table = $this->__pri = null;
+        $this->columnKey = null;
+        $this->_count = null;
+        $this->_distinct = null;
+        $this->_protect = true;
+        $this->groupKey = '';
+        $this->forceIndex = '';
+        $this->tableJoin = [];
+        $this->selectKey = [];
+        $this->_order = [];
+        $this->_decode = [];
+    }
+
     public function __construct(...$param)
     {
-        $this->_Yac = &$GLOBALS['_Yac'] ?? [];
-        $this->_Mysql = &$GLOBALS['_Mysql'] ?? [];
-        $this->_Mongodb = &$GLOBALS['_Mongodb'] ?? [];
-        $this->_Redis = &$GLOBALS['_Redis'] ?? [];
+        $this->_Yac = &$GLOBALS['_Yac'];
+        $this->_Mysql = &$GLOBALS['_Mysql'];
+        $this->_Mongodb = &$GLOBALS['_Mongodb'];
+        $this->_Redis = &$GLOBALS['_Redis'];
 
         $this->_controller = &$GLOBALS['_Controller'];
         $this->_config = $this->_controller->getConfig();
@@ -330,6 +350,16 @@ abstract class Model
         }
     }
 
+    public function decode(string $cols, string $type = 'json')
+    {
+        if (!isset($this->_decode[$type])) $this->_decode[$type] = [];
+        array_push($this->_decode[$type], array_map(function ($col) {
+            if (strpos($col, '=') > 0) return explode('=', $col);
+            return [$col, $col];
+        }, explode(',', $cols)));
+        return $this;
+    }
+
     /**
      * 选择一条记录
      * @param $where
@@ -384,7 +414,7 @@ abstract class Model
         $c = $this->checkRunData('get', $data);
         if ($c) return $c;
 
-        $val = $data->row($this->columnKey);
+        $val = $data->row($this->columnKey, $this->_decode);
 
         if ($val === false) $val = null;
 
@@ -430,7 +460,10 @@ abstract class Model
         $obj = $obj->where_in($this->PRI(), $ids);
         if ($where) $obj->where($where);
         $data = $obj->get(0, $this->_traceLevel);
-        return $this->checkRunData('in', $data) ?: $data->rows();
+        $c = $this->checkRunData('in', $data);
+        if ($c) return $c;
+
+        return $data->rows(0, null, $this->_decode);
     }
 
 
@@ -512,7 +545,7 @@ abstract class Model
         $v = $this->checkRunData('all', $data);
         if ($v) return $v;
 
-        $data = $data->rows(0, $this->columnKey);
+        $data = $data->rows(0, $this->columnKey, $this->_decode);
         return $data;
     }
 
@@ -593,21 +626,7 @@ abstract class Model
         $v = $this->checkRunData('list', $data);
         if ($v) return $v;
         $this->dataCount = $data->count();
-        return $data->rows();
-    }
-
-    /**
-     * 清除自身的一些对象变量
-     */
-    final public function clear_initial()
-    {
-        //这两个值是程序临时指定的，与model自身的_table和_pri用处相同，优先级高
-        $this->__table = $this->__pri = null;
-        $this->columnKey = null;
-        $this->groupKey = '';
-        $this->forceIndex = '';
-        $this->tableJoin = [];
-        $this->selectKey = [];
+        return $data->rows(0, null, $this->_decode);
     }
 
     /**
