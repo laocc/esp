@@ -411,10 +411,10 @@ abstract class Model
             $obj->order($orderBy, $sort);
         }
         $data = $obj->get(0, $this->_traceLevel);
+        $_decode = $this->_decode;
         $c = $this->checkRunData('get', $data);
         if ($c) return $c;
-
-        $val = $data->row($this->columnKey, $this->_decode);
+        $val = $data->row($this->columnKey, $_decode);
 
         if ($val === false) $val = null;
 
@@ -460,10 +460,11 @@ abstract class Model
         $obj = $obj->where_in($this->PRI(), $ids);
         if ($where) $obj->where($where);
         $data = $obj->get(0, $this->_traceLevel);
+        $_decode = $this->_decode;
         $c = $this->checkRunData('in', $data);
         if ($c) return $c;
 
-        return $data->rows(0, null, $this->_decode);
+        return $data->rows(0, null, $_decode);
     }
 
 
@@ -542,10 +543,10 @@ abstract class Model
 
         if (is_bool($this->_count)) $obj->count($this->_count);
         $data = $obj->get($limit, $this->_traceLevel);
+        $_decode = $this->_decode;
         $v = $this->checkRunData('all', $data);
         if ($v) return $v;
-
-        $data = $data->rows(0, $this->columnKey, $this->_decode);
+        $data = $data->rows(0, $this->columnKey, $_decode);
         return $data;
     }
 
@@ -623,10 +624,11 @@ abstract class Model
         if (is_null($this->_count)) $this->_count = true;
         $obj->count($this->_count);
         $data = $obj->limit($this->pageSize, $this->pageSkip)->get(0, $this->_traceLevel);
+        $_decode = $this->_decode;
         $v = $this->checkRunData('list', $data);
         if ($v) return $v;
         $this->dataCount = $data->count();
-        return $data->rows(0, null, $this->_decode);
+        return $data->rows(0, null, $_decode);
     }
 
     /**
