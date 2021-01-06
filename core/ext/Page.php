@@ -11,6 +11,7 @@ trait Page
 
     protected $dataCount = 0;
     protected $pageSize = 0;
+    protected $autoSize = 12;
     protected $pageIndex = 1;
     protected $pageSkip = 0;
     protected $lftRit = 5;
@@ -37,11 +38,17 @@ trait Page
     {
         $this->pageIndex = $index ?: intval($_GET[$this->_page_key] ?? 1);
         if ($this->pageIndex < 1) $this->pageIndex = 1;
-        if (!$size) $size = intval($_GET[$this->_size_key] ?? 10);
+        if (!$size) $size = intval($_GET[$this->_size_key] ?? $this->autoSize);
         $this->pageSize = max(2, $size);
         $this->lftRit = max(2, $lftRit);
         $this->pageSkip = ($this->pageIndex - 1) * $this->pageSize;
         if ($this->pageSkip < 0) $this->pageSkip = 0;
+        return $this;
+    }
+
+    final public function pageSize(int $size)
+    {
+        $this->autoSize = $size;
         return $this;
     }
 
