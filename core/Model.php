@@ -353,7 +353,7 @@ abstract class Model
     public function decode(string $cols, string $type = 'json')
     {
         if (!isset($this->_decode[$type])) $this->_decode[$type] = [];
-        array_push($this->_decode[$type], array_map(function ($col) {
+        array_push($this->_decode[$type], ...array_map(function ($col) {
             if (strpos($col, '=') > 0) return explode('=', $col);
             return [$col, $col];
         }, explode(',', $cols)));

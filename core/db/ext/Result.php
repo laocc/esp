@@ -15,6 +15,12 @@ final class Result
     /**
      * @param \PDOStatement $result
      */
+    /**
+     * Result constructor.
+     * @param \PDOStatement $result
+     * @param $count
+     * @param $sql
+     */
     public function __construct(\PDOStatement $result, $count, $sql)
     {
         $this->rs = $result;
@@ -55,7 +61,10 @@ final class Result
             foreach ($decode['xml'] as $k) $data[$k[0]] = xml_decode(($data[$k[1]] ?? ''), true) ?: [];
         }
         if (isset($decode['time'])) {
-            foreach ($decode['time'] as $k) $data[$k[0]] = date('Y-m-d H:i:s', ($data[$k[1]] ?? 0));
+            foreach ($decode['time'] as $k) {
+                $tm = ($data[$k[1]] ?? 0);
+                if ($tm) $data[$k[0]] = date('Y-m-d H:i:s', $tm);
+            }
         }
         return $data;
     }
@@ -82,6 +91,7 @@ final class Result
 
     /**
      * @param null $col
+     * @param array $decode
      * @return mixed|null
      */
     public function fetch($col = null, array $decode = [])
@@ -101,6 +111,7 @@ final class Result
      * 以数组形式返回结果集中的所有行
      * @param int $row
      * @param int $col 返回第x列
+     * @param array $decode
      * @return array|mixed
      */
     public function rows(int $row = 0, int $col = null, array $decode = [])
