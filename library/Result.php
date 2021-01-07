@@ -26,9 +26,10 @@ class Result
      * @param int $value 错误代码
      * @return $this
      */
-    public function error(int $value = 1): Result
+    public function error(int $value = -1): Result
     {
-        $this->_error = $value;
+        if ($value === -1 && $this->_error === 0) $this->_error = 1;
+        else $this->_error = $value;
         return $this;
     }
 
