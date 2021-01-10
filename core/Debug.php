@@ -290,7 +290,7 @@ final class Debug
          * 控制器访问计数器
          * 键名及表名格式是固定的
          */
-        if ($this->_conf['counter']) {
+        if ($this->_conf['counter'] and $this->_request->exists) {
             $key = date('H/') . $this->_request->method .
                 '/' . $this->_request->virtual .
                 '/' . ($this->_request->module ?: 'auto') .
@@ -303,6 +303,7 @@ final class Debug
         else if ($this->_run === false) return 'run false';
         $filename = $this->filename();
         if (empty($filename)) return 'null filename';
+
         if (isset($GLOBALS['_relay'])) $this->relay(['GLOBALS_relay' => $GLOBALS['_relay']], []);
         $this->relay('END:save_logs', []);
         $rq = $this->_request;
@@ -312,7 +313,7 @@ final class Debug
         $data[] = " - CallBy:\t{$pre}\n";
         $data[] = " - METHOD:\t{$method}\n";
         $data[] = " - GET_URL:\t" . (defined('_URL') ? _URL : '') . "\n";
-        $data[] = " - SERV_IP:\t" . ($_SERVER['SERVER_ADDR'] ?? '') . "\n";
+        $data[] = " - SERVER:\t" . ($_SERVER['SERVER_ADDR'] ?? '') . "\n";
         $data[] = " - USER_IP:\t" . ($_SERVER['REMOTE_ADDR'] ?? '') . "\n";
         $data[] = " - REAL_IP:\t" . _CIP . "\n";
         $data[] = " - DATETIME:\t" . date('Y-m-d H:i:s', $this->_time) . "\n";
@@ -324,6 +325,7 @@ final class Debug
         //一些路由结果，路由结果参数
         $Params = implode(',', $rq->getParams());
         $data[] = " - Params:\t({$Params})\n```\n";
+        if (!$this->_request->exists) goto save;
 
         if (!empty($this->_value)) {
             $data[] = "\n## 程序附加\n```\n";
@@ -396,7 +398,7 @@ final class Debug
             $s = file_put_contents($filename, $data, LOCK_EX);
             return "_SELF_DEBUG={$s}";
         }
-
+        save:
         return $this->save_file($filename, implode($data));
     }
 
