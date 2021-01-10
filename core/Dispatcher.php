@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\ext\EspError;
+use esp\library\Result;
 use function esp\helper\same_first;
 use function esp\helper\host;
-use esp\library\Result;
 
 final class Dispatcher
 {

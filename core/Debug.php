@@ -56,8 +56,8 @@ final class Debug
                 if (empty($this->_transfer_path)) $this->_transfer_path = _RUNTIME . '/debug/move';
                 $this->_transfer_path = root($this->_transfer_path);
 
-                //保存从服务器发来的日志
-                if (_URI === $this->_transfer_uri) {
+                //保存节点服务器发来的日志
+                if (_VIRTUAL === 'rpc' && _URI === $this->_transfer_uri) {
                     $save = $this->transferDebug();
                     exit(getenv('SERVER_ADDR') . ";Length={$save};Time:" . microtime(true));
                 }
@@ -248,6 +248,34 @@ final class Debug
         }
 
         return 'Self Save:' . file_put_contents($filename, $data, LOCK_EX);
+    }
+
+    /**
+     * 读取counter值
+     * @param int $time
+     * @param bool $method
+     * @return array
+     */
+    public function counter(int $time = 0, bool $method = false)
+    {
+        if ($time === 0) $time = time();
+        $key = "{$this->_conf['counter']}_counter_" . date('Y_m_d', $time);
+        $all = $this->_redis->hGetAlls($key);
+        if (empty($all)) return ['data' => [], 'action' => []];
+
+        $data = [];
+        foreach ($all as $hs => $hc) {
+            $key = explode('/', $hs, 5);
+            $hour = (intval($key[0]) + 1);
+            $ca = $method ? "{$key[1]}:/{$key[4]}" : "/{$key[4]}";
+            $vm = "{$key[2]}.{$key[2]}";
+            if (!isset($data[$vm])) $data[$vm] = ['action' => [], 'data' => []];
+            if (!isset($data[$vm]['data'][$hour])) $data[$vm]['data'][$hour] = [];
+            $data[$vm]['data'][$hour][$ca] = $hc;
+            if (!in_array($ca, $data[$vm]['action'])) $data[$vm]['action'][] = $ca;
+            sort($data[$vm]['action']);
+        }
+        return $data;
     }
 
     /**

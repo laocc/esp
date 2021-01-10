@@ -154,7 +154,7 @@ final class Configure
         }
 
         //负载从服务器唤醒，直接退出
-        if (_URI === $awakenURI) exit($this->_token);
+        if (_VIRTUAL === 'rpc' && _URI === $awakenURI) exit($this->_token);
     }
 
     public function flush(int $lev = 0): void
