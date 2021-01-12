@@ -256,7 +256,7 @@ final class Debug
      * @param bool $method
      * @return array
      */
-    public function counter(int $time = 0, bool $method = true)
+    public function counter(int $time = 0, bool $method = null)
     {
         if ($time === 0) $time = time();
         $key = "{$this->_conf['counter']}_counter_" . date('Y_m_d', $time);
@@ -268,7 +268,16 @@ final class Debug
             $key = explode('/', $hs, 5);
             $hour = (intval($key[0]) + 1);
             $ca = "/{$key[4]}";
-            if ($method) $ca .= ucfirst($key[1]);
+            switch ($method) {
+                case true:
+                    $ca = "{$key[1]}:{$ca}";
+                    break;
+                case false;
+                    break;
+                default:
+                    $ca .= ucfirst($key[1]);
+                    break;
+            }
             $vm = "{$key[2]}.{$key[2]}";
             if (!isset($data[$vm])) $data[$vm] = ['action' => [], 'data' => []];
             if (!isset($data[$vm]['data'][$hour])) $data[$vm]['data'][$hour] = [];
