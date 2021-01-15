@@ -29,29 +29,29 @@ composer dump-autoload --optimize
 
 # 二、程序说明
 - 主要基本变量：
-    - `_VIRTUAL`：子项目，例如大项目下有`www``admin``api`等应用，则这些都是相对独立的子项目
+    - `_VIRTUAL`：虚拟机(子项目)，例如大项目下有`www``admin``api`等应用，则这些都是相对独立的子项目
     - `_ROOT`：项目根目录，此变量可以在入口处自已定义
-    - `_RUNTIME`：临时文件目录，此目录要加到`.gitignore`中
+    - `_RUNTIME`：临时文件目录，即`/runtime/`，此目录要加到`.gitignore`中，也可以指定到项目目录以外的任意目录
     - `_CLI`：当前实例是否运行在cli环境下
     - `_DEBUG`：当前服务器是否debug(开发)环境，添加`runtime/debug.lock`即为debug环境
     
 - 程序结构为` 虚拟机 > 模块 > 控制器 - 数据模型 > 动作 > 视图 `，数据模型、视图，均由控制器派生出来。
 - 程序可以有任意多个虚拟机，一般情况下一个虚拟机对应一个子站；
-- 网站入口`/public/www/index.php`，其中`www`建议对应模块名，实际模块名由`_VIRTUAL`决定。
+- 网站入口`/public/www/index.php`，其中`www`建议对应虚拟机名称，但实际虚拟机名称由`_VIRTUAL`决定。
 
 ## 3.4 网页展示内容方式：
-1. `默认`：网页默认为HTML方式展示，也就是按正常方式显示视图中的内容
-2. `html`：与默认有所不同的是，这种方式下显示的内容为`$this->html(...)`中的内容，而不是视图内容
-3. `json`：json/jsonp格式显示`$this->json(ARRAY)`的内容，`Content-type:application/json`
-4. `xml`：xml格式显示`$this->xml('root',ARRAY)`的内容，注意：这儿的参数是数组，不是转换过的xml代码，root是根节点名称，`Content-type:text/xml`
-5. `text`：纯文本格式显示`$this->text(STRING)`的内容，`Content-type:text/plain`。用`print_r()`显示，也就是说如果传入的是数组，则会显示为数组形式（不是json格式）。
+1. `默认`：网页默认为HTML方式展示，也就是按正常方式显示视图中的内容，控制器中没有`return`或`return null;`，此时视图文件要必须存在；
+2. `html`：与默认有所不同的是，这种方式下显示的内容为`$this->html(...)`中的内容，而不是视图内容；
+3. `json`：json/jsonp格式显示`$this->json(Array)`的内容，`Content-type:application/json`；
+4. `xml`：xml格式显示`$this->xml('root',Array)`的内容，注意：这里的参数是数组，不是转换过的xml代码，root是根节点名称，`Content-type:text/xml`
+5. `text`：纯文本格式显示`$this->text(String)`的内容，`Content-type:text/plain`。用`print_r()`显示，也就是说如果传入的是数组，则会显示为数组形式（不是json格式）。
 
 上述5种方式中，只有在`默认`方式时，才会产生`view`对象，但在控制中调用`view()`方法时则会提前自动创建，包括`layout()`对象。
 
 
 
 ## 3.5 关于视图 view
-默认情况下，视图文件与控制器动作一一对应，视图文件被包含在框架视图中，视图文件中的标签，可以直接用原生PHP方式显示，也可以用`{@var}`的标签方式，这种情况下，需要第三方标签解析器进行转换。
+默认情况下，视图文件与控制器动作相对应，视图文件被包含在框架视图中，视图文件中的标签，可以直接用原生PHP方式显示，也可以用`{@var}`的标签方式，这种情况下，需要第三方标签解析器进行转换。
 
 注意：如果在控制器中调用过上面`3.4 网页展示内容方式`中除默认之外的四种方式，都不会产生视图，在这种情况下，如果还需要视图，则需要在控制器动作最后的位置执行`$this->html();`*不带参数*即可清除之前四种方式设置的内容，也就是以最后执行的为准。
 

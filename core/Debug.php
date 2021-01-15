@@ -343,8 +343,10 @@ final class Debug
         }
 
         $data[] = "\n## 执行顺序\n```\n\t\t耗时\t\t耗内存\t\t占内存\t\n";
-        $data[] = "  {$this->_node[0]['t']}\t{$this->_node[0]['m']}\t{$this->_node[0]['n']}\t{$this->_node[0]['g']}进程启动到Debug被创建的消耗总量\n";
-        unset($this->_node[0]);
+        if (isset($this->_node[0])) {
+            $data[] = "  {$this->_node[0]['t']}\t{$this->_node[0]['m']}\t{$this->_node[0]['n']}\t{$this->_node[0]['g']}进程启动到Debug被创建的消耗总量\n";
+            unset($this->_node[0]);
+        }
         $data[] = "" . (str_repeat('-', 100)) . "\n";
         //具体监控点
         $len = min($this->_node_len + 3, 50);

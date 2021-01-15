@@ -125,8 +125,6 @@ final class Configure
                 }
             }
         }
-//        $config[] = ['file' => _ESP_ROOT . '/common/static/mime.ini', 'name' => 'mime.ini'];
-//        $config[] = ['file' => _ESP_ROOT . '/common/static/state.ini', 'name' => 'state.ini'];
 
         $this->_CONFIG_ = array();
         $this->_CONFIG_['_lastLoad'] = date('Y-m-d H:i:s');
