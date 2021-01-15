@@ -13,6 +13,18 @@ class Result
     private $_append = [];
 
     /**
+     * 魔术方法获取变量值
+     * @param string $key
+     * @return |null
+     */
+    public function __get(string $key)
+    {
+        $key = "_{$key}";
+        if (isset($this->{$key})) return $this->{$key};
+        return null;
+    }
+
+    /**
      * @param bool $value 可以是bool或int
      * @return $this
      */

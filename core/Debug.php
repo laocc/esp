@@ -322,7 +322,7 @@ final class Debug
         $data[] = " - CallBy:\t{$pre}\n";
         $data[] = " - METHOD:\t{$method}\n";
         $data[] = " - GET_URL:\t" . (defined('_URL') ? _URL : '') . "\n";
-        $data[] = " - SERVER:\t" . ($_SERVER['SERVER_ADDR'] ?? '') . "\n";
+        $data[] = " - SERV_IP:\t" . ($_SERVER['HTTP_X_SERV_IP'] ?? ($_SERVER['SERVER_ADDR'] ?? '')) . "\n";
         $data[] = " - USER_IP:\t" . ($_SERVER['REMOTE_ADDR'] ?? '') . "\n";
         $data[] = " - REAL_IP:\t" . _CIP . "\n";
         $data[] = " - DATETIME:\t" . date('Y-m-d H:i:s', $this->_time) . "\n";
