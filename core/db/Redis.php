@@ -6,7 +6,7 @@ namespace esp\core\db;
 use esp\core\db\ext\KeyValue;
 use esp\core\db\ext\RedisHash;
 use esp\core\db\ext\RedisList;
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 /**
  * Class Redis

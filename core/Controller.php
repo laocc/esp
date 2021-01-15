@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\db\Redis;
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use esp\core\face\Adapter;
 use esp\core\ext\Input;
 use esp\library\ext\Markdown;
@@ -122,8 +122,14 @@ abstract class Controller
         return $this->_response->viewPath();
     }
 
+    /**
+     * 强制以某账号运行
+     * @param string $user
+     */
     final protected function run_user(string $user = 'www')
     {
+        if (!_CLI) throw new EspError("run_user 只能运行于cli环境");
+
         if (getenv('USER') !== $user) {
             $cmd = implode(' ', $GLOBALS["argv"]);
             exit("请以www账户运行，CLI模式下请用\n\nsudo -u {$user} -g {$user} -s php {$cmd}\n\n\n");

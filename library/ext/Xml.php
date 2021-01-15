@@ -2,7 +2,7 @@
 
 namespace esp\library\ext;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 final class Xml
 {

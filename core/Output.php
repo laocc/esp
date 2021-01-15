@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use function esp\helper\text;
 
 final class Output

@@ -2,7 +2,7 @@
 
 namespace esp\core\db;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 /**
  * 简单文件存储缓存

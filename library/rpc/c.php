@@ -19,7 +19,7 @@ $time = microtime(true);
 
 $success = function ($index, $value) {
     if ($value instanceof \Error) {
-        throw new \esp\core\ext\EspError($value->getMessage());
+        throw new \esp\error\EspError($value->getMessage());
     } else {
         print_r(['index' => $index, 'value' => $value]);
     }

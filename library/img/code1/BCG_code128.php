@@ -2,7 +2,7 @@
 
 namespace esp\library\img\code1;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 final class BCG_code128 extends BCG_Barcode1D
 {

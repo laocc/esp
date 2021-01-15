@@ -2,14 +2,11 @@
 
 namespace esp\library\img;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use esp\library\img\code1\BCG_FontFile;
-use esp\library\img\code1\BCG_Barcode;
-use esp\library\img\code1\BCG_Barcode1D;
 use esp\library\img\code1\BCG_code128;
 use esp\library\img\code1\BCG_Color;
 use esp\library\img\code1\BCG_FontPhp;
-use esp\library\img\code1\BCG_Label;
 
 class Code1 extends BaseImg
 {

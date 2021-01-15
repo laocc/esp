@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\core;
+namespace esp\error;
 
-use esp\core\ext\EspError;
+use esp\core\Debug;
+use esp\core\Dispatcher;
 use function esp\helper\replace_array;
 
 final class Error

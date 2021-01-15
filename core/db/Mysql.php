@@ -6,7 +6,7 @@ namespace esp\core\db;
 use esp\core\Debug;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\Result;
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 final class Mysql
 {

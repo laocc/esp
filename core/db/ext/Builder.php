@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core\db\ext;
 
 use esp\core\db\Mysql;
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 /**
  *

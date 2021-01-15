@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use function esp\helper\is_match;
 use function esp\helper\is_uri;
 use function esp\helper\load;
