@@ -10,7 +10,6 @@
   ],
   "require": {
     "php": ">7.0",
-    "laocc/debug": "*",
     "ext-json": "*",
     "ext-curl": "*",
     "ext-libxml": "*",
@@ -32,6 +31,7 @@
     ],
     "psr-4": {
       "esp\\core\\": "core/",
+      "esp\\debug\\": "debug/",
       "esp\\library\\": "library/"
     }
   }
