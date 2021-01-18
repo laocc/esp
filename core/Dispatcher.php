@@ -416,6 +416,7 @@ final class Dispatcher
     {
         if (!is_null($this->_debug)) $this->_debug->folder('error');
         $empty = $this->_config->get('request.empty');
+        if (is_array($empty)) $empty = $empty[$this->_request->virtual] ?? $msg;
         $this->_request->exists = false;
         if (!empty($empty)) return $empty;
         return $msg;
