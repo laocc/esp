@@ -401,10 +401,6 @@ final class Dispatcher
             $this->relayDebug("[red;{$class}->_close() ==================================]");
         }
 
-        if (!empty($cont->result) and (!is_object($contReturn)) and ($this->_request->method === 'AJAX' or $this->_request->method === 'POST')) {
-            $contReturn = $cont->ReorganizeReturn($contReturn);
-        }
-
         if ($contReturn instanceof Result) return $contReturn->display();
         else if (is_object($contReturn)) return (string)$contReturn;
 
