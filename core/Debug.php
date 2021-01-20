@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\error\EspError;
 use esp\library\Output;
 use function esp\helper\mk_dir;
 use function esp\helper\root;
@@ -115,7 +116,7 @@ final class Debug
      */
     public static function move(bool $show = false, string $path = null)
     {
-        if (!_CLI) throw new \Error('debug->move() 只能运行于CLI环境');
+        if (!_CLI) throw new EspError('debug->move() 只能运行于CLI环境');
 
         if (is_null($path)) $path = _RUNTIME . '/debug/move';
         $time = 0;
@@ -144,7 +145,7 @@ final class Debug
                 if (!is_readable($p)) @mkdir($p, 0740, true);
                 else if (!is_dir($p)) @mkdir($p, 0740, true);
                 rename("{$path}/{$file}", $move);
-            } catch (\Exception $e) {
+            } catch (EspError $e) {
                 print_r(['moveDebug' => $e]);
             }
         }
@@ -251,7 +252,7 @@ final class Debug
         if (!is_dir($p)) {
             try {
                 @mkdir($p, 0740, true);
-            } catch (\Exception $e) {
+            } catch (EspError $e) {
                 print_r($e);
             }
         }

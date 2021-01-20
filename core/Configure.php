@@ -22,7 +22,6 @@ final class Configure
 
     /**
      * @param array $conf
-     * @throws \Exception
      */
     public function __construct(array $conf)
     {
@@ -223,7 +222,6 @@ final class Configure
      * @param string $file
      * @param string $byKey
      * @return array
-     * @throws \Exception
      */
     public function loadFile(string $file, $byKey = null): array
     {

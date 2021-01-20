@@ -437,7 +437,6 @@ abstract class BaseImg
      * @param null $name
      * @param string $ext
      * @return array
-     * @throws \Exception
      */
     protected function getFileName($save, $root, $path, $name = null, $ext = 'png')
     {

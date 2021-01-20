@@ -20,7 +20,6 @@ final class Xml
      * @param string $root
      * @param array $array
      * @return string
-     * @throws \Exception
      */
     public static function encode(string $root, array $array)
     {
@@ -49,7 +48,6 @@ final class Xml
      * Xml constructor.
      * @param $value
      * @param string $notes
-     * @throws \Exception
      */
     public function __construct($value, $notes = 'xml')
     {

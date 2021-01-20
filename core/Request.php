@@ -97,7 +97,6 @@ final class Request
     /**
      * 控制器方法后缀
      * @return mixed
-     * @throws \Exception
      */
     public function getActionExt(): string
     {

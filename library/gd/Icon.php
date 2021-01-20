@@ -28,7 +28,6 @@ class Icon
      * @param int $size 要生成的尺寸
      * @param null $icon_file
      * @return bool|null|string
-     * @throws \Exception
      */
     public static function create($img, $size = 32, $icon_file = null)
     {

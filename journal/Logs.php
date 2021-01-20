@@ -6,6 +6,7 @@ namespace esp\journal;
 use esp\core\Configure;
 use esp\core\Request;
 use esp\core\Response;
+use esp\error\EspError;
 use esp\library\Output;
 use function esp\helper\root;
 
@@ -180,7 +181,7 @@ final class Logs
         if (!is_dir($p)) {
             try {
                 @mkdir($p, 0740, true);
-            } catch (\Exception $e) {
+            } catch (EspError $e) {
                 print_r($e);
             }
         }

@@ -196,7 +196,6 @@ class Client
      * @param $data
      * @param $async
      * @return array
-     * @throws \Exception
      */
     private function realUrl(string $url, string $action, $data, $async)
     {

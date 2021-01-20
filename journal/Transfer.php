@@ -3,6 +3,8 @@
 namespace esp\journal;
 
 
+use esp\error\EspError;
+
 class Transfer
 {
     private $_transfer_uri = '/_esp_debug_transfer';
@@ -55,7 +57,7 @@ class Transfer
      */
     public function save(string $path, bool $show = false)
     {
-        if (!_CLI) throw new \Error('debug->Transfer() 只能运行于CLI环境');
+        if (!_CLI) throw new EspError('debug->Transfer() 只能运行于CLI环境');
 
         if (is_null($path)) $path = _RUNTIME . '/debug/move';
         $time = 0;
@@ -84,7 +86,7 @@ class Transfer
                 if (!is_readable($p)) @mkdir($p, 0740, true);
                 else if (!is_dir($p)) @mkdir($p, 0740, true);
                 rename("{$path}/{$file}", $move);
-            } catch (\Exception $e) {
+            } catch (EspError $e) {
                 print_r(['moveDebug' => $e]);
             }
         }
@@ -99,7 +101,7 @@ class Transfer
         try {
             if (!is_dir($path)) return @mkdir($path, 0740, true);
             return true;
-        } catch (\Exception $e) {
+        } catch (EspError $e) {
             return false;
         }
     }

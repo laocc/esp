@@ -203,7 +203,6 @@ abstract class Controller
 
     /**
      * @return Session
-     * @throws \Exception
      */
     final public function getSession(): Session
     {
@@ -453,7 +452,6 @@ abstract class Controller
      * @param null $mdFile
      * @param string $mdCss
      * @return $this
-     * @throws \Exception
      */
     final protected function md($mdFile = null, string $mdCss = '/css/markdown.css?1')
     {
