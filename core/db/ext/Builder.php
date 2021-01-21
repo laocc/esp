@@ -1162,7 +1162,7 @@ final class Builder
         $where = $this->_build_where();
         if (!empty($this->_join) and !empty($where)) {
             foreach ($this->_join as $j => $join) {
-                if (stripos($where, "{$this->_joinTable[$j]}.") !== false) {
+                if (stripos($where, $this->_joinTable[$j]) !== false) {
                     $sql[] = $join;
                 }
             }
