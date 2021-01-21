@@ -281,6 +281,7 @@ final class Post extends Request
         $value = $this->getData($key, $force);
         if (is_null($value)) return false;
         if ($value === '' && $force) $this->recodeError($key);
+        if (is_bool($value)) return $value;
         if (strtolower($value) === 'false') return false;
         return boolval($value);
     }
