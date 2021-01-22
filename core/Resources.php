@@ -27,6 +27,7 @@ final class Resources
         } else {
             $this->conf['host'] = '';
         }
+        if ($this->conf['rand'] === 'RAND') $this->conf['rand'] = $_config['_rand'] ?? mt_rand();
 
         $this->conf += [
             'host' => '',

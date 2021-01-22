@@ -78,7 +78,9 @@ final class Dispatcher
         $this->_request = new Request($this, $this->_config->get('request'));
         if (_CLI) return;
 
-        $this->_response = new Response($this->_request, $this->_config->get('resource'));
+        $resource = $this->_config->get('resource');
+        $resource['_rand'] = $this->_config->Redis()->get('resourceRand') ?: date('Ym');
+        $this->_response = new Response($this->_request, $resource);
 
         if ($debug = $this->_config->get('debug')) {
             $this->_debug = new Debug($this->_request, $this->_response, $this->_config, $debug);
@@ -424,8 +426,7 @@ final class Dispatcher
      */
     public function anonymousDebug()
     {
-        return new class()
-        {
+        return new class() {
             public function relay(...$a)
             {
             }
