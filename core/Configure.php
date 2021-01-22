@@ -6,7 +6,7 @@ namespace esp\core;
 use esp\library\Output;
 use esp\core\db\File;
 use esp\core\db\Redis;
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use function esp\helper\root;
 
 /**
@@ -22,7 +22,6 @@ final class Configure
 
     /**
      * @param array $conf
-     * @throws \Exception
      */
     public function __construct(array $conf)
     {
@@ -125,8 +124,6 @@ final class Configure
                 }
             }
         }
-//        $config[] = ['file' => _ESP_ROOT . '/common/static/mime.ini', 'name' => 'mime.ini'];
-//        $config[] = ['file' => _ESP_ROOT . '/common/static/state.ini', 'name' => 'state.ini'];
 
         $this->_CONFIG_ = array();
         $this->_CONFIG_['_lastLoad'] = date('Y-m-d H:i:s');
@@ -225,7 +222,6 @@ final class Configure
      * @param string $file
      * @param string $byKey
      * @return array
-     * @throws \Exception
      */
     public function loadFile(string $file, $byKey = null): array
     {

@@ -201,7 +201,6 @@ function make_card($zone, $day = '', $number = '')
  * 设置HTTP响应头
  * @param int $code
  * @param string|null $text
- * @throws \Exception
  */
 function header_state(int $code = 200, string $text = '')
 {

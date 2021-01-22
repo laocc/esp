@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 final class Request
 {
@@ -97,7 +97,6 @@ final class Request
     /**
      * 控制器方法后缀
      * @return mixed
-     * @throws \Exception
      */
     public function getActionExt(): string
     {

@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\core\ext\EspError;
+use esp\error\Error;
+use esp\error\EspError;
 use esp\library\Result;
 use function esp\helper\same_first;
 use function esp\helper\host;
@@ -400,10 +401,6 @@ final class Dispatcher
             $this->relayDebug("[red;{$class}->_close() ==================================]");
         }
 
-        if (!empty($cont->result) and (!is_object($contReturn)) and ($this->_request->method === 'AJAX' or $this->_request->method === 'POST')) {
-            $contReturn = $cont->ReorganizeReturn($contReturn);
-        }
-
         if ($contReturn instanceof Result) return $contReturn->display();
         else if (is_object($contReturn)) return (string)$contReturn;
 
@@ -415,6 +412,7 @@ final class Dispatcher
     {
         if (!is_null($this->_debug)) $this->_debug->folder('error');
         $empty = $this->_config->get('request.empty');
+        if (is_array($empty)) $empty = $empty[$this->_request->virtual] ?? $msg;
         $this->_request->exists = false;
         if (!empty($empty)) return $empty;
         return $msg;

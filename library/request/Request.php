@@ -3,7 +3,7 @@
 namespace esp\library\request;
 
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 abstract class Request
 {

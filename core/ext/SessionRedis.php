@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\core\ext;
 
 use esp\core\Debug;
+use esp\error\EspError;
 
 class SessionRedis implements \SessionHandlerInterface
 {
@@ -37,7 +38,6 @@ class SessionRedis implements \SessionHandlerInterface
      * @param string $save_path
      * @param string $session_name 此值是cookies name
      * @return bool
-     * @throws \Exception
      */
     public function open($save_path, $session_name)
     {
@@ -197,7 +197,7 @@ class SessionRedis implements \SessionHandlerInterface
     {
         try {
             $this->_Redis->close();
-        } catch (\Exception $e) {
+        } catch (EspError $e) {
         }
         return $this->realValue(1);
     }

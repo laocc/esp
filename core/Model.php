@@ -7,7 +7,7 @@ use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
 use esp\core\db\Yac;
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use esp\core\ext\Mysql as MysqlExt;
 use esp\core\ext\Page as PageExt;
 
@@ -23,6 +23,7 @@ abstract class Model
     private $__table = null;        //创建对象时，或明确指定当前模型的对应表名
     private $__pri = null;          //同上，对应主键名
     private $__cache = false;       //是否缓存，若此值被设置，则覆盖子对象的相关设置
+    private $__tranIndex = 0;       //事务
 
     protected $_buffer;
     protected $_config;
@@ -85,10 +86,10 @@ abstract class Model
 
     public function __construct(...$param)
     {
-        $this->_Yac = &$GLOBALS['_Yac'];
-        $this->_Mysql = &$GLOBALS['_Mysql'];
-        $this->_Mongodb = &$GLOBALS['_Mongodb'];
-        $this->_Redis = &$GLOBALS['_Redis'];
+//        $this->_Yac = &$GLOBALS['_Yac'];
+//        $this->_Mysql = &$GLOBALS['_Mysql'];
+//        $this->_Mongodb = &$GLOBALS['_Mongodb'];
+//        $this->_Redis = &$GLOBALS['_Redis'];
 
         $this->_controller = &$GLOBALS['_Controller'];
         $this->_config = $this->_controller->getConfig();
@@ -769,10 +770,7 @@ abstract class Model
     {
         $branchName = $this->_branch ?? 'auto';
 
-        if ($tranID === 1) {
-            if (!isset($GLOBALS['_tranID'])) $GLOBALS['_tranID'] = 0;
-            $tranID = $GLOBALS['_tranID']++;
-        }
+        if ($tranID === 1) $tranID = $this->__tranIndex++;
 
         if (isset($this->_Mysql[$branchName][$tranID])) {
             return $this->_Mysql[$branchName][$tranID];

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\db\Redis;
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use esp\core\face\Adapter;
 use esp\core\ext\Input;
 use esp\library\ext\Markdown;
@@ -23,11 +23,6 @@ abstract class Controller
     public $_debug;
     public $_buffer;
 
-    /**
-     * 用于post,ajax的返回数据，只要启用此变量，最后_close之后会重新组织返回值
-     * 对于get请求无效
-     */
-    public $result = [];
 
     /**
      * Controller constructor.
@@ -82,6 +77,28 @@ abstract class Controller
         return $this->_buffer->publish('order', $action, $value);
     }
 
+
+    /**
+     * @return array
+     */
+    final protected function frameInfo()
+    {
+        $json = file_get_contents(_ROOT . '/composer.lock');
+        $json = json_decode($json, true);
+        $value = [];
+        $value['php'] = phpversion();
+        $value['redis'] = phpversion('redis');
+        $value['swoole'] = phpversion('swoole');
+
+        foreach ($json['packages'] as $pack) {
+            if ($pack['name'] === 'laocc/esp') {
+                $value['esp'] = $pack['version'];
+            }
+        }
+
+        return $value;
+    }
+
     /**
      * 发送到队列
      * @param string $queKey
@@ -122,8 +139,14 @@ abstract class Controller
         return $this->_response->viewPath();
     }
 
+    /**
+     * 强制以某账号运行
+     * @param string $user
+     */
     final protected function run_user(string $user = 'www')
     {
+        if (!_CLI) throw new EspError("run_user 只能运行于cli环境");
+
         if (getenv('USER') !== $user) {
             $cmd = implode(' ', $GLOBALS["argv"]);
             exit("请以www账户运行，CLI模式下请用\n\nsudo -u {$user} -g {$user} -s php {$cmd}\n\n\n");
@@ -180,7 +203,6 @@ abstract class Controller
 
     /**
      * @return Session
-     * @throws \Exception
      */
     final public function getSession(): Session
     {
@@ -430,7 +452,6 @@ abstract class Controller
      * @param null $mdFile
      * @param string $mdCss
      * @return $this
-     * @throws \Exception
      */
     final protected function md($mdFile = null, string $mdCss = '/css/markdown.css?1')
     {
@@ -593,59 +614,6 @@ abstract class Controller
     final protected function shutdown(callable $fun, ...$params): Controller
     {
         register_shutdown_function($fun, ...$params);
-        return $this;
-    }
-
-
-    /**
-     * @param $return
-     * @return array|null
-     *
-     * 控制器返回约定：
-     * string:错误信息
-     * int:success值，APP据此值处理
-     *
-     * 302或router：进入指定URI
-     * 500或reload：重启APP
-     * 505或warn：出错
-     * 400或login：进入登录页面
-     */
-    final public function ReorganizeReturn($return)
-    {
-        if ($return instanceof Result) return $return->display();
-
-        $value = &$this->result;
-        if (empty($value)) return null;
-        if (!is_array($value)) $value = ['data' => $value];
-
-        if (is_string($return)) {
-            $value = ['success' => 0, 'message' => $return] + $value;
-
-        } else if (is_int($return)) {
-            $value = ['success' => 0, 'message' => strval($return)] + $value;
-
-        } else if (is_array($return)) {
-            $value = $return + $value + ['success' => 1, 'message' => 'OK'];
-
-        } else if (is_float($return)) {
-            $value += ['success' => 1, 'message' => strval($return)];
-
-        } else if ($return === true) {
-            $value += ['success' => 1, 'message' => 'True'];
-
-        } else if ($return === false) {
-            $value += ['success' => 0, 'message' => 'False'];
-
-        } else {
-            $value += ['success' => 1, 'message' => 'OK'];
-        }
-
-        return $value;
-    }
-
-    final protected function Result(string $name, $value): Controller
-    {
-        $this->result[$name] = $value;
         return $this;
     }
 

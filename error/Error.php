@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\core;
+namespace esp\error;
 
-use esp\core\ext\EspError;
+use esp\core\Debug;
+use esp\core\Dispatcher;
 use function esp\helper\replace_array;
 
 final class Error
@@ -236,11 +237,7 @@ final class Error
             $debug->relay($info['Error']);
             $sl = $debug->save_logs('by Error Saved');
             $info['debugLogSaveRest'] = $sl;
-            $jsonTxt = json_encode($info, 256 | 128 | 64);
-            if ($jsonTxt === false) {
-                $info['Post'] = base64_encode($info['Post']);
-                $jsonTxt = json_encode($info, 256 | 128 | 64);
-            }
+            $jsonTxt = print_r($info, true);
             if ($debug->save_file($filename, $jsonTxt)) return;
         }
 

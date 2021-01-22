@@ -2,7 +2,7 @@
 
 namespace esp\library\ext;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 /**
  * 仅仅是对Xdebug的结果进行可读重排版，不是用来控制Xdebug的

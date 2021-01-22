@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use function esp\helper\text;
 
 final class Output
@@ -583,13 +583,25 @@ final class Output
         $cOption[CURLOPT_RETURNTRANSFER] = true;                      //返回文本流，若不指定则是直接打印
 
         if (strtoupper(substr($url, 0, 5)) === "HTTPS") {
-//            $cOption[CURLOPT_HTTP_VERSION]=CURLOPT_HTTP_VERSION_2_0;
-//            $cOption[CURLOPT_SSL_VERIFYPEER]=true;
-//            $cOption[CURLOPT_SSL_VERIFYHOST]=2;
-            $cOption[CURLOPT_SSL_VERIFYPEER] = false;//禁止 cURL 验证对等证书，就是不验证对方证书
-            $cOption[CURLOPT_SSL_VERIFYHOST] = false;
 
-            if (isset($option['cert'])) {//证书
+            if (isset($option['ssl']) and $option['ssl'] > 0) {
+                if ($option['ssl'] > 2) $option['ssl'] = 2;
+//                $cOption[CURLOPT_HTTP_VERSION] = CURL_HTTP_VERSION_2_0;
+                $cOption[CURLOPT_SSL_VERIFYPEER] = true;
+                $cOption[CURLOPT_SSL_VERIFYHOST] = intval($option['ssl']);
+                /**
+                 * 1 是检查服务器SSL证书中是否存在一个公用名(common name)。
+                 *      译者注：公用名(Common Name)一般来讲就是填写你将要申请SSL证书的域名 (domain)或子域名(sub domain)。
+                 * 2，会检查公用名是否存在，并且是否与提供的主机名匹配。
+                 * 0 为不检查名称。
+                 * 在生产环境中，这个值应该是 2（默认值）。
+                 */
+            } else {
+                $cOption[CURLOPT_SSL_VERIFYPEER] = false;//禁止 cURL 验证对等证书，就是不验证对方证书
+                $cOption[CURLOPT_SSL_VERIFYHOST] = 0;
+            }
+
+            if (isset($option['cert'])) {       //证书
                 $cOption[CURLOPT_SSLCERTTYPE] = 'PEM';
                 $cOption[CURLOPT_SSLKEYTYPE] = 'PEM';
                 if (isset($option['cert']['cert'])) $cOption[CURLOPT_SSLCERT] = $option['cert']['cert'];
@@ -597,8 +609,10 @@ final class Output
                 if (isset($option['cert']['ca'])) $cOption[CURLOPT_CAINFO] = $option['cert']['ca'];
             }
         } else {
-            $cOption[CURLOPT_HTTP_VERSION] = CURL_HTTP_VERSION_1_1;
+//            $cOption[CURLOPT_HTTP_VERSION] = CURL_HTTP_VERSION_1_1;
         }
+
+        $cOption[CURLOPT_HTTP_VERSION] = CURL_HTTP_VERSION_NONE;//自动选择http版本
 
         $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
         if ($cURL === false) {

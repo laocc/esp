@@ -436,7 +436,6 @@ class Gd
      * @param null $name
      * @param string $ext
      * @return array
-     * @throws \Exception
      */
     public static function getFileName($save, $root, $path, $name = null, $ext = 'png')
     {

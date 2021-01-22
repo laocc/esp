@@ -2,6 +2,8 @@
 
 namespace esp\helper;
 
+use esp\error\EspError;
+
 /**
  * 查询域名的根域名，兼容国别的二级域名
  * @param $domain
@@ -106,7 +108,7 @@ function mk_dir(string $path, int $mode = 0740): bool
             @mkdir($path, $mode ?: 0740, true);
         }
         return true;
-    } catch (\Exception $e) {
+    } catch (EspError $e) {
         return false;
     }
 }
@@ -136,7 +138,6 @@ function xml_decode(string $str, bool $toArray = true)
  * @param array $array
  * @param bool $outHead
  * @return string
- * @throws \Exception
  */
 function xml_encode($root, array $array, bool $outHead = true)
 {

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\library\request;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use esp\library\ext\Xss;
 use function esp\helper\is_mob;
 use function esp\helper\is_card;

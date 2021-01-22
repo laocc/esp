@@ -2,7 +2,7 @@
 
 namespace esp\core\db;
 
-use esp\core\ext\EspError;
+use esp\error\EspError;
 use \MongoDB\Driver\Manager;
 use \MongoDB\Driver\BulkWrite;
 use \MongoDB\Driver\WriteConcern;

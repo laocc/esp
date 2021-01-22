@@ -31,7 +31,8 @@
     ],
     "psr-4": {
       "esp\\core\\": "core/",
-      "esp\\debug\\": "debug/",
+      "esp\\journal\\": "journal/",
+      "esp\\error\\": "error/",
       "esp\\library\\": "library/"
     }
   }

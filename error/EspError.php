@@ -1,7 +1,7 @@
 <?php
+declare(strict_types=1);
 
-namespace esp\core\ext;
-
+namespace esp\error;
 
 class EspError extends \ErrorException
 {

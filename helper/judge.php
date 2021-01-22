@@ -3,6 +3,8 @@
 namespace esp\helper;
 
 
+use esp\error\EspError;
+
 /**
  * 是否为手机号码
  * @param $value
@@ -177,7 +179,7 @@ function is_json($value): bool
     try {
         $a = json_decode($value, true);
         if (!is_array($a)) return false;
-    } catch (\Exception $exception) {
+    } catch (EspError $exception) {
         return false;
     }
     return true;

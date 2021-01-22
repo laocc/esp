@@ -1,14 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\core;
+namespace esp\journal;
 
+use esp\core\Configure;
+use esp\core\Request;
+use esp\core\Response;
 use esp\error\EspError;
 use esp\library\Output;
-use function esp\helper\mk_dir;
 use function esp\helper\root;
 
-final class Debug
+final class Logs
 {
     private $prevTime;
     private $memory;
@@ -83,74 +85,6 @@ final class Debug
         $this->_response = $response;
     }
 
-    private function transferDebug()
-    {
-        $input = file_get_contents("php://input");
-        if (empty($input)) return 'null';
-
-        $array = json_decode($input, true);
-        if (empty($array['data'])) $array['data'] = 'NULL Data';
-        else {
-            $array['data'] = gzuncompress(base64_decode($array['data']));
-        }
-
-        if (is_array($array['data'])) $array['data'] = print_r($array['data'], true);
-
-        //临时中转文件
-        if ($this->_save_mode === 'transfer') {
-            $move = $this->_transfer_path . '/' . urlencode(base64_encode($array['filename']));
-            mk_dir($this->_transfer_path);
-            return file_put_contents($move, $array['data'], LOCK_EX);
-        }
-
-        mk_dir($array['filename']);
-        return file_put_contents($array['filename'], $array['data'], LOCK_EX);
-    }
-
-    /**
-     * 将move里的临时文件移入真实目录
-     * 在并发较大时，需要将日志放入临时目录，由后台移到目标目录中
-     * 因为在大并发时，创建新目录的速度可能跟不上系统请求速度，有时候发生目录已存在的错误
-     * @param bool $show
-     * @param string|null $path
-     */
-    public static function move(bool $show = false, string $path = null)
-    {
-        if (!_CLI) throw new EspError('debug->move() 只能运行于CLI环境');
-
-        if (is_null($path)) $path = _RUNTIME . '/debug/move';
-        $time = 0;
-
-        reMove:
-        $time++;
-        $dir = new \DirectoryIterator($path);
-        $array = array();
-        foreach ($dir as $i => $f) {
-            if ($i > 100) break;
-            if ($f->isFile()) $array[] = $f->getFilename();
-        }
-        if (empty($array)) return;
-
-        if ($show) echo date('Y-m-d H:i:s') . "\tmoveDEBUG({$time}):\t" . json_encode($array, 256 | 64) . "\n";
-
-        foreach ($array as $file) {
-            try {
-                $move = base64_decode(urldecode($file));
-                if (empty($move) or $move[0] !== '/') {
-                    @unlink("{$path}/{$file}");
-                    continue;
-                }
-
-                $p = dirname($move);
-                if (!is_readable($p)) @mkdir($p, 0740, true);
-                else if (!is_dir($p)) @mkdir($p, 0740, true);
-                rename("{$path}/{$file}", $move);
-            } catch (EspError $e) {
-                print_r(['moveDebug' => $e]);
-            }
-        }
-        goto reMove;
-    }
 
     /**
      * @return Debug
@@ -238,12 +172,7 @@ final class Debug
              * 发到RPC，写入move专用目录，然后由后台移到实际目录
              */
             $send = Output::new()->rpc($this->_transfer_uri, $this->_rpc)
-                ->data(json_encode([
-                    'filename' => $filename,
-                    'data' => base64_encode(gzcompress($data, 5))
-                ], 256 | 64))
-                ->post('html');
-
+                ->data(json_encode(['filename' => $filename, 'data' => $data], 256 | 64))->post('html');
             if (is_array($send)) $send = json_encode($send, 256 | 64);
             return "Rpc:{$send}";
         }
@@ -323,7 +252,6 @@ final class Debug
         $filename = $this->filename();
         if (empty($filename)) return 'null filename';
 
-        //其他未通过类，而是直接通过公共变量送入的日志
         if (isset($GLOBALS['_relay'])) $this->relay(['GLOBALS_relay' => $GLOBALS['_relay']], []);
         $this->relay('END:save_logs', []);
         $rq = $this->_request;

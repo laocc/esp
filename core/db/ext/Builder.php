@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core\db\ext;
 
 use esp\core\db\Mysql;
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 /**
  *
@@ -1162,7 +1162,7 @@ final class Builder
         $where = $this->_build_where();
         if (!empty($this->_join) and !empty($where)) {
             foreach ($this->_join as $j => $join) {
-                if (stripos($where, "{$this->_joinTable[$j]}.") !== false) {
+                if (stripos($where, $this->_joinTable[$j]) !== false) {
                     $sql[] = $join;
                 }
             }

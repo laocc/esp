@@ -3,7 +3,7 @@
 namespace esp\core\db;
 
 use esp\core\db\ext\KeyValue;
-use esp\core\ext\EspError;
+use esp\error\EspError;
 
 class Memcache implements KeyValue
 {
