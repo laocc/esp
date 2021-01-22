@@ -261,7 +261,7 @@ final class Debug
     }
 
     /**
-     * 读取counter值
+     * 读取计数器值表
      * @param int $time
      * @param bool $method
      * @return array
@@ -269,13 +269,22 @@ final class Debug
     public function counter(int $time = 0, bool $method = null)
     {
         if ($time === 0) $time = time();
-        $key = "{$this->_conf['counter']}_counter_" . date('Y_m_d', $time);
+        $conf = $this->_conf['counter'];
+        if (!$conf) return [];
+        if (is_array($conf)) {
+            if (!isset($conf['key'])) throw new EspError("counter.key未定义");
+            $key = "{$conf['key']}_counter_" . date('Y_m_d', $time);
+        } else {
+            $key = "{$conf}_counter_" . date('Y_m_d', $time);
+        }
         $all = $this->_redis->hGetAlls($key);
         if (empty($all)) return ['data' => [], 'action' => []];
 
         $data = [];
         foreach ($all as $hs => $hc) {
+            //实际这里是7段，分为5段就行，后三段连起来
             $key = explode('/', $hs, 5);
+
             $hour = (intval($key[0]) + 1);
             $ca = "/{$key[4]}";
             switch ($method) {
@@ -309,13 +318,26 @@ final class Debug
          * 控制器访问计数器
          * 键名及表名格式是固定的
          */
-        if ($this->_conf['counter'] and $this->_request->exists) {
-            $key = date('H/') . $this->_request->method .
-                '/' . $this->_request->virtual .
-                '/' . ($this->_request->module ?: 'auto') .
-                '/' . $this->_request->controller .
-                '/' . $this->_request->action;
-            $this->_redis->hIncrBy("{$this->_conf['counter']}_counter_" . date('Y_m_d'), $key, 1);
+        $conf = $this->_conf['counter'];
+        if ($conf and $this->_request->exists) {
+            $key = sprintf('%s/%s/%s/%s/%s/%s',
+                date('H'),
+                $this->_request->method,
+                $this->_request->virtual,
+                $this->_request->module ?: 'auto',
+                $this->_request->controller,
+                $this->_request->action);
+            if (is_array($conf)) {
+                $conf += ['key' => 'DEBUG', 'params' => 0];
+                $hKey = "{$conf['key']}_counter_" . date('Y_m_d');
+                if ($conf['params'] and $this->_request->params[0]) {
+                    $key .= "/{$this->_request->params[0]}";
+                }
+
+            } else {
+                $hKey = "{$conf}_counter_" . date('Y_m_d');
+            }
+            $this->_redis->hIncrBy($hKey, $key, 1);
         }
 
         if (empty($this->_node)) return 'empty node';
@@ -345,7 +367,7 @@ final class Debug
         //一些路由结果，路由结果参数
         $Params = implode(',', $rq->getParams());
         $data[] = " - Params:\t({$Params})\n```\n";
-        if (!$this->_request->exists) goto save;
+        if (!$this->_request->exists) goto save;//请求了不存在的控制器
 
         if (!empty($this->_value)) {
             $data[] = "\n## 程序附加\n```\n";
@@ -414,13 +436,13 @@ final class Debug
 
         $data[] = microtime(true) . "\n";
 
+        save:
         if (defined('_SELF_DEBUG')) {
             $p = dirname($filename);
             if (!is_dir($p)) @mkdir($p, 0740, true);
             $s = file_put_contents($filename, $data, LOCK_EX);
             return "_SELF_DEBUG={$s}";
         }
-        save:
         return $this->save_file($filename, implode($data));
     }
 

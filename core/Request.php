@@ -25,7 +25,7 @@ final class Request
     public $suffix;
     public $contFix;
     public $route_view;
-    public $exists = true;//是否为正常的请求
+    public $exists = true;//是否为正常的请求，请求了不存在的控制器
 
     public function __construct(Dispatcher $dispatcher, array $config)
     {

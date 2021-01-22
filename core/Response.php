@@ -122,10 +122,10 @@ final class Response
      * 渲染视图并返回
      * @param void $value 控制器返回的值
      */
-    public function display(&$value): void
+    public function display($value): void
     {
         if ($this->_autoRun === false) return;
-//        if (!headers_sent()) header('sid: ' . ip2long(getenv('SERVER_ADDR')));
+//        $hasSend = headers_sent();
         if (!empty($this->_header)) {
             foreach ($this->_header as $kv) header("{$kv[0]}: {$kv[1]}");
         }
