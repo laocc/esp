@@ -237,7 +237,7 @@ final class Error
             $debug->relay($info['Error']);
             $sl = $debug->save_logs('by Error Saved');
             $info['debugLogSaveRest'] = $sl;
-            $jsonTxt = print_r($info, true);
+            $jsonTxt = json_encode($info, 256 | 64 | 128);
             if ($debug->save_file($filename, $jsonTxt)) return;
         }
 
