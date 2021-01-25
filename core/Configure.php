@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\library\Output;
+use esp\http\Http;
 use esp\core\db\File;
 use esp\core\db\Redis;
 use esp\error\EspError;
@@ -90,7 +90,8 @@ final class Configure
              * 然后，再次goto trySelf;从redis中读取config
              * 这里请求$awakenURI，在主服务器中实际上会被当前文件也就是当前构造函数中最后一行拦截并返回success
              */
-            $get = Output::new()->rpc($awakenURI, $this->_rpc)->get('html');
+            $rpcObj = new Http();
+            $get = $rpcObj->rpc($this->_rpc)->encode('text')->get($awakenURI)->html();
             if ($tryCount++ > 1) throw new EspError("多次请求RPC获取到数据不合法，期望值({$this->_token})，实际获取:{$get}");
 
             goto tryReadRedis;

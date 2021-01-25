@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\error\EspError;
-use esp\library\Output;
+use esp\http\Http;
 use function esp\helper\mk_dir;
 use function esp\helper\root;
 
@@ -237,14 +237,17 @@ final class Debug
             /**
              * 发到RPC，写入move专用目录，然后由后台移到实际目录
              */
-            $send = Output::new()->rpc($this->_transfer_uri, $this->_rpc)
-                ->data(json_encode([
-                    'filename' => $filename,
-                    'data' => base64_encode(gzcompress($data, 5))
-                ], 256 | 64))
-                ->post('html');
+            $post = json_encode([
+                'filename' => $filename,
+                'data' => base64_encode(gzcompress($data, 5))
+            ], 256 | 64);
 
-            if (is_array($send)) $send = json_encode($send, 256 | 64);
+            $http = new Http();
+            $send = $http->rpc($this->_rpc)
+                ->encode('html')
+                ->data($post)
+                ->post($this->_transfer_uri)
+                ->html();
             return "Rpc:{$send}";
         }
 
