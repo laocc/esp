@@ -80,6 +80,8 @@ class Code2
 
 
         $option = $dimOption + $option;
+        if (is_array($option['text'])) $option['text'] = json_encode($option['text'], 256 | 64);
+
         $option['root'] = rtrim($option['root'], '/');
         $option['path'] = '/' . trim($option['path'], '/') . '/';
 
