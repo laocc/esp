@@ -45,14 +45,28 @@ class Result
         return $this;
     }
 
-    public function message($msg = 'ok'): Result
+    /**
+     * @param string $msg
+     * @param bool $append
+     * @return $this
+     */
+    public function message($msg = 'ok', bool $append = false): Result
     {
         if (is_array($msg)) $msg = json_encode($msg, 256 | 64);
         else if (is_object($msg)) $msg = var_export($msg, true);
-        $this->_message = strval($msg);
+        if ($append) {
+            $this->_message .= strval($msg);
+        } else {
+            $this->_message = strval($msg);
+        }
         return $this;
     }
 
+    /**
+     * @param $key
+     * @param null $value
+     * @return $this
+     */
     public function data($key, $value = null): Result
     {
         if (is_string($key) and !is_null($value)) {
