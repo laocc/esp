@@ -362,6 +362,43 @@ abstract class Model
     }
 
     /**
+     * 组合空间-点
+     * @param $lng
+     * @param null $lat
+     * @return string
+     */
+    public function point($lng, $lat = null)
+    {
+        if (is_null($lat) and is_array($lng)) {
+            $lat = $lng['lat'] ?? $lng[1];
+            $lng = $lng['lng'] ?? $lng[0];
+        }
+        return "point({$lng} {$lat})";
+    }
+
+    /**
+     * 组合空间-闭合的区域
+     * @param array $location
+     * @return string
+     * @throws EspError
+     */
+    public function polygon(array $location)
+    {
+        if (count($location) < 3) throw new EspError("空间区域至少需要3个点");
+        $val = [];
+        $fst = null;
+        $lst = null;
+        foreach ($location as $loc) {
+            $lst = "{$loc['lng']} {$loc['lat']}";
+            $val[] = $lst;
+            if (is_null($fst)) $fst = $lst;
+        }
+        if ($fst !== $lst) $val[] = $fst;
+        return "polygon(" . implode(',', $val) . ")";
+    }
+
+
+    /**
      * 选择一条记录
      * @param $where
      * @param string|null $orderBy

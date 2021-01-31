@@ -1295,48 +1295,83 @@ final class Builder
         $op = $is_REPLACE ? 'REPLACE' : 'INSERT';
 
         foreach ($data as $i => &$item) {
-            if ($keys === null) {//获取keys
-                $keys = $this->protect_identifier(array_keys($item));
-                $keys = implode(', ', $keys);
-            }
 
             if ($this->_param) {
-//                $valKey = array_keys($item);
                 $valKey = [];
-                $nv = array();
+                $nv = [];
+                $itemKey = [];
                 foreach ($item as $k => &$v) {
                     if (is_array($v)) $v = json_encode($v, 256 | 64);
                     if (is_null($v)) throw new EspError('DB_ERROR: INSERT 值不可为NULL', $tractLevel + 1);
+                    switch (substr($k, -1)) {
+                        case '#':  //压缩数据
+                            $k = substr($k, 0, -1);
+                            $v = gzcompress($v, $this->_gzLevel);
+                            $nv[":{$k}"] = $v;
+                            $valKey[] = ":{$k}";
+                            break;
 
-                    $fh = substr($k, -1);
-                    if ($fh === '#') {                        //压缩数据
-                        $k = substr($k, 0, -1);
-                        $v = gzcompress($v, $this->_gzLevel);
-                    } else if ($fh === '\\') {
-                        $k = substr($k, 0, -1);
+                        case '\\': //直接表达式
+                            $k = substr($k, 0, -1);
+                            $nv[":{$k}"] = $v;
+                            $valKey[] = ":{$k}";
+                            break;
+
+                        case '@'://空间位置数据
+                            $k = substr($k, 0, -1);
+                            $nv[":{$k}"] = $v;
+                            $valKey[] = "ST_GeomFromText(:{$k})";
+                            break;
+
+                        default:
+                            $nv[":{$k}"] = $v;
+                            $valKey[] = ":{$k}";
                     }
-                    $valKey[] = ":{$k}";
-                    $nv[":{$k}"] = $v;
+                    $itemKey[] = $k;
                 }
-                if ($param === null) {
-                    $param = '(' . implode(',', $valKey) . ')';
-                }
+                if (is_null($keys)) $keys = $itemKey;
+                if (is_null($param)) $param = '(' . implode(',', $valKey) . ')';
                 $this->_param_data[] = $nv;
 
             } else {
-                $values = array_values($item);
-                foreach ($values as $k => $val) {
+                $itemKey = [];
+                $itemVal = [];
+                foreach ($item as $k => &$val) {
                     if (is_array($val)) $val = json_encode($val, 256 | 64);
-                    if (substr($k, -1) === '#') {                        //压缩数据
-                        $k = substr($k, 0, -1);
-                        $val = gzcompress($val, $this->_gzLevel);
+                    switch (substr($k, -1)) {
+                        case '#':
+                            $k = substr($k, 0, -1);
+                            $val = gzcompress($val, $this->_gzLevel);
+                            $itemVal[] = "'{$val}'";
+                            break;
+                        case '\\':
+                            $k = substr($k, 0, -1);
+                            $itemVal[] = $val;
+                            break;
+                        case '@':
+                            $k = substr($k, 0, -1);
+                            $itemVal[] = "ST_GeomFromText('{$val}')";
+                            break;
+                        default:
+                            if (is_string($val)) {
+                                $itemVal[] = "'{$val}'";
+                            } else {
+                                $itemVal[] = $val;
+                            }
                     }
-                    if (is_array($val)) $values[$k] = $val;
+
+                    $itemKey[] = $k;
                 }
-                $values[] = '(' . implode(', ', $this->quote($values)) . ')';
+                if (is_null($keys)) $keys = $itemKey;
+                $values[] = '(' . implode(', ', $itemVal) . ')';
             }
         }
+
+        $keys = $this->protect_identifier($keys);
+        $keys = implode(', ', $keys);
+
         $value = $param ?: implode(', ', $values);
+
         $sql = "{$op} INTO {$this->_table} ({$keys}) VALUES {$value}";
         return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
     }
@@ -1415,6 +1450,11 @@ final class Builder
                 $key = substr($key, 0, -1);
 
 //                $value = $this->protect_identifier($key) . " = {$value}";
+
+            } else if ($kFH === '@') {// 空间数据
+                $key = substr($key, 0, -1);
+
+                $value = "ST_GeomFromText('{$value}')";
 
             } else if ($kFH === '.') {//.号为拼接
                 $key = substr($key, 0, -1);
@@ -1589,6 +1629,43 @@ final class Builder
         } else {
             return $data;
         }
+    }
+
+
+    /**
+     * 组合空间-点
+     * @param $lng
+     * @param null $lat
+     * @return string
+     */
+    public function point($lng, $lat = null)
+    {
+        if (is_null($lat) and is_array($lng)) {
+            $lat = $lng['lat'] ?? $lng[1];
+            $lng = $lng['lng'] ?? $lng[0];
+        }
+        return "point({$lng} {$lat})";
+    }
+
+    /**
+     * 组合空间-闭合的区域
+     * @param array $location
+     * @return string
+     * @throws EspError
+     */
+    public function polygon(array $location)
+    {
+        if (count($location) < 3) throw new EspError("空间区域至少需要3个点");
+        $val = [];
+        $fst = null;
+        $lst = null;
+        foreach ($location as $loc) {
+            $lst = "{$loc['lng']} {$loc['lat']}";
+            $val[] = $lst;
+            if (is_null($fst)) $fst = $lst;
+        }
+        if ($fst !== $lst) $val[] = $fst;
+        return "polygon(" . implode(',', $val) . ")";
     }
 
 

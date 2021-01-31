@@ -39,7 +39,9 @@ final class Dispatcher
 
         if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!getenv('HTTP_HOST') && !_CLI) die('unknown host');
-        if (!defined('_ROOT')) define('_ROOT', rtrim(same_first(__DIR__, getenv('DOCUMENT_ROOT')), '/'));//网站根目录
+        if (!defined('_ROOT')) {    //网站根目录
+            define('_ROOT', _CLI ? getenv('PWD') : rtrim(same_first(__DIR__, getenv('DOCUMENT_ROOT')), '/'));
+        }
         if (!defined('_ESP_ROOT')) define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
         if (!defined('_DAY_TIME')) define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
@@ -426,7 +428,8 @@ final class Dispatcher
      */
     public function anonymousDebug()
     {
-        return new class() {
+        return new class()
+        {
             public function relay(...$a)
             {
             }
