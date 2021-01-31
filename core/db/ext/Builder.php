@@ -1641,8 +1641,8 @@ final class Builder
     public function point($lng, $lat = null)
     {
         if (is_null($lat) and is_array($lng)) {
-            $lat = $lng['lat'] ?? $lng[1];
-            $lng = $lng['lng'] ?? $lng[0];
+            $lat = $lng['lat'] ?? ($lng[1] ?? 0);
+            $lng = $lng['lng'] ?? ($lng[0] ?? 0);
         }
         return "point({$lng} {$lat})";
     }
