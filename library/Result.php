@@ -67,9 +67,9 @@ class Result
      * @param null $value
      * @return $this
      */
-    public function data($key, $value = null): Result
+    public function data($key, $value = 'nullValue'): Result
     {
-        if (is_string($key) and !is_null($value)) {
+        if (is_string($key) and $value !== 'nullValue') {
             if (strpos($key, '.') > 0) {
                 $obj = &$this->_data;
                 foreach (explode('.', $key) as $k) {
