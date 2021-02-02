@@ -97,7 +97,13 @@ class Result
 
     public function page(array $value): Result
     {
-        $this->_page = $value;
+        $this->_paging = $value;
+        return $this;
+    }
+
+    public function paging(array $value): Result
+    {
+        $this->_paging = $value;
         return $this;
     }
 
@@ -121,7 +127,7 @@ class Result
             'message' => $this->_message,
             'data' => $this->_data,
         ];
-        if (!is_null($this->_page)) $value['page'] = $this->_page;
+        if (!is_null($this->_page)) $value['paging'] = $this->_paging;
         if (!empty($this->_append)) $value += $this->_append;
 
         if (is_string($return)) {
