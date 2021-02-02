@@ -9,7 +9,7 @@ class Result
     private $_error = 0;
     private $_message = 'ok';
     private $_data = [];
-    private $_page = null;
+    private $_paging = null;
     private $_append = [];
 
     /**
@@ -95,12 +95,6 @@ class Result
         return $this;
     }
 
-    public function page(array $value): Result
-    {
-        $this->_paging = $value;
-        return $this;
-    }
-
     public function paging(array $value): Result
     {
         $this->_paging = $value;
@@ -127,7 +121,7 @@ class Result
             'message' => $this->_message,
             'data' => $this->_data,
         ];
-        if (!is_null($this->_page)) $value['paging'] = $this->_paging;
+        if (!is_null($this->_paging)) $value['paging'] = $this->_paging;
         if (!empty($this->_append)) $value += $this->_append;
 
         if (is_string($return)) {

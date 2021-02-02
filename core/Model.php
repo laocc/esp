@@ -9,7 +9,7 @@ use esp\core\db\Redis;
 use esp\core\db\Yac;
 use esp\error\EspError;
 use esp\core\ext\Mysql as MysqlExt;
-use esp\core\ext\Page as PageExt;
+use esp\core\ext\Paging;
 
 /**
  * Class Model
@@ -63,7 +63,7 @@ abstract class Model
     protected $selectKey = [];
     protected $columnKey = null;
 
-    use MysqlExt, PageExt;
+    use MysqlExt, Paging;
 
     /**
      * 清除自身的一些对象变量

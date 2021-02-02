@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core\ext;
 
 
-trait Page
+trait Paging
 {
     private $_page_key = 'page';       //分页，页码键名，可以任意命名，只要不和常用的别的键冲突就可以
     private $_size_key = 'size';       //分页，每页数量
@@ -63,8 +63,8 @@ trait Page
         ];
         $info['index'] = $info['index'] ?: intval($_GET[$info['key']] ?? 1);//当前页码
         $info['last'] = (int)($info['recode'] % $info['size']);//最后一页数
-        $info['page'] = (int)($info['recode'] / $info['size']);
-        $info['page'] += !!$info['last'] ? 1 : 0;//总页数
+        $info['total'] = (int)($info['recode'] / $info['size']);
+        $info['total'] += !!$info['last'] ? 1 : 0;//总页数
 
         return $info;
     }
@@ -90,13 +90,13 @@ trait Page
         $info['index'] = $info['index'] ?: intval($_GET[$key] ?? 1);//当前页码
 
         $info['last'] = (int)($info['recode'] % $info['size']);//最后一页数
-        $info['page'] = (int)($info['recode'] / $info['size']);
-        $info['page'] += !!$info['last'] ? 1 : 0;//总页数
+        $info['total'] = (int)($info['recode'] / $info['size']);
+        $info['total'] += !!$info['last'] ? 1 : 0;//总页数
 
         $info['prev'] = $info['index'] - 1;//上一页
         $info['next'] = $info['index'] + 1;//下一页
         $info['prev'] < 1 and $info['prev'] = 1;
-        if ($info['next'] > $info['page']) $info['next'] = $info['page'];
+        if ($info['next'] > $info['total']) $info['next'] = $info['total'];
         if (empty($class)) $class = 'pageForm';
         if ($class[0] === '+') $class = "pageForm " . substr($class, 1);
         $link = array();
@@ -117,7 +117,7 @@ trait Page
         $star = $info['index'] - $_show;
         $star < 1 and $star = 1;
         $stop = $info['index'] + $_show;
-        $stop > $info['page'] and $stop = $info['page'];
+        $stop > $info['total'] and $stop = $info['total'];
 
         if ($star >= $_show) {
             $page[] = "<li class='omit'><a>...</a></li>";
@@ -130,14 +130,14 @@ trait Page
                 $page[] = "<li class='link'><a href='?{$key}={$i}&[QueryString]'>{$i}</a></li>";
         }
 
-        if ($stop <= ($info['page'] - $_show)) {
+        if ($stop <= ($info['total'] - $_show)) {
             $page[] = "<li class='omit'><a>...</a></li>";
         }
 
         $link[] = implode($page);
         $link[] = "<li><a href='?{$key}={$info['next']}&[QueryString]' class='next'>&gt;</a></li>";
-        $link[] = "<li><a href='?{$key}={$info['page']}&[QueryString]' class='last'>&gt;&gt;</a></li>";
-        $link[] = "<li class='total'>第{$info['index']}/{$info['page']}页 每页{$info['size']}条/共{$info['recode']}条</li>";
+        $link[] = "<li><a href='?{$key}={$info['total']}&[QueryString]' class='last'>&gt;&gt;</a></li>";
+        $link[] = "<li class='total'>第{$info['index']}/{$info['total']}页 每页{$info['size']}条/共{$info['recode']}条</li>";
         $link[] = "<li class='submit'><input type='tel' onclick='this.select();' name='{$key}' id='pageIndex' value='{$info['index']}'><input id='pageGo' type='submit' value='Go'></li>";
         $link[] = "<li class='notice'></li>";
         $link[] = "</ul></form>";
@@ -170,20 +170,20 @@ trait Page
             $info['index'] = $info['index'] ?: intval($_GET[$key] ?? 1);//当前页码
 
             $info['last'] = (int)($info['recode'] % $info['size']);//最后一页数
-            $info['page'] = (int)($info['recode'] / $info['size']);
-            $info['page'] += !!$info['last'] ? 1 : 0;//总页数
+            $info['total'] = (int)($info['recode'] / $info['size']);
+            $info['total'] += !!$info['last'] ? 1 : 0;//总页数
 
             $info['prev'] = $info['index'] - 1;//上一页
             $info['next'] = $info['index'] + 1;//下一页
             $info['prev'] < 1 and $info['prev'] = 1;
-            if ($info['next'] > $info['page']) $info['next'] = $info['page'];
+            if ($info['next'] > $info['total']) $info['next'] = $info['total'];
             if (empty($class)) $class = 'pageForm';
             if ($class[0] === '+') $class = "pageForm " . substr($class, 1);
             $link = array();
             $link[] = "<form method='get' action='?' autocomplete='off' class='{$class}'><ul>";
             if ($notice and $notice[0] === '<') $link[] = "<li style='padding-right: 3px;'>{$notice}</li>";
-            $link[] = "<li><a href='?{$key}=1&[QueryString]' class='page first'>&lt;&lt;</a></li>";
-            $link[] = "<li><a href='?{$key}={$info['prev']}&[QueryString]' class='page prev'>&lt;</a></li>";
+            $link[] = "<li><a href='?{$key}=1&[QueryString]' class='paging first'>&lt;&lt;</a></li>";
+            $link[] = "<li><a href='?{$key}={$info['prev']}&[QueryString]' class='paging prev'>&lt;</a></li>";
 
             $get = $_GET;
             unset($get[$key]);
@@ -198,7 +198,7 @@ trait Page
             $star = $info['index'] - $_show;
             $star < 1 and $star = 1;
             $stop = $info['index'] + $_show;
-            $stop > $info['page'] and $stop = $info['page'];
+            $stop > $info['total'] and $stop = $info['total'];
 
             if ($star >= $_show) {
                 $page[] = "<li class='omit'><a>...</a></li>";
@@ -206,20 +206,20 @@ trait Page
 
             for ($i = $star; $i <= $stop; $i++) {
                 if ($i == $info['index'])
-                    $page[] = "<li class='active link'><a class='page' href='?{$key}={$i}&[QueryString]'>{$i}</a></li>";
+                    $page[] = "<li class='active link'><a class='paging' href='?{$key}={$i}&[QueryString]'>{$i}</a></li>";
                 else
-                    $page[] = "<li class='link'><a class='page' href='?{$key}={$i}&[QueryString]'>{$i}</a></li>";
+                    $page[] = "<li class='link'><a class='paging' href='?{$key}={$i}&[QueryString]'>{$i}</a></li>";
             }
 
-            if ($stop <= ($info['page'] - $_show)) {
+            if ($stop <= ($info['total'] - $_show)) {
                 $page[] = "<li class='omit'><a>...</a></li>";
             }
 
             $link[] = implode($page);
-            $link[] = "<li><a href='?{$key}={$info['next']}&[QueryString]' class='page next'>&gt;</a></li>";
-            $link[] = "<li><a href='?{$key}={$info['page']}&[QueryString]' class='page last'>&gt;&gt;</a></li>";
+            $link[] = "<li><a href='?{$key}={$info['next']}&[QueryString]' class='paging next'>&gt;</a></li>";
+            $link[] = "<li><a href='?{$key}={$info['total']}&[QueryString]' class='paging last'>&gt;&gt;</a></li>";
             if ($this->_count) {
-                $link[] = "<li class='total'>第{$info['index']}/{$info['page']}页 每页{$info['size']}条/共{$info['recode']}条</li>";
+                $link[] = "<li class='total'>第{$info['index']}/{$info['total']}页 每页{$info['size']}条/共{$info['recode']}条</li>";
             } else {
                 $link[] = "<li class='total'>第{$info['index']}页 每页{$info['size']}条</li>";
             }
