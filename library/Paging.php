@@ -15,7 +15,7 @@ final class Paging
     public $total = 0;//总页数
     public $last = 0;//最后一页剩余的记录数
 
-    private $autoSize = 12;
+    private $autoSize = 10;
 
     public function __construct(int $size = 0, int $index = 0)
     {

@@ -91,11 +91,6 @@ abstract class Model
 
     public function __construct(...$param)
     {
-//        $this->_Yac = &$GLOBALS['_Yac'];
-//        $this->_Mysql = &$GLOBALS['_Mysql'];
-//        $this->_Mongodb = &$GLOBALS['_Mongodb'];
-//        $this->_Redis = &$GLOBALS['_Redis'];
-
         $this->_controller = &$GLOBALS['_Controller'];
         $this->_config = $this->_controller->getConfig();
         $this->_buffer = $this->_controller->_buffer;
