@@ -541,9 +541,6 @@ final class Mysql
                     $error = $CONN->errorInfo();
                     return null;
                 }
-                if ($option['object']) {
-                    $stmt->setFetchMode(\PDO::FETCH_INTO, $option['object']);
-                }
 
                 if ($option['count']) {
                     $count = $CONN->query($option['_count_sql'], \PDO::FETCH_NUM)->fetch()[0] ?? 0;

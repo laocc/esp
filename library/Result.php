@@ -9,8 +9,12 @@ class Result
     private $_error = 0;
     private $_message = 'ok';
     private $_data = [];
-    private $_paging = null;
+    private $_pageValue = null;
     private $_append = [];
+    /**
+     * @var Paging $_paging
+     */
+    private $_paging = null;
 
     /**
      * 魔术方法获取变量值
@@ -95,9 +99,15 @@ class Result
         return $this;
     }
 
-    public function paging(array $value): Result
+    public function page(array $value): Result
     {
-        $this->_paging = $value;
+        $this->_pageValue = $value;
+        return $this;
+    }
+
+    public function paging(Paging $paging): Result
+    {
+        $this->_paging = $paging;
         return $this;
     }
 
@@ -121,7 +131,10 @@ class Result
             'message' => $this->_message,
             'data' => $this->_data,
         ];
-        if (!is_null($this->_paging)) $value['paging'] = $this->_paging;
+
+        if (!is_null($this->_paging)) $value['paging'] = $this->_paging->value();
+        else if (!is_null($this->_pageValue)) $value['paging'] = $this->_pageValue;
+
         if (!empty($this->_append)) $value += $this->_append;
 
         if (is_string($return)) {

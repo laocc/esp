@@ -130,12 +130,14 @@ final class Configure
         $this->_CONFIG_['_lastLoad'] = date('Y-m-d H:i:s');
         foreach ($config as $fn => $cf) {
             $_config = $this->loadFile($cf['file'], $fn);
-            //查找子目录下相同文件，如果存在，则覆盖相关值
+            //查找子目录下同名文件，如果存在，则覆盖相关值
             if (isset($conf['folder'])) {
-                $tmp = "{$conf['path']}/{$conf['folder']}/{$cf['name']}";
-                if (is_readable($tmp)) {
-                    $_config = array_replace_recursive($_config, $this->loadFile($tmp, $fn));
+                if ($conf['folder'][0] === '/') {
+                    $tmp = "{$conf['folder']}/{$cf['name']}";
+                } else {
+                    $tmp = "{$conf['path']}/{$conf['folder']}/{$cf['name']}";
                 }
+                if (is_readable($tmp)) $_config = array_replace_recursive($_config, $this->loadFile($tmp, $fn));
             }
             if (!empty($_config)) {
                 $this->_CONFIG_ = array_merge($this->_CONFIG_, $_config);
@@ -144,6 +146,10 @@ final class Configure
 
         if (isset($conf['merge']) and !empty($conf['merge'])) {
             $this->_CONFIG_ = array_merge($this->_CONFIG_, $conf['merge']);
+        }
+
+        if (isset($conf['replace']) and !empty($conf['replace'])) {
+            $this->_CONFIG_ = array_replace_recursive($this->_CONFIG_, $conf['replace']);
         }
 
         $this->_CONFIG_ = $this->re_arr($this->_CONFIG_);

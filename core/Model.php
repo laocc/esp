@@ -9,7 +9,7 @@ use esp\core\db\Redis;
 use esp\core\db\Yac;
 use esp\error\EspError;
 use esp\core\ext\Mysql as MysqlExt;
-use esp\core\ext\Paging;
+use esp\library\Paging;
 
 /**
  * Class Model
@@ -63,7 +63,12 @@ abstract class Model
     protected $selectKey = [];
     protected $columnKey = null;
 
-    use MysqlExt, Paging;
+    /**
+     * @var Paging $paging
+     */
+    public $paging;
+
+    use MysqlExt;
 
     /**
      * 清除自身的一些对象变量
@@ -633,7 +638,6 @@ abstract class Model
     {
         $table = $this->table();
         if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
-        if ($this->pageSize === 0) $this->pageSet();
         $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect);
         if (!empty($this->selectKey)) {
             foreach ($this->selectKey as $select) $obj->select(...$select);
@@ -661,11 +665,13 @@ abstract class Model
 
         if (is_null($this->_count)) $this->_count = true;
         $obj->count($this->_count);
-        $data = $obj->limit($this->pageSize, $this->pageSkip)->get(0, $this->_traceLevel);
+        if (is_null($this->paging)) $this->paging = new \esp\library\Paging();
+        $skip = ($this->paging->index - 1) * $this->paging->size;
+        $data = $obj->limit($this->paging->size, $skip)->get(0, $this->_traceLevel);
         $_decode = $this->_decode;
         $v = $this->checkRunData('list', $data);
         if ($v) return $v;
-        $this->dataCount = $data->count();
+        $this->paging->calculate($data->count());
         return $data->rows(0, null, $_decode);
     }
 

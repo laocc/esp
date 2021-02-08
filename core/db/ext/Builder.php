@@ -47,7 +47,6 @@ final class Builder
     private $_param_data = array();//占位符的事后填充内容
 
     private $_bindKV = array();
-    private $_object = null;
 
     private $_gzLevel = 5;//压缩比
     private $_protect = true;//默认加保护符
@@ -75,7 +74,6 @@ final class Builder
 
         $this->_skip = 0;
         $this->_fetch_type = 1;
-        $this->_object = null;
         $this->_count = false;
         $this->_group = null;
         $this->_distinct = null;
@@ -93,8 +91,9 @@ final class Builder
 
     /**
      * 设置，或获取表名
-     * @param string $tableName
-     * @param bool $_protect
+     *
+     * @param string|null $tableName
+     * @param bool|null $_protect
      * @return $this
      */
     public function table(string $tableName = null, bool $_protect = null)
@@ -187,12 +186,6 @@ final class Builder
         return $this;
     }
 
-    public function object(object $cls)
-    {
-        $this->_object = $cls;
-        return $this;
-    }
-
 
     /**
      * 消除重复行
@@ -233,7 +226,6 @@ final class Builder
             'count' => $this->_count,
             'fetch' => $this->_fetch_type,
             'bind' => $this->_bindKV,
-            'object' => $this->_object,
             'trans_id' => $this->_Trans_ID,
             'action' => $action,
         ];
@@ -292,9 +284,9 @@ final class Builder
     /**
      * 选择字段的最大值
      *
-     * @param string $fields
-     * @param string $rename
-     * @return Builder
+     * @param $fields
+     * @param null $rename
+     * @return $this
      */
     public function select_max($fields, $rename = null)
     {
@@ -304,9 +296,9 @@ final class Builder
     /**
      * 选择字段的最小值
      *
-     * @param string $fields
-     * @param string $rename
-     * @return Builder
+     * @param $fields
+     * @param null $rename
+     * @return $this
      */
     public function select_min($fields, $rename = null)
     {
@@ -316,9 +308,9 @@ final class Builder
     /**
      * 选择字段的平均值
      *
-     * @param string $fields
-     * @param string $rename
-     * @return Builder
+     * @param $fields
+     * @param null $rename
+     * @return $this
      */
     public function select_avg($fields, $rename = null)
     {
@@ -328,9 +320,9 @@ final class Builder
     /**
      * 选择字段的和
      *
-     * @param string $fields
-     * @param string $rename
-     * @return Builder
+     * @param $fields
+     * @param null $rename
+     * @return $this
      */
     public function select_sum($fields, $rename = null)
     {
@@ -354,7 +346,7 @@ final class Builder
      *
      * @param string $func 函数名
      * @param string $select 字段名
-     * @param string $AS 如果需要重命名返回字段，这里是新的字段名
+     * @param string|null $AS 如果需要重命名返回字段，这里是新的字段名
      * @return $this
      */
     private function select_func($func, $select = '*', string $AS = null)
@@ -388,12 +380,12 @@ final class Builder
     /**
      * 执行一个Where子句
      * 接受以下几种方式的参数：
-     *      1. 直接的where字符串，这种方式不做任何转义和处理，不推荐使用，如 where('abc.def = "abcdefg"')
-     *      2. 两个参数分别是表达式和值的情况，自动添加标识符和值转义，如 where('abc.def', 'abcdefg')
+     *      1. 直接的where字符串，这种方式不做任何转义和处理，不推荐使用，如 where('abc.def = "ade"')
+     *      2. 两个参数分别是表达式和值的情况，自动添加标识符和值转义，如 where('abc.def', 'ade')
      *      3. 第2种情况的KV数组，如 where(['abc'=>'def', 'cde'=>'fgh'])
      *
      * 表达式支持以下格式的使用及自动转义
-     *      where('abcde <=', 'ddddd')
+     *      where('aaa <=', 'ddd')
      *
      *
      * 如果当前查询中有join，且where中有所join表的字段条件，则在计算总数时不考虑join表
@@ -421,7 +413,7 @@ final class Builder
             throw new EspError("DB_ERROR: where 不支持Object类型的值", 1);
         }
         if (is_string($is_OR)) {
-            $is_OR = strtolower($is_OR) === 'or' ? true : false;
+            $is_OR = ('or' === strtolower($is_OR));
         }
 
         /**
@@ -729,9 +721,7 @@ final class Builder
                     }
                     break;
                 case ':'://预留
-                    break;
                 case ';'://预留
-                    break;
                 case '?'://预留
                     break;
                 default:
@@ -830,7 +820,7 @@ final class Builder
     }
 
     /**
-     * 创建一个 OR WHERE xxx IN xxxx 的查询
+     * 创建一个 OR WHERE xxx IN xxx 的查询
      *
      * @param string $field
      * @param array $data
@@ -983,10 +973,11 @@ final class Builder
     public function limit(int $size, int $skip = 0)
     {
         $skip = $skip ?: $this->_skip;
+        if ($skip < 0) $skip = 0;
         if ($skip === 0) {
-            $this->_limit = intval($size);
+            $this->_limit = $size;
         } else {
-            $this->_limit = intval($skip) . ',' . intval($size);
+            $this->_limit = $skip . ',' . $size;
         }
         return $this;
     }
@@ -1237,7 +1228,7 @@ final class Builder
     private function replace_tempTable(&$sql)
     {
         if (empty($this->_temp_table)) return;
-        $sql = preg_replace_callback('/(?:\[|\<)([a-f0-9]{14})(?:\]|\>)/i', function ($matches) {
+        $sql = preg_replace_callback('/(?:\[|<)([a-f0-9]{14})(?:\]|>)/i', function ($matches) {
             if (!isset($this->_temp_table[$matches[1]])) return $matches[0];
             $table = $this->_temp_table[$matches[1]];
             unset($this->_temp_table[$matches[1]]);//用完即清除，所以不需要初始化时清空
@@ -1272,7 +1263,7 @@ final class Builder
 
     /**
      * 一次插入多个值
-     * $v = [['name' => 'wang', 'sex' => 1], ['name' => 'zhang', 'sex' => 0]];
+     * $v = [['name' => 'lcc', 'sex' => 1], ['name' => 'zhang', 'sex' => 0]];
      * @param array $data
      * @param bool $is_REPLACE
      * @param int $tractLevel
@@ -1574,7 +1565,7 @@ final class Builder
          */
         if (is_array($clause)) {
             $r = array();
-            foreach ($clause as &$cls) {
+            foreach ($clause as $cls) {
                 $r[] = $this->protect_identifier($cls);
             }
             return $r;
@@ -1655,7 +1646,7 @@ final class Builder
      */
     public function polygon(array $location)
     {
-        if (count($location) < 3) throw new EspError("空间区域至少需要3个点");
+        if (count($location) < 3) throw new EspError("空间的一个区域至少需要3个点");
         $val = [];
         $fst = null;
         $lst = null;
