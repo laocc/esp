@@ -42,7 +42,7 @@ final class Post extends Request
         }
 
         if (empty($value) && $force) $this->recodeError($key);
-        if ($chk = $this->errorString($value)) $this->recodeError($key . $chk);
+        if ($chk = $this->errorString($value)) $this->recodeError($key, $chk);
 
         return $value;
     }
@@ -91,7 +91,7 @@ final class Post extends Request
     /**
      * 按规则检查，若不为空则必须要符合规则
      * @param string $key
-     * @param string $type
+     * @param string ...$type 可以有多个检查规则，任一个符合即为合法值
      * @return string
      * @throws EspError
      */
@@ -115,113 +115,64 @@ final class Post extends Request
                 }
             }
             if ($isTrue === 0) {
-                if ($force or !empty($value)) $this->recodeError($key, "{$key}-值不符合规则要求");
+                if ($force or !empty($value)) $this->recodeError($key, "不符合规则要求");
                 return '';
             } else {
                 return $value;
             }
-        }
 
-        switch ($type[0]) {
-            case 'cn':
-                if (!preg_match('/^[\x{4e00}-\x{9fa5}]+$/u', $value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为全中文");
-                    return '';
-                }
-                break;
-            case 'en':
-                if (!preg_match('/^[a-zA-Z]+$/', $value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为全英文字母");
-                    return '';
-                }
-                break;
-            case 'number':
-                if (!preg_match('/^\d+$/', $value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须纯数字");
-                    return '';
-                }
-                break;
-            case 'decimal':
-                if (!preg_match('/^\d+(\.\d+)?$/', $value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须数字或小数");
-                    return '';
-                }
-                break;
-            case 'alphanumeric':
-                if (!preg_match('/^[a-zA-Z0-9]+$/', $value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为全英文或数字");
-                    return '';
-                }
-                break;
-            case 'mobile':
-                if (!is_mob($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为手机号码格式");
-                    return '';
-                }
-                break;
-            case 'phone':
-                if (!is_phone($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为电话号码格式");
-                    return '';
-                }
-                break;
-            case 'card':
-                if (!is_card($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为符合规则的身份证号码");
-                    return '';
-                }
-                break;
-            case 'url':
-                if (!is_url($value) && !is_domain($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为URL格式");
-                    return '';
-                }
-                break;
-            case 'mail':
-            case 'email':
-                if (!is_mail($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为电子邮箱地址格式");
-                    return '';
-                }
-                break;
-            case 'ip':
-            case 'ip4':
-                if (!is_ip($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为IP4格式");
-                    return '';
-                }
-                break;
-            case 'ip6':
-                if (!is_ip($value, 'ipv6')) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为IP6格式");
-                    return '';
-                }
-                break;
-            case 'date':
-                if (!is_date($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为日期格式");
-                    return '';
-                }
-                break;
-            case 'time':
-                if (!is_time($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为时间格式");
-                    return '';
-                }
-                break;
-            case 'datetime':
-                if (!strtotime($value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值必须为日期时间格式");
-                    return '';
-                }
-                break;
-            default:
-
-                if (is_match($type) and !preg_match($type, $value)) {
-                    if ($force or !empty($value)) $this->recodeError($key, "{$key}-值不是指定格式的数据");
-                    return '';
-                }
-
+        } else if (!$this->checkString($type[0], $value)) {
+            switch ($type[0]) {
+                case 'cn':
+                    $this->recodeError($key, "必须为全中文");
+                    break;
+                case 'en':
+                    $this->recodeError($key, "值必须为全英文字母");
+                    break;
+                case 'number':
+                    $this->recodeError($key, "必须纯数字");
+                    break;
+                case 'decimal':
+                    $this->recodeError($key, "必须数字或小数");
+                    break;
+                case 'alphanumeric':
+                    $this->recodeError($key, "必须为全英文或数字");
+                    break;
+                case 'mobile':
+                    $this->recodeError($key, "必须为手机号码格式");
+                    break;
+                case 'phone':
+                    $this->recodeError($key, "必须为电话号码格式");
+                    break;
+                case 'card':
+                    $this->recodeError($key, "必须为符合规则的身份证号码");
+                    break;
+                case 'url':
+                    $this->recodeError($key, "必须为URL格式");
+                    break;
+                case 'mail':
+                case 'email':
+                    $this->recodeError($key, "必须为电子邮箱地址格式");
+                    break;
+                case 'ip':
+                case 'ip4':
+                    $this->recodeError($key, "必须为IP4格式");
+                    break;
+                case 'ip6':
+                    $this->recodeError($key, "必须为IP6格式");
+                    break;
+                case 'date':
+                    $this->recodeError($key, "必须为日期格式");
+                    break;
+                case 'time':
+                    $this->recodeError($key, "必须为时间格式");
+                    break;
+                case 'datetime':
+                    $this->recodeError($key, "必须为日期时间格式");
+                    break;
+                default:
+                    $this->recodeError($key, "不是指定格式的数据");
+            }
         }
 
         if (empty($value) && $force) $this->recodeError($key);
@@ -247,7 +198,15 @@ final class Post extends Request
         if (empty($value) && $force) $this->recodeError($key);
 
         $value = strtotime($value) ?: 0;
-        if ($chk = $this->errorNumber($value, 1)) $this->recodeError($key . $chk);
+        if ($chk = $this->errorNumber($value, 1)) $this->recodeError($key, $chk);
+        return $value;
+    }
+
+    public function number(string $key): string
+    {
+        $value = $this->getData($key, $force);
+        if (is_null($value)) return '';
+        if (!preg_match('/^\d+$/', $value)) $this->recodeError($key, "必须为全数字");
         return $value;
     }
 
@@ -260,7 +219,7 @@ final class Post extends Request
         if ($value === '' && $force) $this->recodeError($key);
         if ($ceil) $value = (int)ceil($value);
         $value = intval($value);
-        if ($chk = $this->errorNumber($value)) $this->recodeError($key . $chk);
+        if ($chk = $this->errorNumber($value)) $this->recodeError($key, $chk);
         return $value;
     }
 
@@ -270,7 +229,7 @@ final class Post extends Request
         if (is_null($value)) return floatval(0);
         if ($value === '' && $force) $this->recodeError($key);
         $value = floatval($value);
-        if ($chk = $this->errorNumber($value)) $this->recodeError($key . $chk);
+        if ($chk = $this->errorNumber($value)) $this->recodeError($key, $chk);
         return $value;
     }
 
@@ -299,7 +258,7 @@ final class Post extends Request
         if (is_null($value)) return 0;
         if ($value === '' && $force) $this->recodeError($key);
         $value = intval(floatval($value) * 100);
-        if ($chk = $this->errorNumber($value, 2)) $this->recodeError($key . $chk);
+        if ($chk = $this->errorNumber($value, 2)) $this->recodeError($key, $chk);
         return $value;
     }
 
@@ -313,7 +272,7 @@ final class Post extends Request
         if (empty($value) && $force) $this->recodeError($key);
 
         if (!preg_match($pnt, $value)) {
-            if ($force) $this->recodeError($key, "{$key}-值不是指定格式的数据");
+            if ($force) $this->recodeError($key, "不是指定格式的数据");
             return '';
         }
         return strval($value);
@@ -341,7 +300,7 @@ final class Post extends Request
         if (empty($value) && $force) $this->recodeError($key);
 
         if (!preg_match('/^[\{\[].+[\]\}]$/', $value)) {
-            if ($force) $this->recodeError($key, "{$key}-值不是有效的JSON格式");
+            if ($force) $this->recodeError($key, "不是有效的JSON格式");
             return '';
         }
 
@@ -368,7 +327,7 @@ final class Post extends Request
         if (empty($value) && $force) $this->recodeError($key);
 
         if (!preg_match('/^<\w+>.+<\/\w+>$/', $value)) {
-            if ($force) $this->recodeError($key, "{$key}-值不是有效的XML格式");
+            if ($force) $this->recodeError($key, "不是有效的XML格式");
             return '';
         }
 
@@ -408,7 +367,7 @@ final class Post extends Request
         }
 
         if (!is_array($value) or empty($value)) {
-            if ($force) $this->recodeError($key, "{$key}-值无法转换为数组或数组为空");
+            if ($force) $this->recodeError($key, "无法转换为数组或数组为空");
             return [];
         }
 

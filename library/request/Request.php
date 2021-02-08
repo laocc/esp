@@ -150,15 +150,15 @@ abstract class Request
             $this->_max = null;
         }
 
+        $key = $keyName;
         if (is_null($val) && $force) $this->recodeError($keyName);
 
         return $val;
     }
 
-    protected function recodeError(string $key, string $message = null)
+    protected function recodeError(string $key, string $message = '值不能为空')
     {
-        if (is_null($message)) $message = "{$key}-值不能为空";
-        $this->_error[] = $message;
+        $this->_error[] = "{$key}-{$message}";
     }
 
 
