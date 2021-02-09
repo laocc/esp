@@ -670,13 +670,13 @@ abstract class Model
         return $data->rows(0, null, $_decode);
     }
 
-    public function pagingSet(int $size, int $index = 1)
+    public function pagingSet(int $size, int $index = 0)
     {
         $this->paging = new \esp\library\Paging($size, $index);
         return $this;
     }
 
-    public function pageSet(int $size, int $index = 1)
+    public function pageSet(int $size, int $index = 0)
     {
         $this->paging = new \esp\library\Paging($size, $index);
         return $this;
