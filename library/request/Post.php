@@ -210,25 +210,26 @@ final class Post extends Request
         return $value;
     }
 
-    public function int(string $key, bool $ceil = false): int
+    public function int(string $key, bool $zero = true): int
     {
         $value = $this->getData($key, $force);
         if (is_null($value)) return 0;
         if (is_array($value)) $value = array_sum($value);
 
         if ($value === '' && $force) $this->recodeError($key);
-        if ($ceil) $value = (int)ceil($value);
         $value = intval($value);
+        if ($value === 0 && !$zero) $this->recodeError($key, '不能为零');
         if ($chk = $this->errorNumber($value)) $this->recodeError($key, $chk);
         return $value;
     }
 
-    public function float(string $key): float
+    public function float(string $key, bool $zero = true): float
     {
         $value = $this->getData($key, $force);
         if (is_null($value)) return floatval(0);
         if ($value === '' && $force) $this->recodeError($key);
         $value = floatval($value);
+        if ($value == 0 && !$zero) $this->recodeError($key, '不能为零');
         if ($chk = $this->errorNumber($value)) $this->recodeError($key, $chk);
         return $value;
     }
