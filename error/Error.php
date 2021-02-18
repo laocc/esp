@@ -238,6 +238,10 @@ final class Error
             $sl = $debug->save_logs('by Error Saved');
             $info['debugLogSaveRest'] = $sl;
             $jsonTxt = json_encode($info, 256 | 64 | 128);
+            if ($jsonTxt === false) {
+                unset($info['Error']['trace']);
+                $jsonTxt = json_encode($info, 256 | 64 | 128);
+            }
             if ($debug->save_file($filename, $jsonTxt)) return;
         }
 
