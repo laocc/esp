@@ -166,7 +166,7 @@ abstract class Request
         return [
             'data' => $this->_data,
             'error' => $this->_error,
-            'referer' => $_SERVER['HTTP_REFERER']
+            'referer' => $_SERVER['HTTP_REFERER'] ?? ''
         ];
     }
 
