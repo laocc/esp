@@ -208,12 +208,11 @@ final class Error
     private function error(array $error, array $prev, string $path, string $filename)
     {
         $debug = Debug::class();
-        if ($error['trace'] ?? []) {
+        if ($error['trace'] ?? null) {
             foreach ($error['trace'] as $i => &$trace) {
-                if ($i > 1) unset($error['trace'][$i]);
-                if (!isset($trace['args']) or !is_array($trace['args'])) continue;
+                if (empty($trace['args'])) continue;
                 foreach ($trace['args'] as $lin => &$pam) {
-                    if (is_resource($pam)) $pam = print_r($pam, true);
+                    if (is_resource($pam)) $pam = var_export($pam, true);
                 }
             }
         }
