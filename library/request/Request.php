@@ -34,6 +34,15 @@ abstract class Request
     }
 
     /**
+     * 受理post时的原始数据，也就是file_get_contents('php://input')
+     * @return string
+     */
+    public function raw()
+    {
+        return $this->_raw;
+    }
+
+    /**
      * @param $number
      * @param int $type
      * @return string
