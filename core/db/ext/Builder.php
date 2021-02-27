@@ -1293,7 +1293,7 @@ final class Builder
                 $itemKey = [];
                 foreach ($item as $k => &$v) {
                     if (is_array($v)) $v = json_encode($v, 256 | 64);
-                    if (is_null($v)) throw new EspError('DB_ERROR: INSERT 值不可为NULL', $tractLevel + 1);
+                    if (is_null($v)) throw new EspError("DB_ERROR: INSERT({$k})值不可为NULL", $tractLevel + 1);
                     switch (substr($k, -1)) {
                         case '#':  //压缩数据
                             $k = substr($k, 0, -1);
