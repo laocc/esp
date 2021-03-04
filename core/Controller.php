@@ -149,7 +149,7 @@ abstract class Controller
 
         if (getenv('USER') !== $user) {
             $cmd = implode(' ', $GLOBALS["argv"]);
-            exit("请以www账户运行，CLI模式下请用\n\nsudo -u {$user} -g {$user} -s php {$cmd}\n\n\n");
+            exit("请以{$user}账号运行：\n\nsudo -u {$user} -g {$user} -s php {$cmd}\n\n\n");
         }
     }
 
