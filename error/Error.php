@@ -213,6 +213,9 @@ final class Error
                 if (empty($trace['args'])) continue;
                 foreach ($trace['args'] as $lin => &$pam) {
                     if (is_resource($pam)) $pam = var_export($pam, true);
+                    elseif (is_array($pam)) {
+                        foreach ($pam as &$m) if (is_resource($m)) $m = var_export($m, true);
+                    }
                 }
             }
         }

@@ -1402,7 +1402,7 @@ final class Builder
                 continue;
             }
             if (is_array($value)) $value = json_encode($value, 256 | 64);
-            if (is_null($value)) throw new EspError('DB_ERROR: Update值不可为NULL', $tractLevel + 1);
+            if (is_null($value)) throw new EspError("DB_ERROR: Update({$key})值不可为NULL", $tractLevel + 1);
 
             $kFH = substr($key, -1);
 
