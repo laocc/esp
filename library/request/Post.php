@@ -218,7 +218,7 @@ final class Post extends Request
 
         if ($value === '' && $force) $this->recodeError($key);
         $value = intval($value);
-        if ($value === 0 && !$zero) $this->recodeError($key, '不能为零');
+        if ($value === 0 && !$zero) $this->recodeError($key, '不能为零或空值');
         if ($chk = $this->errorNumber($value)) $this->recodeError($key, $chk);
         return $value;
     }
@@ -229,7 +229,7 @@ final class Post extends Request
         if (is_null($value)) return floatval(0);
         if ($value === '' && $force) $this->recodeError($key);
         $value = floatval($value);
-        if ($value == 0 && !$zero) $this->recodeError($key, '不能为零');
+        if ($value == 0 && !$zero) $this->recodeError($key, '不能为零或空值');
         if ($chk = $this->errorNumber($value)) $this->recodeError($key, $chk);
         return $value;
     }
