@@ -992,7 +992,7 @@ final class Builder
      * @param bool $identifier 是否加保护符
      * @return $this
      */
-    public function join(string $table, $_filter = null, string $select = null, string $method = 'left', bool $identifier = true)
+    public function join(string $table, $_filter, string $select = null, string $method = 'left', bool $identifier = true)
     {
         $method = strtoupper($method);
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
@@ -1012,6 +1012,8 @@ final class Builder
             } else {
                 $_filter = [$_filter];
             }
+        } else if (!is_array($_filter)) {
+            throw new EspError('DB_ERROR: JOIN 条件未指定，需为string或array形式', 1);
         }
 
         $_filter_arr = array_map(function ($re) use ($identifier) {
