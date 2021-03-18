@@ -349,7 +349,7 @@ final class Debug
         if (empty($filename)) return 'null filename';
 
         //长耗时间记录
-        if (($limitTime = $this->_conf['limit']) and ($u = microtime(true) - $this->_time) > $limitTime / 1000) {
+        if (($limitTime = ($this->_conf['limit'] ?? 0)) and ($u = microtime(true) - $this->_time) > $limitTime / 1000) {
             $this->error("耗时过长：总用时{$u}秒，超过限制{$limitTime}ms");
         }
 
