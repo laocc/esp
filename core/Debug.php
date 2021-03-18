@@ -69,7 +69,7 @@ final class Debug
         $this->_redis = $config->_Redis;
         $this->_ROOT_len = strlen(_ROOT);
         $this->_run = boolval($conf['run']);
-        $this->_time = time();
+        $this->_time = microtime(true);
         $this->prevTime = microtime(true) - $this->_star[0];
         $this->memory = memory_get_usage();
         $this->_node[0] = [
@@ -321,8 +321,8 @@ final class Debug
          * 控制器访问计数器
          * 键名及表名格式是固定的
          */
-        $conf = $this->_conf['counter'];
-        if ($conf and $this->_request->exists) {
+        $counter = $this->_conf['counter'];
+        if ($counter and $this->_request->exists) {
             $key = sprintf('%s/%s/%s/%s/%s/%s',
                 date('H'),
                 $this->_request->method,
@@ -330,15 +330,15 @@ final class Debug
                 $this->_request->module ?: 'auto',
                 $this->_request->controller,
                 $this->_request->action);
-            if (is_array($conf)) {
-                $conf += ['key' => 'DEBUG', 'params' => 0];
-                $hKey = "{$conf['key']}_counter_" . date('Y_m_d');
-                if ($conf['params'] and $this->_request->params[0]) {
+            if (is_array($counter)) {
+                $counter += ['key' => 'DEBUG', 'params' => 0];
+                $hKey = "{$counter['key']}_counter_" . date('Y_m_d');
+                if ($counter['params'] and $this->_request->params[0]) {
                     $key .= "/{$this->_request->params[0]}";
                 }
 
             } else {
-                $hKey = "{$conf}_counter_" . date('Y_m_d');
+                $hKey = "{$counter}_counter_" . date('Y_m_d');
             }
             $this->_redis->hIncrBy($hKey, $key, 1);
         }
@@ -347,6 +347,11 @@ final class Debug
         else if ($this->_run === false) return 'run false';
         $filename = $this->filename();
         if (empty($filename)) return 'null filename';
+
+        //长耗时间记录
+        if (($limitTime = $this->_conf['limit']) and ($u = microtime(true) - $this->_time) > $limitTime / 1000) {
+            $this->error("耗时过长：总用时{$u}秒，超过限制{$limitTime}ms");
+        }
 
         //其他未通过类，而是直接通过公共变量送入的日志
         if (isset($GLOBALS['_relay'])) $this->relay(['GLOBALS_relay' => $GLOBALS['_relay']], []);
