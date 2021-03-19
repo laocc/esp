@@ -366,7 +366,7 @@ final class Debug
         $data[] = " - SERV_IP:\t" . ($_SERVER['HTTP_X_SERV_IP'] ?? ($_SERVER['SERVER_ADDR'] ?? '')) . "\n";
         $data[] = " - USER_IP:\t" . ($_SERVER['REMOTE_ADDR'] ?? '') . "\n";
         $data[] = " - REAL_IP:\t" . _CIP . "\n";
-        $data[] = " - DATETIME:\t" . date('Y-m-d H:i:s', $this->_time) . "\n";
+        $data[] = " - DATETIME:\t" . date('Y-m-d H:i:s', intval($this->_time)) . "\n";
         $data[] = " - PHP_VER:\t" . phpversion() . "\n";
         $data[] = " - AGENT:\t" . ($_SERVER['HTTP_USER_AGENT'] ?? '') . "\n";
         $data[] = " - ROOT:\t" . _ROOT . "\n";
