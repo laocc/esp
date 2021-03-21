@@ -1576,21 +1576,25 @@ final class Builder
         if ($clause === '*') return '*';
         $clause = trim(str_replace('`', '', $clause));//先去除已存在的`号
 
-        if (preg_match('/^([\w\-]+)$/i', $clause, $m)) {
+        if (preg_match('/^[\w\-]+$/i', $clause, $m)) {
             //userName => `userName`
-            return "`{$m[1]}`";
+            return "`{$clause}`";
 
         } else if (preg_match('/^([\w\-]+)\.([\w\-]+)$/i', $clause, $m)) {
             //tabUser.userName => `tabUser`.`userName`
             return "`{$m[1]}`.`{$m[2]}`";
 
+        } else if (preg_match('/^[a-z]+\(.+\)$/i', $clause, $m)) {
+            //concat(......)
+            return $clause;
+
         } else if (preg_match('/^([\w\-]+)\.\*$/i', $clause, $m)) {
             //tabUser.* => `tabUser`.*
             return "`{$m[1]}`.*";
 
-        } else if (preg_match('/^([\w\-]+\.?[\w\-]+\,[\w\-]+.+)$/i', $clause, $m)) {
+        } else if (preg_match('/^[\w\-]+\.?[\w\-]+\,[\w\-]+.+$/i', $clause, $m)) {
             //tabUser.userName,userMobile like
-            return "CONCAT({$m[1]})";
+            return "CONCAT({$clause})";
 
         } else if (preg_match('/^([\w\-]+)\s+AS\s+([\w\-]+)$/i', $clause, $m)) {
             //userName as name => `userName` as `name`
