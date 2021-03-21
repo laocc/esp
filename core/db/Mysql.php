@@ -228,6 +228,7 @@ final class Mysql
                 'prepare' => true,
                 'count' => false,
                 'fetch' => 1,
+                'limit' => 0,
                 'bind' => [],
                 'trans_id' => 0,
                 'action' => $this->sqlAction($sql),
@@ -304,12 +305,20 @@ final class Mysql
             'ready' => microtime(true),
         ];
         $result = $this->{$action}($CONN, $sql, $option, $error);//执行
-        $time_b = microtime(true);
         $debugOption += [
-            'finish' => $time_b,
-            'runTime' => ($time_b - $debugOption['ready']) * 1000 . ' Ms',
+            'finish' => $time_b = microtime(true),
+            'runTime' => ($time_b - $debugOption['ready']) * 1000,
             'result' => is_object($result) ? 'Result' : var_export($result, true),
         ];
+        if (($option['limit'] ?? 0) > 0 and $debug and !_CLI and $debugOption['runTime'] > $option['limit']) {
+            $trueSQL = str_replace(array_keys($option['param']), array_map(function ($v) {
+                return is_string($v) ? "'{$v}'" : $v;
+            }, array_values($option['param'])), $sql);
+
+            $this->debug($debugOption, $traceLevel + 1)->error([
+                "SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL
+            ], $traceLevel + 1);
+        }
 
         if (!empty($error)) {
             $debugOption['error'] = $error;

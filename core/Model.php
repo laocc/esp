@@ -53,6 +53,7 @@ abstract class Model
 
     private $_order = [];
     private $_count = null;
+    private $_limitTime = 0;
     private $_decode = [];
     private $_protect = true;//是否加保护符，默认加
     private $_distinct = null;//消除重复行
@@ -434,6 +435,7 @@ abstract class Model
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
         if ($this->forceIndex) $obj->force($this->forceIndex);
+        if ($this->_limitTime > 0) $obj->maxRunTime($this->_limitTime);
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
@@ -484,6 +486,7 @@ abstract class Model
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
         if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
+        if ($this->_limitTime > 0) $obj->maxRunTime($this->_limitTime);
         if ($orderBy) {
             if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
             $obj->order($orderBy, $sort);
@@ -566,6 +569,7 @@ abstract class Model
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
+        if ($this->_limitTime > 0) $obj->maxRunTime($this->_limitTime);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if (!empty($this->_order)) {
@@ -645,6 +649,7 @@ abstract class Model
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if ($where) $obj->where($where);
+        if ($this->_limitTime > 0) $obj->maxRunTime($this->_limitTime);
         if ($this->groupKey) $obj->group($this->groupKey);
         if (!empty($this->_order)) {
             foreach ($this->_order as $k => $a) {
@@ -691,6 +696,16 @@ abstract class Model
         return $this->Mysql(0, [], 1)->quote($string);
     }
 
+    /**
+     * 运行时间超过此限，报警
+     * @param int $ms
+     * @return $this
+     */
+    final public function maxRunTime(int $ms)
+    {
+        $this->_limitTime = $ms;
+        return $this;
+    }
 
     final public function join(...$data)
     {

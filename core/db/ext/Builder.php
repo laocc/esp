@@ -40,6 +40,7 @@ final class Builder
     private $_count = false;//是否启用自动统计
     private $_distinct = null;//消除重复行
     private $_fetch_type = 1;//返回的数据，是用1键值对方式，还是0数字下标，或3都要，默认1
+    private $_max_time = 0;//最长运行时间
 
     private $_dim_param = false;//系统是否定义了是否使用预处理
     private $_prepare = false;//是否启用预处理
@@ -225,6 +226,7 @@ final class Builder
             'prepare' => $this->_param ?: $this->_prepare,
             'count' => $this->_count,
             'fetch' => $this->_fetch_type,
+            'limit' => $this->_max_time,
             'bind' => $this->_bindKV,
             'trans_id' => $this->_Trans_ID,
             'action' => $action,
@@ -979,6 +981,12 @@ final class Builder
         } else {
             $this->_limit = $skip . ',' . $size;
         }
+        return $this;
+    }
+
+    public function maxRunTime(int $ms)
+    {
+        $this->_max_time = $ms;
         return $this;
     }
 
