@@ -8,6 +8,7 @@ class Result
     private $_success = true;
     private $_error = 0;
     private $_message = 'ok';
+    private $_token = '';
     private $_data = [];
     private $_pageValue = null;
     private $_append = [];
@@ -15,6 +16,11 @@ class Result
      * @var Paging $_paging
      */
     private $_paging = null;
+
+    public function __construct(string $token = __FILE__)
+    {
+        $this->_token = $token;
+    }
 
     /**
      * 魔术方法获取变量值
@@ -124,13 +130,16 @@ class Result
     public function display($return = null): array
     {
         if ($return instanceof Result) return $return->display();
+        if (is_array($return) and isset($return['_sign']) and isset($return['_time'])) return $return;
 
         $value = [
             'success' => $this->_success,
             'error' => $this->_error,
             'message' => $this->_message,
             'data' => $this->_data,
+            '_time' => microtime(true),
         ];
+        $value['_sign'] = md5(json_encode($value, 256 | 64) . $this->_token);
 
         if (!is_null($this->_paging)) $value['paging'] = $this->_paging->value();
         else if (!is_null($this->_pageValue)) $value['paging'] = $this->_pageValue;
