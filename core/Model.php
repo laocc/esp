@@ -7,8 +7,8 @@ use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
 use esp\core\db\Yac;
-use esp\error\EspError;
 use esp\core\ext\Mysql as MysqlExt;
+use esp\error\EspError;
 use esp\library\Paging;
 
 /**
@@ -53,16 +53,16 @@ abstract class Model
 
     private $_order = [];
     private $_count = null;
-    private $_limitTime = 0;
     private $_decode = [];
     private $_protect = true;//是否加保护符，默认加
     private $_distinct = null;//消除重复行
+
     protected $tableJoin = array();
     protected $tableJoinCount = 0;
-    protected $forceIndex = '';
-    protected $groupKey;
+    protected $forceIndex = [];
     protected $selectKey = [];
     protected $columnKey = null;
+    protected $groupKey = null;
 
     /**
      * @var Paging $paging
@@ -82,8 +82,8 @@ abstract class Model
         $this->_count = null;
         $this->_distinct = null;
         $this->_protect = true;
-        $this->groupKey = '';
-        $this->forceIndex = '';
+        $this->groupKey = null;
+        $this->forceIndex = [];
         $this->tableJoin = [];
         $this->selectKey = [];
         $this->_order = [];
@@ -435,7 +435,6 @@ abstract class Model
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
         if ($this->forceIndex) $obj->force($this->forceIndex);
-        if ($this->_limitTime > 0) $obj->maxRunTime($this->_limitTime);
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
@@ -486,7 +485,6 @@ abstract class Model
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
         if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
-        if ($this->_limitTime > 0) $obj->maxRunTime($this->_limitTime);
         if ($orderBy) {
             if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
             $obj->order($orderBy, $sort);
@@ -569,7 +567,6 @@ abstract class Model
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
-        if ($this->_limitTime > 0) $obj->maxRunTime($this->_limitTime);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if (!empty($this->_order)) {
@@ -649,7 +646,6 @@ abstract class Model
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if ($where) $obj->where($where);
-        if ($this->_limitTime > 0) $obj->maxRunTime($this->_limitTime);
         if ($this->groupKey) $obj->group($this->groupKey);
         if (!empty($this->_order)) {
             foreach ($this->_order as $k => $a) {
@@ -665,7 +661,7 @@ abstract class Model
 
         if (is_null($this->_count)) $this->_count = true;
         $obj->count($this->_count);
-        if (is_null($this->paging)) $this->paging = new \esp\library\Paging();
+        if (is_null($this->paging)) $this->paging = new Paging();
         $skip = ($this->paging->index - 1) * $this->paging->size;
         $data = $obj->limit($this->paging->size, $skip)->get(0, $this->_traceLevel);
         $_decode = $this->_decode;
@@ -677,13 +673,13 @@ abstract class Model
 
     public function pagingSet(int $size, int $index = 0)
     {
-        $this->paging = new \esp\library\Paging($size, $index);
+        $this->paging = new Paging($size, $index);
         return $this;
     }
 
     public function pageSet(int $size, int $index = 0)
     {
-        $this->paging = new \esp\library\Paging($size, $index);
+        $this->paging = new Paging($size, $index);
         return $this;
     }
 
@@ -696,16 +692,6 @@ abstract class Model
         return $this->Mysql(0, [], 1)->quote($string);
     }
 
-    /**
-     * 运行时间超过此限，报警
-     * @param int $ms
-     * @return $this
-     */
-    final public function maxRunTime(int $ms)
-    {
-        $this->_limitTime = $ms;
-        return $this;
-    }
 
     final public function join(...$data)
     {
@@ -717,7 +703,7 @@ abstract class Model
         return $this;
     }
 
-    final public function group($groupKey, bool $only = false)
+    final public function group(string $groupKey, bool $only = false)
     {
         if ($only) $this->columnKey = 0;
         $this->groupKey = $groupKey;
@@ -756,11 +742,9 @@ abstract class Model
     final public function force($index)
     {
         if (empty($index)) return $this;
-        if (is_array($index)) {
-            $this->forceIndex = implode(',', $index);
-        } else {
-            $this->forceIndex = $index;
-        }
+        if (is_string($index)) $index = explode(',', $index);
+        $new = array_merge($this->forceIndex, $index);
+        $this->forceIndex = array_unique($new);
         return $this;
     }
 
@@ -772,11 +756,9 @@ abstract class Model
     final public function index($index)
     {
         if (empty($index)) return $this;
-        if (is_array($index)) {
-            $this->forceIndex = implode(',', $index);
-        } else {
-            $this->forceIndex = $index;
-        }
+        if (is_string($index)) $index = explode(',', $index);
+        $new = array_merge($this->forceIndex, $index);
+        $this->forceIndex = array_unique($new);
         return $this;
     }
 
