@@ -100,6 +100,39 @@ abstract class Request
         return $this->_data;
     }
 
+    /**
+     * 传入数据签名校验
+     *
+     * 只能满足常见签名方法 https://pay.weixin.qq.com/wiki/doc/api/H5.php?chapter=4_3
+     *
+     * @param array $param
+     * @return bool|string
+     */
+    public function signCheck(array $param = [])
+    {
+        $sKey = $param['sign_key'] ?? 'sign';
+        $tKey = $param['token_key'] ?? 'key';
+        $token = $param['token'] ?? '';
+        if (isset($param['sign_data'])) {
+            $data = $param['sign_data'];
+        } else {
+            $data = $this->_data;
+        }
+        $sign = $data[$sKey] ?? '';
+        unset($data[$sKey]);
+        ksort($data);
+        $str = '';
+        foreach ($data as $k => $v) {
+            if ($v === '') continue;
+            if (is_array($v)) $v = json_encode($v, 256 | 64);
+            $str .= "{$k}={$v}&";
+        }
+        $md5 = md5("{$str}{$tKey}={$token}");
+        if ($sign === 'create') return $md5;
+
+        return hash_equals(strtoupper($sign), strtoupper($md5));
+    }
+
     protected function getData(string &$key, &$force)
     {
         if ($this->_off && $this->_isPost) throw new EspError('POST已被注销，不能再次引用，请在调用error()之前读取所有数据。', 2);
