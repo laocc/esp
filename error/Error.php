@@ -63,7 +63,7 @@ final class Error
             $err['error'] = $errNo ?: 500;
             $err['message'] = $errStr;
             $err['file'] = $this->filter_root($errFile) . '(' . $errLine . ')';
-//            $err['trace'] = $error->getTrace();
+            $err['trace'] = $error->getTrace();
 //            $err['context'] = print_r($context, true);
 
             $this->error($err, $prev, $option['path'], $option['filename']);
@@ -91,6 +91,7 @@ final class Error
                     break;
 
                 case ($option['display'] === 'json'):
+                    unset($err['trace'], $err['context']);
                     echo '<pre>' . json_encode($err, 256 | 128 | 64) . '</pre>';
                     break;
 
@@ -124,7 +125,7 @@ final class Error
             $err['error'] = $error->getCode() ?: 500;
             $err['message'] = $error->getMessage();
             $err['file'] = $this->filter_root($error->getFile()) . '(' . $error->getLine() . ')';
-//            $err['trace'] = $error->getTrace();
+            $err['trace'] = $error->getTrace();
 
             $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
 
@@ -151,6 +152,7 @@ final class Error
                     break;
 
                 case ($option['display'] === 'json'):
+                    unset($err['trace'], $err['context']);
                     echo '<pre>' . json_encode($err, 256 | 128 | 64) . '</pre>';
                     break;
 
