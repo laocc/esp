@@ -62,8 +62,8 @@ final class Error
             $err['time'] = date('Y-m-d H:i:s');
             $err['error'] = $errNo ?: 500;
             $err['message'] = $errStr;
-            $err['file'] = $errFile . '(' . $errLine . ')';
-            $err['trace'] = $error->getTrace();
+            $err['file'] = $this->filter_root($errFile) . '(' . $errLine . ')';
+//            $err['trace'] = $error->getTrace();
 //            $err['context'] = print_r($context, true);
 
             $this->error($err, $prev, $option['path'], $option['filename']);
@@ -123,8 +123,8 @@ final class Error
             $err['time'] = date('Y-m-d H:i:s');
             $err['error'] = $error->getCode() ?: 500;
             $err['message'] = $error->getMessage();
-            $err['file'] = $error->getFile() . '(' . $error->getLine() . ')';
-            $err['trace'] = $error->getTrace();
+            $err['file'] = $this->filter_root($error->getFile()) . '(' . $error->getLine() . ')';
+//            $err['trace'] = $error->getTrace();
 
             $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
 
@@ -299,7 +299,7 @@ HTML;
     private function displayError(array $error)
     {
         $traceHtml = '';
-        foreach (array_reverse($error['trace']) as $tr) {
+        foreach (array_reverse($error['trace'] ?? []) as $tr) {
             $str = '<tr><td class="l">';
             if (isset($tr['file'])) $str .= $this->filter_root($tr['file']);
             if (isset($tr['line'])) $str .= "({$tr['line']})";

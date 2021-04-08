@@ -233,7 +233,10 @@ final class Dispatcher
             goto end;
         }
 
-        (new Router($this->_config, $this->_request));
+        $route = (new Router())->run($this->_config, $this->_request);
+        if (is_string($route)) exit($route);
+//        if (is_string($route)) throw new EspError($route);
+
 
         if ($this->_plugs_count and !is_null($hook = $this->plugsHook('routeAfter'))) {
             $this->_response->display($hook);
@@ -297,7 +300,8 @@ final class Dispatcher
      */
     public function simple()
     {
-        (new Router($this->_config, $this->_request));
+        $route = (new Router())->run($this->_config, $this->_request);
+        if (is_string($route)) exit($route);
 
         $value = $this->dispatch();
         if (_CLI) {

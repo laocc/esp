@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\EspError;
 use function esp\helper\is_match;
 use function esp\helper\is_uri;
 use function esp\helper\load;
@@ -11,13 +10,17 @@ use function esp\helper\root;
 
 final class Router
 {
+    public function __construct()
+    {
+    }
+
     /**
      * 路由中心
-     * Router constructor.
      * @param Configure $configure
      * @param Request $request
+     * @return bool|string
      */
-    public function __construct(Configure $configure, Request $request)
+    public function run(Configure $configure, Request $request)
     {
         $default = [
             '_default' => ['match' => '/^\/(?:[a-z][a-z0-9\-]+\/?)*/i', 'route' => []],
@@ -33,10 +36,10 @@ final class Router
                 if (!empty($modRoute)) {
                     foreach ($modRoute as $r => $route) {
                         if (isset($route['match']) and !is_match($route['match']))
-                            throw new EspError("Route[Match]：{$route['match']} 不是有效正则表达式");
+                            return ("Route[Match]：{$route['match']} 不是有效正则表达式");
 
                         if (isset($route['uri']) and !is_uri($route['uri']))
-                            throw new EspError("Route[uri]：{$route['uri']} 不是合法的URI格式");
+                            return ("Route[uri]：{$route['uri']} 不是合法的URI格式");
 
                         if (!isset($route['route'])) $route['route'] = [];
                     }
@@ -58,7 +61,7 @@ final class Router
                 (isset($route['match']) and preg_match($route['match'], _URI, $matches))) {
 
                 if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
-                    throw new EspError('非法Method请求');
+                    return ('非法Method请求');
                 }
 
                 if ($key === '_default') {
@@ -73,9 +76,13 @@ final class Router
                 else if (isset($route['directory'])) $request->directory = root($route['directory']);
 
                 //分别获取模块、控制器、动作的实际值
-                list($module, $controller, $action, $param) = $this->fill_route($request->virtual, $request->directory, $matches, $route['route']);
+                $routeValue = $this->fill_route($request->virtual, $request->directory, $matches, $route['route']);
+                if (is_string($routeValue)) return $routeValue;
 
-                if ($controller === 'base') throw new EspError('控制器名不可以为Base，这是系统保留公共控制器名');
+                list($module, $controller, $action, $param) = $routeValue;
+
+                //'控制器名不可以为Base，这是系统保留公共控制器名'
+                if ($controller === 'base') return ('非法Controller请求');
 
                 //分别获取各个指定参数
                 $params = array();
@@ -110,10 +117,10 @@ final class Router
                 //路由器对视图的定义
                 if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
                 unset($modRoute, $default);
-                return;
+                return true;
             }
         }
-        throw new EspError('系统路由没有获取到相应内容');
+        return ('系统路由没有获取到相应内容');
     }
 
 
@@ -123,8 +130,7 @@ final class Router
      * @param string $directory
      * @param array $matches 正则匹配结果
      * @param array $route
-     * @return array
-     * @throws EspError
+     * @return array|string
      */
     private function fill_route(string $virtual, string $directory, array $matches, array $route): array
     {
@@ -156,7 +162,7 @@ final class Router
             foreach (['module', 'controller', 'action'] as $key) {
                 ${$key} = $route[$key] ?? null;
                 if (is_numeric(${$key})) {
-                    if (!isset($matches[${$key}])) throw new EspError("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。");
+                    if (!isset($matches[${$key}])) return ("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。");
                     ${$key} = $matches[${$key}];
                 }
             }

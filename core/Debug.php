@@ -333,7 +333,7 @@ final class Debug
             if (is_array($counter)) {
                 $counter += ['key' => 'DEBUG', 'params' => 0];
                 $hKey = "{$counter['key']}_counter_" . date('Y_m_d');
-                if ($counter['params'] and $this->_request->params[0]) {
+                if ($counter['params'] and $this->_request->params[0] ?? null) {
                     $key .= "/{$this->_request->params[0]}";
                 }
 
