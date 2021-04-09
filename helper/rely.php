@@ -77,12 +77,12 @@ function load(string $file)
  */
 function root(string $path, bool $real = false): string
 {
-    foreach (['home', 'mnt', 'mdb'] as $r) {
-        if (stripos($path, "/{$r}/") !== 0) continue;
-        if ($real) $path = realpath($path);
-        return rtrim($path, '/');
+    foreach (['home', 'mnt', 'mdb', 'mda'] as $r) {
+        if (stripos($path, "/{$r}/") === 0) goto end;
     }
+
     if (stripos($path, _ROOT) !== 0) $path = _ROOT . "/" . trim($path, '/');
+    end:
     if ($real) $path = realpath($path);
     return rtrim($path, '/');
 }
