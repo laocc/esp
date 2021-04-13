@@ -207,7 +207,7 @@ final class Post extends Request
         $value = $this->getData($key, $force);
         if (is_null($value)) return '';
         if (!preg_match('/^\d+$/', $value)) $this->recodeError($key, "必须为全数字");
-        return $value;
+        return strval($value);
     }
 
     public function int(string $key, bool $zero = true): int
