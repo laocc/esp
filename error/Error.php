@@ -5,6 +5,7 @@ namespace esp\error;
 
 use esp\core\Debug;
 use esp\core\Dispatcher;
+use function esp\helper\mk_dir;
 use function esp\helper\replace_array;
 
 final class Error
@@ -66,7 +67,7 @@ final class Error
             $err['trace'] = $error->getTrace();
 //            $err['context'] = print_r($context, true);
 
-            $this->error($err, $prev, $option['path'], $option['filename']);
+            $this->error($err, $prev, $option['path'], $option['filename'], boolval($option['restrain'] ?? 0));
             $ajax = (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
             $post = (strtolower(getenv('REQUEST_METHOD') ?: '') === 'post');
 
@@ -127,7 +128,8 @@ final class Error
             $err['file'] = $this->filter_root($error->getFile()) . '(' . $error->getLine() . ')';
             $err['trace'] = $error->getTrace();
 
-            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
+                $option['path'], $option['filename'], boolval($option['restrain'] ?? 0));
 
             $ajax = (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
             $post = (strtolower(getenv('REQUEST_METHOD') ?: '') === 'post');
@@ -206,17 +208,34 @@ final class Error
      * @param array $prev
      * @param string $path
      * @param string $filename
+     * @param bool $restrain 抑制相同错误，防止日志目录被撑爆
      */
-    private function error(array $error, array $prev, string $path, string $filename)
+    private function error(array $error, array $prev, string $path, string $filename, bool $restrain)
     {
         $debug = Debug::class();
+        if ($restrain) {
+            $md5Key = md5(($error['message'] ?? '') . ($error['file'] ?? ''));
+            $errLogFile = "{$path}/{$md5Key}.md";
+            if (is_readable($errLogFile)) {
+                if (!is_null($debug)) $debug->disable();
+                file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+                return;
+            }
+            file_put_contents($errLogFile, json_encode(['trace' => ''] + $error, 256 | 64 | 128) . "\n");
+        }
+
         if ($error['trace'] ?? null) {
             foreach ($error['trace'] as $i => &$trace) {
                 if (empty($trace['args'])) continue;
                 foreach ($trace['args'] as $lin => &$pam) {
-                    if (is_resource($pam)) $pam = var_export($pam, true);
+                    if (is_object($pam)) $pam = '(OBJECT):' . get_class($pam);
                     elseif (is_array($pam)) {
-                        foreach ($pam as &$m) if (is_resource($m)) $m = var_export($m, true);
+                        foreach ($pam as &$m) {
+                            if (is_object($m)) $m = '(OBJECT):' . get_class($m);
+                            else if (is_array($m)) {
+                                foreach ($m as &$mn) if (is_object($mn)) $mn = '(OBJECT):' . get_class($mn);
+                            }
+                        }
                     }
                 }
             }
