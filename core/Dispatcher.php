@@ -225,7 +225,7 @@ final class Dispatcher
     public function run(callable $callable = null): void
     {
         if ($callable and call_user_func($callable)) goto end;
-        if (_CLI) throw new EspError("cli环境中请直接调用\$this->min()方法");
+        if (_CLI) throw new EspError("cli环境中请直接调用\$this->simple()方法");
 
         if ($this->run === false) goto end;
 
