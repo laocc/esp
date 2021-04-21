@@ -44,7 +44,8 @@ final class Dispatcher
         }
         if (!defined('_ESP_ROOT')) define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
-        if (!defined('_DAY_TIME')) define('_DAY_TIME', strtotime(date('Ymd')));//今天零时整的时间戳
+        if (!defined('_TIME')) define('_TIME', time());//当前时间戳
+        if (!defined('_DAY_TIME')) define('_DAY_TIME', strtotime(date('Ymd', _TIME)));//今天零时整的时间戳
         if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
         if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);

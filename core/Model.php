@@ -156,7 +156,6 @@ abstract class Model
         return $this->_config->get(...$key);
     }
 
-
     /**
      * 发送通知信息
      * @param string $action
@@ -229,7 +228,7 @@ abstract class Model
      * @return null
      * @throws EspError
      */
-    private function checkRunData(string $action, $data)
+    final  private function checkRunData(string $action, $data)
     {
         $this->clear_initial();
         if (!is_string($data)) return null;
@@ -352,7 +351,7 @@ abstract class Model
         }
     }
 
-    public function decode(string $cols, string $type = 'json')
+    final  public function decode(string $cols, string $type = 'json')
     {
         if (!isset($this->_decode[$type])) $this->_decode[$type] = [];
         array_push($this->_decode[$type], ...array_map(function ($col) {
@@ -368,7 +367,7 @@ abstract class Model
      * @param null $lat
      * @return string
      */
-    public function point($lng, $lat = null)
+    final  public function point($lng, $lat = null)
     {
         if (is_null($lat) and is_array($lng)) {
             $lat = $lng['lat'] ?? ($lng[1] ?? 0);
@@ -383,7 +382,7 @@ abstract class Model
      * @return string
      * @throws EspError
      */
-    public function polygon(array $location)
+    final public function polygon(array $location)
     {
         if (count($location) < 3) throw new EspError("空间区域至少需要3个点");
         $val = [];
@@ -617,7 +616,7 @@ abstract class Model
      * @param bool $bool
      * @return $this
      */
-    public function distinct(bool $bool = true)
+    final public function distinct(bool $bool = true)
     {
         $this->_distinct = $bool;
         return $this;
@@ -671,13 +670,13 @@ abstract class Model
         return $data->rows(0, null, $_decode);
     }
 
-    public function pagingSet(int $size, int $index = 0)
+    final  public function pagingSet(int $size, int $index = 0)
     {
         $this->paging = new Paging($size, $index);
         return $this;
     }
 
-    public function pageSet(int $size, int $index = 0)
+    final public function pageSet(int $size, int $index = 0)
     {
         $this->paging = new Paging($size, $index);
         return $this;

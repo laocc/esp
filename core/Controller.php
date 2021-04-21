@@ -8,7 +8,6 @@ use esp\error\EspError;
 use esp\core\face\Adapter;
 use esp\core\ext\Input;
 use esp\library\ext\Markdown;
-use esp\library\Result;
 
 abstract class Controller
 {

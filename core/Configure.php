@@ -238,6 +238,7 @@ final class Configure
         if ($info['extension'] === 'php') {
             $_config = include($file);
             if (!is_array($_config)) $_config = [];
+
         } elseif ($info['extension'] === 'ini') {
             $_config = parse_ini_file($file, true);
             if (!is_array($_config)) $_config = [];
@@ -249,10 +250,12 @@ final class Configure
                     unset($_config[$k]);
                 }
             }
+
         } elseif ($info['extension'] === 'json') {
             $_config = file_get_contents($file);
             $_config = json_decode($_config, true);
             if (!is_array($_config)) $_config = [];
+
         } else {
             throw new EspError("未知的配置文件类型({$info['extension']})");
         }
@@ -265,15 +268,11 @@ final class Configure
                     $_config[$key] = array();
                     foreach ($fil as $l => $f) {
                         $_inc = $this->loadFile(root($f), $l);
-                        if (!empty($_inc)) {
-                            $_config[$key] = $_inc + $_config[$key];
-                        }
+                        if (!empty($_inc)) $_config[$key] = $_inc + $_config[$key];
                     }
                 } else {
                     $_inc = $this->loadFile(root($fil), $key);
-                    if (!empty($_inc)) {
-                        $_config = $_inc + $_config;
-                    }
+                    if (!empty($_inc)) $_config = $_inc + $_config;
                 }
             }
         }
@@ -358,20 +357,11 @@ final class Configure
      */
     public function get(...$key)
     {
-        if (empty($key)) {
-            return null;
-        }
-        if ($key === ['*']) {
-            return $this->_CONFIG_;
-        }
+        if (empty($key)) return null;
+        if ($key === ['*']) return $this->_CONFIG_;
         $conf = $this->_CONFIG_;
         foreach (explode('.', strtolower(implode('.', $key))) as $k) {
-            if ($k === '' or $k === '*') {
-                return null;
-            }
-            if (!isset($conf[$k])) {
-                return null;
-            }
+            if ($k === '' or $k === '*' or !isset($conf[$k])) return null;
             $conf = &$conf[$k];
         }
         return $conf;
@@ -384,7 +374,8 @@ final class Configure
      */
     private function mime(string $type): string
     {
-        $mime = $this->get('mime', $type);
+        $mime = $this->get("mime.{$type}");
+        if (is_array($mime)) $mime = json_encode($mime, 256 | 64);
         return $mime ?: 'text/html';
     }
 
@@ -394,7 +385,8 @@ final class Configure
      */
     private function states(int $code): string
     {
-        $state = $this->get('state', $code);
+        $state = $this->get("state.{$code}");
+        if (is_array($state)) $state = json_encode($state, 256 | 64);
         return $state ?: 'Unexpected';
     }
 }
