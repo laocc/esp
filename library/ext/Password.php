@@ -162,7 +162,7 @@ class Password
     public static function base_en($String, $expiration = 0)
     {
         //创建时间，内容，有效时间
-        $str = base64_encode(time() . self::$RANDOM . $String . self::$RANDOM . $expiration . self::$RANDOM . self::s_rand());
+        $str = base64_encode(_TIME . self::$RANDOM . $String . self::$RANDOM . $expiration . self::$RANDOM . self::s_rand());
         $RS = str_split($str);
         $RS = array_reverse($RS);//倒排
         $index = count($RS) % self::$FACTORLEN;//使用密码库因子
@@ -189,7 +189,7 @@ class Password
         $decode = base64_decode(implode($RS2));
         $str = explode(self::$RANDOM, $decode . self::$RANDOM . self::$RANDOM);
         unset($RS, $new, $rs, $decode, $arr);
-        if ((int)$str[0] > 0 and (0 === (int)$str[2] or ((int)$str[0] + 86400 * (int)$str[2]) > time())) return $str[1];
+        if ((int)$str[0] > 0 and (0 === (int)$str[2] or ((int)$str[0] + 86400 * (int)$str[2]) > _TIME)) return $str[1];
         return null;
     }
 

@@ -84,7 +84,7 @@ final class Input
     {
         if (!isset($data[$param])) {
             if ($param === 'date_zone') return self::date_zone($autoValue);
-            else if ($autoValue === 'date_time') return time();
+            else if ($autoValue === 'date_time') return _TIME;
             return $autoValue;
         }
         $value = ($data[$param]);

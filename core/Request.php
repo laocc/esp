@@ -209,7 +209,7 @@ final class Request
                 $err = ['message' => "Header be Send:{$file}[{$line}]", 'code' => 500, 'file' => $file, 'line' => $line];
                 throw new EspError($err);
             }
-            $time = time() + 86400 * 365;
+            $time = _TIME + 86400 * 365;
             $dom = $this->_dispatcher->_cookies->domain;
 
             if (version_compare(PHP_VERSION, '7.3', '>')) {

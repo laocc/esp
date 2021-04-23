@@ -329,7 +329,7 @@ abstract class Controller
             return false;
         }
         $this->_response->redirect("Location: {$url} {$code}");
-        header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1) . ' GMT');
+        header('Expires: ' . gmdate('D, d M Y H:i:s', _TIME - 1) . ' GMT');
         header("Cache-Control: no-cache");
         header("Pragma: no-cache");
         header("Location: {$url}", true, $code);

@@ -271,7 +271,7 @@ final class Debug
      */
     public function counter(int $time = 0, bool $method = null)
     {
-        if ($time === 0) $time = time();
+        if ($time === 0) $time = _TIME;
         $conf = $this->_conf['counter'];
         if (!$conf) return [];
         if (is_array($conf)) {

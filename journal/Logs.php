@@ -71,7 +71,7 @@ final class Logs
         $this->_redis = $config->_Redis;
         $this->_ROOT_len = strlen(_ROOT);
         $this->_run = boolval($conf['run']);
-        $this->_time = time();
+        $this->_time = _TIME;
         $this->prevTime = microtime(true) - $this->_star[0];
         $this->memory = memory_get_usage();
         $this->_node[0] = [
@@ -205,7 +205,7 @@ final class Logs
      */
     public function counter(int $time = 0, bool $method = null)
     {
-        if ($time === 0) $time = time();
+        if ($time === 0) $time = _TIME;
         $key = "{$this->_conf['counter']}_counter_" . date('Y_m_d', $time);
         $all = $this->_redis->hGetAlls($key);
         if (empty($all)) return ['data' => [], 'action' => []];

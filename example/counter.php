@@ -53,7 +53,7 @@
 
 function counterAjax()
 {
-    $time = time();
+    $time = _TIME;
 
     $data = \esp\core\Debug::class()->counter($time);
 

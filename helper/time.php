@@ -133,9 +133,9 @@ function date_diffs(int $timeA, int $timeB): string
  */
 function date_friendly(int $timestamp, $time_now = null): string
 {
-    $Q = $timestamp > time() ? '后' : '前';
+    $Q = $timestamp > _TIME ? '后' : '前';
     $V = $T = $dt = null;
-    $S = abs((($time_now ?: time()) - $timestamp) ?: 1) and $V = 'S' and $T = '秒';
+    $S = abs((($time_now ?: _TIME) - $timestamp) ?: 1) and $V = 'S' and $T = '秒';
     $I = floor($S / 60) and $V = 'I' and $T = '分钟';
     $H = floor($I / 60) and $V = 'H' and $T = '小时';
     $D = intval($H / 24) and $V = 'D' and $T = '天';

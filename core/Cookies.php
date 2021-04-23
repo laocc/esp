@@ -25,7 +25,7 @@ final class Cookies
         if (_CLI) return null;
         if (!is_int($ttl) and preg_match('/^(\d+)\s?([ymDhw])$/i', trim($ttl), $mat)) {
             $s = ['y' => 86400 * 365, 'm' => 86400 * 30, 'w' => 86400 * 7, 'd' => 86400, 'h' => 3600][strtolower($mat[2])];
-            $ttl = (intval($mat[1]) * $s) + time();
+            $ttl = (intval($mat[1]) * $s) + _TIME;
         }
         if (is_array($value)) $value = json_encode($value, 256);
 

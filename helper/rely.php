@@ -176,7 +176,7 @@ function format(string $str): string
     return preg_replace_callback('/\%([a-z])/i', function ($matches) {
         switch ($matches[1]) {
             case 'D':       //从2015-8-3算起的天数
-                return ceil((time() - 1438531200) / 86400);
+                return ceil((_TIME - 1438531200) / 86400);
             case 'u':       //唯一性值
                 return uniqid();
             case 'r':       //随机数

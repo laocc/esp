@@ -18,8 +18,7 @@ final class Mysql
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
     private $_debug;
-    public $slave = array();//从库连接
-    public $master = array();//主库连接
+    private $_pool = [];//进程级的连接池，$master，$slave
     public $_error = array();//每个连接的错误信息
     public $dbName;
 
@@ -36,6 +35,12 @@ final class Mysql
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
         $this->dbName = $conf['db'];
+
+        if ($conf['pool'] ?? 1) {
+            if (!isset($GLOBALS['_PDO_POOL'])) $GLOBALS['_PDO_POOL'] = [];
+            $this->_pool =& $GLOBALS['_PDO_POOL'];
+        }
+
     }
 
     public function debug($value, int $traceLevel = 1)
@@ -80,8 +85,8 @@ final class Mysql
         $real = $upData ? 'master' : 'slave';
 
         //当前缓存过该连接，直接返
-        if (isset($this->{$real}[$trans_id]) and !empty($this->{$real}[$trans_id])) {
-            return $this->{$real}[$trans_id];
+        if (isset($this->_pool[$real][$trans_id]) and !empty($this->_pool[$real][$trans_id])) {
+            return $this->_pool[$real][$trans_id];
         }
 
         $cnf = $this->_CONF;
@@ -133,9 +138,8 @@ final class Mysql
                 $err['host'] = $host;
                 throw new EspError("Mysql Connection failed:" . json_encode($err, 256 | 64));
             }
-            $this->connect_time[$trans_id] = time();
-            $this->{$real}[$trans_id] = $pdo;
-            return $this->{$real}[$trans_id];
+            $this->connect_time[$trans_id] = _TIME;
+            return $this->_pool[$real][$trans_id] = $pdo;
 
         } catch (\PDOException $PdoError) {
             /*
@@ -244,19 +248,28 @@ final class Mysql
 
         //是否更新数据操作
         $upData = ($action !== 'select');
-        if ($action === 'delete') $action = 'update';
-        else if ($action === 'replace') $action = 'insert';
-        else if ($action === 'alter') $action = 'select';
-        else if ($action === 'analyze') $action = 'select';
+        $real = $upData ? 'master' : 'slave';
+        //这4种操作要换成当前类中的对应操作方法
+        switch ($action) {
+            case 'delete':
+                $action = 'update';
+                break;
+            case 'replace':
+                $action = 'insert';
+                break;
+            case 'alter':
+            case 'analyze':
+                $action = 'select';
+                break;
+        }
 
         $try = 0;
         tryExe://重新执行起点
 
         //连接数据库，自动选择主从库
         if (!$CONN) {
-            $real = $upData ? 'master' : 'slave';
-            if (isset($this->{$real}[$transID]) and !empty($this->{$real}[$transID])) {
-                $CONN = $this->{$real}[$transID];
+            if (isset($this->_pool[$real][$transID]) and !empty($this->_pool[$real][$transID])) {
+                $CONN = $this->_pool[$real][$transID];
             } else {
                 $CONN = $this->connect($upData, $transID);
             }
@@ -273,11 +286,11 @@ final class Mysql
                     print_r([
                         'id' => $transID,
                         'connect_time' => $this->connect_time[$transID],
-                        'now' => time(),
-                        'after' => time() - $this->connect_time[$transID],
+                        'now' => _TIME,
+                        'after' => _TIME - $this->connect_time[$transID],
                     ]);
 
-                    unset($this->{$real}[$transID]);
+                    unset($this->_pool[$real][$transID]);
                     $CONN = null;
                     goto tryExe;
                 } else {
@@ -322,6 +335,7 @@ final class Mysql
 
         if (!empty($error)) {
             $debugOption['error'] = $error;
+            $this->_error[$transID] = $error;
 
             $errState = intval($error[1]);
             _CLI and print_r(['try' => $try, 'error' => $errState]);
@@ -336,20 +350,20 @@ final class Mysql
                     print_r([
                         'id' => $transID,
                         'connect_time' => $this->connect_time[$transID],
-                        'now' => time(),
-                        'after' => time() - $this->connect_time[$transID],
+                        'now' => _TIME,
+                        'after' => _TIME - $this->connect_time[$transID],
                     ]);
                     print_r($this->PdoAttribute($CONN));
                 } else {
                     ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
                 }
 
-                unset($this->{$real}[$transID]);
+                unset($this->_pool[$real][$transID]);
                 $CONN = null;
                 goto tryExe; //重新执行
 
             } else if ($transID > 0 and $upData) {
-                $this->trans_back($CONN, $transID, $error);//回滚事务
+                $this->trans_back($transID, $error);//回滚事务
             }
             if ($debug) $error['sql'] = $sql;
             if (_CLI) print_r($debugOption);
@@ -565,9 +579,13 @@ final class Mysql
     }
 
 
+    /**
+     * 暂未实现ping
+     * @return bool
+     */
     public function ping()
     {
-        return is_array($this->master);
+        return isset($this->_pool['master']);
     }
 
     /**
@@ -629,18 +647,20 @@ final class Mysql
 
     /**
      * 提交事务
-     * @param \PDO $CONN
      * @param $trans_id
      * @return array|bool
      * @throws EspError
      */
-    public function trans_commit(\PDO $CONN, $trans_id)
+    public function trans_commit($trans_id)
     {
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
             if (!empty($this->_trans_error)) return $this->_trans_error;
             return false;
         }
-
+        /**
+         * @var $CONN \PDO
+         */
+        $CONN = $this->_pool['master'][$trans_id];
         if (!$CONN->inTransaction()) {
             throw new EspError("Trans Commit Error: 当前没有处于事务{$trans_id}中", 1);
         }
@@ -650,14 +670,17 @@ final class Mysql
 
     /**
      * 回滚事务
-     * @param \PDO $CONN
      * @param int $trans_id
      * @param null $error
      * @return bool
      */
-    public function trans_back(\PDO $CONN, $trans_id = 0, $error = null)
+    public function trans_back($trans_id = 0, $error = null)
     {
         $this->_trans_run[$trans_id] = false;
+        /**
+         * @var $CONN \PDO
+         */
+        $CONN = $this->_pool['master'][$trans_id];
         if (!$CONN->inTransaction()) {
             return true;
         }

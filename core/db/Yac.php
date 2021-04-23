@@ -40,12 +40,11 @@ class Yac implements KeyValue
         $dump = $this->conn->dump(100000);
         $keys = array_column($dump, 'key');
         $ttls = array_column($dump, 'ttl');
-        $time = time();
         $value = array();
         foreach ($keys as $index => &$key) {
             $title = explode('_', $key);
             if ($title[0] !== $this->table) continue;
-            if ($ttls[$index] > 0 and $ttls[$index] < $time) {
+            if ($ttls[$index] > 0 and $ttls[$index] < _TIME) {
                 unset($keys[$index]);
                 continue;
             }

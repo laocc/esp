@@ -56,7 +56,7 @@ class SessionFiles implements \SessionHandlerInterface
     function gc($maxlifetime)
     {
         foreach (glob("{$this->savePath}/*") as $file) {
-            if (filemtime($file) + $maxlifetime < time() && file_exists($file)) {
+            if (filemtime($file) + $maxlifetime < _TIME && file_exists($file)) {
                 unlink($file);
             }
         }
