@@ -115,7 +115,7 @@ final class Builder
      */
     public function commit(bool $rest = true)
     {
-        $val = $this->_MySQL->trans_commit($this->_MySQL->trans_object($this->_Trans_ID), $this->_Trans_ID);
+        $val = $this->_MySQL->trans_commit($this->_Trans_ID);
         if ($rest && is_array($val)) return $val['error'];
         return $val;
     }

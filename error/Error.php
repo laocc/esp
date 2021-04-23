@@ -67,7 +67,7 @@ final class Error
             $err['trace'] = $error->getTrace();
 //            $err['context'] = print_r($context, true);
 
-            $this->error($err, $prev, $option['path'], $option['filename'], boolval($option['restrain'] ?? 0));
+            $this->error($err, $prev, $option['path'], $option['filename']);
             $ajax = (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
             $post = (strtolower(getenv('REQUEST_METHOD') ?: '') === 'post');
 
@@ -128,8 +128,7 @@ final class Error
             $err['file'] = $this->filter_root($error->getFile()) . '(' . $error->getLine() . ')';
             $err['trace'] = $error->getTrace();
 
-            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0],
-                $option['path'], $option['filename'], boolval($option['restrain'] ?? 0));
+            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
 
             $ajax = (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
             $post = (strtolower(getenv('REQUEST_METHOD') ?: '') === 'post');
@@ -208,32 +207,33 @@ final class Error
      * @param array $prev
      * @param string $path
      * @param string $filename
-     * @param bool $restrain 抑制相同错误，防止日志目录被撑爆
      */
-    private function error(array $error, array $prev, string $path, string $filename, bool $restrain)
+    private function error(array $error, array $prev, string $path, string $filename)
     {
         $debug = Debug::class();
-        if ($restrain) {
-            $md5Key = md5(($error['message'] ?? '') . ($error['file'] ?? ''));
-            $errLogFile = "{$path}/{$md5Key}.md";
-            if (is_readable($errLogFile)) {
-                if (!is_null($debug)) $debug->disable();
-                file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-                return;
-            }
-            file_put_contents($errLogFile, json_encode(['trace' => ''] + $error, 256 | 64 | 128) . "\n");
+        $md5Key = md5(($error['message'] ?? '') . ($error['file'] ?? ''));
+        $errLogFile = dirname($path) . "/error/{$md5Key}.md";
+
+        if (is_readable($errLogFile)) {
+            if (!is_null($debug)) $debug->disable();
+            file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            return;
         }
+        mk_dir($errLogFile);
+        file_put_contents($errLogFile, json_encode(['trace' => ''] + $error, 256 | 64 | 128) . "\n");
+
 
         if ($error['trace'] ?? null) {
             foreach ($error['trace'] as $i => &$trace) {
                 if (empty($trace['args'])) continue;
                 foreach ($trace['args'] as $lin => &$pam) {
-                    if (is_object($pam)) $pam = '(OBJECT):' . get_class($pam);
+                    if (is_object($pam)) $mn = '(OBJECT):' . get_class($pam);
                     elseif (is_array($pam)) {
                         foreach ($pam as &$m) {
                             if (is_object($m)) $m = '(OBJECT):' . get_class($m);
-                            else if (is_array($m)) {
+                            if (is_array($m)) {
                                 foreach ($m as &$mn) if (is_object($mn)) $mn = '(OBJECT):' . get_class($mn);
+
                             }
                         }
                     }
@@ -246,6 +246,7 @@ final class Error
             'HOST' => getenv('HTTP_HOST'),
             'Url' => _HTTP_ . _DOMAIN . _URI,
             'Debug' => !is_null($debug) ? $debug->filename() : '',
+            'errKey' => $md5Key,
             'Error' => $error,
             'Server' => $_SERVER,
             'Post' => file_get_contents("php://input"),
