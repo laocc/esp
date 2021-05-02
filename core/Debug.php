@@ -370,7 +370,11 @@ final class Debug
         $data[] = " - PHP_VER:\t" . phpversion() . "\n";
         $data[] = " - AGENT:\t" . ($_SERVER['HTTP_USER_AGENT'] ?? '') . "\n";
         $data[] = " - ROOT:\t" . _ROOT . "\n";
-        $data[] = " - Router:\t/{$rq->virtual}/{$rq->module}/{$rq->controller}/{$rq->action}\t({$rq->router})\n";
+        if ($rq->module) {
+            $data[] = " - Router:\t/{$rq->virtual}/{$rq->module}/{$rq->controller}/{$rq->action}\t({$rq->router})\n";
+        } else {
+            $data[] = " - Router:\t/{$rq->virtual}/{$rq->controller}/{$rq->action}\t({$rq->router})\n";
+        }
 
         //一些路由结果，路由结果参数
         $Params = implode(',', $rq->getParams());

@@ -78,11 +78,13 @@ final class Mysql
     /**
      * @param bool $upData
      * @param int $trans_id
+     * @param int $traceLevel
      * @return mixed
      */
-    private function connect(bool $upData, int $trans_id = 0)
+    private function connect(bool $upData, int $trans_id = 0, int $traceLevel = 0)
     {
         $real = $upData ? 'master' : 'slave';
+        if (!$upData and !isset($this->_CONF['slave'])) $real = 'master';
 
         //当前缓存过该连接，直接返
         if (isset($this->_pool[$real][$trans_id]) and !empty($this->_pool[$real][$trans_id])) {
@@ -129,8 +131,12 @@ final class Mysql
                 list($host, $port) = explode(':', "{$host}:3306", 2);
                 $conStr = "mysql:dbname={$cnf['db']};host={$host};port={$port};charset={$cnf['charset']};id={$trans_id};";
             }
+
             try {
                 $pdo = new \PDO($conStr, $cnf['username'], $cnf['password'], $opts);
+
+                (!_CLI) and $this->debug("{$real}({$trans_id}):{$conStr}");
+
             } catch (\PDOException $PdoError) {
                 $err = [];
                 $err['code'] = $PdoError->getCode();
@@ -271,7 +277,7 @@ final class Mysql
             if (isset($this->_pool[$real][$transID]) and !empty($this->_pool[$real][$transID])) {
                 $CONN = $this->_pool[$real][$transID];
             } else {
-                $CONN = $this->connect($upData, $transID);
+                $CONN = $this->connect($upData, $transID, $traceLevel + 1);
             }
         }
 
