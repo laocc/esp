@@ -258,7 +258,7 @@ final class Post extends Request
         $value = $this->getData($key, $force);
         if (is_null($value)) return 0;
         if ($value === '' && $force) $this->recodeError($key);
-        $value = intval(floatval($value) * 100);
+        $value = intval(strval(floatval($value) * 100));
         if ($chk = $this->errorNumber($value, 2)) $this->recodeError($key, $chk);
         return $value;
     }

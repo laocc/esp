@@ -181,7 +181,7 @@ class Get extends Request
     {
         $value = $this->getData($key, $force);
         if (is_null($value)) return 0;
-        return intval(floatval($value) * 100);
+        return intval(strval(floatval($value) * 100));
     }
 
     public function match(string $key, string $pnt): string
