@@ -45,9 +45,9 @@ final class Debug
 
         $conf = $setting['default'];
         if (isset($setting[_VIRTUAL])) $conf = $setting[_VIRTUAL] + $conf;
+        $this->_save_mode = $conf['mode'] ?? ($conf['api'] ?? 'shutdown');
 
-        if (($conf['api'] ?? '') === 'rpc') {
-            $this->_save_mode = 'rpc';
+        if ($this->_save_mode === 'rpc') {
             $this->_rpc = $config->_rpc;
 
             //当前是主服务器，还继续判断保存方式

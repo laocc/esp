@@ -288,9 +288,14 @@ final class Dispatcher
         $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
 
         if (!is_null($this->_debug)) {
-            register_shutdown_function(function () {
-                $this->_debug->save_logs('Dispatcher');
-            });
+            if ($this->_debug->_save_mode === 'cgi') {
+                $this->_debug->save_logs('DispatcherCgi');
+            } else {
+                register_shutdown_function(function () {
+                    $this->_debug->save_logs('Dispatcher');
+                });
+            }
+
         }
     }
 
@@ -315,11 +320,13 @@ final class Dispatcher
         fastcgi_finish_request();
 
         if (is_null($this->_debug)) return;
-
-        register_shutdown_function(function () {
-            $this->_debug->save_logs('minDispatcher');
-        });
-
+        if ($this->_debug->_save_mode === 'cgi') {
+            $this->_debug->save_logs('minDispatcherCgi');
+        } else {
+            register_shutdown_function(function () {
+                $this->_debug->save_logs('minDispatcher');
+            });
+        }
     }
 
     public function min()
@@ -433,8 +440,7 @@ final class Dispatcher
      */
     public function anonymousDebug()
     {
-        return new class()
-        {
+        return new class() {
             public function relay(...$a)
             {
             }
