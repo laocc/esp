@@ -396,10 +396,11 @@ final class Builder
      *
      * @param string $field
      * @param null $value
-     * @param bool $is_OR
-     * @return $this
+     * @param null $is_OR 若=0则返回组合后的where而不加入现有sql中
+     * @return $this|string
+     * @throws EspError
      */
-    public function where($field = '', $value = null, bool $is_OR = null)
+    public function where($field = '', $value = null, $is_OR = null)
     {
         if (empty($field)) return $this;
 
@@ -424,20 +425,23 @@ final class Builder
             foreach ($field as $key => $val) {
                 $fType = is_string($key) ? strtolower($key[-1]) : '';
                 if (is_int($key)) {
-                    if (is_array($val)) {
-                        $this->where_group_start();
+                    if (is_array($val)) {//多条件或开始
+
+                        $this->where_group_start(false);
+
                         foreach ($val as $k => $v) {
                             if (is_int($k) and is_array($v)) {
                                 /**
-                                 * 条件或
-                                 * $where = [];
-                                 * $where['labID'] = [1, 2];     //同一字段
                                  * $where[] = [['labID' => 1], ['labKey' => 2]]; //* 不同字段
                                  */
+                                $simWhere = [];
                                 foreach ($v as $vk => $vv) {
-                                    $this->where($vk, $vv, true);
+                                    $simWhere[] = $this->where($vk, $vv, 0);
                                 }
+                                $this->_where_insert('(' . implode(' and ', $simWhere) . ')', 'or');
+
                             } else {
+                                //$where['labID'] = [1, 2];     //同一字段
                                 $this->where($k, $v, true);
                             }
                         }
@@ -446,7 +450,7 @@ final class Builder
                         $this->where($val, null, $is_OR);
                     }
                 } else if (is_array($val) and !in_array($fType, ['#', '$', '@', '%'])) {
-                    $this->where_group_start();
+                    $this->where_group_start(false);
                     foreach ($val as $v) $this->where($key, $v, true);
                     $this->where_group_end();
                 } else {
@@ -755,6 +759,7 @@ final class Builder
         if (empty($_where)) {
             throw new EspError("where条件为空", 1);
         }
+        if ($is_OR === '') return $_where;
         $this->_where_insert($_where, ($is_OR ? ' OR ' : ' AND '));
         return $this;
     }

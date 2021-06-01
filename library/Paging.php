@@ -26,6 +26,12 @@ final class Paging
         $this->size = max(2, $size);
     }
 
+    public function index(int $index)
+    {
+        $this->index = $index;
+        return $this;
+    }
+
     public function calculate(int $count)
     {
         if ($this->size === 0) return;

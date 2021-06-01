@@ -676,6 +676,12 @@ abstract class Model
         return $this;
     }
 
+    final  public function pagingIndex(int $index)
+    {
+        $this->paging->index($index);
+        return $this;
+    }
+
     final public function pageSet(int $size, int $index = 0)
     {
         $this->paging = new Paging($size, $index);
