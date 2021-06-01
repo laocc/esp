@@ -431,6 +431,9 @@ final class Builder
 
                         foreach ($val as $k => $v) {
                             if (is_int($k) and is_array($v)) {
+                                if (empty($v)) {
+                                    throw new EspError("DB_ERROR: where 多条件联合时，不得有空条件", 1);
+                                }
                                 /**
                                  * $where[] = [['labID' => 1], ['labKey' => 2]]; //* 不同字段
                                  */
@@ -438,7 +441,8 @@ final class Builder
                                 foreach ($v as $vk => $vv) {
                                     $simWhere[] = $this->where($vk, $vv, 0);
                                 }
-                                $this->_where_insert('(' . implode(' and ', $simWhere) . ')', 'or');
+                                $siw = implode(' and ', $simWhere);
+                                $this->_where_insert("({$siw})", 'or');
 
                             } else {
                                 //$where['labID'] = [1, 2];     //同一字段
@@ -759,7 +763,9 @@ final class Builder
         if (empty($_where)) {
             throw new EspError("where条件为空", 1);
         }
-        if ($is_OR === '') return $_where;
+
+        if ($is_OR === 0) return $_where;
+
         $this->_where_insert($_where, ($is_OR ? ' OR ' : ' AND '));
         return $this;
     }
