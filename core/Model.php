@@ -56,6 +56,7 @@ abstract class Model
     private $_decode = [];
     private $_protect = true;//是否加保护符，默认加
     private $_distinct = null;//消除重复行
+    private $_having = '';//having
 
     protected $tableJoin = array();
     protected $tableJoinCount = 0;
@@ -79,10 +80,11 @@ abstract class Model
         //这两个值是程序临时指定的，与model自身的_table和_pri用处相同，优先级高
         $this->__table = $this->__pri = null;
         $this->columnKey = null;
+        $this->groupKey = null;
         $this->_count = null;
         $this->_distinct = null;
         $this->_protect = true;
-        $this->groupKey = null;
+        $this->_having = '';
         $this->forceIndex = [];
         $this->tableJoin = [];
         $this->selectKey = [];
@@ -323,6 +325,12 @@ abstract class Model
         return $this->checkRunData('update', $val) ?: $val;
     }
 
+    final public function having(string $filter)
+    {
+        $this->_having = $filter;
+        return $this;
+    }
+
     /**
      * 压缩字符串
      * @param string $string
@@ -351,7 +359,7 @@ abstract class Model
         }
     }
 
-    final  public function decode(string $cols, string $type = 'json')
+    final public function decode(string $cols, string $type = 'json')
     {
         if (!isset($this->_decode[$type])) $this->_decode[$type] = [];
         array_push($this->_decode[$type], ...array_map(function ($col) {
@@ -367,7 +375,7 @@ abstract class Model
      * @param null $lat
      * @return string
      */
-    final  public function point($lng, $lat = null)
+    final public function point($lng, $lat = null)
     {
         if (is_null($lat) and is_array($lng)) {
             $lat = $lng['lat'] ?? ($lng[1] ?? 0);
@@ -434,6 +442,7 @@ abstract class Model
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
         if ($this->forceIndex) $obj->force($this->forceIndex);
+        if ($this->_having) $obj->having($this->_having);
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
@@ -494,6 +503,8 @@ abstract class Model
             }
         }
         if ($this->forceIndex) $obj->force($this->forceIndex);
+        if ($this->_having) $obj->having($this->_having);
+
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
         $obj = $obj->where_in($this->PRI(), $ids);
         if ($where) $obj->where($where);
@@ -566,6 +577,8 @@ abstract class Model
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
+        if ($this->_having) $obj->having($this->_having);
+
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if (!empty($this->_order)) {
@@ -646,6 +659,8 @@ abstract class Model
 
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
+        if ($this->_having) $obj->having($this->_having);
+
         if (!empty($this->_order)) {
             foreach ($this->_order as $k => $a) {
                 $obj->order($a['key'], $a['sort'], $a['pro']);
@@ -670,13 +685,13 @@ abstract class Model
         return $data->rows(0, null, $_decode);
     }
 
-    final  public function pagingSet(int $size, int $index = 0)
+    final public function pagingSet(int $size, int $index = 0)
     {
         $this->paging = new Paging($size, $index);
         return $this;
     }
 
-    final  public function pagingIndex(int $index)
+    final public function pagingIndex(int $index)
     {
         $this->paging->index($index);
         return $this;
