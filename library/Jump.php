@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 namespace esp\library;
+
 /**
  * Class Jump
  * @package esp\library
@@ -23,9 +24,9 @@ final class Jump
         if ($token) $this->token = $token;
     }
 
-    public function encode($userID, $userName, $extend = ''): string
+    public function encode(int $userID, string $userName, $extend = ''): string
     {
-        if (!$extend) $extend = mt_rand($extend);
+        if (!$extend) $extend = _TIME;
         $extend = serialize($extend);
         $sign = md5(date('YmdHi', _TIME) . $userID . $this->token . $userName . $extend);
         $data = [
