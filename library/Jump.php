@@ -25,7 +25,8 @@ final class Jump
 
     public function encode($userID, $userName, $extend = ''): string
     {
-        if (is_array($extend)) $extend = json_encode($extend, 256 | 64);
+        if (!$extend) $extend = mt_rand($extend);
+        $extend = serialize($extend);
         $sign = md5(date('YmdHi', _TIME) . $userID . $this->token . $userName . $extend);
         $data = [
             'u' => $userID,
@@ -52,7 +53,8 @@ final class Jump
             $sign = md5(date('YmdHi', $time - 1) . $data['u'] . $this->token . $data['n'] . ($data['e'] ?? ''));
             if ($sign !== $data['s']) return [];
         }
-        return ['id' => $data['u'], 'name' => $data['n'], 'extend' => ($data['e'] ?? '')];
+        $ext = unserialize($data['e'] ?? '');
+        return ['id' => $data['u'], 'name' => $data['n'], 'extend' => $ext];
     }
 
 
