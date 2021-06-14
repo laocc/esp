@@ -243,15 +243,15 @@ final class Request
 
         //操作系统
         if (preg_match('/Android/i', $u_agent)) {
-            $os = 'Android';
-        } elseif (preg_match('/linux/i', $u_agent)) {
-            $os = 'linux';
-        } elseif (preg_match('/macintosh|mac os x/i', $u_agent)) {
-            $os = 'mac';
+            $os = 'android';
+        } elseif (preg_match('/iPhone|iPad|macintosh|mac os x/i', $u_agent)) {
+            $os = 'ios';
         } elseif (preg_match('/windows|win32/i', $u_agent)) {
             $os = 'windows';
+        } elseif (preg_match('/linux/i', $u_agent)) {
+            $os = 'linux';
         } else {
-            $os = 'Unknown';
+            $os = 'unknown';
         }
 
         //浏览器
