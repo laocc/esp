@@ -264,85 +264,12 @@ final class Debug
     }
 
     /**
-     * 读取计数器值表
-     * @param int $time
-     * @param bool $method
-     * @return array
-     */
-    public function counter(int $time = 0, bool $method = null)
-    {
-        if ($time === 0) $time = _TIME;
-        $conf = $this->_conf['counter'];
-        if (!$conf) return [];
-        if (is_array($conf)) {
-            if (!isset($conf['key'])) throw new EspError("counter.key未定义");
-            $key = "{$conf['key']}_counter_" . date('Y_m_d', $time);
-        } else {
-            $key = "{$conf}_counter_" . date('Y_m_d', $time);
-        }
-        $all = $this->_redis->hGetAlls($key);
-        if (empty($all)) return ['data' => [], 'action' => []];
-
-        $data = [];
-        foreach ($all as $hs => $hc) {
-            //实际这里是7段，分为5段就行，后三段连起来
-            $key = explode('/', $hs, 5);
-
-            $hour = (intval($key[0]) + 1);
-            $ca = "/{$key[4]}";
-            switch ($method) {
-                case true:
-                    $ca = "{$key[1]}:{$ca}";
-                    break;
-                case false;
-                    break;
-                default:
-                    $ca .= ucfirst($key[1]);
-                    break;
-            }
-            $vm = "{$key[2]}.{$key[2]}";
-            if (!isset($data[$vm])) $data[$vm] = ['action' => [], 'data' => []];
-            if (!isset($data[$vm]['data'][$hour])) $data[$vm]['data'][$hour] = [];
-            $data[$vm]['data'][$hour][$ca] = $hc;
-            if (!in_array($ca, $data[$vm]['action'])) $data[$vm]['action'][] = $ca;
-            sort($data[$vm]['action']);
-        }
-        return $data;
-    }
-
-    /**
      * 保存记录到的数据
      * @param string $pre
      * @return string
      */
     public function save_logs(string $pre = '')
     {
-        /**
-         * 控制器访问计数器
-         * 键名及表名格式是固定的
-         */
-        $counter = $this->_conf['counter'];
-        if ($counter and $this->_request->exists) {
-            $key = sprintf('%s/%s/%s/%s/%s/%s',
-                date('H'),
-                $this->_request->method,
-                $this->_request->virtual,
-                $this->_request->module ?: 'auto',
-                $this->_request->controller,
-                $this->_request->action);
-            if (is_array($counter)) {
-                $counter += ['key' => 'DEBUG', 'params' => 0];
-                $hKey = "{$counter['key']}_counter_" . date('Y_m_d');
-                if ($counter['params'] and $this->_request->params[0] ?? null) {
-                    $key .= "/{$this->_request->params[0]}";
-                }
-
-            } else {
-                $hKey = "{$counter}_counter_" . date('Y_m_d');
-            }
-            $this->_redis->hIncrBy($hKey, $key, 1);
-        }
-
         if (empty($this->_node)) return 'empty node';
         else if ($this->_run === false) return 'run false';
         $filename = $this->filename();

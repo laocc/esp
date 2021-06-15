@@ -81,6 +81,9 @@ final class Dispatcher
         $this->_request = new Request($this, $this->_config->get('request'));
         if (_CLI) return;
 
+        //控制器、并发计数
+        $this->_request->recodeConcurrentCounter($this->_config->Redis());
+
         $resource = $this->_config->get('resource');
         $resource['_rand'] = $this->_config->Redis()->get('resourceRand') ?: date('Ym');
         $this->_response = new Response($this->_request, $resource);
@@ -440,7 +443,8 @@ final class Dispatcher
      */
     public function anonymousDebug()
     {
-        return new class() {
+        return new class()
+        {
             public function relay(...$a)
             {
             }
