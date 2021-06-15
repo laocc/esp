@@ -82,7 +82,7 @@ final class Dispatcher
         if (_CLI) return;
 
         //控制器、并发计数
-        $this->_request->recodeConcurrentCounter($this->_config->Redis());
+        $this->_request->recodeConcurrent($this->_config->Redis());
 
         $resource = $this->_config->get('resource');
         $resource['_rand'] = $this->_config->Redis()->get('resourceRand') ?: date('Ym');
@@ -239,7 +239,9 @@ final class Dispatcher
 
         $route = (new Router())->run($this->_config, $this->_request);
         if (is_string($route)) exit($route);
-//        if (is_string($route)) throw new EspError($route);
+
+        //控制器、并发计数
+        $this->_request->recodeCounter($this->_config->Redis());
 
 
         if ($this->_plugs_count and !is_null($hook = $this->plugsHook('routeAfter'))) {
@@ -311,6 +313,9 @@ final class Dispatcher
     {
         $route = (new Router())->run($this->_config, $this->_request);
         if (is_string($route)) exit($route);
+
+        //控制器、并发计数
+        $this->_request->recodeCounter($this->_config->Redis());
 
         $value = $this->dispatch();
         if (_CLI) {

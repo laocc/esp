@@ -116,6 +116,15 @@ final class Request
         return ucfirst($actionExt);
     }
 
+    public function recodeConcurrent(Redis $redis)
+    {
+        //统计最大并发
+        if ($this->counter['concurrent']) {
+            $redis->hIncrBy($this->counter['concurrent'] . '_concurrent_' . date('Y_m_d'), '' . _TIME, 1);
+        }
+    }
+
+
     /**
      *
      * 统计最大并发
@@ -123,32 +132,25 @@ final class Request
      *
      * @param Redis $redis
      */
-    public function recodeConcurrentCounter(Redis $redis)
+    public function recodeCounter(Redis $redis)
     {
-        //统计最大并发
-        if ($this->counter['concurrent']) {
-            $redis->hIncrBy($this->counter['concurrent'] . '_concurrent_' . date('Y_m_d'), '' . _TIME, 1);
-        }
-
         if (!$this->exists or !$this->counter['counter']) return;
 
         //记录各控制器请求计数
         $counter = $this->counter['counter'];
 
-        if ($counter) {
-            $key = sprintf('%s/%s/%s/%s/%s/%s', date('H'), $this->method, $this->virtual, $this->module ?: 'auto', $this->controller, $this->action);
-            if (is_array($counter)) {
-                $counter += ['key' => 'DEBUG', 'params' => 0];
-                $hKey = "{$counter['key']}_counter_" . date('Y_m_d');
-                if ($counter['params'] and $this->params[0] ?? null) {
-                    $key .= "/{$this->params[0]}";
-                }
-
-            } else {
-                $hKey = "{$counter}_counter_" . date('Y_m_d');
+        $key = sprintf('%s/%s/%s/%s/%s/%s', date('H'), $this->method, $this->virtual, $this->module ?: 'auto', $this->controller, $this->action);
+        if (is_array($counter)) {
+            $counter += ['key' => 'DEBUG', 'params' => 0];
+            $hKey = "{$counter['key']}_counter_" . date('Y_m_d');
+            if ($counter['params'] and $this->params[0] ?? null) {
+                $key .= "/{$this->params[0]}";
             }
-            $redis->hIncrBy($hKey, $key, 1);
+
+        } else {
+            $hKey = "{$counter}_counter_" . date('Y_m_d');
         }
+        $redis->hIncrBy($hKey, $key, 1);
 
     }
 
