@@ -379,7 +379,7 @@ final class Response
 
         //合并js/css
         if ($this->_resource->concat()) {
-            preg_match_all("/<link.*?href=['\"](\/\w.+?)['\"].*?\>/is", $html, $css, PREG_PATTERN_ORDER);
+            preg_match_all("/<link.*?href=['\"](\/\w.+?)['\"].*?>/is", $html, $css, PREG_PATTERN_ORDER);
             $html = str_replace($css[0], '', $html);
             foreach ($css[1] as $i => $mch) {
                 if (($w = strpos($mch, '?')) > 0) {
@@ -390,7 +390,7 @@ final class Response
             $import = $this->_resource->get('importcss');
             if ($import) array_push($css[1], ...$import);
 
-            preg_match_all("/<script.*?src=['\"](\/\w.+?)['\"]\><\/script>/i", $html, $jss, PREG_PATTERN_ORDER);
+            preg_match_all("/<script.*?src=['\"](\/\w.+?)['\"]><\/script>/i", $html, $jss, PREG_PATTERN_ORDER);
             $html = str_replace($jss[0], '', $html);
             foreach ($jss[1] as $i => $mch) {
                 if (substr($mch, 0, 4) === 'http' or substr($mch, 0, 2) === '//') {

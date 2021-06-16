@@ -115,8 +115,8 @@ final class Session
 
     /**
      * 设置或读取过期时间
-     * @param int $ttl
-     * @return int|bool
+     * @param int|null $ttl
+     * @return bool|int
      */
     public function ttl(int $ttl = null)
     {
@@ -162,9 +162,10 @@ final class Session
     }
 
     /**
-     * @param  $key
+     * @param $key
      * @param null $autoValue
-     * @return bool|float|int|mixed|null|string
+     * @return array|bool|float|int|mixed|string|null
+     * @throws EspError
      */
     public function get($key, $autoValue = null)
     {
@@ -196,7 +197,12 @@ final class Session
         return $this;
     }
 
-
+    /**
+     * @param string $key
+     * @param null $val
+     * @return bool|mixed|string|null
+     * @throws EspError
+     */
     public function data(string $key, $val = null)
     {
         if ($this->run !== true) {

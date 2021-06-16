@@ -8,6 +8,8 @@ use esp\error\EspError;
 use esp\core\face\Adapter;
 use esp\core\ext\Input;
 use esp\library\ext\Markdown;
+use function \esp\helper\host;
+use function \esp\helper\root;
 
 abstract class Controller
 {
@@ -27,7 +29,7 @@ abstract class Controller
      * Controller constructor.
      * @param Dispatcher $dispatcher
      */
-    final public function __construct(Dispatcher $dispatcher)
+    public function __construct(Dispatcher $dispatcher)
     {
         $this->_dispatcher = &$dispatcher;
         $this->_config = &$dispatcher->_config;
@@ -45,12 +47,13 @@ abstract class Controller
      * 本站_HOST，总是被列入查询，另外自定义更多的host，
      * 若允许本站或空来路，则用：$this->check_host('');
      *
-     * @param array ...$host
+     * @param mixed ...$host
+     * @throws EspError
      */
     final protected function check_host(...$host)
     {
         if (isset($host[0]) and is_array($host[0])) $host = $host[0];
-        if (!in_array(\esp\helper\host($this->_request->referer), array_merge([_HOST], $host))) {
+        if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
             throw new EspError('禁止接入');
         }
     }
@@ -141,6 +144,7 @@ abstract class Controller
     /**
      * 强制以某账号运行
      * @param string $user
+     * @throws EspError
      */
     final protected function run_user(string $user = 'www')
     {
@@ -202,6 +206,7 @@ abstract class Controller
 
     /**
      * @return Session
+     * @throws EspError
      */
     final public function getSession(): Session
     {
@@ -257,8 +262,7 @@ abstract class Controller
      */
     final private function anonymousDebug()
     {
-        return new class()
-        {
+        return new class() {
             public function relay(...$a)
             {
             }
@@ -273,7 +277,7 @@ abstract class Controller
     /**
      * @param string $data
      * @param null $pre
-     * @return bool|Debug|__anonymous@6848
+     * @return false|__anonymous@5908
      */
     final public function debug($data = '_R_DEBUG_', $pre = null)
     {
@@ -289,7 +293,7 @@ abstract class Controller
 
     /**
      * @param null $data
-     * @return bool|Debug|__anonymous@6848
+     * @return bool|Debug|__anonymous@5789
      */
     final public function debug_mysql($data = null)
     {
@@ -359,8 +363,8 @@ abstract class Controller
      *
      * 此函数冲刷(flush)所有响应的数据给客户端并结束请求。这使得客户端结束连接后，需要大量时间运行的任务能够继续运行。
      * 在mvc结构下，不能在控制器中结束客户端，否则视图不会渲染
-     * @return bool
-     * @param string $notes
+     *
+     * @param string|null $notes
      * @return bool
      */
     final protected function finish(string $notes = null)
@@ -392,7 +396,7 @@ abstract class Controller
         $controller = $action = $params = null;
 
         if (is_string($param[0]) and is_dir($param[0])) {
-            $directory = \esp\helper\root($param[0]) . '/';
+            $directory = root($param[0]) . '/';
             array_shift($param);
         }
         if (is_dir($directory . $param[0])) {
@@ -461,6 +465,7 @@ abstract class Controller
         $this->css($mdCss);
         if ($mdFile) $this->_response->setView($mdFile);
         $this->_response->set_value('md', null);
+        return $this;
     }
 
     /**

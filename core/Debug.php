@@ -497,7 +497,7 @@ final class Debug
         elseif (is_bool($msg)) $msg = "\n" . var_export($msg, true);
         elseif (!is_string($msg)) $msg = strval($msg);
 
-        $this->_node_len = max(iconv_strlen($msg), $this->_node_len);
+        $this->_node_len = max(\iconv_strlen($msg), $this->_node_len);
         $nowMemo = memory_get_usage();
         $time = sprintf($this->_print_format, (microtime(true) - $this->prevTime) * 1000);
         $memo = sprintf($this->_print_format, ($nowMemo - $this->memory) / 1024);

@@ -6,6 +6,7 @@ namespace esp\core;
 use esp\error\EspError;
 use esp\core\face\Adapter;
 use esp\library\ext\MarkdownObject;
+use function \esp\helper\root;
 
 final class View
 {
@@ -124,6 +125,7 @@ final class View
     /**
      * @param $use
      * @return $this
+     * @throws EspError
      */
     public function setAdapter($use): View
     {
@@ -168,13 +170,14 @@ final class View
      * @param string $file
      * @param array $value
      * @return string
+     * @throws EspError
      */
     public function render(string $file, array $value): string
     {
-        $dir = \esp\helper\root($this->dir());
+        $dir = root($this->dir());
         $fileV = $this->file() ?: $file;//以之前设置的优先
         if (strpos($fileV[0], '/') === 0) {
-            $fileV = \esp\helper\root($fileV);
+            $fileV = root($fileV);
         } else {
             $fileV = "{$dir}/{$fileV}";
         }
@@ -211,6 +214,7 @@ final class View
      * 显示解析视图结果
      * @param $file
      * @param $value
+     * @throws EspError
      */
     public function display($file, $value): void
     {

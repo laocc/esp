@@ -5,6 +5,8 @@ namespace esp\core;
 
 use esp\core\db\Redis;
 use esp\error\EspError;
+use function \esp\helper\root;
+use function \esp\helper\str_rand;
 
 final class Request
 {
@@ -46,8 +48,8 @@ final class Request
         $this->_dispatcher = $dispatcher;
         $this->virtual = _VIRTUAL;//虚拟机
         $this->module = '';//虚拟机下模块
-        $this->directory = \esp\helper\root($config['directory']);
-        $this->router_path = \esp\helper\root($config['router']);
+        $this->directory = root($config['directory']);
+        $this->router_path = root($config['router']);
         $this->contFix = $config['controller'];//控制器后缀，固定的
         $this->suffix = $config['suffix'];//数组，方法名后缀，在总控中根据不同请求再取值
         $this->counter['concurrent'] = $config['concurrent'];
@@ -171,8 +173,9 @@ final class Request
     /**
      * 读取（控制器、方法）计数器值表
      * @param int $time
-     * @param bool $method
-     * @return array
+     * @param bool|null $method
+     * @return array|array[]
+     * @throws EspError
      */
     public function getCounter(int $time = 0, bool $method = null)
     {
@@ -297,7 +300,8 @@ final class Request
      * 客户端唯一标识
      * @param string $key
      * @param bool $number
-     * @return int|mixed|null|string
+     * @return string
+     * @throws EspError
      */
     public function cid(string $key = '_SSI', bool $number = false): string
     {
@@ -308,7 +312,7 @@ final class Request
         $key = strtolower($key);
         $unique = $_COOKIE[$key] ?? null;
         if (!$unique) {
-            $unique = $number ? mt_rand() : \esp\helper\str_rand(20);
+            $unique = $number ? mt_rand() : str_rand(20);
             if (headers_sent($file, $line)) {
                 $err = ['message' => "Header be Send:{$file}[{$line}]", 'code' => 500, 'file' => $file, 'line' => $line];
                 throw new EspError($err);
@@ -337,8 +341,9 @@ final class Request
 
     /**
      * 分析客户端信息
-     * @param string $agent
-     * @return array ['agent' => '', 'browser' => '', 'version' => '', 'os' => '']
+     * @param string|null $agent
+     * @return array|string[]
+     * ['agent' => '', 'browser' => '', 'version' => '', 'os' => '']
      */
     public function agent(string $agent = null): array
     {
@@ -423,7 +428,6 @@ final class Request
     {
         if (_CLI) return '127.0.0.1';
         if (defined('_CIP')) return _CIP;
-        $ip = '127.0.0.1';
         foreach (['X-REAL-IP', 'X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'REMOTE_ADDR'] as $k) {
             if (!empty($ip = ($_SERVER[$k] ?? null))) {
                 if (strpos($ip, ',')) $ip = explode(',', $ip)[0];
