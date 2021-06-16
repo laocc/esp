@@ -8,6 +8,8 @@ use esp\library\ext\Xss;
 /**
  * Class Input
  * http://php.net/manual/zh/wrappers.php.php
+ *
+ * 当前方法已弃用，建议用 request\Get|Post方法
  */
 final class Input
 {
