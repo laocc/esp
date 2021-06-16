@@ -35,7 +35,7 @@ final class Configure
             $bFile = "{$conf['path']}/buffer.ini";
             if (!is_readable($bFile)) $bFile = "{$conf['path']}/buffer.json";
             if (!is_readable($bFile)) $bFile = "{$conf['path']}/buffer.php";
-            if (!is_readable($bFile)) throw new EspError("未定义buffer文件");
+            if (!is_readable($bFile)) throw new EspError("buffer配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
         }
 
         $_bufferConf = $this->loadFile($bFile, 'buffer');
