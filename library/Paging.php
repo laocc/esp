@@ -7,7 +7,7 @@ namespace esp\library;
 
 final class Paging
 {
-    public $key = 'page';       //分页，页码键名，可以任意命名，只要不和常用的别的键冲突就可以
+    public $index_key = 'page';       //分页，页码键名，可以任意命名，只要不和常用的别的键冲突就可以
     public $size_key = 'size';       //分页，每页数量
     public $index = 1;//当前页码
     public $size = 0;//每页数量
@@ -17,13 +17,12 @@ final class Paging
 
     private $autoSize = 10;
 
-    public function __construct(int $size = 0, int $index = 0)
+    public function __construct(int $sizeDefault = 0, int $index = 0)
     {
-        $this->index = $index ?: intval($_GET[$this->key] ?? 1);
+        $this->index = intval($_GET[$this->index_key] ?? $index);
+        $this->size = intval($_GET[$this->size_key] ?? $sizeDefault);
         if ($this->index < 1) $this->index = 1;
-        if (!$size) $size = intval($_GET[$this->size_key] ?? 0);
-        if (!$size) $size = $this->autoSize;
-        $this->size = max(2, $size);
+        if ($this->size < 2) $this->size = $this->autoSize;
     }
 
     public function index(int $index)
@@ -32,6 +31,10 @@ final class Paging
         return $this;
     }
 
+    /**
+     * 在Model->list()中调用，设置当前总数，并计算页数和最后一页数
+     * @param int $count
+     */
     public function calculate(int $count)
     {
         if ($this->size === 0) return;
@@ -48,7 +51,7 @@ final class Paging
             'index' => $this->index,//当前页码
             'total' => $this->total,
             'last' => $this->last,
-            'key' => $this->key,
+            'key' => $this->index_key,
         ];
     }
 
