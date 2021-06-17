@@ -10,6 +10,9 @@ use esp\library\ext\Xss;
  * http://php.net/manual/zh/wrappers.php.php
  *
  * 当前方法已弃用，建议用 request\Get|Post方法
+ * 关于文件列表，建议用Fso类
+ * 此类将来有可能移除
+ *
  */
 final class Input
 {

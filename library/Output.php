@@ -6,6 +6,13 @@ namespace esp\library;
 use esp\error\EspError;
 use function esp\helper\text;
 
+/**
+ * CURL的封装，此类不再维护，请用  laocc/http
+ * https://github.com/laocc/http
+ *
+ * Class Output
+ * @package esp\library
+ */
 final class Output
 {
     private $option;
