@@ -6,7 +6,6 @@ namespace esp\core;
 use esp\core\db\Redis;
 use esp\error\EspError;
 use esp\core\face\Adapter;
-use esp\core\ext\Input;
 use esp\library\ext\Markdown;
 use function \esp\helper\host;
 use function \esp\helper\root;
@@ -20,7 +19,6 @@ abstract class Controller
     protected $_session;
     protected $_plugs;
     protected $_cookies;
-    private $_input;
     public $_debug;
     public $_buffer;
 
@@ -186,17 +184,6 @@ abstract class Controller
     }
 
     /**
-     * @return Input
-     */
-    final protected function input(): Input
-    {
-        if (is_null($this->_input)) {
-            $this->_input = new Input();
-        }
-        return $this->_input;
-    }
-
-    /**
      * @return Redis
      */
     final public function getBuffer(): Redis
@@ -339,6 +326,8 @@ abstract class Controller
         header("Location: {$url}", true, $code);
         fastcgi_finish_request();
         if (!is_null($this->_debug)) {
+            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+            $this->_debug->relay(['控制器主动调用 redirect()结束客户端', $url], $pre);
             $this->_debug->save_logs('Controller Redirect');
         }
         exit;

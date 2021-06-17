@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace esp\library;
 
-
+/**
+ * Model中用的分页
+ *
+ * Class Paging
+ * @package esp\library
+ */
 final class Paging
 {
     public $index_key = 'page';       //分页，页码键名，可以任意命名，只要不和常用的别的键冲突就可以

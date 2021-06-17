@@ -25,7 +25,7 @@ class Result
     /**
      * 魔术方法获取变量值
      * @param string $key
-     * @return |null
+     * @return null
      */
     public function __get(string $key)
     {
@@ -74,8 +74,8 @@ class Result
 
     /**
      * @param $key
-     * @param null $value
-     * @return $this
+     * @param string $value
+     * @return Result
      */
     public function data($key, $value = 'nullValue'): Result
     {
