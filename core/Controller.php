@@ -246,10 +246,11 @@ abstract class Controller
 
     /**
      * 构造一个Debug空类
+     * @return Debug
      */
     final private function anonymousDebug()
     {
-        return new class() {
+        $db = new class() {
             public function relay(...$a)
             {
             }
@@ -259,12 +260,13 @@ abstract class Controller
                 // TODO: Implement __call() method.
             }
         };
+        return $db;
     }
 
     /**
      * @param string $data
      * @param null $pre
-     * @return false|__anonymous@5908
+     * @return false|Debug
      */
     final public function debug($data = '_R_DEBUG_', $pre = null)
     {
@@ -280,7 +282,7 @@ abstract class Controller
 
     /**
      * @param null $data
-     * @return bool|Debug|__anonymous@5789
+     * @return bool|Debug
      */
     final public function debug_mysql($data = null)
     {
