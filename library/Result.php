@@ -3,6 +3,12 @@ declare(strict_types=1);
 
 namespace esp\library;
 
+/**
+ * ajax/post中返回数据的封装
+ *
+ * Class Result
+ * @package esp\library
+ */
 class Result
 {
     private $_success = true;
