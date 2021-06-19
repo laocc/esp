@@ -11,7 +11,7 @@
   "require": {
     "laocc/http": "*",
     "laocc/gd": "*",
-    "php": ">7.0",
+    "php": ">7.1",
     "ext-json": "*",
     "ext-curl": "*",
     "ext-libxml": "*",

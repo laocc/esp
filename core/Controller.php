@@ -272,7 +272,7 @@ abstract class Controller
     {
         if (_CLI) return false;
         if ($data === '_R_DEBUG_') {
-            if (is_null($this->_debug)) return $this->anonymousDebug();
+            if (is_null($this->_debug)) $this->_debug = $this->anonymousDebug();
             return $this->_debug;
         }
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
