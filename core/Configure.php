@@ -92,7 +92,7 @@ final class Configure
 //                $config[] = ['file' => $f->getPathname(), 'name' => $fn];
 //            }
 //        }
-        
+
         $dir = new \DirectoryIterator($conf['path']);
         foreach ($dir as $f) {
             if ($f->isFile()) {
