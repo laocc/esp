@@ -270,7 +270,6 @@ class RedisHash
     /**
      * Returns the values in a hash, as an array of strings.
      *
-     * @param string $key
      * @return  array   An array of elements, the values of the hash. This works like PHP's array_values().
      * @link    http://redis.io/commands/hvals
      * @example
@@ -304,31 +303,9 @@ class RedisHash
     /**
      * Returns the whole hash, as an array of strings indexed by strings.
      *
-     * @param string $key
      * @return  array   An array of elements, the contents of the hash.
      * @link    http://redis.io/commands/hgetall
      * @example
-     * <pre>
-     * $redis->delete('h');
-     * $redis->hSet('h', 'a', 'x');
-     * $redis->hSet('h', 'b', 'y');
-     * $redis->hSet('h', 'c', 'z');
-     * $redis->hSet('h', 'd', 't');
-     * var_dump($redis->hGetAll('h'));
-     *
-     * // Output:
-     * // array(4) {
-     * //   ["a"]=>
-     * //   string(1) "x"
-     * //   ["b"]=>
-     * //   string(1) "y"
-     * //   ["c"]=>
-     * //   string(1) "z"
-     * //   ["d"]=>
-     * //   string(1) "t"
-     * // }
-     * // The order is random and corresponds to redis' own internal representation of the set structure.
-     * </pre>
      */
     public function hGetAll()
     {
@@ -338,16 +315,10 @@ class RedisHash
     /**
      * Verify if the specified member exists in a key.
      *
-     * @param string $key
      * @param string $hashKey
      * @return  bool    If the member exists in the hash table, return TRUE, otherwise return FALSE.
      * @link    http://redis.io/commands/hexists
      * @example
-     * <pre>
-     * $redis->hSet('h', 'a', 'x');
-     * $redis->hExists('h', 'a');               //  TRUE
-     * $redis->hExists('h', 'NonExistingKey');  // FALSE
-     * </pre>
      */
     public function hExists(string $hashKey)
     {
@@ -357,17 +328,11 @@ class RedisHash
     /**
      * Increments the value of a member from a hash by a given amount.
      *
-     * @param string $key
      * @param string $hashKey
      * @param int $value (integer) value that will be added to the member's value
      * @return  int     the new value
      * @link    http://redis.io/commands/hincrby
      * @example
-     * <pre>
-     * $redis->delete('h');
-     * $redis->hIncrBy('h', 'x', 2); // returns 2: h[x] = 2 now.
-     * $redis->hIncrBy('h', 'x', 1); // h[x] ← 2 + 1. Returns 3
-     * </pre>
      */
     public function hIncrBy(string $hashKey, int $value)
     {
@@ -375,30 +340,10 @@ class RedisHash
     }
 
     /**
-     * Increment the float value of a hash field by the given amount
-     * @param string $key
-     * @param string $field
+     * @param int $field
      * @param float $increment
-     * @return  float
+     * @return float
      * @link    http://redis.io/commands/hincrbyfloat
-     * @example
-     * <pre>
-     * $redis = new Redis();
-     * $redis->connect('127.0.0.1');
-     * $redis->hset('h', 'float', 3);
-     * $redis->hset('h', 'int',   3);
-     * var_dump( $redis->hIncrByFloat('h', 'float', 1.5) ); // float(4.5)
-     *
-     * var_dump( $redis->hGetAll('h') );
-     *
-     * // Output
-     *  array(2) {
-     *    ["float"]=>
-     *    string(3) "4.5"
-     *    ["int"]=>
-     *    string(1) "3"
-     *  }
-     * </pre>
      */
     public function hIncrByFloat(int $field, float $increment)
     {
@@ -409,7 +354,6 @@ class RedisHash
      * Fills in a whole hash. Non-string values are converted to string, using the standard (string) cast.
      * NULL values are stored as empty strings
      *
-     * @param string $key
      * @param array $hashKeys key → value array
      * @return  bool
      * @link    http://redis.io/commands/hmset
@@ -428,7 +372,6 @@ class RedisHash
     /**
      * Retirieve the values associated to the specified fields in the hash.
      *
-     * @param string $key
      * @param array $hashKeys
      * @return  array   Array An array of elements, the values of the specified fields in the hash,
      * with the hash keys as array keys.

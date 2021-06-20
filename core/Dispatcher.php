@@ -78,52 +78,62 @@ final class Dispatcher
         if (!_CLI) new Error($this, $option['error'] ?? []);
         $this->_config = new Configure($option['config'] ?? []);
         chdir(_ROOT);
-        $this->_request = new Request($this, $this->_config->get('request'));
+        $request = $this->_config->get('request');
+        $this->_request = new Request($this, $request);
         if (_CLI) return;
 
         //控制器、并发计数
-        $this->_request->recodeConcurrent($this->_config->Redis());
+        if ($request['concurrent'] ?? '') {
+            $this->_request->recodeConcurrent($this->_config->_Redis);
+        }
 
-        $resource = $this->_config->get('resource');
-        $resource['_rand'] = $this->_config->Redis()->get('resourceRand') ?: date('Ym');
+        $resourceConf = $this->_config->get('resource');
+        $resource = $this->mergeConf($resourceConf);
+        $resource['_rand'] = $this->_config->_Redis->get('resourceRand') ?: date('YmdH');
         $this->_response = new Response($this->_request, $resource);
 
-        if ($debug = $this->_config->get('debug')) {
-            $this->_debug = new Debug($this->_request, $this->_response, $this->_config, $debug);
-            $GLOBALS['_Debug'] = $this->_debug;
+        if ($debugConf = $this->_config->get('debug')) {
+            $debug = $this->mergeConf($debugConf);
+            if ($debug['run'] ?? 0) {
+                $this->_debug = new Debug($this->_request, $this->_response, $this->_config, $debug);
+                $GLOBALS['_Debug'] = $this->_debug;
+            }
         }
 
         if ($cookies = $this->_config->get('cookies')) {
-            $cokConf = ($cookies['default'] ?? []) + ['run' => false, 'domain' => 'host'];
-            if (isset($cookies[_VIRTUAL])) $cokConf = $cookies[_VIRTUAL] + $cokConf;
-            if (isset($cookies[_HOST])) $cokConf = $cookies[_HOST] + $cokConf;
-            if (isset($cookies[_DOMAIN])) $cokConf = $cookies[_DOMAIN] + $cokConf;
+            $cokConf = $this->mergeConf($cookies, ($cookies['default'] ?? []) + ['run' => false, 'domain' => 'host']);
+
             if ($cokConf['run'] ?? false) {
                 $this->_cookies = new Cookies($cokConf);
                 $this->relayDebug(['cookies' => $_COOKIE]);
 
                 //若不启用Cookies，则也不启用Session
                 if ($session = ($this->_config->get('session'))) {
-                    $sseConf = ($session['default'] ?? []) + ['run' => false, 'domain' => $cokConf['domain']];
-                    if (isset($session[_VIRTUAL])) $sseConf = $session[_VIRTUAL] + $sseConf;
-                    if (isset($session[_HOST])) $sseConf = $session[_HOST] + $sseConf;
-                    if (isset($session[_DOMAIN])) $sseConf = $session[_DOMAIN] + $sseConf;
+                    $sseConf = $this->mergeConf($session, ($session['default'] ?? []) + ['run' => false, 'domain' => $cokConf['domain']]);
+
                     if ($sseConf['run'] ?? false) {
+
+                        $rds = $this->_config->get('database.redis');
+                        $cID = $rds['db'];
+                        if (is_array($cID)) $cID = $cID['config'] ?? 1;
+
+                        $rdsConf = ($sseConf['redis'] ?? []) + $rds;
+                        if (is_array($rdsConf['db'])) $rdsConf['db'] = $rdsConf['db']['session'] ?? 0;
+                        if ($rdsConf['db'] === 0) $rdsConf['db'] = $cID;
+                        if ($rdsConf['db'] === $cID) $sseConf['object'] = $this->_config->_Redis->redis;
+                        $sseConf['redis'] = $rdsConf;
+
                         $this->_session = new Session($sseConf, $this->_debug);
                         $this->relayDebug(['session' => $_SESSION]);
+
                     }
                 }
             }
         }
 
-        if ($cache = $this->_config->get('cache')) {
-            $setting = $cache['setting'];
-            if (isset($cache[_VIRTUAL])) {
-                $setting = $cache[_VIRTUAL] + $setting;
-            }
-            if (isset($setting['run']) and $setting['run']) {
-                $this->_cache = new Cache($this, $setting);
-            }
+        if ($cacheConf = $this->_config->get('cache')) {
+            $cache = $this->mergeConf($cacheConf);
+            if ($cache['run'] ?? 0) $this->_cache = new Cache($this, $cache);
         }
 
         if (isset($option['after'])) $option['after']($option);
@@ -132,6 +142,30 @@ final class Dispatcher
         if (headers_sent($file, $line)) {
             throw new EspError("在{$file}[{$line}]行已有数据输出，系统无法启动");
         }
+    }
+
+    /**
+     * 合并设置
+     *
+     * @param $allConf
+     * @param null $conf
+     * @return array|null
+     */
+    private function mergeConf($allConf, $conf = null)
+    {
+        if (is_null($conf)) $conf = $allConf['default'];
+
+        if (isset($allConf[_VIRTUAL])) {
+            $conf = array_replace_recursive($conf, $allConf[_VIRTUAL]);
+        }
+        if (isset($allConf[_HOST])) {
+            $conf = array_replace_recursive($conf, $allConf[_HOST]);
+        }
+        if (isset($allConf[_DOMAIN])) {
+            $conf = array_replace_recursive($conf, $allConf[_DOMAIN]);
+        }
+
+        return $conf;
     }
 
     private function relayDebug($info)
@@ -241,8 +275,9 @@ final class Dispatcher
         if (is_string($route)) exit($route);
 
         //控制器、并发计数
-        $this->_request->recodeCounter($this->_config->Redis());
-
+        if ($this->_request->counter['counter']) {
+            $this->_request->recodeCounter($this->_config->_Redis);
+        }
 
         if ($this->_plugs_count and !is_null($hook = $this->plugsHook('routeAfter'))) {
             $this->_response->display($hook);
@@ -315,7 +350,7 @@ final class Dispatcher
         if (is_string($route)) exit($route);
 
         //控制器、并发计数
-        $this->_request->recodeCounter($this->_config->Redis());
+        $this->_request->recodeCounter($this->_config->_Redis);
 
         $value = $this->dispatch();
         if (_CLI) {
@@ -328,6 +363,7 @@ final class Dispatcher
         fastcgi_finish_request();
 
         if (is_null($this->_debug)) return;
+
         if ($this->_debug->_save_mode === 'cgi') {
             $this->_debug->save_logs('minDispatcherCgi');
         } else {
@@ -442,23 +478,5 @@ final class Dispatcher
         return $msg;
     }
 
-
-    /**
-     * 构造一个Debug空类
-     */
-    public function anonymousDebug()
-    {
-        return new class()
-        {
-            public function relay(...$a)
-            {
-            }
-
-            public function __call($name, $arguments)
-            {
-                // TODO: Implement __call() method.
-            }
-        };
-    }
 
 }

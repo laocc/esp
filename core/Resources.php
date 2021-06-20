@@ -12,13 +12,9 @@ final class Resources
 {
     private $conf;
 
-    public function __construct(array $_config)
+    public function __construct(array $_config = null)
     {
-        if (!is_array($_config) or empty($_config)) $_config = [];
-        $this->conf = $_config['default'] ?? [];
-        if (isset($_config[_VIRTUAL])) {
-            $this->conf = array_replace_recursive($this->conf, $_config[_VIRTUAL]);
-        }
+        $this->conf = $_config ?: [];
 
         if (isset($this->conf['host'])) {
             if (!($this->conf['host'][0] === '/' or substr($this->conf['host'], 0, 4) === 'http')) {
@@ -27,7 +23,7 @@ final class Resources
         } else {
             $this->conf['host'] = '';
         }
-        if ($this->conf['rand'] === 'RAND') $this->conf['rand'] = $_config['_rand'] ?? mt_rand();
+        if (($this->conf['rand'] ?? '') === 'RAND') $this->conf['rand'] = $_config['_rand'] ?? date('YmdH');
 
         $this->conf += [
             'host' => '',

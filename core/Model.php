@@ -24,8 +24,8 @@ abstract class Model
     private $__pri = null;          //同上，对应主键名
     private $__cache = false;       //是否缓存，若此值被设置，则覆盖子对象的相关设置
     private $__tranIndex = 0;       //事务
+    private $__buffer;
 
-    protected $_buffer;
     protected $_config;
     /**
      * @var $_controller Controller
@@ -50,6 +50,7 @@ abstract class Model
     private $_Mysql = array();
     private $_Mongodb = array();
     private $_Redis = array();
+    private $_Hash;
 
     private $_order = [];
     private $_count = null;
@@ -79,25 +80,26 @@ abstract class Model
     {
         //这两个值是程序临时指定的，与model自身的_table和_pri用处相同，优先级高
         $this->__table = $this->__pri = null;
-        $this->columnKey = null;
-        $this->groupKey = null;
         $this->_count = null;
         $this->_distinct = null;
         $this->_protect = true;
         $this->_having = '';
+        $this->_order = [];
+        $this->_decode = [];
+
+        $this->columnKey = null;
+        $this->groupKey = null;
         $this->forceIndex = [];
         $this->tableJoin = [];
         $this->selectKey = [];
-        $this->_order = [];
-        $this->_decode = [];
     }
 
     public function __construct(...$param)
     {
         $this->_controller = &$GLOBALS['_Controller'];
         $this->_config = $this->_controller->getConfig();
-        $this->_buffer = $this->_controller->_buffer;
         $this->_debug = $this->_controller->_debug;
+        $this->__buffer = $this->_controller->_buffer;
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $param);
@@ -166,7 +168,7 @@ abstract class Model
      */
     final public function publish(string $action, array $value)
     {
-        return $this->_buffer->publish('order', $action, $value);
+        return $this->__buffer->publish('order', $action, $value);
     }
 
     /**
@@ -180,7 +182,7 @@ abstract class Model
      */
     final public function queue(string $queKey, array $data)
     {
-        return $this->_buffer->push('task', $data + ['_action' => $queKey]);
+        return $this->__buffer->push('task', $data + ['_action' => $queKey]);
     }
 
     /**
@@ -264,13 +266,15 @@ abstract class Model
 
     final public function unset_cache(...$where)
     {
+        if (!$this->__cache) return $this;
+
         $mysql = $this->Mysql(0, [], 1);
         $table = $this->table();
 
         foreach ($where as $w) {
             if (is_numeric($w)) $w = [$this->PRI() => intval($w)];
             $kID = md5(serialize($w));
-            $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
+            $this->Redis()->hash("{$mysql->dbName}.{$table}")->del("_id_{$kID}");
         }
         return $this;
     }
@@ -293,7 +297,7 @@ abstract class Model
         $val = $mysql->table($table, $this->_protect)->where($where)->delete($this->_traceLevel);
         if ($this->__cache === true) {
             $kID = md5(serialize($where));
-            $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
+            $this->Redis()->hash("{$mysql->dbName}.{$table}")->del("_id_{$kID}");
         }
         return $this->checkRunData('delete', $val) ?: $val;
     }
@@ -318,7 +322,7 @@ abstract class Model
 
         if ($this->__cache === true) {
             $kID = md5(serialize($where));
-            $this->cache_del("{$mysql->dbName}.{$table}", "_id_{$kID}");
+            $this->Redis()->hash("{$mysql->dbName}.{$table}")->del("_id_{$kID}");
         }
 
         $val = $mysql->table($table, $this->_protect)->where($where)->update($data, true, $this->_traceLevel);
@@ -423,7 +427,7 @@ abstract class Model
         }
         if ($this->__cache === true) {
             $kID = md5(serialize($where));
-            $data = $this->cache_get("{$mysql->dbName}.{$table}", "_id_{$kID}");
+            $data = $this->Redis()->hash("{$mysql->dbName}.{$table}")->get("_id_{$kID}");
             $dbg = ['table' => $table, 'where' => $where, 'key' => $kID, 'value' => !empty($data)];
             $this->debug($dbg, 1);
             if (!empty($data)) {
@@ -466,7 +470,7 @@ abstract class Model
         if ($val === false) $val = null;
 
         if ($this->__cache === true and isset($kID) and !empty($val)) {
-            $this->cache_set("{$mysql->dbName}.{$table}", "_id_{$kID}", $val);
+            $this->Redis()->hash("{$mysql->dbName}.{$table}")->set("_id_{$kID}", $val);
             $this->__cache = false;
         }
         return $val;
@@ -892,7 +896,14 @@ abstract class Model
     final public function Redis(array $_conf = [], int $traceLevel = 0): Redis
     {
         $conf = $this->_config->get('database.redis');
-        $conf = $_conf + $conf + ['db' => 1];
+        $dbConfig = $conf['db'];
+        if (is_array($dbConfig)) $dbConfig = $dbConfig['config'] ?? 1;
+
+        $conf = $_conf + $conf + ['db' => 0];
+        if (is_array($conf['db'])) $conf['db'] = $conf['db']['cache'] ?? 0;
+
+        if ($conf['db'] === 0 or $conf['db'] === $dbConfig) return $this->_config->Redis();
+
         if (!isset($this->_Redis[$conf['db']])) {
             $this->_Redis[$conf['db']] = new Redis($conf);
             $this->debug("create Redis({$conf['db']});", $traceLevel + 1);
@@ -902,63 +913,14 @@ abstract class Model
 
 
     /**
-     * 缓存哈希
+     * 创建哈希表
+     *
      * @param string $table
-     * @param string|null $key
-     * @param string|null $value
-     * @return mixed
+     * @return db\ext\RedisHash
      */
-    final public function Hash(string $table, string $key = null, string $value = null)
+    final public function Hash(string $table)
     {
-        $hash = $this->Redis()->hash($table);
-        if (is_null($key)) return $hash;
-        if (is_null($value))
-            return $hash->hGet($key);
-        else
-            return $hash->hSet($key, $value);
-    }
-
-
-    /**
-     * @param string $hashTable
-     * @param mixed ...$key
-     * @return int
-     */
-    final public function cache_delete(string $hashTable, ...$key)
-    {
-        return $this->_buffer->hash($hashTable)->del(...$key);
-    }
-
-    /**
-     * @param string $hashTable
-     * @param mixed ...$key
-     * @return int
-     */
-    final public function cache_del(string $hashTable, ...$key)
-    {
-        return $this->_buffer->hash($hashTable)->del(...$key);
-    }
-
-
-    /**
-     * @param string $hashTable
-     * @param string $key
-     * @param array $value
-     * @return int
-     */
-    final public function cache_set(string $hashTable, string $key, array $value)
-    {
-        return $this->_buffer->hash($hashTable)->set($key, $value);
-    }
-
-    /**
-     * @param string $hashTable
-     * @param string $key
-     * @return array|int|string
-     */
-    final public function cache_get(string $hashTable, string $key)
-    {
-        return $this->_buffer->hash($hashTable)->get($key);
+        return $this->Redis()->hash($table);
     }
 
 
@@ -966,10 +928,12 @@ abstract class Model
      * 注册关门后操作
      * @param callable $fun
      * @param mixed ...$parameter
+     * @return $this
      */
     final public function shutdown(callable $fun, ...$parameter)
     {
         register_shutdown_function($fun, ...$parameter);
+        return $this;
     }
 
 }

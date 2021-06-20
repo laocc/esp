@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\http\Http;
-use esp\core\db\File;
 use esp\core\db\Redis;
 use esp\error\EspError;
 use function esp\helper\root;
@@ -28,46 +27,33 @@ final class Configure
         $this->_token = md5(__FILE__);
         $conf += ['path' => '/common/config'];
         $conf['path'] = root($conf['path']);
-        if (isset($conf['buffer'])) {
-            $bFile = root($conf['buffer']);
-            if (!is_readable($bFile)) throw new EspError("指定的buffer文件({$bFile})不存在");
-        } else {
-            $bFile = "{$conf['path']}/buffer.ini";
-            if (!is_readable($bFile)) $bFile = "{$conf['path']}/buffer.json";
-            if (!is_readable($bFile)) $bFile = "{$conf['path']}/buffer.php";
-            if (!is_readable($bFile)) throw new EspError("buffer配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
+
+        $bFile = "{$conf['path']}/database.ini";
+        if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.json";
+        if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.php";
+        if (!is_readable($bFile)) throw new EspError("database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
+
+        $dbConf = $this->loadFile($bFile, 'database');
+        if (empty($dbConf)) return;
+        if (isset($conf['folder'])) {
+            $bFile = str_replace('/database.', "/{$conf['folder']}/database.", $bFile);
+            if (is_readable($bFile)) {
+                $siteConf = $this->loadFile($bFile, 'database');
+                $dbConf = array_replace_recursive($dbConf, $siteConf);
+            }
         }
 
-        $_bufferConf = $this->loadFile($bFile, 'buffer');
-        $_bufferConf = $_bufferConf['buffer'] ?? [];
-
-        if (_DEBUG and isset($_bufferConf['debug'])) {
-            $_bufferConf = $_bufferConf['debug'];
-        } else if (isset($conf['folder']) and isset($_bufferConf[$conf['folder']])) {
-            $_bufferConf = $_bufferConf[$conf['folder']];
-        }
-
-        if (($_bufferConf['medium'] ?? 'redis') === 'file') {
-            $this->_Redis = new File($_bufferConf);
-        } else {
-            $this->_Redis = new Redis($_bufferConf);
-        }
-
-        if (defined('_RPC')) {
-            $this->_rpc = _RPC;
-        } else {
-            $this->_rpc = $_bufferConf['rpc'] ?? null;
-        }
+        $this->_rpc = defined('_RPC') ? _RPC : ($dbConf['database']['rpc'] ?? null);
         if ($this->_rpc) {
             $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
         }
 
+        $rdsConf = $dbConf['database']['redis'] ?? [];
+        if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
+        $this->_Redis = new Redis($rdsConf);
+
         //没有强制从文件加载
-        if (!_CLI
-            and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD)
-            and (!isset($_bufferConf['cache']) or $_bufferConf['cache'])
-            and (!isset($conf['cache']) or $conf['cache'])
-        ) {
+        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD)) {
             $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
             if (!empty($this->_CONFIG_)) return;
         }
@@ -98,13 +84,15 @@ final class Configure
         }
 
         $config = [];
-        $dir = new \DirectoryIterator(_ESP_ROOT . "/common/config");
-        foreach ($dir as $f) {
-            if ($f->isFile()) {
-                $fn = $f->getFilename();
-                $config[] = ['file' => $f->getPathname(), 'name' => $fn];
-            }
-        }
+
+//        $dir = new \DirectoryIterator(_ESP_ROOT . "/common/config");
+//        foreach ($dir as $f) {
+//            if ($f->isFile()) {
+//                $fn = $f->getFilename();
+//                $config[] = ['file' => $f->getPathname(), 'name' => $fn];
+//            }
+//        }
+        
         $dir = new \DirectoryIterator($conf['path']);
         foreach ($dir as $f) {
             if ($f->isFile()) {

@@ -14,19 +14,19 @@ class SessionRedis implements \SessionHandlerInterface
     private $_prefix = '';
     private $_debug;
 
-
     /**
      * SessionRedis constructor.
      * @param Debug $debug
+     * @param \Redis $redis
      * @param bool $delay
      * @param string $prefix
      */
-    public function __construct(Debug $debug = null, bool $delay = false, string $prefix = '')
+    public function __construct(Debug $debug = null, \Redis $redis = null, bool $delay = false, string $prefix = '')
     {
         $this->_debug = $debug;
         $this->_delay = $delay;
         $this->_prefix = $prefix;
-        $this->_Redis = new \Redis();
+        if (!is_null($redis)) $this->_Redis = $redis;
     }
 
 
@@ -41,9 +41,13 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function open($save_path, $session_name)
     {
+        if (!is_null($this->_Redis)) return true;
+
         $conf = unserialize($save_path);
-        if (!isset($conf['port']) or intval($conf['port']) === 0) {
-            if (!$this->_Redis->connect($conf['host'])) {
+
+        $this->_Redis = new \Redis();
+        if ($conf['host'][0] === '/') {
+            if (!$this->_Redis->connect($conf['host'])) {//sock方式
                 throw new EspError("Redis服务器【{$conf['host']}】无法连接。");
             }
         } else if (!$this->_Redis->connect($conf['host'], $conf['port'])) {
@@ -59,7 +63,7 @@ class SessionRedis implements \SessionHandlerInterface
         if (!$select) {
             throw new EspError("Redis选择库【{$conf['db']}】失败。" . json_encode($conf, 256 | 64));
         }
-        return $this->realValue($select);
+        return boolval($select);
     }
 
     /**
@@ -105,7 +109,7 @@ class SessionRedis implements \SessionHandlerInterface
     public function destroy($session_id)
     {
         $d = $this->_Redis->del($session_id);
-        return $this->realValue($d);
+        return boolval($d);
     }
 
     /**
@@ -136,12 +140,6 @@ class SessionRedis implements \SessionHandlerInterface
         }
     }
 
-    private function realValue($val)
-    {
-        return boolval($val);
-//        return !boolval($val);
-    }
-
     /**
      * 基本上是倒数第二个被调用
      * 如果session_abort()被调用过，则不会调用此方法
@@ -169,11 +167,12 @@ class SessionRedis implements \SessionHandlerInterface
     {
         if (!$this->_update or $session_data === 'a:0:{}' or empty($session_data)) return true;
         if ($this->_delay) {
-            $ttl = session_cache_expire();
+            $ttl = session_cache_expire() * 60;
         } else {
             $ttl = $this->_Redis->ttl($session_id);
-            if ($ttl < 0) $ttl = session_cache_expire();
+            if ($ttl < 0) $ttl = session_cache_expire() * 60;
         }
+
         $save = $this->_Redis->set($session_id, $session_data, $ttl);
         !is_null($this->_debug) && $this->_debug->relay(['write_session' => [
             'id' => $session_id,
@@ -182,7 +181,7 @@ class SessionRedis implements \SessionHandlerInterface
             'time' => microtime(true),
             'save' => var_export($save, true)
         ]]);
-        return $this->realValue($save);
+        return boolval($save);
     }
 
 
@@ -198,8 +197,9 @@ class SessionRedis implements \SessionHandlerInterface
         try {
             $this->_Redis->close();
         } catch (EspError $e) {
+            return false;
         }
-        return $this->realValue(1);
+        return true;
     }
 
     /**

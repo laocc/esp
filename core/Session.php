@@ -55,39 +55,48 @@ final class Session
     public function __construct(array $config, Debug $debug = null)
     {
         $this->debug = $debug;
-
         $config += [
             'key' => 'PHPSESSID',
-            'host' => '127.0.0.1',
-            'port' => 6379,
-            'db' => 0,
             'delay' => 0,
             'prefix' => '',
-            'password' => '',
-            'httponly' => 1,
+            'path' => '/',
+            'domain' => '',
+            'limiter' => 'nocache',
+            'object' => null,
             'expire' => 86400,
-            'ttl' => 86400
+            'cookie' => 86400,
+            'redis' => [
+                'host' => '127.0.0.1',
+                'port' => 6379,
+                'db' => 0,
+                'password' => '',
+            ]
         ];
+        if ($config['cookie'] < $config['expire']) $config['cookie'] = $config['expire'];
 
-        $this->SessionHandler = new SessionRedis($debug, boolval($config['delay']), $config['prefix']);
-        $handler = session_set_save_handler($this->SessionHandler, true);//!_DEBUG
+        $this->SessionHandler = new SessionRedis($debug, $config['object'], boolval($config['delay']), $config['prefix']);
+        $handler = session_set_save_handler($this->SessionHandler, true);
 
         $option = [];
-        $option['save_path'] = serialize(['host' => $config['host'], 'port' => $config['port'], 'db' => $config['db'], 'password' => $config['password']]);
-        $option['cache_expire'] = intval($config['expire']);//session内容生命期
+        $option['save_path'] = serialize($config['redis']);
         $option['serialize_handler'] = 'php_serialize';//用PHP序列化存储数据
+
+        //若为nocache以外值，则Last-Modified为index.php最后保存时间，不知道为什么要显示成这个时间
+        $option['cache_limiter'] = $config['limiter'];//客户端缓存方法
+        $option['cache_expire'] = intval($config['expire'] / 60);//缓存方法内容生命期，分钟
 
         $option['use_trans_sid'] = 0;//指定是否启用透明 SID 支持。默认为 0（禁用）。
         $option['use_only_cookies'] = 1;//指定是否在客户端仅仅使用 cookie 来存放会话 ID。。启用此设定可以防止有关通过 URL 传递会话 ID 的攻击
         $option['use_cookies'] = 1;//指定是否在客户端用 cookie 来存放会话 ID
 
         $option['name'] = strtolower($config['key']);//指定会话名以用做 cookie 的名字。只能由字母数字组成，默认为 PHPSESSID
-        $option['cookie_lifetime'] = intval($config['ttl']);//以秒数指定了发送到浏览器的 cookie 的生命周期。值为 0 表示"直到关闭浏览器"。
-        $option['cookie_path'] = ($config['path'] ?? '/');//指定了要设定会话 cookie 的路径。默认为 /。
+        $option['cookie_lifetime'] = intval($config['cookie']);//以秒数指定了发送到浏览器的 cookie 的生命周期。值为 0 表示"直到关闭浏览器"。
+        $option['cookie_path'] = $config['path'];//指定了要设定会话 cookie 的路径。默认为 /。
         $option['cookie_secure'] = _HTTPS;//指定是否仅通过安全连接发送 cookie。默认为 off。如果启用了https则要启用
-        $option['cookie_httponly'] = boolval($config['httponly']);//只能PHP读取，JS禁止
+        $option['cookie_httponly'] = true;//只能PHP读取，JS禁止
         $option['cookie_domain'] = ($config['domain'] === 'host') ? _HOST : _DOMAIN;
-        if (version_compare(PHP_VERSION, '7.3', '>')) $option['cookie_samesite'] = 'Lax';
+
+        if (version_compare(PHP_VERSION, '7.3', '>=')) $option['cookie_samesite'] = 'Lax';
 
         //允许从URL或POST中读取session值
         if ($option['use_trans_sid']) {

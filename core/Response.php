@@ -41,7 +41,7 @@ final class Response
 
     private $_autoRun = true;
 
-    public function __construct(Request $request, array $resource)
+    public function __construct(Request $request, array $resource = null)
     {
         $this->_request = $request;
         $this->_resource = new Resources($resource);

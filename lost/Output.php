@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\core;
+namespace esp\lost;
 
 use esp\error\EspError;
 use function esp\helper\text;

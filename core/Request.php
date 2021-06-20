@@ -16,7 +16,7 @@ final class Request
     public $router_path = null;//路由配置目录
     public $router = null;//实际生效的路由器名称
     public $params = Array();
-    private $counter = ['concurrent' => false, 'counter' => false];
+    public $counter = ['concurrent' => false, 'counter' => false];
 
     public $virtual;
     public $module;
@@ -30,12 +30,16 @@ final class Request
     public $contFix;
     public $route_view;
     public $exists = true;//是否为正常的请求，请求了不存在的控制器
+    private $_ajax;
 
-    public function __construct(Dispatcher $dispatcher, array $config)
+    public function __construct(Dispatcher $dispatcher, array $config = null)
     {
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
-        if (_CLI) $this->method = 'CLI';
-        if ($this->method === 'GET' and $this->isAjax()) $this->method = 'AJAX';
+        $this->_ajax = !_CLI && (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
+
+        if ($this->method === 'GET' and $this->_ajax) $this->method = 'AJAX';
+        else if (_CLI) $this->method = 'CLI';
+
         if (!is_array($config) or empty($config)) $config = [];
         $config += [
             'directory' => '/application',
@@ -134,9 +138,9 @@ final class Request
      *
      * @param Redis $redis
      */
-    public function recodeCounter(Redis $redis)
+    public function recodeCounter(Redis $redis = null)
     {
-        if (!$this->exists or !$this->counter['counter']) return;
+        if (!$redis or !$this->exists or !$this->counter['counter']) return;
 
         //记录各控制器请求计数
         $counter = $this->counter['counter'];
@@ -265,29 +269,41 @@ final class Request
         return $this->method;
     }
 
-    public function isGet(): bool
+    /**
+     * 是否get
+     * @param bool $ajax ajax方式的get是否也算在内
+     * @return bool
+     */
+    public function isGet(bool $ajax = false): bool
     {
-        return $this->method === 'GET' && strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') !== 'xmlhttprequest';
+        if ($ajax) return $this->method === 'GET';
+        return $this->method === 'GET' && !$this->_ajax;
     }
 
-    public function isPost(): bool
+    /**
+     * 是否post，含ajax
+     * @param bool $ajax ajax方式的post是否也算在内
+     * @return bool
+     */
+    public function isPost(bool $ajax = true): bool
     {
-        return $this->method === 'POST';
+        if ($ajax) return $this->method === 'POST';
+        return $this->method === 'POST' && !$this->_ajax;
+    }
+
+    /**
+     * 含 Get和Post，
+     * $this->method=ajax时仅指get时
+     * @return bool
+     */
+    public function isAjax(): bool
+    {
+        return _CLI ? false : $this->_ajax;
     }
 
     public function isCli(): bool
     {
         return _CLI;
-    }
-
-    /**
-     * 含 Get和Post，但是：$this->method不含post
-     * $this->method 仅指get时的ajax
-     * @return bool
-     */
-    public function isAjax(): bool
-    {
-        return _CLI ? false : strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest';
     }
 
     public function ua(): string
@@ -320,7 +336,7 @@ final class Request
             $time = _TIME + 86400 * 365;
             $dom = $this->_dispatcher->_cookies->domain;
 
-            if (version_compare(PHP_VERSION, '7.3', '>')) {
+            if (version_compare(PHP_VERSION, '7.3', '>=')) {
                 $option = [];
                 $option['domain'] = $dom;
                 $option['expires'] = $time;
@@ -341,6 +357,7 @@ final class Request
 
     /**
      * 分析客户端信息
+     *
      * @param string|null $agent
      * @return array|string[]
      * ['agent' => '', 'browser' => '', 'version' => '', 'os' => '']
@@ -415,6 +432,10 @@ final class Request
             'os' => $os];
     }
 
+    /**
+     * md5(IP+UA+DOMAIN)
+     * @return string
+     */
     public function key(): string
     {
         return md5($this->ip() . getenv('HTTP_USER_AGENT') . _DOMAIN);
@@ -429,7 +450,7 @@ final class Request
         if (_CLI) return '127.0.0.1';
         if (defined('_CIP')) return _CIP;
         foreach (['X-REAL-IP', 'X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'REMOTE_ADDR'] as $k) {
-            if (!empty($ip = ($_SERVER[$k] ?? null))) {
+            if (!empty($ip = ($_SERVER[$k] ?? ''))) {
                 if (strpos($ip, ',')) $ip = explode(',', $ip)[0];
                 if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) break;
             }
@@ -466,7 +487,7 @@ final class Request
         $browser = $browser ?: ($_SERVER['HTTP_USER_AGENT'] ?? '');
         if (empty($browser)) return true;
 
-        $uaKey = ['iphone', 'ipad', 'ipod', 'ios'];
+        $uaKey = ['iphone', 'ipad', 'ipod', 'ios', 'macintosh'];
         foreach ($uaKey as $i => $k) if (stripos($browser, $k)) return true;
 
         return false;

@@ -26,7 +26,7 @@ final class Router
             '_default' => ['match' => '/^\/(?:[a-z][a-z0-9\-]+\/?)*/i', 'route' => []],
         ];
         $rdsKey = $configure->_token . '_ROUTES_' . _VIRTUAL;
-        $redis = $configure->Redis();
+        $redis = $configure->_Redis;
         $modRoute = (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and $redis) ? $redis->get($rdsKey) : null;
 
         if (empty($modRoute) or $modRoute === 'null') {
@@ -80,9 +80,6 @@ final class Router
                 if (is_string($routeValue)) return $routeValue;
 
                 list($module, $controller, $action, $param) = $routeValue;
-
-                //'控制器名不可以为Base，这是系统保留公共控制器名'
-                if ($controller === 'base') return ('非法Controller请求');
 
                 //分别获取各个指定参数
                 $params = array();

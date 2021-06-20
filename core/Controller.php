@@ -37,7 +37,7 @@ abstract class Controller
         $this->_session = &$dispatcher->_session;
         $this->_cookies = &$dispatcher->_cookies;
         $this->_debug = &$dispatcher->_debug;
-        $this->_buffer = $this->_config->Redis();
+        $this->_buffer = $this->_config->_Redis;
     }
 
     /**
@@ -58,59 +58,13 @@ abstract class Controller
 
     /**
      * 读取Config值
+     *
      * @param mixed ...$key
      * @return array|null|string
      */
     final protected function config(...$key)
     {
         return $this->_config->get(...$key);
-    }
-
-    /**
-     * 发送订阅，需要在swoole\redis中接收
-     * @param string $action
-     * @param $value
-     * @return int
-     */
-    final protected function publish(string $action, $value)
-    {
-        return $this->_buffer->publish('order', $action, $value);
-    }
-
-
-    /**
-     * @return array
-     */
-    final protected function frameInfo()
-    {
-        $json = file_get_contents(_ROOT . '/composer.lock');
-        $json = json_decode($json, true);
-        $value = [];
-        $value['php'] = phpversion();
-        $value['redis'] = phpversion('redis');
-        $value['swoole'] = phpversion('swoole');
-
-        foreach ($json['packages'] as $pack) {
-            if ($pack['name'] === 'laocc/esp') {
-                $value['esp'] = $pack['version'];
-            }
-        }
-
-        return $value;
-    }
-
-    /**
-     * 发送到队列
-     * @param string $queKey
-     * @param array $data
-     * @return int
-     *
-     * 用下面方法读取
-     * while ($data = $this->_redis->lPop($queKey)){...}
-     */
-    final public function queue(string $queKey, array $data)
-    {
-        return $this->_buffer->push('task', $data + ['_action' => $queKey]);
     }
 
     /**
@@ -184,11 +138,42 @@ abstract class Controller
     }
 
     /**
+     * 发送订阅，需要在swoole\redis中接收
+     *
+     * @param string $action
+     * @param $value
+     * @return int
+     */
+    final protected function publish(string $action, $value)
+    {
+        return $this->_buffer->publish('order', $action, $value);
+    }
+
+    /**
+     * 发送到队列
+     * @param string $queKey
+     * @param array $data
+     * @return int
+     *
+     * 用下面方法读取
+     * while ($data = $this->_redis->lPop($queKey)){...}
+     */
+    final public function queue(string $queKey, array $data)
+    {
+        return $this->_buffer->push('task', $data + ['_action' => $queKey]);
+    }
+
+    /**
      * @return Redis
      */
     final public function getBuffer(): Redis
     {
         return $this->_buffer;
+    }
+
+    final public function buffer_flush()
+    {
+        return $this->_buffer->flush();
     }
 
     /**
@@ -245,25 +230,6 @@ abstract class Controller
 
 
     /**
-     * 构造一个Debug空类
-     * @return Debug
-     */
-    final private function anonymousDebug()
-    {
-        $db = new class() {
-            public function relay(...$a)
-            {
-            }
-
-            public function __call($name, $arguments)
-            {
-                // TODO: Implement __call() method.
-            }
-        };
-        return $db;
-    }
-
-    /**
      * @param string $data
      * @param null $pre
      * @return false|Debug
@@ -271,10 +237,8 @@ abstract class Controller
     final public function debug($data = '_R_DEBUG_', $pre = null)
     {
         if (_CLI) return false;
-        if ($data === '_R_DEBUG_') {
-            if (is_null($this->_debug)) $this->_debug = $this->anonymousDebug();
-            return $this->_debug;
-        }
+        if (is_null($this->_debug)) return null;
+        if ($data === '_R_DEBUG_') return $this->_debug;
         if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
         $this->_debug->relay($data, $pre);
         return $this->_debug;
@@ -287,17 +251,10 @@ abstract class Controller
     final public function debug_mysql($data = null)
     {
         if (_CLI) return false;
-        if (is_null($data)) {
-            if (is_null($this->_debug)) return $this->anonymousDebug();
-            return $this->_debug;
-        }
+        if (is_null($this->_debug)) return null;
+        if (is_null($data)) return $this->_debug;
         $this->_debug->mysql_log($data);
         return $this->_debug;
-    }
-
-    final public function buffer_flush()
-    {
-        return $this->_buffer->flush();
     }
 
     final protected function header(...$kv): Controller
@@ -611,5 +568,30 @@ abstract class Controller
         register_shutdown_function($fun, ...$params);
         return $this;
     }
+
+
+    /**
+     * 主要依赖版本号
+     *
+     * @return array
+     */
+    final protected function frameVersion()
+    {
+        $json = file_get_contents(_ROOT . '/composer.lock');
+        $json = json_decode($json, true);
+        $value = [];
+        $value['php'] = phpversion();
+        $value['redis'] = phpversion('redis');
+        $value['swoole'] = phpversion('swoole');
+
+        foreach ($json['packages'] as $pack) {
+            if ($pack['name'] === 'laocc/esp') {
+                $value['esp'] = $pack['version'];
+            }
+        }
+
+        return $value;
+    }
+
 
 }

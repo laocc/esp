@@ -11,11 +11,13 @@ use function esp\helper\replace_array;
 final class Error
 {
     private $dispatcher;
+    private $restrain = false;
 
     public function __construct(Dispatcher $dispatcher, array $option)
     {
         $this->dispatcher = $dispatcher;
         $this->register_handler($option);
+        $this->restrain = boolval($option['restrain'] ?? 0);
     }
 
     /**
@@ -212,15 +214,20 @@ final class Error
     {
         $debug = Debug::class();
         $md5Key = md5(($error['message'] ?? '') . ($error['file'] ?? ''));
-        $errLogFile = dirname($path) . "/error/{$md5Key}.md";
 
-        if (is_readable($errLogFile)) {
-            if (!is_null($debug)) $debug->disable();
-            file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-            return;
+        if ($this->restrain) {
+
+            $errLogFile = dirname($path) . "/error/{$md5Key}.md";
+
+            if (is_readable($errLogFile)) {
+                if (!is_null($debug)) $debug->disable();
+                file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+                return;
+            }
+            mk_dir($errLogFile);
+            file_put_contents($errLogFile, json_encode(['trace' => ''] + $error, 256 | 64 | 128) . "\n");
+
         }
-        mk_dir($errLogFile);
-        file_put_contents($errLogFile, json_encode(['trace' => ''] + $error, 256 | 64 | 128) . "\n");
 
 
         if ($error['trace'] ?? null) {

@@ -9,8 +9,7 @@ final class Cookies
 
     public function __construct(array $cookies)
     {
-        $this->domain = _DOMAIN;
-        if ($cookies['domain'] === 'host') $this->domain = _HOST;
+        $this->domain = ($cookies['domain'] === 'host') ? _HOST : _DOMAIN;
     }
 
     public function get($key = null, $autoValue = null)

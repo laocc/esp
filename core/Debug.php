@@ -39,16 +39,14 @@ final class Debug
      */
     public $_save_mode = 'shutdown';
 
-    public function __construct(Request $request, Response $response, Configure $config, array $setting)
+    public function __construct(Request $request, Response $response, Configure $configure, array $conf)
     {
         $this->_star = [$_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true), memory_get_usage()];
 
-        $conf = $setting['default'];
-        if (isset($setting[_VIRTUAL])) $conf = $setting[_VIRTUAL] + $conf;
         $this->_save_mode = $conf['mode'] ?? ($conf['api'] ?? 'shutdown');
 
         if ($this->_save_mode === 'rpc') {
-            $this->_rpc = $config->_rpc;
+            $this->_rpc = $configure->_rpc;
 
             //当前是主服务器，还继续判断保存方式
             if (is_file(_RUNTIME . '/master.lock')) {
@@ -66,9 +64,9 @@ final class Debug
         }
 
         $this->_conf = $conf + ['path' => _RUNTIME, 'run' => false, 'host' => [], 'counter' => false];
-        $this->_redis = $config->_Redis;
+        $this->_redis = $configure->_Redis;
         $this->_ROOT_len = strlen(_ROOT);
-        $this->_run = boolval($conf['run']);
+        $this->_run = boolval($conf['auto'] ?? 1);
         $this->_time = microtime(true);
         $this->prevTime = microtime(true) - $this->_star[0];
         $this->memory = memory_get_usage();
