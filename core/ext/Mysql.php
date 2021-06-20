@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace esp\core\ext;
 
 
+use esp\error\EspError;
+
 trait Mysql
 {
 
@@ -21,7 +23,11 @@ trait Mysql
             $table = $this->table();
         }
         if (!$table) throw new EspError('Unable to get table name');
-        $val = $this->Mysql()->table('INFORMATION_SCHEMA.Columns')
+        /**
+         * @var $mysql \esp\core\db\Mysql
+         */
+        $mysql = $this->Mysql();
+        $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME')
             ->where(['table_name' => $table, 'EXTRA' => 'auto_increment'])
             ->get()->row();
@@ -58,8 +64,8 @@ trait Mysql
         /**
          * @var $mysql \esp\core\db\Mysql
          */
-        $this->cache_set("{$mysql->dbName}.{$table}", '_field', []);
-        $this->cache_set("{$mysql->dbName}.{$table}", '_title', []);
+        $this->hash("{$mysql->dbName}.{$table}")->set('_field', []);
+        $this->hash("{$mysql->dbName}.{$table}")->set('_title', []);
         $val = $mysql->query("analyze table `{$table}`", [], null, 1)->rows();
         if (isset($val[1])) {
             return $val[0]['Msg_text'];
@@ -231,7 +237,7 @@ PHP;
          * @var $mysql \esp\core\db\Mysql
          */
         $table = $this->table();
-        $data = $this->cache_get("{$mysql->dbName}.{$table}", '_title');
+        $data = $this->hash("{$mysql->dbName}.{$table}")->get('_title');
         if (!empty($data)) return $data;
 
         if (!$table) throw new EspError('Unable to get table name');
@@ -239,7 +245,7 @@ PHP;
             ->select('COLUMN_NAME as field,COLUMN_COMMENT as title')
             ->where(['table_name' => $table])->get()->rows();
         if (empty($val)) throw new EspError("Table '{$table}' doesn't exist");
-        $this->cache_set("{$mysql->dbName}.{$table}", '_title', $val);
+        $this->hash("{$mysql->dbName}.{$table}")->set('_title', $val);
         return $val;
     }
 
@@ -252,10 +258,10 @@ PHP;
      */
     final private function _FillField(string $dbName, string $table, array $data)
     {
-        $field = $this->cache_get("{$dbName}.{$table}", '_field');
+        $field = $this->hash("{$dbName}.{$table}")->get('_field');
         if (empty($field)) {
             $field = $this->fields($table);
-            $s = $this->cache_set("{$dbName}.{$table}", '_field', $field);
+            $s = $this->hash("{$dbName}.{$table}")->set('_field', $field);
         }
         if (isset($data[0])) {
             $rowData = $data[0];
@@ -286,10 +292,10 @@ PHP;
 
     final private function _AllField(string $dbName, string $table, array $data)
     {
-        $field = $this->cache_get("{$dbName}.{$table}", '_field');
+        $field = $this->hash("{$dbName}.{$table}")->get('_field');
         if (empty($field)) {
             $field = $this->fields($table);
-            $this->cache_set("{$dbName}.{$table}", '_field', $field);
+            $this->hash("{$dbName}.{$table}")->set('_field', $field);
         }
         if (isset($data[0])) {
             $rowData = $data[0];
