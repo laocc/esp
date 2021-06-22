@@ -109,31 +109,9 @@ trait Mysql
     }
 
     /**
-     * @return array|null
-     * *************************** 17. row ***************************
-     * TABLE_CATALOG: def
-     * TABLE_SCHEMA: dbPlatform
-     * TABLE_NAME: tabWithdrawals
-     * TABLE_TYPE: BASE TABLE
-     * ENGINE: InnoDB
-     * VERSION: 10
-     * ROW_FORMAT: Dynamic
-     * TABLE_ROWS: 16
-     * AVG_ROW_LENGTH: 1024
-     * DATA_LENGTH: 16384
-     * MAX_DATA_LENGTH: 0
-     * INDEX_LENGTH: 49152
-     * DATA_FREE: 0
-     * AUTO_INCREMENT: 17
-     * CREATE_TIME: 2018-08-30 11:23:08
-     * UPDATE_TIME: 2018-08-30 18:59:16
-     * CHECK_TIME: NULL
-     * TABLE_COLLATION: utf8_general_ci
-     * CHECKSUM: NULL
-     * CREATE_OPTIONS:
-     * TABLE_COMMENT: 提现表
-     *
-     * select concat(round(sum(data_length/1024/1024),2),'MB') as data from tables where table_schema='home' and table_name='members';
+     * @param false $html
+     * @return array|mixed|string
+     * @throws EspError
      */
     final public function tables($html = false)
     {
