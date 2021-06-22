@@ -31,7 +31,14 @@ final class Mysql
     {
         if (is_array($tranID)) list($tranID, $conf) = [0, $tranID];
         if (!is_array($conf)) throw new EspError('Mysql配置信息错误', 1);
-        $this->_CONF = $conf;
+        $this->_CONF = $conf + [
+                'charset' => 'utf8mb4',
+                'collation' => 'utf8mb4_general_ci',
+//                'persistent' => false,//是否持久连接，不指定时取值_CLI
+                'param' => true,
+                'timeout' => 2,
+                'prefix' => '',
+            ];
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
         $this->dbName = $conf['db'];
@@ -65,7 +72,7 @@ final class Mysql
         if (!is_string($tabName) || empty($tabName)) {
             throw new EspError('PDO_Error :  数据表名错误', 1);
         }
-        return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? false), $this->transID))
+        return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $this->transID))
             ->table($tabName, $_protect);
     }
 
@@ -86,7 +93,7 @@ final class Mysql
         $real = $upData ? 'master' : 'slave';
         if (!$upData and !isset($this->_CONF['slave'])) $real = 'master';
 
-        //当前缓存过该连接，直接返
+        //当前缓存过该连接，直接返回
         if (isset($this->_pool[$real][$trans_id]) and !empty($this->_pool[$real][$trans_id])) {
             return $this->_pool[$real][$trans_id];
         }
@@ -123,18 +130,18 @@ final class Mysql
                 \PDO::ATTR_AUTOCOMMIT => $autoCommit,//自动提交事务=false，默认true,如果有事务ID，则为false
                 \PDO::ATTR_EMULATE_PREPARES => false,//是否使用PHP本地模拟prepare,禁止
                 \PDO::ATTR_PERSISTENT => $persistent,//是否启用持久连接
-                \PDO::ATTR_TIMEOUT => (($cnf['timeout'] ?? 0) > 0) ? $cnf['timeout'] : 5, //设置超时时间，秒，默认=2
+                \PDO::ATTR_TIMEOUT => intval($cnf['timeout']), //设置超时时间，秒，默认=2
             );
             if ($host[0] === '/') {//unix_socket
                 $conStr = "mysql:dbname={$cnf['db']};unix_socket={$host};charset={$cnf['charset']};id={$trans_id};";
             } else {
-                list($host, $port) = explode(':', "{$host}:3306", 2);
+                $port = 3306;
+                if (strpos($host, ':') > 0) list($host, $port) = explode(':', "{$host}:3306", 2);
                 $conStr = "mysql:dbname={$cnf['db']};host={$host};port={$port};charset={$cnf['charset']};id={$trans_id};";
             }
 
             try {
                 $pdo = new \PDO($conStr, $cnf['username'], $cnf['password'], $opts);
-
                 (!_CLI) and $this->debug("{$real}({$trans_id}):{$conStr}");
 
             } catch (\PDOException $PdoError) {
