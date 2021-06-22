@@ -37,6 +37,7 @@ abstract class Model
      */
     private $_debug;
     private $_print_sql;
+    private $_debug_sql;
     private $_traceLevel = 1;
 
     //=========数据相关===========
@@ -153,6 +154,12 @@ abstract class Model
     {
         if (is_null($this->_debug)) return 'null';
         return $this->_debug->filename($filename);
+    }
+
+    final public function debug_sql(bool $df = false)
+    {
+        $this->_debug_sql = $df;
+        return $this;
     }
 
     final protected function config(...$key)
@@ -409,7 +416,6 @@ abstract class Model
         return "polygon(" . implode(',', $val) . ")";
     }
 
-
     /**
      * 选择一条记录
      * @param $where
@@ -445,6 +451,7 @@ abstract class Model
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
+        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if ($this->_having) $obj->having($this->_having);
         if ($where) $obj->where($where);
@@ -506,6 +513,7 @@ abstract class Model
                 $obj->order($a['key'], $a['sort'], $a['pro']);
             }
         }
+        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if ($this->_having) $obj->having($this->_having);
 
@@ -581,6 +589,7 @@ abstract class Model
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
+        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->_having) $obj->having($this->_having);
 
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
@@ -660,6 +669,7 @@ abstract class Model
         if (is_bool($this->_protect)) $obj->protect($this->_protect);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
+        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
 
         if ($where) $obj->where($where);
         if ($this->groupKey) $obj->group($this->groupKey);

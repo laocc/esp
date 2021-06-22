@@ -47,6 +47,7 @@ final class Builder
     private $_param_data = array();//占位符的事后填充内容
 
     private $_bindKV = array();
+    private $_debug_sql;//是否最后记录sql执行结果
 
     private $_gzLevel = 5;//压缩比
     private $_protect = true;//默认加保护符
@@ -227,6 +228,7 @@ final class Builder
             'fetch' => $this->_fetch_type,
             'bind' => $this->_bindKV,
             'trans_id' => $this->_Trans_ID,
+            'debug_sql' => $this->_debug_sql,
             'action' => $action,
         ];
     }
@@ -984,6 +986,12 @@ final class Builder
         return $this;
     }
 
+
+    public function debug_sql(bool $df = false)
+    {
+        $this->_debug_sql = $df;
+        return $this;
+    }
 
     /**
      * 执行Limit查询

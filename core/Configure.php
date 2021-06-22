@@ -84,15 +84,6 @@ final class Configure
         }
 
         $config = [];
-
-//        $dir = new \DirectoryIterator(_ESP_ROOT . "/common/config");
-//        foreach ($dir as $f) {
-//            if ($f->isFile()) {
-//                $fn = $f->getFilename();
-//                $config[] = ['file' => $f->getPathname(), 'name' => $fn];
-//            }
-//        }
-
         $dir = new \DirectoryIterator($conf['path']);
         foreach ($dir as $f) {
             if ($f->isFile()) {
@@ -119,7 +110,7 @@ final class Configure
         foreach ($config as $fn => $cf) {
             $_config = $this->loadFile($cf['file'], $fn);
             //查找子目录下同名文件，如果存在，则覆盖相关值
-            if (isset($conf['folder'])) {
+            if ($conf['folder'] ?? '') {
                 if ($conf['folder'][0] === '/') {
                     $tmp = "{$conf['folder']}/{$cf['name']}";
                 } else {
@@ -141,7 +132,7 @@ final class Configure
         }
 
         $this->_CONFIG_ = $this->re_arr($this->_CONFIG_);
-        if (!_CLI and (!isset($conf['cache']) or $conf['cache'])) {
+        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD)) {
             $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
         }
 
