@@ -78,7 +78,6 @@ class SessionRedis implements \SessionHandlerInterface
     public function read($session_id)
     {
         $dataString = $this->_Redis->get($session_id);
-
         !is_null($this->_debug) && $this->_debug->relay([
             'read_session' => [
                 'id' => $session_id,

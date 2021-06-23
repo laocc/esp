@@ -48,13 +48,12 @@ use esp\core\ext\SessionRedis;
 final class Session
 {
     private $SessionHandler;
-    private $debug;
     private $run = true;
+    public $debug;
     public $update = false;
 
     public function __construct(array $config, Debug $debug = null)
     {
-        $this->debug = $debug;
         $config += [
             'key' => 'PHPSESSID',
             'delay' => 0,
@@ -62,6 +61,7 @@ final class Session
             'path' => '/',
             'domain' => '',
             'limiter' => 'nocache',
+            'debug' => false,
             'object' => null,
             'expire' => 86400,
             'cookie' => 86400,
@@ -73,8 +73,9 @@ final class Session
             ]
         ];
         if ($config['cookie'] < $config['expire']) $config['cookie'] = $config['expire'];
+        if ($config['debug']) $this->debug = $debug;
 
-        $this->SessionHandler = new SessionRedis($debug, $config['object'], boolval($config['delay']), $config['prefix']);
+        $this->SessionHandler = new SessionRedis($this->debug, $config['object'], boolval($config['delay']), $config['prefix']);
         $handler = session_set_save_handler($this->SessionHandler, true);
 
         $option = [];
@@ -111,7 +112,7 @@ final class Session
 
         $star = session_start($option);
 
-        if (!is_null($debug)) {
+        if (!is_null($this->debug)) {
             $debug->relay([
                 'config' => $config,
                 'option' => $option,

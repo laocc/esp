@@ -313,7 +313,7 @@ final class Mysql
         }
 
         $debug = true;
-        $debug_sql = (($option['_debug_sql'] ?? null) !== false);
+        $debug_sql = (($option['debug_sql'] ?? null) !== false);
 
         //数据操作时，若当前`trans_run`=false，则说明刚才被back过了或已经commit，后面的数据不再执行
         //更新操作，有事务ID，在运行中，且已被标识为false

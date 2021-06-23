@@ -101,11 +101,11 @@ final class Dispatcher
         }
 
         if ($cookies = $this->_config->get('cookies')) {
-            $cokConf = $this->mergeConf($cookies, ($cookies['default'] ?? []) + ['run' => false, 'domain' => 'host']);
+            $cokConf = $this->mergeConf($cookies, ($cookies['default'] ?? []) + ['run' => false, 'debug' => false, 'domain' => 'host']);
 
             if ($cokConf['run'] ?? false) {
                 $this->_cookies = new Cookies($cokConf);
-                $this->relayDebug(['cookies' => $_COOKIE]);
+                if ($cokConf['debug']) $this->relayDebug(['cookies' => $_COOKIE]);
 
                 //若不启用Cookies，则也不启用Session
                 if ($session = ($this->_config->get('session'))) {
@@ -124,7 +124,7 @@ final class Dispatcher
                         $sseConf['redis'] = $rdsConf;
 
                         $this->_session = new Session($sseConf, $this->_debug);
-                        $this->relayDebug(['session' => $_SESSION]);
+                        if ($this->_session->debug) $this->relayDebug(['session' => $_SESSION]);
 
                     }
                 }
@@ -191,7 +191,8 @@ final class Dispatcher
     }
 
     /**
-     * @param string $class '\library\Bootstrap'
+     * '\library\Bootstrap'
+     * @param string $class
      * @return Dispatcher
      * @throws EspError
      */
@@ -311,7 +312,7 @@ final class Dispatcher
         }
 
         if (!is_null($this->_session)) {
-            $this->relayDebug(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
+            if ($this->_session->debug) $this->relayDebug(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
             session_write_close();//立即保存并结束
         }
 
