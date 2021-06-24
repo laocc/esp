@@ -160,12 +160,16 @@ trait Mysql
 
     /**
      * 根据数据库中的表，创建相应的模型
-     * @param string $path
-     * @param string $baseModel
      * @return string|array
      */
-    final public function createModel(string $path, string $baseModel = 'BaseModel')
+    final public function createModel()
     {
+        $self = explode('\\', get_parent_class($this));
+        $parent = array_pop($self);
+        if ($parent === 'Model') return 'Model实例应该有个中间类，比如_Base，不应该直接引自Model类，若确需这样，请手工创建。';
+        if (empty($self)) return 'Model实例应该引用自Model>_Base';
+        $path = '/' . implode('/', $self);
+
         $root = \esp\helper\root($path);
         if (!is_dir($root)) return "请先创建[{$root}]目录";
 
@@ -190,7 +194,7 @@ trait Mysql
 
 namespace {$namespace};
 
-class {$tab} extends {$baseModel} 
+class {$tab} extends {$parent} 
 {
     public \$_table = '{$table['TABLE_NAME']}';
     public \$_id = '{$keyID['COLUMN_NAME']}';
