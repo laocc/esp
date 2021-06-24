@@ -130,10 +130,10 @@ abstract class Model
      * @param $prevTrace
      * @return bool|Debug
      */
-    final public function debug($value, $prevTrace = 0)
+    final public function debug($value = '_Debug_Object', $prevTrace = 0)
     {
         if (_CLI) return false;
-        if (is_null($value)) return $this->_debug;
+        if ($value === '_Debug_Object') return $this->_debug;
         if (is_null($this->_debug)) return false;
         if (!(is_int($prevTrace) or is_array($prevTrace))) $prevTrace = 0;
         if (is_int($prevTrace)) {
@@ -345,7 +345,7 @@ abstract class Model
     /**
      * 压缩字符串
      * @param string $string
-     * @return string
+     * @return false|string
      */
     final public function gz(string $string)
     {
@@ -359,7 +359,7 @@ abstract class Model
     /**
      * 解压缩字符串
      * @param string $string
-     * @return string
+     * @return false|string
      */
     final public function ugz(string $string)
     {
