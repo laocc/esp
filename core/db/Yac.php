@@ -44,7 +44,7 @@ class Yac implements KeyValue
         foreach ($keys as $index => &$key) {
             $title = explode('_', $key);
             if ($title[0] !== $this->table) continue;
-            if ($ttls[$index] > 0 and $ttls[$index] < _TIME) {
+            if ($ttls[$index] > 0 and $ttls[$index] < time()) {
                 unset($keys[$index]);
                 continue;
             }

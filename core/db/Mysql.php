@@ -151,7 +151,7 @@ final class Mysql
                 $err['host'] = $host;
                 throw new EspError("Mysql Connection failed:" . json_encode($err, 256 | 64));
             }
-            $this->connect_time[$trans_id] = _TIME;
+            $this->connect_time[$trans_id] = time();
             return $this->_pool[$real][$trans_id] = $pdo;
 
         } catch (\PDOException $PdoError) {
@@ -299,8 +299,8 @@ final class Mysql
                     print_r([
                         'id' => $transID,
                         'connect_time' => $this->connect_time[$transID],
-                        'now' => _TIME,
-                        'after' => _TIME - $this->connect_time[$transID],
+                        'now' => time(),
+                        'after' => time() - $this->connect_time[$transID],
                     ]);
 
                     unset($this->_pool[$real][$transID]);
@@ -364,8 +364,8 @@ final class Mysql
                     print_r([
                         'id' => $transID,
                         'connect_time' => $this->connect_time[$transID],
-                        'now' => _TIME,
-                        'after' => _TIME - $this->connect_time[$transID],
+                        'now' => time(),
+                        'after' => time() - $this->connect_time[$transID],
                     ]);
                     print_r($this->PdoAttribute($CONN));
                 } else {

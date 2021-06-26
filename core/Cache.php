@@ -175,8 +175,6 @@ final class Cache
             $protocol = getenv('SERVER_PROTOCOL') ?: 'HTTP/1.1';
             header("{$protocol} 304 Not Modified", true, 304);
         } else {
-//            $Expires = _TIME + $expires;//过期时间
-//            $maxAge = $Expires - (getenv('REQUEST_TIME') ?: 0);//生命期
             header("Cache-Control: max-age={$expires}, public");
             header('Expires: ' . gmdate('D, d M Y H:i:s', _TIME + $expires) . ' GMT');
             header('Pragma: public');
