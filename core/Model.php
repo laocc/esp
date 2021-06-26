@@ -134,7 +134,7 @@ abstract class Model
     {
         if (_CLI or is_null($this->_debug)) return null;
         if ($value === '_Debug_Object') return $this->_debug;
-        
+
         if (!(is_int($prevTrace) or is_array($prevTrace))) $prevTrace = 0;
         if (is_int($prevTrace)) {
             $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($prevTrace + 1));
