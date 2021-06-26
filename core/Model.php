@@ -40,19 +40,6 @@ abstract class Model
     private $_debug_sql;
     private $_traceLevel = 1;
 
-    //=========数据相关===========
-    /**
-     * @var $_Yac Yac
-     * @var $_Mysql Mysql
-     * @var $_Redis Redis
-     * @var $_Mongodb Mongodb
-     */
-    private $_Yac = array();
-    private $_Mysql = array();
-    private $_Mongodb = array();
-    private $_Redis = array();
-    private $_Hash;
-
     private $_order = [];
     private $_count = null;
     private $_decode = [];
@@ -134,7 +121,7 @@ abstract class Model
     {
         if (_CLI or is_null($this->_debug)) return null;
         if ($value === '_Debug_Object') return $this->_debug;
-        
+
         if (!(is_int($prevTrace) or is_array($prevTrace))) $prevTrace = 0;
         if (is_int($prevTrace)) {
             $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($prevTrace + 1));
@@ -833,11 +820,11 @@ abstract class Model
      */
     final public function Yac(string $tab = 'tmp', int $traceLevel = 0): Yac
     {
-        if (!isset($this->_Yac[$tab])) {
-            $this->_Yac[$tab] = new Yac($tab);
+        if (!isset($this->_controller->_Yac[$tab])) {
+            $this->_controller->_Yac[$tab] = new Yac($tab);
             $this->debug("New Yac({$tab});", $traceLevel + 1);
         }
-        return $this->_Yac[$tab];
+        return $this->_controller->_Yac[$tab];
     }
 
     /**
@@ -853,8 +840,8 @@ abstract class Model
 
         if ($tranID === 1) $tranID = $this->__tranIndex++;
 
-        if (isset($this->_Mysql[$branchName][$tranID])) {
-            return $this->_Mysql[$branchName][$tranID];
+        if (isset($this->_controller->_Mysql[$branchName][$tranID])) {
+            return $this->_controller->_Mysql[$branchName][$tranID];
         }
 
         $conf = $this->_config->get('database.mysql');
@@ -872,9 +859,9 @@ abstract class Model
         if (empty($conf) or !is_array($conf)) {
             throw new EspError("`Database.Mysql`配置信息错误", $traceLevel + 1);
         }
-        $this->_Mysql[$branchName][$tranID] = new Mysql($tranID, ($_conf + $conf));
+        $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($tranID, ($_conf + $conf));
         $this->debug("New Mysql({$branchName}-{$tranID});", $traceLevel + 1);
-        return $this->_Mysql[$branchName][$tranID];
+        return $this->_controller->_Mysql[$branchName][$tranID];
     }
 
 
@@ -886,16 +873,16 @@ abstract class Model
      */
     final public function Mongodb(string $db = 'temp', array $_conf = [], int $traceLevel = 0): Mongodb
     {
-        if (!isset($this->_Mongodb[$db])) {
+        if (!isset($this->_controller->_Mongodb[$db])) {
             $conf = $this->_config->get('database.mongodb');
             if (empty($conf)) {
                 throw new EspError('无法读取mongodb配置信息', $traceLevel + 1);
             }
-            $this->_Mongodb[$db] = new Mongodb($_conf + $conf, $db);
+            $this->_controller->_Mongodb[$db] = new Mongodb($_conf + $conf, $db);
 
             $this->debug("New Mongodb({$db});", $traceLevel + 1);
         }
-        return $this->_Mongodb[$db];
+        return $this->_controller->_Mongodb[$db];
     }
 
     /**
@@ -914,11 +901,11 @@ abstract class Model
 
         if ($conf['db'] === 0 or $conf['db'] === $dbConfig) return $this->_config->Redis();
 
-        if (!isset($this->_Redis[$conf['db']])) {
-            $this->_Redis[$conf['db']] = new Redis($conf);
+        if (!isset($this->_controller->_Redis[$conf['db']])) {
+            $this->_controller->_Redis[$conf['db']] = new Redis($conf);
             $this->debug("create Redis({$conf['db']});", $traceLevel + 1);
         }
-        return $this->_Redis[$conf['db']];
+        return $this->_controller->_Redis[$conf['db']];
     }
 
 

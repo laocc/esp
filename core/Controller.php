@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\core\db\Mongodb;
+use esp\core\db\Mysql;
 use esp\core\db\Redis;
+use esp\core\db\Yac;
 use esp\error\EspError;
 use esp\core\face\Adapter;
 use esp\library\ext\Markdown;
@@ -21,6 +24,18 @@ abstract class Controller
     protected $_cookies;
     public $_debug;
     public $_buffer;
+
+    /**
+     * 以下4个是用于Model中的链接缓存
+     * @var $_Yac Yac
+     * @var $_Mysql Mysql
+     * @var $_Redis Redis
+     * @var $_Mongodb Mongodb
+     */
+    public $_Yac = array();
+    public $_Mysql = array();
+    public $_Mongodb = array();
+    public $_Redis = array();
 
 
     /**
