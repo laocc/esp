@@ -563,6 +563,7 @@ final class Mysql
                     }
                     $stmtC->execute($option['param']);
                     $count = $stmtC->fetchColumn(0);
+                    if (!$count) $count = 0;
 //                    $count = $stmtC->fetch()[0] ?? 0;
                 }
 
@@ -581,6 +582,7 @@ final class Mysql
 
                 if ($option['count']) {
                     $count = $CONN->query($option['_count_sql'], \PDO::FETCH_NUM)->fetch()[0] ?? 0;
+                    if (!$count) $count = 0;
                 }
 
 
