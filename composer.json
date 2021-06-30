@@ -10,6 +10,7 @@
   ],
   "require": {
     "laocc/http": "*",
+    "laocc/debug": "*",
     "laocc/gd": "*",
     "php": ">7.1",
     "ext-json": "*",

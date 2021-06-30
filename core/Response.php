@@ -14,10 +14,11 @@ final class Response
     private $_request;
     private $_resource;
     private $_display_type = '';
-    public $_display_Result;//最终的打印结果
-    public $_Content_Type;
     private $_save_cache = false;
     private $_header = [];
+
+    public $_display_Result;//最终的打印结果
+    public $_Content_Type;
 
     private $_view_val = Array();
     private $_layout_val = [
@@ -41,9 +42,9 @@ final class Response
 
     private $_autoRun = true;
 
-    public function __construct(Request $request, array $resource = null)
+    public function __construct(Dispatcher $dispatcher, array $resource = null)
     {
-        $this->_request = $request;
+        $this->_request = $dispatcher->_request;
         $this->_resource = new Resources($resource);
     }
 

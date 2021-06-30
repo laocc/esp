@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\error;
 
-use esp\core\Debug;
 use esp\core\Dispatcher;
 use function esp\helper\mk_dir;
 use function esp\helper\replace_array;
@@ -212,7 +211,7 @@ final class Error
      */
     private function error(array $error, array $prev, string $path, string $filename)
     {
-        $debug = Debug::class();
+        $debug = $this->dispatcher->_debug;
         $md5Key = md5(($error['message'] ?? '') . ($error['file'] ?? ''));
 
         if ($this->restrain) {
@@ -226,7 +225,6 @@ final class Error
             }
             mk_dir($errLogFile);
             file_put_contents($errLogFile, json_encode(['trace' => ''] + $error, 256 | 64 | 128) . "\n");
-
         }
 
 

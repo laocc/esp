@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace esp\core\db;
 
-use esp\core\Debug;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\Result;
+use esp\core\Model;
 use esp\error\EspError;
 
 final class Mysql
@@ -24,10 +24,12 @@ final class Mysql
 
     /**
      * Mysql constructor.
+     * @param Model $model
      * @param int $tranID
      * @param array|null $conf
+     * @throws EspError
      */
-    public function __construct(int $tranID = 0, array $conf = null)
+    public function __construct(Model $model, int $tranID = 0, array $conf = null)
     {
         if (is_array($tranID)) list($tranID, $conf) = [0, $tranID];
         if (!is_array($conf)) throw new EspError('Mysql配置信息错误', 1);
@@ -42,23 +44,13 @@ final class Mysql
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
         $this->dbName = $conf['db'];
+        $this->_debug = $model->_debug;
 
         if ($conf['pool'] ?? 1) {
             if (!isset($GLOBALS['_PDO_POOL'])) $GLOBALS['_PDO_POOL'] = [];
             $this->_pool =& $GLOBALS['_PDO_POOL'];
         }
 
-    }
-
-    public function debug($value, int $traceLevel = 1)
-    {
-        if (is_null($this->_debug)) $this->_debug = Debug::class();
-        if (empty($value)) return $this->_debug;
-        if (is_null($this->_debug)) return false;
-        if ($traceLevel > 10) $traceLevel = 2;
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($traceLevel + 1));
-        $trace = $trace[$traceLevel] ?? [];
-        return $this->_debug->mysql_log($value, $trace);
     }
 
     /**
@@ -80,6 +72,17 @@ final class Mysql
     {
         $this->_cli_print_sql = $boolPrint;
         return $this;
+    }
+
+    public function debug($value, int $traceLevel = 1)
+    {
+        if (is_null($this->_debug)) return null;
+        if (empty($value)) return $this->_debug;
+        if (is_null($this->_debug)) return false;
+        if ($traceLevel > 10) $traceLevel = 2;
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($traceLevel + 1));
+        $trace = $trace[$traceLevel] ?? [];
+        return $this->_debug->mysql_log($value, $trace);
     }
 
     /**

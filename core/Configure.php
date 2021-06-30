@@ -34,7 +34,8 @@ final class Configure
         if (!is_readable($bFile)) throw new EspError("database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
 
         $dbConf = $this->loadFile($bFile, 'database');
-        if (empty($dbConf)) return;
+        if (empty($dbConf)) throw new EspError('读取database失败，配置文件可能是空文件');
+
         if (isset($conf['folder'])) {
             $bFile = str_replace('/database.', "/{$conf['folder']}/database.", $bFile);
             if (is_readable($bFile)) {
@@ -43,14 +44,12 @@ final class Configure
             }
         }
 
-        $this->_rpc = defined('_RPC') ? _RPC : ($dbConf['database']['rpc'] ?? null);
-        if ($this->_rpc) {
-            $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
-        }
+        $isMaster = is_file(_RUNTIME . '/master.lock');
 
         $rdsConf = $dbConf['database']['redis'] ?? [];
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
         $this->_Redis = new Redis($rdsConf);
+        $this->_rpc = defined('_RPC') ? _RPC : ['host' => 'rpc.esp', 'port' => 80, 'ip' => ($rdsConf['master'] ?? null)];
 
         //没有强制从文件加载
         if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD)) {
@@ -58,8 +57,12 @@ final class Configure
             if (!empty($this->_CONFIG_)) return;
         }
 
+
         $awakenURI = '/_esp_config_awaken_';
-        if (!_DEBUG and !_CLI and $this->_rpc and !is_file(_RUNTIME . '/master.lock')) {
+        if (!_DEBUG and !_CLI and !$isMaster and $this->_rpc['ip']) {
+
+            $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
+
             $tryCount = 0;
             tryReadRedis:
             /**
@@ -72,12 +75,12 @@ final class Configure
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
-             * 并且主服务器返回的是`success`，如果返回的不是这个，就是出错了。
+             * 并且主服务器返回的是`$this->_token`，如果返回的不是这个，就是出错了。
              * 然后，再次goto trySelf;从redis中读取config
              * 这里请求$awakenURI，在主服务器中实际上会被当前文件也就是当前构造函数中最后一行拦截并返回success
              */
             $rpcObj = new Http();
-            $get = $rpcObj->rpc($this->_rpc)->encode('text')->get($awakenURI)->html();
+            $get = $rpcObj->rpc($this->_rpc)->decode('text')->get($awakenURI)->html();
             if ($tryCount++ > 1) throw new EspError("多次请求RPC获取到数据不合法，期望值({$this->_token})，实际获取:{$get}");
 
             goto tryReadRedis;
@@ -213,30 +216,29 @@ final class Configure
     {
         if (!is_readable($file)) return [];
         $info = pathinfo($file);
+        switch ($info['extension']) {
+            case 'ini':
+                $_config = parse_ini_file($file, true);
+                break;
+            case 'json':
+                $_config = file_get_contents($file);
+                $_config = json_decode($_config, true);
+                break;
+            case 'php':
+                $_config = include($file);
+                break;
+            default:
+                return [];
+        }
+        if (!is_array($_config) or empty($_config)) return [];
 
-        if ($info['extension'] === 'php') {
-            $_config = include($file);
-            if (!is_array($_config)) $_config = [];
-
-        } elseif ($info['extension'] === 'ini') {
-            $_config = parse_ini_file($file, true);
-            if (!is_array($_config)) $_config = [];
-            foreach ($_config as $k => $v) {
-                if (!is_string($k)) continue;
-                if (strpos($k, '.')) {
-                    $tm = explode('.', $k, 2);
-                    $_config[$tm[0]][$tm[1]] = $v;
-                    unset($_config[$k]);
-                }
+        foreach ($_config as $k => $v) {
+            if (!is_string($k)) continue;
+            if (strpos($k, '.')) {
+                $tm = explode('.', $k, 2);
+                $_config[$tm[0]][$tm[1]] = $v;
+                unset($_config[$k]);
             }
-
-        } elseif ($info['extension'] === 'json') {
-            $_config = file_get_contents($file);
-            $_config = json_decode($_config, true);
-            if (!is_array($_config)) $_config = [];
-
-        } else {
-            throw new EspError("未知的配置文件类型({$info['extension']})");
         }
 
         if (isset($_config['include'])) {

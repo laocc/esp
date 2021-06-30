@@ -35,7 +35,7 @@ abstract class Model
     /**
      * @var $_debug Debug
      */
-    private $_debug;
+    public $_debug;
     private $_print_sql;
     private $_debug_sql;
     private $_traceLevel = 1;
@@ -859,7 +859,7 @@ abstract class Model
         if (empty($conf) or !is_array($conf)) {
             throw new EspError("`Database.Mysql`配置信息错误", $traceLevel + 1);
         }
-        $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($tranID, ($_conf + $conf));
+        $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this, $tranID, ($_conf + $conf));
         $this->debug("New Mysql({$branchName}-{$tranID});", $traceLevel + 1);
         return $this->_controller->_Mysql[$branchName][$tranID];
     }

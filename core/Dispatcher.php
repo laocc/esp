@@ -11,8 +11,8 @@ use function esp\helper\host;
 
 final class Dispatcher
 {
-    public $_plugs = array();
     private $_plugs_count = 0;//引入的plugs数量
+    public $_plugs = array();
     public $_request;
     public $_response;
     public $_session;
@@ -91,12 +91,15 @@ final class Dispatcher
         $resourceConf = $this->_config->get('resource');
         $resource = $this->mergeConf($resourceConf);
         $resource['_rand'] = $this->_config->_Redis->get('resourceRand') ?: date('YmdH');
-        $this->_response = new Response($this->_request, $resource);
+        $this->_response = new Response($this, $resource);
 
         if ($debugConf = $this->_config->get('debug')) {
             $debug = $this->mergeConf($debugConf);
             if ($debug['run'] ?? 0) {
-                $this->_debug = new Debug($this->_request, $this->_response, $this->_config, $debug);
+                $this->_debug = new \esp\debug\Debug($debug);
+                $GLOBALS['_Debug'] = $this->_debug;
+            } else {
+                $this->_debug = new Debug([]);
                 $GLOBALS['_Debug'] = $this->_debug;
             }
         }
@@ -276,6 +279,16 @@ final class Dispatcher
         $route = (new Router())->run($this->_config, $this->_request);
         if (is_string($route)) exit($route);
 
+        $this->_debug->setRouter([
+            'virtual' => $this->_request->virtual,
+            'method' => $this->_request->getMethod(),
+            'module' => $this->_request->module,
+            'controller' => $this->_request->controller,
+            'action' => $this->_request->action,
+            'exists' => $this->_request->exists,
+            'params' => $this->_request->params,
+        ]);
+
         //控制器、并发计数
         if ($this->_request->counter['counter']) {
             $this->_request->recodeCounter($this->_config->_Redis);
@@ -321,23 +334,31 @@ final class Dispatcher
 
         $this->_plugs_count and $hook = $this->plugsHook('displayAfter', $value);
 
-        fastcgi_finish_request();//运行结束，客户端断开
+        if (!_DEBUG) fastcgi_finish_request();//运行结束，客户端断开
+
         $this->relayDebug("[blue;客户端已断开 =============================]");
 
         if (!is_null($this->_cache)) $this->_cache->Save();
 
+
         end:
         $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
 
-        if (!is_null($this->_debug)) {
-            if ($this->_debug->_save_mode === 'cgi') {
-                $this->_debug->save_logs('DispatcherCgi');
-            } else {
-                register_shutdown_function(function () {
-                    $this->_debug->save_logs('Dispatcher');
-                });
-            }
+        if (is_null($this->_debug)) return;
 
+        $this->_debug->setResponse([
+            'type' => $this->_response->_Content_Type,
+            'display' => $this->_response->_display_Result
+        ]);
+
+        if ($this->_debug->_save_mode === 'shutdown') {
+            $save = $this->_debug->save_logs('DispatcherCgi');
+            var_dump($save);
+
+        } else {
+            register_shutdown_function(function () {
+                $this->_debug->save_logs('Dispatcher');
+            });
         }
     }
 
@@ -350,6 +371,16 @@ final class Dispatcher
     {
         $route = (new Router())->run($this->_config, $this->_request);
         if (is_string($route)) exit($route);
+
+        $this->_debug->setRouter([
+            'virtual' => $this->_request->virtual,
+            'method' => $this->_request->getMethod(),
+            'module' => $this->_request->module,
+            'controller' => $this->_request->controller,
+            'action' => $this->_request->action,
+            'exists' => $this->_request->exists,
+            'params' => $this->_request->params,
+        ]);
 
         //控制器、并发计数
         $this->_request->recodeCounter($this->_config->_Redis);
@@ -365,6 +396,11 @@ final class Dispatcher
         fastcgi_finish_request();
 
         if (is_null($this->_debug)) return;
+
+        $this->_debug->setResponse([
+            'type' => $this->_response->_Content_Type,
+            'display' => $this->_response->_display_Result
+        ]);
 
         if ($this->_debug->_save_mode === 'cgi') {
             $this->_debug->save_logs('minDispatcherCgi');
