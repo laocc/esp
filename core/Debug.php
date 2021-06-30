@@ -6,6 +6,14 @@ namespace esp\core;
 class Debug
 {
 
+    /**
+     * 保存方式:
+     * shutdown：进程结束后
+     * rpc：发送RPC，只要定义_RPC常量，从节点都是发送rpc
+     * transfer：只在主服器内，文件中转，然后由后台机器人移走
+     */
+    public $mode = 'shutdown';
+
     public function __construct(array $conf)
     {
     }
@@ -95,6 +103,15 @@ class Debug
         return $this;
     }
 
+    public function folder(string $path = null)
+    {
+        return '';
+    }
+
+    public function path(string $path = null, bool $append = false)
+    {
+        return '';
+    }
 
     /**
      * 创建一个debug点

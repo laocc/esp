@@ -351,9 +351,9 @@ final class Dispatcher
             'display' => $this->_response->_display_Result
         ]);
 
-        if ($this->_debug->_save_mode === 'shutdown') {
+        if ($this->_debug->mode === 'shutdown') {
             $save = $this->_debug->save_logs('DispatcherCgi');
-            var_dump($save);
+//            var_dump($save);
 
         } else {
             register_shutdown_function(function () {
@@ -402,7 +402,7 @@ final class Dispatcher
             'display' => $this->_response->_display_Result
         ]);
 
-        if ($this->_debug->_save_mode === 'cgi') {
+        if ($this->_debug->mode === 'shutdown') {
             $this->_debug->save_logs('minDispatcherCgi');
         } else {
             register_shutdown_function(function () {
