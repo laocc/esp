@@ -33,19 +33,20 @@ class Fso
     /**
      * 文件
      * @param string $path
-     * @param string $ext
+     * @param  $ext
      * @return array
      */
-    public function file(string $path, string $ext = '')
+    public function file(string $path, $ext = null)
     {
         if (!is_dir($path)) return [];
         $array = array();
         $dir = new \DirectoryIterator($path);
-        if ($ext) $ext = ltrim($ext, '.');
+        if (is_string($ext)) $ext = [$ext];
+        if (!empty($ext)) foreach ($ext as $i => $t) $ext[$i] = ltrim($t, '.');
         foreach ($dir as $f) {
             if (!$f->isFile()) continue;
             if ($ext) {
-                if ($f->getExtension() === $ext) $array[] = $f->getFilename();
+                if (in_array($f->getExtension(), $ext)) $array[] = $f->getFilename();
             } else {
                 $array[] = $f->getFilename();
             }

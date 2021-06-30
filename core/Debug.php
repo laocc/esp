@@ -10,6 +10,16 @@ class Debug
     {
     }
 
+    /**
+     * 读取日志
+     * @param string $file
+     * @return string
+     */
+    public function read(string $file)
+    {
+        return '';
+    }
+
     public function error($error, $tract = null)
     {
         return $this;
