@@ -334,7 +334,8 @@ final class Dispatcher
 
         $this->_plugs_count and $hook = $this->plugsHook('displayAfter', $value);
 
-        if (!_DEBUG) fastcgi_finish_request();//运行结束，客户端断开
+        $showDebug = isset($_GET['_debug']);
+        if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
         $this->relayDebug("[blue;客户端已断开 =============================]");
 
@@ -350,9 +351,9 @@ final class Dispatcher
             'display' => $this->_response->_display_Result
         ]);
 
-        if ($this->_debug->mode === 'shutdown') {
+        if ($this->_debug->mode === 'shutdown' or $showDebug) {
             $save = $this->_debug->save_logs('DispatcherCgi');
-//            var_dump($save);
+            if ($showDebug) var_dump($save);
 
         } else {
             register_shutdown_function(function () {
