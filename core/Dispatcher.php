@@ -340,7 +340,6 @@ final class Dispatcher
 
         if (!is_null($this->_cache)) $this->_cache->Save();
 
-
         end:
         $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
 
@@ -372,20 +371,25 @@ final class Dispatcher
         $route = (new Router())->run($this->_config, $this->_request);
         if (is_string($route)) exit($route);
 
-        $this->_debug->setRouter([
-            'virtual' => $this->_request->virtual,
-            'method' => $this->_request->getMethod(),
-            'module' => $this->_request->module,
-            'controller' => $this->_request->controller,
-            'action' => $this->_request->action,
-            'exists' => $this->_request->exists,
-            'params' => $this->_request->params,
-        ]);
+        if (!_CLI) {
+            $this->_debug->setRouter([
+                'virtual' => $this->_request->virtual,
+                'method' => $this->_request->getMethod(),
+                'module' => $this->_request->module,
+                'controller' => $this->_request->controller,
+                'action' => $this->_request->action,
+                'exists' => $this->_request->exists,
+                'params' => $this->_request->params,
+            ]);
 
-        //控制器、并发计数
-        $this->_request->recodeCounter($this->_config->_Redis);
+            //控制器、并发计数
+            if ($this->_request->counter['counter']) {
+                $this->_request->recodeCounter($this->_config->_Redis);
+            }
+        }
 
         $value = $this->dispatch();
+
         if (_CLI) {
             print_r($value);
             return;
