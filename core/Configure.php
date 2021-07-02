@@ -219,6 +219,16 @@ final class Configure
         switch ($info['extension']) {
             case 'ini':
                 $_config = parse_ini_file($file, true);
+                if (!is_array($_config) or empty($_config)) return [];
+                //只将一级键名中带.号的，转换为数组，如将：abc.xyz=123转换为abc[xyz]=123
+                foreach ($_config as $k => $v) {
+                    if (!is_string($k)) continue;
+                    if (strpos($k, '.')) {
+                        $tm = explode('.', $k, 2);
+                        $_config[$tm[0]][$tm[1]] = $v;
+                        unset($_config[$k]);
+                    }
+                }
                 break;
             case 'json':
                 $_config = file_get_contents($file);
@@ -231,15 +241,6 @@ final class Configure
                 return [];
         }
         if (!is_array($_config) or empty($_config)) return [];
-
-        foreach ($_config as $k => $v) {
-            if (!is_string($k)) continue;
-            if (strpos($k, '.')) {
-                $tm = explode('.', $k, 2);
-                $_config[$tm[0]][$tm[1]] = $v;
-                unset($_config[$k]);
-            }
-        }
 
         if (isset($_config['include'])) {
             $include = $_config['include'];
