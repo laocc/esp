@@ -10,6 +10,7 @@
   ],
   "require": {
     "laocc/http": "*",
+    "laocc/helper": "*",
     "laocc/debug": "*",
     "laocc/gd": "*",
     "php": ">7.1",
@@ -25,13 +26,6 @@
     "ext-pdo": "*"
   },
   "autoload": {
-    "files": [
-      "helper/rely.php",
-      "helper/judge.php",
-      "helper/time.php",
-      "helper/other.php",
-      "helper/tools.php"
-    ],
     "psr-4": {
       "esp\\core\\": "core/",
       "esp\\journal\\": "journal/",
