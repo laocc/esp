@@ -29,6 +29,7 @@
   "autoload": {
     "psr-4": {
       "esp\\core\\": "core/",
+      "esp\\face\\": "face/",
       "esp\\error\\": "error/"
     }
   }
