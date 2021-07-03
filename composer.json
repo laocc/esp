@@ -9,11 +9,10 @@
     }
   ],
   "require": {
+    "php": ">7.1",
     "laocc/http": "*",
     "laocc/helper": "*",
     "laocc/debug": "*",
-    "laocc/gd": "*",
-    "php": ">7.1",
     "ext-json": "*",
     "ext-curl": "*",
     "ext-libxml": "*",
