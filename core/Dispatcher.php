@@ -12,6 +12,7 @@ use function esp\helper\host;
 final class Dispatcher
 {
     private $_plugs_count = 0;//引入的plugs数量
+    private $run = true;//任一个钩子若返回false，则不再执行run()方法中的后续内容
     public $_plugs = array();
     public $_request;
     public $_response;
@@ -20,7 +21,6 @@ final class Dispatcher
     public $_config;
     public $_debug;
     public $_cache;
-    private $run = true;
 
     /**
      * Dispatcher constructor.
@@ -195,7 +195,6 @@ final class Dispatcher
     }
 
     /**
-     * '\library\Bootstrap'
      * @param string $class
      * @return Dispatcher
      * @throws EspError
@@ -211,7 +210,10 @@ final class Dispatcher
         foreach (get_class_methods($class) as $method) {
             if (substr($method, 0, 5) === '_init') {
                 $run = call_user_func_array([$class, $method], [$this]);
-                if ($run === false) $this->run = false;
+                if ($run === false) {
+                    $this->run = false;
+                    break;
+                }
             }
         }
         return $this;
@@ -266,10 +268,10 @@ final class Dispatcher
      */
     public function run(callable $callable = null): void
     {
+        $showDebug = isset($_GET['_debug']);
+        if ($this->run === false) goto end;
         if ($callable and call_user_func($callable)) goto end;
         if (_CLI) throw new EspError("cli环境中请直接调用\$this->simple()方法");
-
-        if ($this->run === false) goto end;
 
         if ($this->_plugs_count and !is_null($hook = $this->plugsHook('routeBefore'))) {
             $this->_response->display($hook);
@@ -334,7 +336,6 @@ final class Dispatcher
 
         $this->_plugs_count and $hook = $this->plugsHook('displayAfter', $value);
 
-        $showDebug = isset($_GET['_debug']);
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
         $this->relayDebug("[blue;客户端已断开 =============================]");
@@ -369,6 +370,9 @@ final class Dispatcher
      */
     public function simple()
     {
+        $showDebug = isset($_GET['_debug']);
+        if ($this->run === false) goto end;
+
         $route = (new Router())->run($this->_config, $this->_request);
         if (is_string($route)) exit($route);
 
@@ -398,7 +402,8 @@ final class Dispatcher
 
         $this->_response->display($value);
 
-        fastcgi_finish_request();
+        end:
+        if (!_DEBUG and !$showDebug) fastcgi_finish_request();
 
         if (is_null($this->_debug)) return;
 
@@ -407,8 +412,9 @@ final class Dispatcher
             'display' => $this->_response->_display_Result
         ]);
 
-        if ($this->_debug->mode === 'shutdown') {
-            $this->_debug->save_logs('minDispatcherCgi');
+        if ($this->_debug->mode === 'shutdown' or $showDebug) {
+            $save = $this->_debug->save_logs('minDispatcherCgi');
+            if ($showDebug) var_dump($save);
         } else {
             register_shutdown_function(function () {
                 $this->_debug->save_logs('minDispatcher');
