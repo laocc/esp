@@ -286,7 +286,7 @@ final class Error
      */
     public static function displayState(int $code, bool $writeHeader = true): string
     {
-        $conf = parse_ini_file(_ESP_ROOT . '/common/static/state.ini', true);
+        $conf = parse_ini_file(__DIR__ . '/state.ini', true);
         $state = $conf[$code] ?? 'OK';
         if (_CLI) return "[{$code}]:{$state}\n";
         $server = isset($_SERVER['SERVER_SOFTWARE']) ? ucfirst($_SERVER['SERVER_SOFTWARE']) : null;

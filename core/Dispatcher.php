@@ -42,7 +42,6 @@ final class Dispatcher
         if (!defined('_ROOT')) {    //网站根目录
             define('_ROOT', _CLI ? getenv('PWD') : rtrim(same_first(__DIR__, getenv('DOCUMENT_ROOT')), '/'));
         }
-        if (!defined('_ESP_ROOT')) define('_ESP_ROOT', dirname(__DIR__));//esp框架自身的根目录
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
         if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
