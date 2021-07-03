@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 
-use esp\core\face\PlugFace;
+use esp\face\PlugFace;
 
 abstract class Plugin implements PlugFace
 {

@@ -8,8 +8,8 @@ use esp\core\db\Mysql;
 use esp\core\db\Redis;
 use esp\core\db\Yac;
 use esp\core\ext\Mysql as MysqlExt;
+use esp\core\ext\Paging;
 use esp\error\EspError;
-use esp\library\Paging;
 
 /**
  * Class Model

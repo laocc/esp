@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core\db;
 
 use esp\core\db\ext\Builder;
-use esp\core\db\ext\Result;
+use esp\core\db\ext\PdoResult;
 use esp\core\Model;
 use esp\error\EspError;
 
@@ -414,6 +414,7 @@ final class Mysql
             }
             try {
                 $run = $stmt->execute($option['param']);
+//                $option['debug_sql'] = $stmt->debugDumpParams();
                 if ($run === false) {//执行预处理过的内容，如果不成功，多出现传入的值不符合字段类型的情况
                     $error = $stmt->errorInfo();
                     return null;
@@ -465,6 +466,7 @@ final class Mysql
                 foreach ($option['param'] as &$row) {
                     try {
                         $run = $stmt->execute($row);
+//                        $option['debug_sql'] = $stmt->debugDumpParams();
                         if ($run === false) {
                             $error = $stmt->errorInfo();
                             return null;
@@ -479,6 +481,7 @@ final class Mysql
             } else {//无后续参数
                 try {
                     $run = $stmt->execute();
+//                    $option['debug_sql'] = $stmt->debugDumpParams();
                     if ($run === false) {
                         $error = $stmt->errorInfo();
                         return null;
@@ -516,7 +519,7 @@ final class Mysql
      * @param string $sql
      * @param array $option
      * @param $error
-     * @return Result|null
+     * @return PdoResult|null
      */
     private function select(\PDO $CONN, string &$sql, array &$option, &$error)
     {
@@ -548,6 +551,7 @@ final class Mysql
                     }
                 }
                 $run = $stmt->execute($option['param']);
+//                $option['debug_sql'] = $stmt->debugDumpParams();
                 if ($run === false) {
                     $error = $stmt->errorInfo();
                     return null;
@@ -565,6 +569,7 @@ final class Mysql
                         return null;
                     }
                     $stmtC->execute($option['param']);
+//                    $option['count_sql'] = $stmtC->debugDumpParams();
                     $count = $stmtC->fetchColumn(0);
                     if (!$count) $count = 0;
 //                    $count = $stmtC->fetch()[0] ?? 0;
@@ -594,7 +599,7 @@ final class Mysql
                 return null;
             }
         }
-        return new Result($stmt, $count, $sql);
+        return new PdoResult($stmt, $count, $sql);
     }
 
 

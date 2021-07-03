@@ -1,6 +1,6 @@
 <?php
 
-namespace esp\core\face;
+namespace esp\face;
 
 use esp\core\Request;
 use esp\core\Response;

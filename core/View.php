@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\error\EspError;
-use esp\core\face\Adapter;
+use esp\face\Adapter;
 use esp\library\ext\MarkdownObject;
 use function \esp\helper\root;
 

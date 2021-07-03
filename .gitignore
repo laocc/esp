@@ -1,5 +1,6 @@
-/.idea/
 *.log
+*.tmp
+/.idea/
 /vendor
 /cache
 /runtime

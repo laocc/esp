@@ -5,7 +5,7 @@ namespace esp\core\db\ext;
 
 use function esp\helper\xml_decode;
 
-final class Result
+final class PdoResult
 {
 
     private $rs;//结果对象
@@ -13,10 +13,7 @@ final class Result
     private $sql;
 
     /**
-     * @param \PDOStatement $result
-     */
-    /**
-     * Result constructor.
+     * PdoResult constructor.
      * @param \PDOStatement $result
      * @param $count
      * @param $sql

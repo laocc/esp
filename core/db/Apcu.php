@@ -113,7 +113,6 @@ class Apcu implements KeyValue
 
     /**
      * 读取【指定表】的所有行键
-     * @param $table
      * @return array
      */
     public function keys()
