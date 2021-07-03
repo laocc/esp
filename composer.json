@@ -17,7 +17,6 @@
     "ext-json": "*",
     "ext-curl": "*",
     "ext-libxml": "*",
-    "ext-apcu": "*",
     "ext-xml": "*",
     "ext-gd": "*",
     "ext-redis": "*",
