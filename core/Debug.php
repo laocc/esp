@@ -76,6 +76,11 @@ class Debug
         return '';
     }
 
+    public function setPrint(string $type, bool $val = null)
+    {
+        return $this;
+    }
+
     /**
      * 禁用debug
      * @param int $mt 禁用几率，

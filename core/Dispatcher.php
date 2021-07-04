@@ -72,7 +72,8 @@ final class Dispatcher
         if (isset($option['before'])) $option['before']($option);
 
         //以下2项必须在`chdir()`之前，且顺序不可变
-        if (!_CLI) new Error($this, $option['error'] ?? []);
+        if (!_CLI) $error = new Error($option['error'] ?? []);
+
         $this->_config = new Configure($option['config'] ?? []);
         chdir(_ROOT);
         $request = $this->_config->get('request');
@@ -97,6 +98,7 @@ final class Dispatcher
             if ($debug['run'] ?? 0) {
                 $this->_debug = new \esp\debug\Debug($debug);
                 $GLOBALS['_Debug'] = $this->_debug;
+                if (isset($error)) $error->setDebug($this->_debug);
             } else {
                 $this->_debug = new Debug([]);
                 $GLOBALS['_Debug'] = $this->_debug;

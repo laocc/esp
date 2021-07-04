@@ -3,18 +3,16 @@ declare(strict_types=1);
 
 namespace esp\error;
 
-use esp\core\Dispatcher;
+use esp\core\Debug;
 use function esp\helper\mk_dir;
 use function esp\helper\replace_array;
 
 final class Error
 {
-    private $dispatcher;
     private $restrain = false;
 
-    public function __construct(Dispatcher $dispatcher, array $option)
+    public function __construct(array $option)
     {
-        $this->dispatcher = $dispatcher;
         $this->register_handler($option);
         $this->restrain = boolval($option['restrain'] ?? 0);
     }
@@ -109,7 +107,7 @@ final class Error
             exit;
             /**
              * 这里必须要结束，以阻止程序继续执行，
-             * 同时也是切断Dispatcher中shutdown中保存Debug，
+             * 同时也是切断debug类中shutdown中保存日志
              * 由本类->error执行保存
              * 否则shutdown内的异常将无法被记录
              */
@@ -203,6 +201,20 @@ final class Error
     }
 
     /**
+     * @var Debug $debug
+     */
+    private $debug;
+
+    /**
+     * 由于error的创建要早于debug，所以要在debug创建成功时，送入自己
+     * @param Debug $debug
+     */
+    public function setDebug(Debug $debug): void
+    {
+        $this->debug = $debug;
+    }
+
+    /**
      * 仅记录错误，但不阻止程序继续运行
      * @param array $error
      * @param array $prev
@@ -211,7 +223,6 @@ final class Error
      */
     private function error(array $error, array $prev, string $path, string $filename)
     {
-        $debug = $this->dispatcher->_debug;
         $md5Key = md5(($error['message'] ?? '') . ($error['file'] ?? ''));
 
         if ($this->restrain) {
@@ -219,7 +230,7 @@ final class Error
             $errLogFile = dirname($path) . "/error/{$md5Key}.md";
 
             if (is_readable($errLogFile)) {
-                if (!is_null($debug)) $debug->disable();
+                if (!is_null($this->debug)) $this->debug->disable();
                 file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
                 return;
             }
@@ -250,7 +261,7 @@ final class Error
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('HTTP_HOST'),
             'Url' => _HTTP_ . _DOMAIN . _URI,
-            'Debug' => !is_null($debug) ? $debug->filename() : '',
+            'Debug' => !is_null($this->debug) ? $this->debug->filename() : '',
             'errKey' => $md5Key,
             'Error' => $error,
             'Server' => $_SERVER,
@@ -261,17 +272,17 @@ final class Error
         $filename = date($filename) . mt_rand() . '.md';
         $filename = trim($filename, '/');
 
-        if (!is_null($debug)) {
+        if (!is_null($this->debug)) {
             //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
-            $debug->relay($info['Error']);
-            $sl = $debug->save_logs('by Error Saved');
+            $this->debug->relay($info['Error']);
+            $sl = $this->debug->save_logs('by Error Saved');
             $info['debugLogSaveRest'] = $sl;
             $jsonTxt = json_encode($info, 256 | 64 | 128);
             if ($jsonTxt === false) {
                 unset($info['Error']['trace']);
                 $jsonTxt = json_encode($info, 256 | 64 | 128);
             }
-            if ($debug->save_file($filename, $jsonTxt)) return;
+            if ($this->debug->save_file($filename, $jsonTxt)) return;
         }
 
         if (!is_dir($path)) mkdir($path, 0740, true);
@@ -284,9 +295,51 @@ final class Error
      * @param $writeHeader
      * @return string
      */
-    public static function displayState(int $code, bool $writeHeader = true): string
+    public function displayState(int $code, bool $writeHeader = true): string
     {
-        $conf = parse_ini_file(__DIR__ . '/state.ini', true);
+        $conf = [
+            100 => 'Continue',
+            101 => 'Switching Protocols',
+            200 => 'OK',
+            201 => 'Created',
+            202 => 'Accepted',
+            203 => 'Non-Authoritative Information',
+            204 => 'No Content',
+            205 => 'Reset Content',
+            206 => 'Partial Content',
+            300 => 'Multiple Choices',
+            301 => 'Moved Permanently',
+            302 => 'Found',
+            303 => 'See Other',
+            304 => 'Not Modified',
+            305 => 'Use Proxy',
+            306 => '(Unused)',
+            307 => 'Temporary Redirect',
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            402 => 'Payment Required',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            405 => 'Method Not Allowed',
+            406 => 'Not Acceptable',
+            407 => 'Proxy Authentication Required',
+            408 => 'Request Timeout',
+            409 => 'Conflict',
+            410 => 'Gone',
+            411 => 'Length Required',
+            412 => 'Precondition Failed',
+            413 => 'Request Entity Too Large',
+            414 => 'Request-URI Too Long',
+            415 => 'Unsupported Media Type',
+            416 => 'Requested Range Not Satisfiable',
+            417 => 'Expectation Failed',
+            500 => 'Internal Server Error',
+            501 => 'Not Implemented',
+            502 => 'Bad Gateway',
+            503 => 'Service Unavailable',
+            504 => 'Gateway Timeout',
+            505 => 'HTTP Version Not Supported',
+        ];
         $state = $conf[$code] ?? 'OK';
         if (_CLI) return "[{$code}]:{$state}\n";
         $server = isset($_SERVER['SERVER_SOFTWARE']) ? ucfirst($_SERVER['SERVER_SOFTWARE']) : null;
