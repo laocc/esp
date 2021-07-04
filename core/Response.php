@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\Error;
 use esp\error\EspError;
 use esp\face\Adapter;
 use esp\library\ext\Xml;
+use function esp\helper\displayState;
 
 final class Response
 {
@@ -156,7 +156,7 @@ final class Response
 
         } else if (is_int($value)) {//如果是某种错误代码，则显示为错误
             $this->_Content_Type = 'text/html';
-            echo $this->_display_Result = Error::displayState($value);
+            echo $this->_display_Result = displayState($value);
             return;
 
         } else if (is_bool($value)) {//简单表示是否立即渲染
