@@ -54,7 +54,7 @@ final class View
     public function file(string $file = null): string
     {
         if (is_null($file)) {
-            return $this->_path['file'];
+            return $this->_path['file'] ?: '';
         } else {
             return $this->_path['file'] = $file;
         }

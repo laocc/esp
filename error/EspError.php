@@ -27,7 +27,7 @@ class EspError extends \ErrorException
         parent::__construct($message, $code, $severity, $filename, $line);
     }
 
-    public function debug()
+    public function debug(): array
     {
         $err = array();
         $err['success'] = 0;
@@ -38,7 +38,7 @@ class EspError extends \ErrorException
         return $err;
     }
 
-    public function display()
+    public function display(): array
     {
         $err = array();
         $err['success'] = 0;
@@ -82,12 +82,12 @@ class EspError extends \ErrorException
         return $this->context;
     }
 
-    public function message()
+    public function message(): string
     {
         return $this->getMessage();
     }
 
-    public function file()
+    public function file(): string
     {
         return $this->getFile() . '(' . $this->getLine() . ')';
     }

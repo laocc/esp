@@ -56,6 +56,7 @@ final class Dispatcher
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
             define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
+            //对于favicon.ico，建议在nginx中直接拦截
             if (_URI === '/favicon.ico') {
                 header('Content-type: image/x-icon', true);
                 exit('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAQSURBVHjaYvj//z8DQIABAAj8Av7bok0WAAAAAElFTkSuQmCC');
@@ -154,7 +155,7 @@ final class Dispatcher
      * @param null $conf
      * @return array|null
      */
-    private function mergeConf($allConf, $conf = null)
+    private function mergeConf($allConf, $conf = null): array
     {
         if (is_null($conf)) $conf = $allConf['default'];
 
@@ -171,7 +172,7 @@ final class Dispatcher
         return $conf;
     }
 
-    private function relayDebug($info)
+    private function relayDebug($info): void
     {
         if (is_null($this->_debug)) return;
         $this->_debug->relay($info, []);
@@ -367,7 +368,7 @@ final class Dispatcher
      *
      * @throws EspError
      */
-    public function simple()
+    public function simple(): void
     {
         $showDebug = isset($_GET['_debug']);
         if ($this->run === false) goto end;
@@ -421,7 +422,7 @@ final class Dispatcher
         }
     }
 
-    public function min()
+    public function min(): void
     {
         $this->simple();
     }
@@ -516,7 +517,7 @@ final class Dispatcher
     }
 
 
-    private function err404(string $msg)
+    private function err404(string $msg): string
     {
         if (!is_null($this->_debug)) $this->_debug->folder('error');
         $empty = $this->_config->get('request.empty');
