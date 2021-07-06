@@ -18,6 +18,12 @@ final class Error
         $this->restrain = boolval($option['restrain'] ?? 0);
     }
 
+    public function __destruct()
+    {
+        restore_error_handler();
+        restore_exception_handler();
+    }
+
     /**
      * 简单处理出错信息
      */

@@ -35,10 +35,10 @@ final class Dispatcher
          * if ($request_method ~ ^(HEAD)$ ) { return 200 "OK"; }
          * if ($request_method !~ ^(GET|POST)$ ) { return 200 "OK"; }
          */
-        if (getenv('REQUEST_METHOD') === 'HEAD') die('OK');
+        if (getenv('REQUEST_METHOD') === 'HEAD') exit('OK');
 
         if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
-        if (!getenv('HTTP_HOST') && !_CLI) die('unknown host');
+        if (!getenv('HTTP_HOST') && !_CLI) exit('unknown host');
         if (!defined('_ROOT')) {    //网站根目录
             define('_ROOT', _CLI ? getenv('PWD') : rtrim(same_first(__DIR__, getenv('DOCUMENT_ROOT')), '/'));
         }

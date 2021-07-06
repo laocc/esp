@@ -116,9 +116,7 @@ final class Request
         elseif ($this->isPost() and ($p = $suffix['post'] ?? '')) $actionExt = $p;
         elseif ($this->isAjax() and ($p = $suffix['ajax'] ?? '')) $actionExt = $p;//必须放在isPost之后
         elseif (_CLI and ($p = $suffix['cli'] ?? '')) $actionExt = $p;
-        else {
-            die("Prohibited Method[{$this->method}]");
-        }
+        else $actionExt = strtolower($this->method);
         return ucfirst($actionExt);
     }
 

@@ -314,7 +314,7 @@ abstract class Controller
         fastcgi_finish_request();
         if (!is_null($this->_debug)) {
             $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-            $this->_debug->relay(['控制器主动调用 exit()结束客户端', $text], $pre);
+            $this->_debug->relay(['控制器主动调用exit()结束客户端', $text], $pre);
             $this->_debug->save_logs('Controller Exit');
         }
         exit;
