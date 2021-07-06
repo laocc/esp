@@ -111,12 +111,14 @@ final class Redis implements KeyValue
      */
     public function list(string $tabName)
     {
-        static $list = array();
-        if (!isset($list[$tabName])) {
-            $list[$tabName] = new RedisList($this->redis, $tabName);
+        if (!isset($this->tmpList[$tabName])) {
+            $this->tmpList[$tabName] = new RedisList($this->redis, $tabName);
         }
-        return $list[$tabName];
+        return $this->tmpList[$tabName];
     }
+
+    private $tmpList = [];
+    private $tmpHash = [];
 
     /**
      * 创建一个hash表
@@ -125,11 +127,10 @@ final class Redis implements KeyValue
      */
     public function hash(string $tabName)
     {
-        static $list = array();
-        if (!isset($list[$tabName])) {
-            $list[$tabName] = new RedisHash($this->redis, $tabName);
+        if (!isset($this->tmpHash[$tabName])) {
+            $this->tmpHash[$tabName] = new RedisHash($this->redis, $tabName);
         }
-        return $list[$tabName];
+        return $this->tmpHash[$tabName];
     }
 
     public function hGet(string $table, string $hashKey)

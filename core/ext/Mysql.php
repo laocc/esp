@@ -40,7 +40,7 @@ trait Mysql
      * 设置自增ID起始值
      * @param string $table
      * @param int $id
-     * @return bool|\esp\core\db\ext\Result|null
+     * @return bool|\esp\core\db\ext\PdoResult|null
      */
     final public function increment(string $table, int $id = 1)
     {

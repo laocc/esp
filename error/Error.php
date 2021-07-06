@@ -190,17 +190,6 @@ final class Error
         set_exception_handler($handler_exception);
     }
 
-    public static function exception(EspError $exception)
-    {
-        echo "<pre style='background:#fff;display:block;'>";
-        if (_DEBUG) {
-            print_r($exception->debug());
-        } else {
-            print_r($exception->display());
-        }
-        echo "</pre>";
-    }
-
     /**
      * @var Debug $debug
      */

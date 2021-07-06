@@ -36,6 +36,7 @@ abstract class Controller
     public $_Mysql = array();
     public $_Mongodb = array();
     public $_Redis = array();
+    public $_PdoPool = array();
 
 
     /**

@@ -21,14 +21,12 @@ final class View
      */
     private $_adapter;//标签解析器对象
     private $_adapter_use;
-    private $_controller;
     private $_display_type;
 
-    public function __construct(string $dir, string $controller, $file)
+    public function __construct(string $dir, $file)
     {
         $this->_path['dir'] = $dir;
         $this->_path['file'] = $file;
-        $this->_controller = $controller;
     }
 
     /**
@@ -53,7 +51,7 @@ final class View
      * @param string|null $file
      * @return mixed|string
      */
-    public function file(string $file = null)
+    public function file(string $file = null): string
     {
         if (is_null($file)) {
             return $this->_path['file'];

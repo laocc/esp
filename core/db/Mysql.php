@@ -45,12 +45,7 @@ final class Mysql
         $this->_checkGoneAway = _CLI;
         $this->dbName = $conf['db'];
         $this->_debug = $model->_debug;
-
-        if ($conf['pool'] ?? 1) {
-            if (!isset($GLOBALS['_PDO_POOL'])) $GLOBALS['_PDO_POOL'] = [];
-            $this->_pool =& $GLOBALS['_PDO_POOL'];
-        }
-
+        $this->_pool = $model->_controller->_PdoPool;
     }
 
     /**

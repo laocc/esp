@@ -19,14 +19,6 @@ class Debug
     }
 
     /**
-     * @return Debug
-     */
-    public static function class()
-    {
-        return $GLOBALS['_Debug'] ?? null;
-    }
-
-    /**
      * 读取日志
      * @param string $file
      * @return string

@@ -17,25 +17,14 @@ use esp\error\EspError;
  *
  * func_get_args()
  */
-abstract class Model
+abstract class Model extends Library
 {
-    private $_table_fix = 'tab';    //表前缀
+    private $__table_fix = 'tab';    //表前缀
     private $__table = null;        //创建对象时，或明确指定当前模型的对应表名
     private $__pri = null;          //同上，对应主键名
     private $__cache = false;       //是否缓存，若此值被设置，则覆盖子对象的相关设置
     private $__tranIndex = 0;       //事务
-    private $__buffer;
 
-    protected $_config;
-    /**
-     * @var $_controller Controller
-     */
-    protected $_controller;
-
-    /**
-     * @var $_debug Debug
-     */
-    public $_debug;
     private $_print_sql;
     private $_debug_sql;
     private $_traceLevel = 1;
@@ -82,18 +71,6 @@ abstract class Model
         $this->selectKey = [];
     }
 
-    public function __construct(...$param)
-    {
-        $this->_controller = &$GLOBALS['_Controller'];
-        $this->_config = $this->_controller->getConfig();
-        $this->_debug = $this->_controller->_debug;
-        $this->__buffer = $this->_controller->_buffer;
-
-        if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
-            call_user_func_array([$this, '_init'], $param);
-        }
-    }
-
     public function __debugInfo()
     {
         return ['table' => $this->_table, 'id' => $this->_id];
@@ -104,79 +81,10 @@ abstract class Model
         return json_encode(['table' => $this->_table, 'id' => $this->_id]);
     }
 
-    /**
-     * @return Controller
-     */
-    final public function Controller()
-    {
-        return $this->_controller;
-    }
-
-    /**
-     * @param $value
-     * @param $prevTrace
-     * @return bool|Debug
-     */
-    final public function debug($value = '_Debug_Object', $prevTrace = 0)
-    {
-        if (_CLI or is_null($this->_debug)) return null;
-        if ($value === '_Debug_Object') return $this->_debug;
-
-        if (!(is_int($prevTrace) or is_array($prevTrace))) $prevTrace = 0;
-        if (is_int($prevTrace)) {
-            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($prevTrace + 1));
-            $trace = $trace[$prevTrace] ?? [];
-        } else {
-            $trace = $prevTrace;
-        }
-        return $this->_debug->relay($value, $trace);
-    }
-
-    /**
-     * 设置并返回debug文件名
-     * @param string|null $filename
-     * @return string
-     */
-    final public function debug_file(string $filename = null)
-    {
-        if (is_null($this->_debug)) return 'null';
-        return $this->_debug->filename($filename);
-    }
-
     final public function debug_sql(bool $df = false)
     {
         $this->_debug_sql = $df;
         return $this;
-    }
-
-    final protected function config(...$key)
-    {
-        return $this->_config->get(...$key);
-    }
-
-    /**
-     * 发送通知信息
-     * @param string $action
-     * @param array $value
-     * @return int
-     */
-    final public function publish(string $action, array $value)
-    {
-        return $this->__buffer->publish('order', $action, $value);
-    }
-
-    /**
-     * 发送到队列
-     * @param string $queKey
-     * @param array $data
-     * @return int
-     *
-     * 用下面方法读取
-     * while ($data = $this->_redis->lPop($queKey)){...}
-     */
-    final public function queue(string $queKey, array $data)
-    {
-        return $this->__buffer->push('task', $data + ['_action' => $queKey]);
     }
 
     /**
@@ -215,7 +123,7 @@ abstract class Model
         preg_match('/(.+\\\)?(\w+)model$/i', get_class($this), $mac);
         if (!$mac) return null;
 
-        return ($this->_table_fix . ucfirst($mac[2]));
+        return ($this->__table_fix . ucfirst($mac[2]));
     }
 
     /**
@@ -301,7 +209,7 @@ abstract class Model
      * 改
      * @param $where
      * @param array $data
-     * @return bool|db\ext\Result|null
+     * @return bool|db\ext\PdoResult|null
      * @throws EspError
      */
     final public function update($where, array $data)
@@ -920,17 +828,5 @@ abstract class Model
         return $this->Redis()->hash($table);
     }
 
-
-    /**
-     * 注册关门后操作
-     * @param callable $fun
-     * @param mixed ...$parameter
-     * @return $this
-     */
-    final public function shutdown(callable $fun, ...$parameter)
-    {
-        register_shutdown_function($fun, ...$parameter);
-        return $this;
-    }
 
 }

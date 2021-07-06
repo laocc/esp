@@ -42,6 +42,11 @@ final class Response
 
     private $_autoRun = true;
 
+    private $viewObj;
+    private $layoutObj;
+    private $renderHtml;
+
+
     public function __construct(Dispatcher $dispatcher, array $resource = null)
     {
         $this->_request = $dispatcher->_request;
@@ -241,10 +246,9 @@ final class Response
      */
     public function getView(): View
     {
-        static $obj;
-        if (!is_null($obj)) return $obj;
+        if (!is_null($this->viewObj)) return $this->viewObj;
         $this->_view_set['view_use'] = true;
-        return $obj = new View($this->viewPath(), $this->_request->controller, $this->_view_set['view_file']);
+        return $this->viewObj = new View($this->viewPath(), $this->_view_set['view_file']);
     }
 
     public function setView($value): Response
@@ -286,10 +290,9 @@ final class Response
      */
     public function getLayout(): View
     {
-        static $obj;
-        if (!is_null($obj)) return $obj;
+        if (!is_null($this->layoutObj)) return $this->layoutObj;
         $this->_view_set['layout_use'] = true;
-        return $obj = new View($this->viewPath(), $this->_request->controller, $this->_view_set['layout_file']);
+        return $this->layoutObj = new View($this->viewPath(), $this->_view_set['layout_file']);
     }
 
     public function setLayout($value): Response
@@ -320,8 +323,7 @@ final class Response
      */
     public function render()
     {
-        static $html;
-        if (!is_null($html)) return $html;
+        if (!is_null($this->renderHtml)) return $this->renderHtml;
         $this->_Content_Type = 'text/html';
         switch (strtolower($this->_display_type)) {
             case 'json':
@@ -422,6 +424,7 @@ final class Response
             $html = str_replace("</head>", "{$cssTag}\n\t{$jssTag}\n</head>", $html);
         }
 
+        $this->renderHtml = $html;
         //由resource过滤一些特殊的字符串
         return $this->_resource->replace($html);
     }

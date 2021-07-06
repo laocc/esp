@@ -97,11 +97,9 @@ final class Dispatcher
             $debug = $this->mergeConf($debugConf);
             if ($debug['run'] ?? 0) {
                 $this->_debug = new \esp\debug\Debug($debug);
-                $GLOBALS['_Debug'] = $this->_debug;
                 if (isset($error)) $error->setDebug($this->_debug);
             } else {
                 $this->_debug = new Debug([]);
-                $GLOBALS['_Debug'] = $this->_debug;
             }
         }
 
@@ -462,7 +460,7 @@ final class Dispatcher
             }
         }
 
-        $GLOBALS['_Controller'] = &$cont;//放入公共变量，后面Model需要读取
+        $GLOBALS['_Controller'] = &$cont;//放入公共变量，供Library读取
 
         /**
          * 运行初始化，一般这个放在Base中

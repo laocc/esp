@@ -251,10 +251,12 @@ final class Session
     }
 
     /**
+     * 以下两个方法在实际应用中，直接调用相应函数就可以了
+     *
      * 撤销本次请求对session的改动
      * @return bool
      */
-    public static function reset()
+    public function reset()
     {
         return session_abort();
     }
@@ -262,7 +264,7 @@ final class Session
     /**
      * 结束session
      */
-    public static function destroy()
+    public function destroy()
     {
         return session_destroy();
     }
