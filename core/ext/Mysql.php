@@ -5,6 +5,7 @@ namespace esp\core\ext;
 
 
 use esp\error\EspError;
+use function esp\helper\root;
 
 trait Mysql
 {
@@ -169,8 +170,7 @@ trait Mysql
         if ($parent === 'Model') return 'Model实例应该有个中间类，比如_Base，不应该直接引自Model类，若确需这样，请手工创建。';
         if (empty($self)) return 'Model实例应该引用自Model>_Base';
         $path = '/' . implode('/', $self);
-
-        $root = \esp\helper\root($path);
+        $root = root($path);
         if (!is_dir($root)) return "请先创建[{$root}]目录";
 
         $mysql = $this->Mysql();

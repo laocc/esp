@@ -68,6 +68,11 @@ class Debug
         return '';
     }
 
+    public function mysql_log($val, $pre = null)
+    {
+        return $this;
+    }
+
     public function setPrint(string $type, bool $val = null)
     {
         return $this;

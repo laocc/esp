@@ -335,7 +335,7 @@ final class Error
             padding: 0;
             font-size: 1em;
             color: #555555;
-            font-family: "Source Code Pro", "Arial", "Microsoft YaHei", "msyh", "sans-serif";
+            font-family: "Source Code Pro", "Arial", "sans-serif";
         }
 
         table {

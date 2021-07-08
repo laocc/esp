@@ -217,25 +217,29 @@ final class Response
     }
 
 
-    public function viewPath(string $path = null)
+    public function getViewPath(): string
+    {
+        if (is_null($this->_view_set['view_path'])) {
+            $vmp = $this->_request->virtual;
+            if ($this->_request->module) $vmp = "{$vmp}/{$this->_request->module}";
+            return "{$this->_request->directory}/{$vmp}/views/";
+        } else {
+            return $this->_view_set['view_path'];
+        }
+    }
+
+
+    public function setViewPath(string $path = null): Response
     {
         $vmp = $this->_request->virtual;
         if ($this->_request->module) $vmp = "{$vmp}/{$this->_request->module}";
-        if (is_null($path) or empty($path)) {
-            if (is_null($this->_view_set['view_path'])) {
-                return "{$this->_request->directory}/{$vmp}/views/";
-            } else {
-                return $this->_view_set['view_path'];
-            }
+        if (substr($path, 0, 1) === '/') {
+            $path = "{$this->_request->directory}{$path}";
         } else {
-            if (substr($path, 0, 1) === '/') {
-                $path = "{$this->_request->directory}{$path}";
-            } else {
-                $path = "{$this->_request->directory}/{$vmp}/{$path}";
-            }
-            $this->_view_set['view_path'] = $path;
-            return $this;
+            $path = "{$this->_request->directory}/{$vmp}/{$path}";
         }
+        $this->_view_set['view_path'] = $path;
+        return $this;
     }
 
     /**
@@ -248,7 +252,7 @@ final class Response
     {
         if (!is_null($this->viewObj)) return $this->viewObj;
         $this->_view_set['view_use'] = true;
-        return $this->viewObj = new View($this->viewPath(), $this->_view_set['view_file']);
+        return $this->viewObj = new View($this->getViewPath(), $this->_view_set['view_file']);
     }
 
     public function setView($value): Response
@@ -292,7 +296,7 @@ final class Response
     {
         if (!is_null($this->layoutObj)) return $this->layoutObj;
         $this->_view_set['layout_use'] = true;
-        return $this->layoutObj = new View($this->viewPath(), $this->_view_set['layout_file']);
+        return $this->layoutObj = new View($this->getViewPath(), $this->_view_set['layout_file']);
     }
 
     public function setLayout($value): Response
@@ -555,7 +559,7 @@ final class Response
      * @param $name
      * @param null $value
      */
-    public function assign($name, $value = null)
+    public function assign($name, $value = null): void
     {
         if (is_array($name)) {
             foreach ($name as $k => $v) {
@@ -571,13 +575,13 @@ final class Response
         return $this->_view_val[$name] ?? null;
     }
 
-    public function set(string $name, $value)
+    public function set(string $name, $value): void
     {
         $this->assign($name, $value);
     }
 
 
-    public function js($file, $pos = 'foot')
+    public function js($file, $pos = 'foot'): void
     {
         $pos = in_array($pos, ['foot', 'head', 'body', 'defer']) ? $pos : 'foot';
         if (is_array($file)) {
@@ -585,50 +589,44 @@ final class Response
         } else {
             $this->_layout_val["_js_{$pos}"][] = $file;
         }
-        return $this;
     }
 
 
-    public function css($file)
+    public function css($file): void
     {
         if (is_array($file)) {
             array_push($this->_layout_val['_css'], ...$file);
         } else {
             $this->_layout_val['_css'][] = $file;
         }
-        return $this;
     }
 
 
-    public function meta(string $name, $value)
+    public function meta(string $name, $value): void
     {
         $this->_layout_val['_meta'][$name] = $value;
-        return $this;
     }
 
 
-    public function title(string $title, bool $default = true)
+    public function title(string $title, bool $default = true): void
     {
         $this->_layout_val['_title'] = $title;
         if (!$default) $this->_layout_val['_title_default'] = false;
-        return $this;
     }
 
 
-    public function keywords(string $value)
+    public function keywords(string $value): void
     {
         $this->_layout_val['_meta']['keywords'] = $value;
-        return $this;
     }
 
 
-    public function description(string $value)
+    public function description(string $value): void
     {
         $this->_layout_val['_meta']['description'] = $value;
-        return $this;
     }
 
-    public function cache(bool $save = true)
+    public function cache(bool $save = true): void
     {
         $this->_save_cache = $save;
     }

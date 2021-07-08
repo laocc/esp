@@ -74,8 +74,12 @@ final class Dispatcher
 
         //以下2项必须在`chdir()`之前，且顺序不可变
         if (!_CLI) $error = new Error($option['error'] ?? []);
-
         $this->_config = new Configure($option['config'] ?? []);
+
+        /**
+         * 切换之前是nginx中指定的root入口目录，
+         * 切换后getcwd()的结果为_ROOT
+         */
         chdir(_ROOT);
         $request = $this->_config->get('request');
         $this->_request = new Request($this, $request);
