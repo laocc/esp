@@ -15,13 +15,13 @@ use function \esp\helper\root;
 
 abstract class Controller
 {
-    protected $_dispatcher;
-    protected $_config;
-    protected $_request;
-    protected $_response;
-    protected $_session;
-    protected $_plugs;
-    protected $_cookies;
+    public $_dispatcher;
+    public $_config;
+    public $_request;
+    public $_response;
+    public $_session;
+    public $_plugs;
+    public $_cookies;
     public $_debug;
     public $_buffer;
 

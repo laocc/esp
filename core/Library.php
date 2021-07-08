@@ -14,19 +14,14 @@ abstract class Library
      * @var $_controller Controller
      */
     public $_controller;
-    protected $_config;
-    protected $_buffer;
-
-    /**
-     * debug需要为public
-     * @var $_debug Debug
-     */
+    public $_config;
+    public $_buffer;
     public $_debug;
 
     public function __construct(...$param)
     {
         $this->_controller = &$GLOBALS['_Controller'];
-        $this->_config = $this->_controller->getConfig();
+        $this->_config = $this->_controller->_config;
         $this->_debug = $this->_controller->_debug;
         $this->_buffer = $this->_controller->_buffer;
 
