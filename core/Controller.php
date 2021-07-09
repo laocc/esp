@@ -16,6 +16,11 @@ use function \esp\helper\root;
 abstract class Controller
 {
     public $_dispatcher;
+    /**
+     * @var $_config Configure
+     * @var $_request Request
+     * @var $_response Response
+     */
     public $_config;
     public $_request;
     public $_response;
@@ -100,13 +105,13 @@ abstract class Controller
 
     final protected function setViewPath(string $value): Controller
     {
-        $this->_response->viewPath($value);
+        $this->_response->setViewPath($value);
         return $this;
     }
 
     final protected function getViewPath()
     {
-        return $this->_response->viewPath();
+        return $this->_response->getViewPath();
     }
 
     /**
