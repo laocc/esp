@@ -52,7 +52,7 @@ final class Configure
         $this->_rpc = defined('_RPC') ? _RPC : ['host' => 'rpc.esp', 'port' => 80, 'ip' => ($rdsConf['master'] ?? null)];
 
         //没有强制从文件加载
-        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD)) {
+        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
             $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
             if (!empty($this->_CONFIG_)) return;
         }
