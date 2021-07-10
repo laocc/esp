@@ -135,9 +135,7 @@ final class Configure
         }
 
         $this->_CONFIG_ = $this->re_arr($this->_CONFIG_);
-        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD)) {
-            $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
-        }
+        if (!_CLI) $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
 
         //负载从服务器唤醒，直接退出
         if (_VIRTUAL === 'rpc' && _URI === $awakenURI) exit($this->_token);
