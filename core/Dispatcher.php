@@ -465,8 +465,6 @@ final class Dispatcher
             }
         }
 
-        $GLOBALS['_Controller'] = &$cont;//放入公共变量，供Library读取
-
         /**
          * 运行初始化，一般这个放在Base中
          */

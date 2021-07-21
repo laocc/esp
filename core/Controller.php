@@ -50,6 +50,8 @@ abstract class Controller
      */
     public function __construct(Dispatcher $dispatcher)
     {
+        $GLOBALS['_Controller'] = &$this;//放入公共变量，供Library读取
+
         $this->_dispatcher = &$dispatcher;
         $this->_config = &$dispatcher->_config;
         $this->_plugs = &$dispatcher->_plugs;
