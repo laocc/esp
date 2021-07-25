@@ -118,6 +118,16 @@ class Debug
         return '';
     }
 
+    /**
+     * 指定完整的目录，也就是不采用控制器名称
+     * @param string|null $path
+     * @return $this|string
+     */
+    public function fullPath(string $path = null)
+    {
+        return '';
+    }
+
     public function path(string $path = null, bool $append = false)
     {
         return '';
