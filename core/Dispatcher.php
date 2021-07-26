@@ -93,10 +93,10 @@ final class Dispatcher
             $this->_request->recodeConcurrent($this->_config->_Redis);
         }
 
-        $resourceConf = $this->_config->get('resource');
-        $resource = $this->mergeConf($resourceConf);
-        $resource['_rand'] = $this->_config->_Redis->get('resourceRand') ?: date('YmdH');
-        $this->_response = new Response($this, $resource);
+        $response = $this->_config->get('response') ?: $this->_config->get('resource');
+        $response = $this->mergeConf($response);
+        $response['_rand'] = $this->_config->_Redis->get('resourceRand') ?: date('YmdH');
+        $this->_response = new Response($this, $response);
 
         if ($debugConf = $this->_config->get('debug')) {
             $debug = $this->mergeConf($debugConf);

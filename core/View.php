@@ -13,6 +13,7 @@ final class View
     private $_path = [
         'dir' => null,
         'file' => null,
+        'ext' => '.php',
     ];
     private $_view_val = array();
     private $_layout;//框架对象
@@ -23,10 +24,11 @@ final class View
     private $_adapter_use;
     private $_display_type;
 
-    public function __construct(string $dir, $file)
+    public function __construct(string $dir, $file, $ext)
     {
         $this->_path['dir'] = $dir;
         $this->_path['file'] = $file;
+        $this->_path['ext'] = $ext;
     }
 
     /**
@@ -181,7 +183,7 @@ final class View
         }
 
         if (!is_readable($fileV)) {
-            if (!is_readable($fileT = "{$dir}/view.php")) {
+            if (!is_readable($fileT = "{$dir}/view{$this->_path['ext']}")) {
                 throw new EspError("视图文件({$fileV})不存在", 1);
             } else {
                 $fileV = $fileT;
@@ -199,7 +201,7 @@ final class View
                     $html = $md->render($html);
                 }
             }
-            $layout = '/layout.php';
+            $layout = "/layout{$this->_path['ext']}";
             $layout_file = $dir . $layout;
             if (!is_readable($layout_file)) $layout_file = dirname($dir) . $layout;//上一级目录
             if (!is_readable($layout_file)) throw new EspError("框架视图文件({$layout_file})不存在", 1);

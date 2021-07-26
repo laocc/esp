@@ -35,6 +35,7 @@ final class Response
     private $_view_set = [
         'view_use' => true,
         'view_file' => null,
+        'file_ext' => '.php',
         'view_path' => null,
         'layout_use' => true,
         'layout_file' => null,
@@ -47,10 +48,12 @@ final class Response
     private $renderHtml;
 
 
-    public function __construct(Dispatcher $dispatcher, array $resource = null)
+    public function __construct(Dispatcher $dispatcher, array $conf = null)
     {
         $this->_request = $dispatcher->_request;
-        $this->_resource = new Resources($resource);
+        $this->_resource = new Resources($conf);
+        if (isset($conf['views'])) $this->_view_set['view_path'] = $conf['views'];
+        if (isset($conf['extend'])) $this->_view_set['file_ext'] = '.' . trim($conf['extend'], '.');
     }
 
     /**
@@ -252,7 +255,7 @@ final class Response
     {
         if (!is_null($this->viewObj)) return $this->viewObj;
         $this->_view_set['view_use'] = true;
-        return $this->viewObj = new View($this->getViewPath(), $this->_view_set['view_file']);
+        return $this->viewObj = new View($this->getViewPath(), $this->_view_set['view_file'], $this->_view_set['file_ext']);
     }
 
     public function setView($value): Response
@@ -261,7 +264,7 @@ final class Response
             $this->_view_set['view_use'] = $value;
         } elseif (is_string($value)) {
             if (strpos($value, '.') === false) {
-                $value = "{$value}.php";
+                $value = "{$value}{$this->_view_set['file_ext']}";
             }
             if (strpos($value, '/') === false) {
                 $value = "{$this->_request->controller}/{$value}";
@@ -296,7 +299,7 @@ final class Response
     {
         if (!is_null($this->layoutObj)) return $this->layoutObj;
         $this->_view_set['layout_use'] = true;
-        return $this->layoutObj = new View($this->getViewPath(), $this->_view_set['layout_file']);
+        return $this->layoutObj = new View($this->getViewPath(), $this->_view_set['layout_file'], $this->_view_set['file_ext']);
     }
 
     public function setLayout($value): Response
@@ -304,7 +307,7 @@ final class Response
         if (is_bool($value)) {
             $this->_view_set['layout_use'] = $value;
         } elseif (is_string($value)) {
-            if (!strpos($value, '.')) $value = "{$value}.php";
+            if (!strpos($value, '.')) $value = "{$value}{$this->_view_set['file_ext']}";
             $this->_view_set['layout_use'] = true;
             $this->_view_set['layout_file'] = $value;
             $this->getLayout()->file($value);
@@ -454,14 +457,14 @@ final class Response
         }
         $this->_layout_val = null;
 
-        $viewFileExt = 'php';
-        if (strtolower($this->_display_type) === 'md') $viewFileExt = 'md';
+        $viewFileExt = $this->_view_set['file_ext'];
+        if (strtolower($this->_display_type) === 'md') $viewFileExt = '.md';
         if ($route = $this->_request->route_view) {
             if (isset($route['path']) and $route['path']) $view->dir($route['path']);
             if (isset($route['file']) and $route['file']) $view->file($route['file']);
         }
         //组合一个默认值送到视图中，但是，有可能在这之前已经通过$this->getView()->file($value);指定过实际视图文件
-        $file = "{$this->_request->controller}/{$this->_request->action}.{$viewFileExt}";
+        $file = "{$this->_request->controller}/{$this->_request->action}{$viewFileExt}";
         return $view->display_type($this->_display_type)->render(strtolower($file), $this->_view_val);
     }
 
