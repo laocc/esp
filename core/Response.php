@@ -20,7 +20,7 @@ final class Response
     public $_display_Result;//最终的打印结果
     public $_Content_Type;
 
-    private $_view_val = Array();
+    private $_view_val = array();
     private $_layout_val = [
         '_js_foot' => [],
         '_js_head' => [],
@@ -431,9 +431,8 @@ final class Response
             $html = str_replace("</head>", "{$cssTag}\n\t{$jssTag}\n</head>", $html);
         }
 
-        $this->renderHtml = $html;
         //由resource过滤一些特殊的字符串
-        return $this->_resource->replace($html);
+        return $this->renderHtml = $this->_resource->replace($html);
     }
 
 
@@ -488,8 +487,8 @@ final class Response
             foreach (['foot', 'head', 'body', 'defer'] as $pos) {
                 if (!empty($this->_layout_val["_js_{$pos}"])) {
                     $defer = ($pos === 'defer') ? ' defer="defer"' : null;
-                    $conJS = Array();
-                    $http = Array();
+                    $conJS = array();
+                    $http = array();
                     foreach ($this->_layout_val["_js_{$pos}"] as &$js) {
                         if ($js === 'jquery') $js = $this->_resource->get('jquery');
                         if (substr($js, 0, 4) === 'http') {
@@ -507,8 +506,8 @@ final class Response
                 }
             }
             if (!empty($this->_layout_val['_css'])) {
-                $conCSS = Array();
-                $http = Array();
+                $conCSS = array();
+                $http = array();
                 foreach ($this->_layout_val['_css'] as &$css) {
                     if (substr($css, 0, 4) === 'http') {
                         $http[] = "<link rel=\"stylesheet\" href=\"{$css}\" charset=\"utf-8\" />";

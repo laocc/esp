@@ -18,7 +18,7 @@ final class Cache
     {
         $this->request = &$dispatcher->_request;
         $this->response = &$dispatcher->_response;
-        $this->redis = &$dispatcher->_config->Redis();
+        $this->redis = &$dispatcher->_config->_Redis;
         $this->_option = &$option;
     }
 
@@ -36,7 +36,7 @@ final class Cache
      */
     public function Display()
     {
-        if (_CLI or !$this->_option['run'] or $this->_option['ttl'] < 1) goto no_cache;
+        if (_CLI or !($this->_option['run'] ?? 0) or ($this->_option['ttl'] ?? 0) < 1) goto no_cache;
         if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) goto no_cache;
 
         //_cache_set是路由的设置，有可能是T/F，或需要组成KEY的数组
@@ -68,33 +68,28 @@ final class Cache
      */
     public function Save()
     {
-        if (_CLI or !$this->_option['run'] or $this->_option['ttl'] < 1) return;
-//        if ($this->htmlSave()) return;
+        if (_CLI or !($this->_option['run'] ?? 0) or ($this->_option['ttl'] ?? 0) < 1) return;
         if (defined('_CACHE_DISABLE') and !!_CACHE_DISABLE) return;
+        if ($this->htmlSave()) return;
 
         //这里的_cache_key是前面Display()生成的
         $key = $this->request->get('_cache_key');
         if (empty($key)) return;
         $value = $this->response->render();
-
         if (!$value) return;
+
         //连续两个以上空格变成一个
         if ($this->_option['space'] ?? 0) $value = preg_replace(['/\x20{2,}/'], ' ', $value);
 
         //删除:所有HTML注释
-        if ($this->_option['notes'] ?? 0) {
-            $value = preg_replace(['/\<\!--.*?--\>/'], '', $value);
-        }
+        if ($this->_option['notes'] ?? 0) $value = preg_replace(['/\<\!--.*?--\>/'], '', $value);
 
         //删除:HTML之间的空格
         if ($this->_option['tags'] ?? 0) $value = preg_replace(['/\>([\s\x20])+\</'], '><', $value);
 
         //全部HTML归为一行
-        if ($this->_option['zip'] ?? 0) {
-            $value = preg_replace(['/\s\/\/.+/', '/[\n\t\r]/s'], '', $value);
-        }
+        if ($this->_option['zip'] ?? 0) $value = preg_replace(['/\s\/\/.+/', '/[\n\t\r]/s'], '', $value);
 
-//        $value .= print_r($this->_option, true);
         $array = [];
         $array['html'] = $value;
         $array['type'] = $this->response->getType();
@@ -119,7 +114,7 @@ final class Cache
     private function htmlSave()
     {
         if ($this->request->get('_disable_static')) return false;
-        $pattern = $this->_option['static'];
+        $pattern = $this->_option['static'] ?? null;
         if (empty($pattern) or !$pattern) return false;
         $filename = null;
         foreach ($pattern as &$ptn) {
@@ -146,7 +141,6 @@ final class Cache
     private function build_cache_key($_cache_set)
     {
         $bud = array();
-        //共公key
         if (!empty($_GET)) {
             $param = $this->_option['param'] ?? [];
             if (!is_array($param)) $param = array();

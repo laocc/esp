@@ -96,23 +96,16 @@ final class Router
                 $request->controller = $controller ?: 'index';
                 $request->action = $action ?: 'index';
                 $request->params = $params + array_fill(0, 10, null);
-                if (isset($route['static'])) {
-                    $request->set('_disable_static', !$route['static']);
-                }
+
+                if (isset($route['static'])) $request->set('_disable_static', !$route['static']);
 
                 //缓存设置，结果可能为：true/false，或array(参与cache的$_GET参数)
                 //将结果放入request，供Cache类读取
-                if (isset($route['cache'])) {
-                    $request->set('_cache_set', $route['cache']);
-                } else {
-                    $cacheSet = $configure->get("cache.{$request->module}.{$request->controller}.{$request->action}");
-                    if ($cacheSet) {
-                        $request->set('_cache_set', $cacheSet);
-                    }
-                }
+                if (isset($route['cache'])) $request->set('_cache_set', $route['cache']);
 
-                //路由器对视图的定义
+                //路由器对视图的定义，false，或array
                 if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
+
                 unset($modRoute, $default);
                 return true;
             }
