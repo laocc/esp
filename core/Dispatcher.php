@@ -55,7 +55,12 @@ final class Dispatcher
         if (_CLI) {
             define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
-            define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
+            /**
+             * REQUEST_URI:浏览器中实际请求的uri
+             * PATH_INFO:nginx中有可能会用rewrite转换REQUEST_URI，转换的结果是PATH_INFO
+             * 所以这里只能读取PATH_INFO
+             */
+            define('_URI', parse_url(getenv('PATH_INFO'), PHP_URL_PATH));
             //对于favicon.ico，建议在nginx中直接拦截
             if (_URI === '/favicon.ico') {
                 header('Content-type: image/x-icon', true);

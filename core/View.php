@@ -175,18 +175,24 @@ final class View
     public function render(string $file, array $value): string
     {
         $dir = root($this->dir());
-        $fileV = $this->file() ?: $file;//以之前设置的优先
+        //以之前设置的优先，这里的$file是response中根据控制器推算出来的默认视图文件名
+        $fileV = $this->file() ?: $file;
         if (strpos($fileV[0], '/') === 0) {
             $fileV = root($fileV);
         } else {
             $fileV = "{$dir}/{$fileV}";
         }
 
+        $tryCheckPhp = ($this->_path['ext'] !== '.php');
         if (!is_readable($fileV)) {
-            if (!is_readable($fileT = "{$dir}/view{$this->_path['ext']}")) {
-                throw new EspError("视图文件({$fileV})不存在", 1);
+            if ($tryCheckPhp) {
+                if (!is_readable($fileT = str_replace($this->_path['ext'], '.php', $fileV))) {
+                    throw new EspError("视图文件({$fileV})或({$fileT})不存在", 1);
+                } else {
+                    $fileV = $fileT;
+                }
             } else {
-                $fileV = $fileT;
+                throw new EspError("视图文件({$fileV})不存在", 1);
             }
         }
 
@@ -201,10 +207,30 @@ final class View
                     $html = $md->render($html);
                 }
             }
-            $layout = "/layout{$this->_path['ext']}";
-            $layout_file = $dir . $layout;
-            if (!is_readable($layout_file)) $layout_file = dirname($dir) . $layout;//上一级目录
-            if (!is_readable($layout_file)) throw new EspError("框架视图文件({$layout_file})不存在", 1);
+
+            if (!is_readable($layout_file = $dir . "/layout{$this->_path['ext']}")) {
+                if ($tryCheckPhp) {
+                    if (!is_readable($ltm = ($dir . "/layout.php"))) { //查默认php
+                        if (!is_readable($ltm = dirname($dir) . "/layout{$this->_path['ext']}")) {//上一级目录
+                            if (!is_readable($ltm = (dirname($dir) . "/layout.php"))) { //查默认php
+                                throw new EspError("框架视图文件({$layout_file})不存在", 1);
+                            } else {
+                                $layout_file = $ltm;
+                            }
+                        } else {
+                            $layout_file = $ltm;
+                        }
+                    } else {
+                        $layout_file = $ltm;
+                    }
+                } else {
+                    if (!is_readable($ltm = dirname($dir) . "/layout{$this->_path['ext']}")) {//上一级目录
+                        throw new EspError("框架视图文件({$layout_file})不存在", 1);
+                    } else {
+                        $layout_file = $ltm;
+                    }
+                }
+            }
             return $this->_layout->render($layout_file, ['_view_html' => &$html]);
         }
         return $this->fetch($fileV, $value + $this->_view_val);
