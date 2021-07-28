@@ -254,6 +254,7 @@ PHP;
         foreach ($field as $i => $rs) {
             if (strtolower($rs['EXTRA']) === 'auto_increment') continue;//自增字段
             if (isset($rowData[$rs['COLUMN_NAME']])) continue;//传入数据中，字段有值
+            if (isset($rowData[$rs['COLUMN_NAME'] . '\\'])) continue;//传入字段中以\\结尾的
             $string = array('CHAR', 'VARCHAR', 'TINYBLOB', 'TINYTEXT', 'BLOB', 'TEXT', 'MEDIUMBLOB', 'MEDIUMTEXT', 'LONGBLOB', 'LONGTEXT');
             $number = array('INT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'INTEGER', 'BIGINT');
             $float = array('FLOAT', 'DOUBLE', 'DECIMAL');

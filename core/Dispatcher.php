@@ -60,7 +60,7 @@ final class Dispatcher
              * PATH_INFO:nginx中有可能会用rewrite转换REQUEST_URI，转换的结果是PATH_INFO
              * 所以这里只能读取PATH_INFO
              */
-            define('_URI', parse_url(getenv('PATH_INFO'), PHP_URL_PATH));
+            define('_URI', parse_url(getenv('PATH_INFO') ?: '/', PHP_URL_PATH));
             //对于favicon.ico，建议在nginx中直接拦截
             if (_URI === '/favicon.ico') {
                 header('Content-type: image/x-icon', true);
