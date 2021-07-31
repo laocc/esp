@@ -43,7 +43,7 @@ final class Dispatcher
             define('_ROOT', _CLI ? getenv('PWD') : rtrim(same_first(__DIR__, getenv('DOCUMENT_ROOT')), '/'));
         }
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
-        if (!defined('_DEBUG')) define('_DEBUG', is_file(_RUNTIME . '/debug.lock'));
+        if (!defined('_DEBUG')) define('_DEBUG', is_readable($df = _RUNTIME . '/debug.lock') ? file_get_contents($df) : false);
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
         if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
         if (!defined('_HOST')) define('_HOST', host(_DOMAIN));//域名的根域
@@ -60,7 +60,7 @@ final class Dispatcher
              * PATH_INFO:nginx中有可能会用rewrite转换REQUEST_URI，转换的结果是PATH_INFO
              * 所以这里只能读取PATH_INFO
              */
-            define('_URI', parse_url(getenv('PATH_INFO') ?: '/', PHP_URL_PATH));
+            define('_URI', parse_url(getenv('PATH_INFO') ?: (getenv('REQUEST_URI') ?: '/'), PHP_URL_PATH));
             //对于favicon.ico，建议在nginx中直接拦截
             if (_URI === '/favicon.ico') {
                 header('Content-type: image/x-icon', true);
@@ -466,7 +466,13 @@ final class Dispatcher
             if (method_exists($cont, $auto) and is_callable([$cont, $auto])) {
                 $action = $auto;
             } else {
-                return $this->err404("[{$class}::{$action}()] not exists.");
+                if (method_exists($cont, "default{$actionExt}") and is_callable([$cont, "default{$actionExt}"])) {
+                    $action = "default{$actionExt}";
+                } else if (method_exists($cont, 'defaultAction') and is_callable([$cont, 'defaultAction'])) {
+                    $action = 'defaultAction';
+                } else {
+                    return $this->err404("[{$class}::{$action}()] not exists.");
+                }
             }
         }
 
