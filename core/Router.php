@@ -10,8 +10,11 @@ use function esp\helper\root;
 
 final class Router
 {
+    private $uri;
+
     public function __construct()
     {
+        $this->uri = _URI;
     }
 
     /**
@@ -57,16 +60,16 @@ final class Router
         if (empty($modRoute) or !is_array($modRoute)) $modRoute = array();
         foreach (array_merge($modRoute, $default) as $key => $route) {
             $matches = [];
-            if ((isset($route['uri']) and stripos(_URI, $route['uri']) === 0) or
-                (isset($route['match']) and preg_match($route['match'], _URI, $matches))) {
+            if ((isset($route['uri']) and stripos($this->uri, $route['uri']) === 0) or
+                (isset($route['match']) and preg_match($route['match'], $this->uri, $matches))) {
 
                 if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
                     return ('非法Method请求');
                 }
 
                 if ($key === '_default') {
-                    $matches = explode('/', _URI);
-                    $matches[0] = _URI;
+                    $matches = explode('/', $this->uri);
+                    $matches[0] = $this->uri;
                 }
 
                 if (isset($route['route']['virtual'])) $request->virtual = $route['route']['virtual'];

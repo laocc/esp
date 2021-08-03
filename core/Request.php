@@ -11,11 +11,11 @@ use function \esp\helper\str_rand;
 final class Request
 {
     private $_dispatcher;
-    private $_var = Array();
+    private $_var = array();
     public $loop = false;//控制器间跳转循环标识
     public $router_path = null;//路由配置目录
     public $router = null;//实际生效的路由器名称
-    public $params = Array();
+    public $params = array();
     public $counter = ['concurrent' => false, 'counter' => false];
 
     public $virtual;
@@ -78,17 +78,7 @@ final class Request
 
     public function __toString(): string
     {
-        return json_encode([
-            'method' => $this->method,
-            'virtual' => $this->virtual,
-            'module' => $this->module,
-            'directory' => $this->directory,
-            'router_path' => $this->router_path,
-            'contFix' => $this->contFix,
-            'suffix' => $this->suffix,
-            'referer' => $this->referer,
-            'uri' => _URI,
-        ], 256 | 64);
+        return json_encode($this->__debugInfo(), 256 | 64);
     }
 
     public function id(): string
