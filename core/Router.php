@@ -25,129 +25,171 @@ final class Router
      */
     public function run(Configure $configure, Request $request)
     {
-        $default = [
-            '_default' => ['match' => '/^\/(?:[a-z][a-z0-9\-]+\/?)*/i', 'route' => []],
-        ];
         $rdsKey = $configure->_token . '_ROUTES_' . _VIRTUAL;
         $redis = $configure->_Redis;
         $modRoute = (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and $redis) ? $redis->get($rdsKey) : null;
 
         if (empty($modRoute) or $modRoute === 'null') {
-            $file = $request->router_path . '/' . _VIRTUAL . '.php';
-            if (is_readable($file)) {
-                $modRoute = load($file);
-                if (!empty($modRoute)) {
-                    foreach ($modRoute as $r => $route) {
-                        if (isset($route['match']) and !is_match($route['match']))
-                            return ("Route[Match]：{$route['match']} 不是有效正则表达式");
-
-                        if (isset($route['uri']) and !is_uri($route['uri']))
-                            return ("Route[uri]：{$route['uri']} 不是合法的URI格式");
-
-                        if (!isset($route['route'])) $route['route'] = [];
-                    }
-                    $saveRoute = $modRoute;
-                    if (is_array($saveRoute)) $saveRoute = json_encode($saveRoute, 256);
-                    !is_null($redis) and $redis->set($rdsKey, $saveRoute);
-                } else {//写入一个值，否则每次经过这里还要读取一次
-                    !is_null($redis) and $redis->set($rdsKey, 'empty');
+            $modRoute = $this->loadRouteFile($request);
+            if (!is_null($redis)) {
+                if (empty($modRoute)) {
+                    $redis->set($rdsKey, 'null');
+                } else {
+                    $redis->set($rdsKey, json_encode($modRoute, 256 | 64));
                 }
-            } else {
-                !is_null($redis) and $redis->set($rdsKey, 'null');
             }
         }
+
         if (is_string($modRoute) and !empty($modRoute)) $modRoute = json_decode($modRoute, true);
         if (empty($modRoute) or !is_array($modRoute)) $modRoute = array();
+
+        $default = ['__default__' => ['__default__' => 1, 'route' => []]];//默认路由
         foreach (array_merge($modRoute, $default) as $key => $route) {
-            $matches = [];
-            if ((isset($route['uri']) and stripos($this->uri, $route['uri']) === 0) or
-                (isset($route['match']) and preg_match($route['match'], $this->uri, $matches))) {
+            $matcher = $this->getMatcher($key, $route);
+            if (!$matcher) continue;
 
-                if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
-                    return ('非法Method请求');
-                }
-
-                if ($key === '_default') {
-                    $matches = explode('/', $this->uri);
-                    $matches[0] = $this->uri;
-                }
-
-                if (isset($route['route']['virtual'])) $request->virtual = $route['route']['virtual'];
-                else if (isset($route['virtual'])) $request->virtual = $route['virtual'];
-
-                if (isset($route['route']['directory'])) $request->directory = root($route['route']['directory']);
-                else if (isset($route['directory'])) $request->directory = root($route['directory']);
-
-                //分别获取模块、控制器、动作的实际值
-                $routeValue = $this->fill_route($request->virtual, $request->directory, $matches, $route['route']);
-                if (is_string($routeValue)) return $routeValue;
-
-                list($module, $controller, $action, $param) = $routeValue;
-
-                //分别获取各个指定参数
-                $params = array();
-                if (isset($route['map'])) {
-                    foreach ($route['map'] as $mi => $mk) {
-                        $params[$mi] = isset($matches[$mk]) ? $matches[$mk] : null;
-                    }
-                } else {
-                    $params = $param;
-                }
-
-                $request->router = $key;
-                $request->module = $module ?: '';
-                $request->controller = $controller ?: 'index';
-                $request->action = $action ?: 'index';
-                $request->params = $params + array_fill(0, 10, null);
-
-                if (isset($route['static'])) $request->set('_disable_static', !$route['static']);
-
-                //缓存设置，结果可能为：true/false，或array(参与cache的$_GET参数)
-                //将结果放入request，供Cache类读取
-                if (isset($route['cache'])) $request->set('_cache_set', $route['cache']);
-
-                //路由器对视图的定义，false，或array
-                if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
-
-                unset($modRoute, $default);
-                return true;
+            if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
+                return ('非法Method请求');
             }
+
+            if (isset($route['route']['virtual'])) $request->virtual = $route['route']['virtual'];
+            else if (isset($route['virtual'])) $request->virtual = $route['virtual'];
+
+            if (isset($route['route']['directory'])) $request->directory = root($route['route']['directory']);
+            else if (isset($route['directory'])) $request->directory = root($route['directory']);
+
+            //分别获取模块、控制器、动作的实际值
+            $routeValue = $this->fill_route($request->virtual, $request->directory, $matcher, $route['route']);
+            if (is_string($routeValue)) return $routeValue;
+            list($module, $controller, $action, $param) = $routeValue;
+
+            //分别获取各个指定参数
+            $params = array();
+            if (isset($route['map'])) {
+                foreach ($route['map'] as $mi => $mk) $params[$mi] = $matcher[$mk] ?? null;
+            } else {
+                $params = $param;
+            }
+
+            $request->router = $key;
+            $request->module = $module ?: '';
+            $request->controller = $controller ?: 'index';
+            $request->action = $action ?: 'index';
+            $request->params = $params + array_fill(0, 10, null);
+            if (isset($route['static'])) {
+                $request->set('_disable_static', !$route['static']);
+            }
+
+            //缓存设置，结果可能为：true/false，或array(参与cache的$_GET参数)
+            //将结果放入request，供Cache类读取
+            if (isset($route['cache'])) {
+                $request->set('_cache_set', $route['cache']);
+            } else {
+                $cacheSet = $configure->get("cache.{$request->module}.{$request->controller}.{$request->action}");
+                if ($cacheSet) {
+                    $request->set('_cache_set', $cacheSet);
+                }
+            }
+
+            //路由器对视图的定义
+            if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
+            unset($modRoute, $default);
+//                print_r($request);
+            return true;
         }
-        return ('系统路由没有获取到相应内容');
+
+        return '系统路由没有获取到相应内容，或非法请求URL。';
     }
 
+    /**
+     * 匹配路由
+     *
+     * @param string $key
+     * @param array $route
+     * @return false|string[]|null
+     */
+    private function getMatcher(string $key, array $route)
+    {
+        if ((isset($route['path']) and $route['path'] === $this->uri) or
+            (isset($route['uri']) and (stripos($this->uri, $route['uri']) === 0)) or
+            (isset($route['like']) and (stripos($this->uri, $route['like'])) !== false)) {
+            $matcher = explode('/', $this->uri);
+            $matcher[0] = $this->uri;
+            return $matcher;
+        }
+
+        if (isset($route['match']) and preg_match($route['match'], $this->uri, $matcher)) return $matcher;
+
+        if (isset($route['__default__']) and ($this->uri === '/' or $this->uri === '')) return ['/', ''];
+
+        if (isset($route['__default__']) and preg_match('#^\/[a-z][a-z0-9\-\_]+\/?.*#i', $this->uri)) {
+            $matcher = explode('/', $this->uri);
+            $matcher[0] = $this->uri;
+            return $matcher;
+        }
+
+        return null;
+    }
+
+    private function loadRouteFile(Request $request)
+    {
+        if (is_readable($file = ($request->router_path . '/' . _VIRTUAL . '.php'))) {
+            $modRoute = load($file);
+        } else if (is_readable($file = ($request->router_path . '/' . _VIRTUAL . '.ini'))) {
+            $modRoute = parse_ini_file($file, true);
+            if (!is_array($modRoute) or empty($modRoute)) return [];
+            //只将一级键名中带.号的，转换为数组，如将：abc.xyz=123转换为abc[xyz]=123
+            foreach ($modRoute as $k => $v) {
+                if (!is_string($k)) continue;
+                if (strpos($k, '.')) {
+                    $tm = explode('.', $k, 2);
+                    $modRoute[$tm[0]][$tm[1]] = $v;
+                    unset($modRoute[$k]);
+                }
+            }
+        }
+        if (empty($modRoute)) return [];
+
+        foreach ($modRoute as $r => $route) {
+            if (isset($route['match']) and !is_match($route['match']))
+                return ("Route[Match]：{$route['match']} 不是有效正则表达式");
+
+            if (isset($route['uri']) and !is_uri($route['uri']))
+                return ("Route[uri]：{$route['uri']} 不是合法的URI格式");
+
+            if (!isset($route['route'])) $modRoute[$r]['route'] = [];
+        }
+        return $modRoute;
+    }
 
     /**
      * 分别获取模块、控制器、动作的实际值
      * @param string $virtual
      * @param string $directory
-     * @param array $matches 正则匹配结果
+     * @param array $matcher 正则匹配结果
      * @param array $route
      * @return array|string
      */
-    private function fill_route(string $virtual, string $directory, array $matches, array $route): array
+    private function fill_route(string $virtual, string $directory, array $matcher, array $route): array
     {
         $module = $controller = $action = '';
         $param = array();
-
-        //正则结果中没有指定结果集
-        if (empty($matches) or !isset($matches[0])) return [null, null, null, null];
-
-        //未指定MCA
+        if (empty($matcher) or !isset($matcher[0])) return [null, null, null, null];
         if (empty($route)) {
-            if (($matches[1] ?? '') and is_dir("{$directory}/{$virtual}/{$matches[1]}")) {
-                $module = strtolower($matches[1]);
-                $controller = ($matches[2] ?? 'index');
-                $action = ($matches[3] ?? 'index');
-                if (isset($matches[4])) {
-                    $param = array_slice($matches, 4);
+            //第一节点指向的目录存在，则第一节点为module
+            if (($matcher[1] ?? '') and is_dir("{$directory}/{$virtual}/{$matcher[1]}")) {
+                $module = strtolower($matcher[1]);
+                $controller = ($matcher[2] ?? 'index');
+                $action = ($matcher[3] ?? 'index');
+                if (isset($matcher[4])) {
+                    $param = array_slice($matcher, 4);
                 }
-            } else {//否则第一模块指的就是控制器
+            } else {//否则第一节点指的是控制器
                 $module = null;
-                $controller = ($matches[1] ?? 'index');
-                $action = ($matches[2] ?? 'index');
-                if (isset($matches[3])) {
-                    $param = array_slice($matches, 3);
+                $controller = ($matcher[1] ?? 'index');
+                $action = ($matcher[2] ?? 'index');
+                if (isset($matcher[3])) {
+                    $param = array_slice($matcher, 3);
                 }
             }
         } else {
@@ -155,8 +197,7 @@ final class Router
             foreach (['module', 'controller', 'action'] as $key) {
                 ${$key} = $route[$key] ?? null;
                 if (is_numeric(${$key})) {
-                    if (!isset($matches[${$key}])) return ("自定义路由规则中需要第{${$key}}个正则结果，实际无此数据。");
-                    ${$key} = $matches[${$key}];
+                    ${$key} = $matcher[${$key}] ?? 'index';
                 }
             }
         }
