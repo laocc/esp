@@ -49,20 +49,6 @@ final class View
     }
 
     /**
-     * 设置视图文件名
-     * @param string|null $file
-     * @return mixed|string
-     */
-    public function file(string $file = null): string
-    {
-        if (is_null($file)) {
-            return $this->_path['file'] ?: '';
-        } else {
-            return $this->_path['file'] = $file;
-        }
-    }
-
-    /**
      * 视图接收变量
      * @param $name
      * @param $value
@@ -183,9 +169,8 @@ final class View
             $fileV = "{$dir}/{$fileV}";
         }
 
-        $tryCheckPhp = ($this->_path['ext'] !== '.php');
         if (!is_readable($fileV)) {
-            if ($tryCheckPhp) {
+            if ($this->_path['ext'] === '.php') {
                 if (!is_readable($fileT = str_replace($this->_path['ext'], '.php', $fileV))) {
                     throw new EspError("视图文件({$fileV})或({$fileT})不存在", 1);
                 } else {
@@ -208,33 +193,62 @@ final class View
                 }
             }
 
-            if (!is_readable($layout_file = $dir . "/layout{$this->_path['ext']}")) {
-                if ($tryCheckPhp) {
-                    if (!is_readable($ltm = ($dir . "/layout.php"))) { //查默认php
-                        if (!is_readable($ltm = dirname($dir) . "/layout{$this->_path['ext']}")) {//上一级目录
-                            if (!is_readable($ltm = (dirname($dir) . "/layout.php"))) { //查默认php
-                                throw new EspError("框架视图文件({$layout_file})不存在", 1);
-                            } else {
-                                $layout_file = $ltm;
-                            }
-                        } else {
-                            $layout_file = $ltm;
-                        }
-                    } else {
-                        $layout_file = $ltm;
-                    }
-                } else {
-                    if (!is_readable($ltm = dirname($dir) . "/layout{$this->_path['ext']}")) {//上一级目录
-                        throw new EspError("框架视图文件({$layout_file})不存在", 1);
-                    } else {
-                        $layout_file = $ltm;
-                    }
-                }
-            }
+            $layout_file = $this->_layout->builderViewFile($fileV);
+
             return $this->_layout->render($layout_file, ['_view_html' => &$html]);
         }
+
         return $this->fetch($fileV, $value + $this->_view_val);
     }
+
+    /**
+     * 设置视图文件名
+     * @param string|null $file
+     * @return mixed|string
+     */
+    public function file(string $file = null): string
+    {
+        if (is_null($file)) {
+            return $this->_path['file'] ?: '';
+        } else {
+            return $this->_path['file'] = $file;
+        }
+    }
+
+    /**
+     * 读取框架layout的文件名，因layout有可能存在不同位置，所以需要单独查询
+     *
+     * @param string $viewPath
+     * @return string
+     * @throws EspError
+     */
+    public function builderViewFile(string $viewPath)
+    {
+        if (!empty($this->_path['file'])) {
+            $file = $this->_path['dir'] . $this->_path['file'];
+            if (!is_readable($file)) {
+                throw new EspError("指定的框架视图文件({$file})不存在.", 1);
+            }
+            return $file;
+        }
+//        var_dump($viewPath);
+
+        $viewPath = dirname($viewPath);
+        $dir0 = rtrim($this->_path['dir'], '/');
+        $dir1 = dirname($this->_path['dir']);
+
+        if ($this->_path['ext'] !== '.php') {
+            if (is_readable($layout_file = "{$viewPath}/layout{$this->_path['ext']}")) return $layout_file;
+            if (is_readable($layout_file = "{$dir0}/layout{$this->_path['ext']}")) return $layout_file;
+            if (is_readable($layout_file = "{$dir1}/layout{$this->_path['ext']}")) return $layout_file;
+        }
+        if (is_readable($layout_file = "{$viewPath}/layout.php")) return $layout_file;
+        if (is_readable($layout_file = "{$dir0}/layout.php")) return $layout_file;
+        if (is_readable($layout_file = "{$dir1}/layout.php")) return $layout_file;
+
+        throw new EspError("框架视图文件({$layout_file})不存在", 1);
+    }
+
 
     /**
      * 显示解析视图结果
