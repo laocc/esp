@@ -55,11 +55,6 @@ final class Dispatcher
         if (_CLI) {
             if (!defined('_URI')) define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
-            /**
-             * REQUEST_URI:浏览器中实际请求的uri
-             * PATH_INFO:nginx中有可能会用rewrite转换REQUEST_URI，转换的结果是PATH_INFO
-             * 所以这里只能读取PATH_INFO
-             */
             if (!defined('_URI')) define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
             //对于favicon.ico，建议在nginx中直接拦截
             if (_URI === '/favicon.ico') {
@@ -361,13 +356,13 @@ final class Dispatcher
             'display' => $this->_response->_display_Result
         ]);
 
-        if ($this->_debug->mode === 'shutdown' or $showDebug) {
-            $save = $this->_debug->save_logs('DispatcherCgi');
+        if ($this->_debug->mode === 'cgi' or $showDebug) {
+            $save = $this->_debug->save_logs('run.Dispatcher.Cgi');
             if ($showDebug) var_dump($save);
 
         } else {
             register_shutdown_function(function () {
-                $this->_debug->save_logs('Dispatcher');
+                $this->_debug->save_logs('run.Dispatcher.Shutdown');
             });
         }
     }
@@ -421,12 +416,12 @@ final class Dispatcher
             'display' => $this->_response->_display_Result
         ]);
 
-        if ($this->_debug->mode === 'shutdown' or $showDebug) {
-            $save = $this->_debug->save_logs('minDispatcherCgi');
+        if ($this->_debug->mode === 'cgi' or $showDebug) {
+            $save = $this->_debug->save_logs('simple.Dispatcher.Cgi');
             if ($showDebug) var_dump($save);
         } else {
             register_shutdown_function(function () {
-                $this->_debug->save_logs('minDispatcher');
+                $this->_debug->save_logs('simple.Dispatcher.Shutdown');
             });
         }
     }
