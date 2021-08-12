@@ -160,6 +160,9 @@ final class Configure
     public function all(bool $showAll = false): array
     {
         $rds = $this->Redis();
+        /**
+         * @var $rds \Redis
+         */
         $config = $rds->keys('*');
         $db1Value = [];
         $v = ['NULL', 'STRING', 'SET', 'LIST', 'ZSET', 'HASH'];
@@ -338,7 +341,7 @@ final class Configure
     public function get(...$key)
     {
         if (empty($key)) return null;
-        if ($key === ['*']) return $this->_CONFIG_;
+//        if ($key === ['*']) return $this->_CONFIG_;
         $conf = $this->_CONFIG_;
         foreach (explode('.', strtolower(implode('.', $key))) as $k) {
             if ($k === '' or $k === '*' or !isset($conf[$k])) return null;
@@ -347,26 +350,8 @@ final class Configure
         return $conf;
     }
 
-
-    /**
-     * @param $type
-     * @return string
-     */
-    private function mime(string $type): string
+    public function allConfig()
     {
-        $mime = $this->get("mime.{$type}");
-        if (is_array($mime)) $mime = json_encode($mime, 256 | 64);
-        return $mime ?: 'text/html';
-    }
-
-    /**
-     * @param $code
-     * @return null|string
-     */
-    private function states(int $code): string
-    {
-        $state = $this->get("state.{$code}");
-        if (is_array($state)) $state = json_encode($state, 256 | 64);
-        return $state ?: 'Unexpected';
+        return $this->_CONFIG_;
     }
 }

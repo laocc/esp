@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\debug\Counter;
 use esp\error\Error;
 use esp\error\EspError;
 use esp\library\Result;
@@ -21,6 +22,7 @@ final class Dispatcher
     public $_config;
     public $_debug;
     public $_cache;
+    private $_counter;
 
     /**
      * Dispatcher constructor.
@@ -88,10 +90,9 @@ final class Dispatcher
         if (!defined('_TIME')) define('_TIME', time());//当前时间戳
         if (!defined('_DAY_TIME')) define('_DAY_TIME', strtotime(date('Ymd', _TIME)));//今天零时整的时间戳
 
-        //控制器、并发计数
-        if ($request['concurrent'] ?? '') {
-            $this->_request->recodeConcurrent($this->_config->_Redis);
-        }
+        $counter = $this->_config->get('counter');
+        if ($counter and !$counter['run']) $counter = null;
+        if (is_array($counter)) $this->_counter = new Counter($counter, $this->_config->_Redis, $this->_request);
 
         $response = $this->_config->get('response') ?: $this->_config->get('resource');
         $response = $this->mergeConf($response);
@@ -296,9 +297,7 @@ final class Dispatcher
         ]);
 
         //控制器、并发计数
-        if ($this->_request->counter['counter']) {
-            $this->_request->recodeCounter($this->_config->_Redis);
-        }
+        if ($this->_counter) $this->_counter->recodeCounter();
 
         if ($this->_plugs_count and !is_null($hook = $this->plugsHook('routeAfter'))) {
             $this->_response->display($hook);
@@ -392,9 +391,7 @@ final class Dispatcher
             ]);
 
             //控制器、并发计数
-            if ($this->_request->counter['counter']) {
-                $this->_request->recodeCounter($this->_config->_Redis);
-            }
+            if ($this->_counter) $this->_counter->recodeCounter();
         }
 
         $value = $this->dispatch();

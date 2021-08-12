@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\core\db\Redis;
 use esp\error\EspError;
 use function \esp\helper\root;
 use function \esp\helper\str_rand;
@@ -16,7 +15,6 @@ final class Request
     public $router_path = null;//路由配置目录
     public $router = null;//实际生效的路由器名称
     public $params = array();
-    public $counter = ['concurrent' => false, 'counter' => false];
 
     public $virtual;
     public $module;
@@ -46,7 +44,6 @@ final class Request
             'router' => '/common/routes',
             'controller' => '',
             'suffix' => ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post', 'cli' => 'Cli'],
-            'concurrent' => false, 'counter' => false
         ];
 
         $this->_dispatcher = $dispatcher;
@@ -56,8 +53,6 @@ final class Request
         $this->router_path = root($config['router']);
         $this->contFix = $config['controller'];//控制器后缀，固定的
         $this->suffix = $config['suffix'];//数组，方法名后缀，在总控中根据不同请求再取值
-        $this->counter['concurrent'] = $config['concurrent'];
-        $this->counter['counter'] = $config['counter'];
         $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
     }
 
@@ -111,107 +106,6 @@ final class Request
         elseif (_CLI and ($p = $suffix['cli'] ?? '')) $actionExt = $p;
         else $actionExt = strtolower($this->method);
         return ucfirst($actionExt);
-    }
-
-    public function recodeConcurrent(Redis $redis)
-    {
-        //统计最大并发
-        if ($this->counter['concurrent']) {
-            $redis->hIncrBy($this->counter['concurrent'] . '_concurrent_' . date('Y_m_d'), '' . _TIME, 1);
-        }
-    }
-
-
-    /**
-     *
-     * 统计最大并发
-     * 记录各控制器请求计数 若是非法请求，不记录
-     *
-     * @param Redis $redis
-     */
-    public function recodeCounter(Redis $redis = null)
-    {
-        if (!$redis or !$this->exists or !$this->counter['counter']) return;
-
-        //记录各控制器请求计数
-        $counter = $this->counter['counter'];
-
-        $key = sprintf('%s/%s/%s/%s/%s/%s', date('H'), $this->method, $this->virtual, $this->module ?: 'auto', $this->controller, $this->action);
-        if (is_array($counter)) {
-            $counter += ['key' => 'DEBUG', 'params' => 0];
-            $hKey = "{$counter['key']}_counter_" . date('Y_m_d');
-            if ($counter['params'] and $this->params[0] ?? null) {
-                $key .= "/{$this->params[0]}";
-            }
-
-        } else {
-            $hKey = "{$counter}_counter_" . date('Y_m_d');
-        }
-        $redis->hIncrBy($hKey, $key, 1);
-
-    }
-
-    /**
-     * 获取最大并发数
-     * @param int $time
-     * @return array
-     */
-    public function getConcurrent(int $time = _TIME)
-    {
-        if (!$this->counter['concurrent']) return [];
-        $key = "{$this->counter['concurrent']}_concurrent_" . date('Y_m_d', $time);
-        $all = $this->_dispatcher->_config->Redis()->hGetAlls($key);
-//        arsort($all);
-        return $all;
-    }
-
-    /**
-     * 读取（控制器、方法）计数器值表
-     * @param int $time
-     * @param bool|null $method
-     * @return array|array[]
-     * @throws EspError
-     */
-    public function getCounter(int $time = 0, bool $method = null)
-    {
-        if ($time === 0) $time = _TIME;
-        $conf = $this->counter['counter'];
-        if (!$conf) return [];
-        if (is_array($conf)) {
-            if (!isset($conf['key'])) throw new EspError("counter.key未定义");
-            $key = "{$conf['key']}_counter_" . date('Y_m_d', $time);
-        } else {
-            $key = "{$conf}_counter_" . date('Y_m_d', $time);
-        }
-
-        $all = $this->_dispatcher->_config->Redis()->hGetAlls($key);
-        if (empty($all)) return ['data' => [], 'action' => []];
-
-        $data = [];
-        foreach ($all as $hs => $hc) {
-            //实际这里是7段，分为5段就行，后三段连起来
-            $key = explode('/', $hs, 5);
-
-            $hour = (intval($key[0]) + 1);
-            $ca = "/{$key[4]}";
-            switch ($method) {
-                case true:
-                    $ca = "{$key[1]}:{$ca}";
-                    break;
-                case false;
-                    break;
-                default:
-                    $ca .= ucfirst($key[1]);
-                    break;
-            }
-            $vm = "{$key[2]}.{$key[2]}";
-            if (!isset($data[$vm])) $data[$vm] = ['action' => [], 'data' => []];
-            if (!isset($data[$vm]['data'][$hour])) $data[$vm]['data'][$hour] = [];
-            $data[$vm]['data'][$hour][$ca] = $hc;
-            if (!in_array($ca, $data[$vm]['action'])) $data[$vm]['action'][] = $ca;
-            sort($data[$vm]['action']);
-        }
-        return $data;
     }
 
     public function __get(string $name)
