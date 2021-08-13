@@ -92,7 +92,10 @@ final class Dispatcher
 
         $counter = $this->_config->get('counter');
         if ($counter and !$counter['run']) $counter = null;
-        if (is_array($counter)) $this->_counter = new Counter($counter, $this->_config->_Redis, $this->_request);
+        if (is_array($counter)) {
+            $counter['_key'] = md5(_ROOT);
+            $this->_counter = new Counter($counter, $this->_config->_Redis, $this->_request);
+        }
 
         $response = $this->_config->get('response') ?: $this->_config->get('resource');
         $response = $this->mergeConf($response);
