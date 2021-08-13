@@ -28,6 +28,7 @@ trait Mysql
          * @var $mysql \esp\core\db\Mysql
          */
         $mysql = $this->Mysql();
+        if ($mysql->lowCase) $table = strtolower($table);
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME')
             ->where(['table_name' => $table, 'EXTRA' => 'auto_increment'])
@@ -90,6 +91,7 @@ trait Mysql
          * @var $mysql \esp\core\db\Mysql
          */
         $mysql = $this->Mysql();
+        if ($mysql->lowCase) $table = strtolower($table);
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('column_name as name,COLUMN_DEFAULT as default,column_type as type,column_key as key,column_comment as comment')
             ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
@@ -152,6 +154,7 @@ trait Mysql
          * @var $mysql \esp\core\db\Mysql
          */
         $mysql = $this->Mysql();
+        if ($mysql->lowCase) $table = strtolower($table);
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
             ->get()->rows();
@@ -221,7 +224,7 @@ PHP;
         $table = $this->table();
         $data = $this->hash("{$mysql->dbName}.{$table}")->get('_title');
         if (!empty($data)) return $data;
-
+        if ($mysql->lowCase) $table = strtolower($table);
         if (!$table) throw new EspError('Unable to get table name');
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME as field,COLUMN_COMMENT as title')

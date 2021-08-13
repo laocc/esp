@@ -21,6 +21,7 @@ final class Mysql
     private $_pool = [];//进程级的连接池，$master，$slave
     public $_error = array();//每个连接的错误信息
     public $dbName;
+    public $lowCase = false; //是否转换为小写
 
     /**
      * Mysql constructor.
@@ -43,9 +44,14 @@ final class Mysql
             ];
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
-        $this->dbName = $conf['db'];
         $this->_debug = $model->_debug;
         $this->_pool = $model->_controller->_PdoPool;
+        $this->lowCase = boolval($this->_CONF['lowercase'] ?? 0);
+        if ($this->lowCase) {
+            $this->_CONF['db'] = strtolower($this->_CONF['db']);
+            $this->_CONF['prefix'] = strtolower($this->_CONF['prefix']);
+        }
+        $this->dbName = $this->_CONF['db'];
     }
 
     /**
@@ -59,7 +65,7 @@ final class Mysql
         if (!is_string($tabName) || empty($tabName)) {
             throw new EspError('PDO_Error :  数据表名错误', 1);
         }
-        return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $this->transID))
+        return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $this->lowCase, $this->transID))
             ->table($tabName, $_protect);
     }
 
@@ -204,7 +210,7 @@ final class Mysql
      * 直接执行SQL
      * @param string $sql
      * @param array $param
-     * @return bool|Result|null
+     * @return bool|null
      */
     private function query_dddd(string $sql, array $param = [])
     {
@@ -227,7 +233,7 @@ final class Mysql
      * @param array $option
      * @param \PDO|null $CONN
      * @param int $traceLevel
-     * @return bool|string|Result|int
+     * @return bool|string|int
      * @throws EspError
      */
     public function query(string $sql, array $option = [], \PDO $CONN = null, int $traceLevel = 0)
@@ -616,7 +622,7 @@ final class Mysql
      * 创建事务开始，或直接执行批量事务
      * @param int $trans_id
      * @param array $batch_SQLs
-     * @return Builder
+     * @return bool|Builder
      * @throws EspError
      */
     public function trans(int $trans_id = 1, array $batch_SQLs = [])

@@ -14,10 +14,6 @@ class Debug
      */
     public $mode = 'shutdown';
 
-    public function __construct(array $conf)
-    {
-    }
-
     /**
      * 读取日志
      * @param string $file

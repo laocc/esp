@@ -51,12 +51,14 @@ final class Builder
 
     private $_gzLevel = 5;//压缩比
     private $_protect = true;//默认加保护符
+    private $_lowCase = false;//转小写
 
-    public function __construct(Mysql $mysql, string $table_prefix, bool $param, int $trans_id = 0)
+    public function __construct(Mysql $mysql, string $table_prefix, bool $param, bool $lowCase, int $trans_id = 0)
     {
         $this->_MySQL = $mysql;
         $this->_dim_param = $param;
         $this->_table_prefix = $table_prefix;
+        $this->_lowCase = $lowCase;
         $this->clean_builder();
 
         //必须在clean_builder后执行
@@ -104,6 +106,7 @@ final class Builder
             $tableName = "{$this->_table_prefix}{$tableName}";
         }
         if (is_bool($_protect)) $this->_protect = $_protect;
+        if ($this->_lowCase) $tableName = strtolower($tableName);
         $this->_table = $tableName;
         if ($this->_protect) $this->_table = $this->protect_identifier($this->_table);
         return $this;
@@ -1028,6 +1031,7 @@ final class Builder
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
             throw new EspError('DB_ERROR: JOIN模式不存在：' . $method, 1);
         }
+        if ($this->_lowCase) $table = strtolower($table);
         $this->_joinTable[] = $table;
 
         // 保护标识符
@@ -1210,7 +1214,7 @@ final class Builder
      * 获取查询结果
      * @param int $row
      * @param int $tractLevel
-     * @return bool|Result|mixed|null
+     * @return bool|mixed|null
      */
     public function get(int $row = 0, int $tractLevel = 0)
     {
@@ -1273,7 +1277,7 @@ final class Builder
      * 删除记录，配合where类子句使用以删除指定记录
      * 没有where的情况下是删除表内所有数据
      * @param int $tractLevel
-     * @return bool|Result|int|string
+     * @return bool|int|string
      * @throws EspError
      */
     public function delete(int $tractLevel = 0)
@@ -1420,7 +1424,7 @@ final class Builder
      * @param array $data
      * @param bool $add_identifier
      * @param int $tractLevel
-     * @return bool|Result|null
+     * @return bool|null
      */
     public function update(array $data, bool $add_identifier = true, int $tractLevel = 0)
     {

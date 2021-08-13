@@ -4,3 +4,4 @@
 /vendor
 /cache
 /runtime
+composer.lock
