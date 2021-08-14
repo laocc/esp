@@ -6,6 +6,7 @@ namespace esp\core\db;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\PdoResult;
 use esp\core\Model;
+use esp\debug\Debug;
 use esp\error\EspError;
 
 final class Mysql
@@ -75,10 +76,15 @@ final class Mysql
         return $this;
     }
 
-    public function debug($value, int $traceLevel = 1)
+    /**
+     * @param string $value
+     * @param int $traceLevel
+     * @return false|null|Debug
+     */
+    public function debug($value = '_RETURN_DEBUG_', int $traceLevel = 1)
     {
         if (is_null($this->_debug)) return null;
-        if (empty($value)) return $this->_debug;
+        if ($value === '_RETURN_DEBUG_') return $this->_debug;
         if (is_null($this->_debug)) return false;
         if ($traceLevel > 10) $traceLevel = 2;
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($traceLevel + 1));
@@ -569,7 +575,12 @@ final class Mysql
                         $error = $CONN->errorInfo();
                         return null;
                     }
+                    $a = microtime(true);
                     $stmtC->execute($option['param']);
+                    $t = microtime(true) - $a;
+                    if ($t > 2) {
+                        $this->debug()->error("SQL count 超时执行:{$option['_count_sql']}");
+                    }
 //                    $option['count_sql'] = $stmtC->debugDumpParams();
                     $count = $stmtC->fetchColumn(0);
                     if (!$count) $count = 0;
@@ -590,7 +601,12 @@ final class Mysql
                 }
 
                 if ($option['count']) {
+                    $a = microtime(true);
                     $count = $CONN->query($option['_count_sql'], \PDO::FETCH_NUM)->fetch()[0] ?? 0;
+                    $t = microtime(true) - $a;
+                    if ($t > 2) {
+                        $this->debug()->error("SQL count 超时执行:{$option['_count_sql']}");
+                    }
                     if (!$count) $count = 0;
                 }
 
