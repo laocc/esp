@@ -499,8 +499,10 @@ abstract class Model extends Library
             $obj->order($orderBy, $sort);
         }
 
+        $count = $this->_count;
+        if (is_null($count)) $count = true;
+        if (is_bool($count)) $obj->count($count);
 
-        if (is_bool($this->_count)) $obj->count($this->_count);
         $data = $obj->get($limit, $this->_traceLevel);
         $_decode = $this->_decode;
         $v = $this->checkRunData('all', $data);
@@ -512,12 +514,19 @@ abstract class Model extends Library
 
     /**
      * 当前请求结果的总行数
-     * @param bool $count
+     * @param  $count
      * @return $this
+     *
+     * $count取值：
+     * true     :执行count(1)统计总数
+     * 0|false  :不统计总数
+     * 1-10     :size的倍数，为了分页不至于显示0页
+     * 10以上    :为指定总数
      */
-    final public function count(bool $count = true)
+    final public function count($count = true)
     {
         $this->_count = $count;
+        if ($count === 0) $this->_count = false;
         return $this;
     }
 
@@ -582,15 +591,27 @@ abstract class Model extends Library
             $obj->order($orderBy, $sort);
         }
 
-        if (is_null($this->_count)) $this->_count = true;
-        $obj->count($this->_count);
+        $count = $this->_count;
+        if (is_null($count)) $count = true;
+        $obj->count($count === true);
+
         if (is_null($this->paging)) $this->paging = new Paging();
         $skip = ($this->paging->index - 1) * $this->paging->size;
         $data = $obj->limit($this->paging->size, $skip)->get(0, $this->_traceLevel);
         $_decode = $this->_decode;
         $v = $this->checkRunData('list', $data);
         if ($v) return $v;
-        $this->paging->calculate($data->count());
+
+        if ($count === true) {
+            $this->paging->calculate($data->count());
+        } else if (is_int($count)) {
+            if ($count <= 10) {
+                $this->paging->calculate(($count + ($this->paging->index - 1)) * $this->paging->size, true);
+            } else {
+                $this->paging->calculate($count);
+            }
+        }
+
         return $data->rows(0, null, $_decode);
     }
 

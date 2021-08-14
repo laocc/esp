@@ -21,6 +21,7 @@ final class Paging
     public $last = 0;//最后一页剩余的记录数
 
     private $autoSize = 10;
+    private $isTake = false;
 
     public function __construct(int $sizeDefault = 0, int $index = 0)
     {
@@ -36,22 +37,24 @@ final class Paging
         return $this;
     }
 
+
     /**
      * 在Model->list()中调用，设置当前总数，并计算页数和最后一页数
-     * @param int $count
+     * @param bool $isTake 当前总数是估计数
      */
-    public function calculate(int $count)
+    public function calculate(int $count, bool $isTake = false)
     {
         if ($this->size === 0) return;
         $this->recode = $count;
         $this->last = intval($this->recode % $this->size);//最后一页数
         $this->total = ceil($this->recode / $this->size);
+        $this->isTake = $isTake;
     }
 
     public function value(): array
     {
         return [
-            'recode' => $this->recode,//记录数
+            'recode' => $this->recode . ($this->isTake ? '+' : ''),//记录数
             'size' => $this->size,//每页数量
             'index' => $this->index,//当前页码
             'total' => $this->total,
