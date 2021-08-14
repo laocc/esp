@@ -45,7 +45,7 @@ final class Dispatcher
             define('_ROOT', _CLI ? getenv('PWD') : rtrim(same_first(__DIR__, getenv('DOCUMENT_ROOT')), '/'));
         }
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
-        if (!defined('_DEBUG')) define('_DEBUG', is_readable($df = _RUNTIME . '/debug.lock') ? file_get_contents($df) : false);
+        if (!defined('_DEBUG')) define('_DEBUG', is_readable($df = _RUNTIME . '/debug.lock') ? (file_get_contents($df) ?: true) : false);
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
         if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
         if (!defined('_HOST')) define('_HOST', host(_DOMAIN));//域名的根域
@@ -299,9 +299,6 @@ final class Dispatcher
             'params' => $this->_request->params,
         ]);
 
-        //控制器、并发计数
-        if ($this->_counter) $this->_counter->recodeCounter();
-
         if ($this->_plugs_count and !is_null($hook = $this->plugsHook('routeAfter'))) {
             $this->_response->display($hook);
             goto end;
@@ -322,6 +319,9 @@ final class Dispatcher
 
         //TODO 运行控制器->方法
         $value = $this->dispatch();
+
+        //控制器、并发计数
+        if ($this->_counter) $this->_counter->recodeCounter();
 
         if ($this->_plugs_count and !is_null($hook = $this->plugsHook('dispatchAfter', $value))) {
             $this->_response->display($hook);
@@ -392,9 +392,6 @@ final class Dispatcher
                 'exists' => $this->_request->exists,
                 'params' => $this->_request->params,
             ]);
-
-            //控制器、并发计数
-            if ($this->_counter) $this->_counter->recodeCounter();
         }
 
         $value = $this->dispatch();
@@ -403,6 +400,9 @@ final class Dispatcher
             print_r($value);
             return;
         }
+
+        //控制器、并发计数
+        if ($this->_counter) $this->_counter->recodeCounter();
 
         $this->_response->display($value);
 

@@ -222,19 +222,18 @@ final class View
      * @return string
      * @throws EspError
      */
-    public function builderViewFile(string $viewPath)
+    public function builderViewFile(string $viewPath): string
     {
+        $dir0 = rtrim($this->_path['dir'], '/');
         if (!empty($this->_path['file'])) {
-            $file = $this->_path['dir'] . $this->_path['file'];
+            $file = $dir0 . '/' . ltrim($this->_path['file'], '/');
             if (!is_readable($file)) {
                 throw new EspError("指定的框架视图文件({$file})不存在.", 1);
             }
             return $file;
         }
-//        var_dump($viewPath);
 
         $viewPath = dirname($viewPath);
-        $dir0 = rtrim($this->_path['dir'], '/');
         $dir1 = dirname($this->_path['dir']);
 
         if ($this->_path['ext'] !== '.php') {
@@ -246,7 +245,7 @@ final class View
         if (is_readable($layout_file = "{$dir0}/layout.php")) return $layout_file;
         if (is_readable($layout_file = "{$dir1}/layout.php")) return $layout_file;
 
-        throw new EspError("框架视图文件({$layout_file})不存在", 1);
+        throw new EspError("自动框架视图文件({$layout_file})不存在", 1);
     }
 
 

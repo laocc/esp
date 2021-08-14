@@ -66,8 +66,8 @@ final class Mysql
         if (!is_string($tabName) || empty($tabName)) {
             throw new EspError('PDO_Error :  数据表名错误', 1);
         }
-        return (new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $this->lowCase, $this->transID))
-            ->table($tabName, $_protect);
+        $bud = new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $this->lowCase, $this->transID);
+        return $bud->table($tabName, $_protect);
     }
 
     public function print(bool $boolPrint = false)
@@ -683,7 +683,7 @@ final class Mysql
             return $CONN->commit();
         }
 
-        return new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $trans_id);
+        return new Builder($this, $this->_CONF['prefix'], boolval($this->_CONF['param'] ?? 0), $this->lowCase, $trans_id);
     }
 
     /**

@@ -4,13 +4,14 @@ declare(strict_types=1);
 namespace esp\core\db;
 
 use esp\error\EspError;
+use esp\core\db\ext\KeyValue;
 
 /**
  * 简单文件存储缓存
  * Class File
  * @package esp\core\db
  */
-final class File
+final class File implements KeyValue
 {
     private $path;
     private $ext = 'TEMP';
@@ -37,9 +38,14 @@ final class File
         return unserialize($val);
     }
 
-    public function del(string $key)
+    /**
+     * 删除key
+     * @param $key
+     * @return bool
+     */
+    public function del(string ...$key)
     {
-        $file = "{$this->path}/{$key}.{$this->ext}";
+        $file = "{$this->path}/{$key[0]}.{$this->ext}";
         if (is_file($file)) return unlink($file);
         return false;
     }
@@ -80,4 +86,53 @@ final class File
         throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 1);
     }
 
+
+    /**
+     * 指定表，也就是指定键前缀
+     * @param $table
+     * @return $this
+     */
+    public function table(string $table)
+    {
+        return $this;
+    }
+
+    /**
+     * 读取【指定表】的所有行键
+     * @return array
+     */
+    public function keys()
+    {
+        return [];
+    }
+
+
+    /**
+     * 计数器，只可是整型，
+     * >0   加
+     * <0   减
+     * =0   获取值
+     * @param string $key 表名.键名，但这儿的键名要是预先定好义的
+     * @param int $incrby 可以是正数、负数，或0，=0时为读取值
+     * @return bool
+     */
+    public function counter(string $key = 'count', int $incrby = 1)
+    {
+        return true;
+    }
+
+    /**
+     *  关闭
+     */
+    public function close()
+    {
+    }
+
+    /**
+     * @return bool
+     */
+    public function ping()
+    {
+        return true;
+    }
 }

@@ -38,7 +38,7 @@ class Memcache implements KeyValue
 
     /**
      * 读取【指定表】的所有行键，由于memcached有时读不出getExtendedStats，所以可能需要允许重试几次
-     * @param $table
+     * @param int $try
      * @return array
      */
     public function keys($try = self::_TRY)
@@ -68,8 +68,10 @@ class Memcache implements KeyValue
 
     /**
      * 读取【指定表】【指定键值】的记录
-     * @param $table
-     * @param $recode
+     * @param null $keys
+     * @param null $whereKey
+     * @param string $whereType
+     * @param null $whereValue
      * @return array
      */
     public function all($keys = null, $whereKey = null, $whereType = '=', $whereValue = null)
@@ -127,11 +129,10 @@ class Memcache implements KeyValue
 
     /**
      * 存入【指定表】【行键】【行值】
-     * @param $table
-     * @param $key
+     * @param string $key
      * @param $array
-     * @param int $ttl 生存期
-     * @return bool
+     * @param int $ttl
+     * @return bool|int
      */
     public function set(string $key, $array, int $ttl = 0)
     {
