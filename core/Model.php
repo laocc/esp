@@ -499,10 +499,6 @@ abstract class Model extends Library
             $obj->order($orderBy, $sort);
         }
 
-        $count = $this->_count;
-        if (is_null($count)) $count = true;
-        if (is_bool($count)) $obj->count($count);
-
         $data = $obj->get($limit, $this->_traceLevel);
         $_decode = $this->_decode;
         $v = $this->checkRunData('all', $data);
