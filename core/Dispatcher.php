@@ -41,7 +41,7 @@ final class Dispatcher
 
         if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!getenv('HTTP_HOST') && !_CLI) exit('unknown host');
-        if (!defined('_ROOT')) define('_ROOT', rtrim(same_first(__DIR__, getenv('SCRIPT_NAME')), '/')); //网站根目录
+        if (!defined('_ROOT')) define('_ROOT', rtrim(same_first(__DIR__, getenv('SCRIPT_FILENAME')), '/')); //网站根目录
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
         if (!defined('_DEBUG')) define('_DEBUG', is_readable($df = _RUNTIME . '/debug.lock') ? (file_get_contents($df) ?: true) : false);
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
