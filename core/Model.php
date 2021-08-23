@@ -594,9 +594,9 @@ abstract class Model extends Library
         if (is_null($this->paging)) $this->paging = new Paging();
         $skip = ($this->paging->index - 1) * $this->paging->size;
         $data = $obj->limit($this->paging->size, $skip)->get(0, $this->_traceLevel);
+        if ($v = $this->checkRunData('list', $data)) return $v;
+
         $_decode = $this->_decode;
-        $v = $this->checkRunData('list', $data);
-        if ($v) return $v;
 
         if ($count === true) {
             $this->paging->calculate($data->count());
@@ -606,6 +606,8 @@ abstract class Model extends Library
             } else {
                 $this->paging->calculate($count);
             }
+        } else {
+            $this->paging->calculate(0);
         }
 
         return $data->rows(0, null, $_decode);
