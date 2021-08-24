@@ -365,8 +365,8 @@ abstract class Model extends Library
         }
         $data = $obj->get(0, $this->_traceLevel);
         $_decode = $this->_decode;
-        $c = $this->checkRunData('get', $data);
-        if ($c) return $c;
+        if ($c = $this->checkRunData('get', $data)) return $c;
+
         $val = $data->row($this->columnKey, $_decode);
 
         if ($val === false) $val = null;
@@ -417,8 +417,7 @@ abstract class Model extends Library
         if ($where) $obj->where($where);
         $data = $obj->get(0, $this->_traceLevel);
         $_decode = $this->_decode;
-        $c = $this->checkRunData('in', $data);
-        if ($c) return $c;
+        if ($c = $this->checkRunData('in', $data)) return $c;
 
         return $data->rows(0, null, $_decode);
     }
@@ -501,8 +500,8 @@ abstract class Model extends Library
 
         $data = $obj->get($limit, $this->_traceLevel);
         $_decode = $this->_decode;
-        $v = $this->checkRunData('all', $data);
-        if ($v) return $v;
+        if ($v = $this->checkRunData('all', $data)) return $v;
+
         $data = $data->rows(0, $this->columnKey, $_decode);
         return $data;
     }
@@ -594,9 +593,8 @@ abstract class Model extends Library
         if (is_null($this->paging)) $this->paging = new Paging();
         $skip = ($this->paging->index - 1) * $this->paging->size;
         $data = $obj->limit($this->paging->size, $skip)->get(0, $this->_traceLevel);
-        if ($v = $this->checkRunData('list', $data)) return $v;
-
         $_decode = $this->_decode;
+        if ($v = $this->checkRunData('list', $data)) return $v;
 
         if ($count === true) {
             $this->paging->calculate($data->count());
