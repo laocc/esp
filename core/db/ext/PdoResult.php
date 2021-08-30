@@ -82,6 +82,7 @@ final class PdoResult
         } else {
             $data = $this->rs->fetch()[$col] ?? null;
         }
+        if (empty($data)) return null;
         if (empty($decode)) return $data;
         return $this->decode($data, $decode);
     }
@@ -100,6 +101,7 @@ final class PdoResult
         } else {
             $data = $this->rs->fetch()[$col] ?? null;
         }
+        if (empty($data)) return null;
         if (empty($decode)) return $data;
         return $this->decode($data, $decode);
     }
@@ -137,6 +139,7 @@ final class PdoResult
             }
         }
 
+        if (empty($data)) return null;
         if (empty($decode)) return $data;
 
         return array_map(function ($rs) use ($decode) {
