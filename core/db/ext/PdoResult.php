@@ -94,16 +94,7 @@ final class PdoResult
      */
     public function fetch($col = null, array $decode = [])
     {
-        if (is_null($col)) {
-            $data = $this->rs->fetch();
-        } else if (is_int($col)) {
-            $data = $this->rs->fetchColumn($col);
-        } else {
-            $data = $this->rs->fetch()[$col] ?? null;
-        }
-        if (empty($data)) return null;
-        if (empty($decode)) return $data;
-        return $this->decode($data, $decode);
+        return $this->row($col, $decode);
     }
 
     /**
@@ -139,7 +130,7 @@ final class PdoResult
             }
         }
 
-        if (empty($data)) return null;
+        if (empty($data)) return [];
         if (empty($decode)) return $data;
 
         return array_map(function ($rs) use ($decode) {
