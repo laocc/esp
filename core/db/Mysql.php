@@ -19,6 +19,7 @@ final class Mysql
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
     private $_debug;
+    private $_redis;
     private $_pool = [];//进程级的连接池，$master，$slave
     public $_error = array();//每个连接的错误信息
     public $dbName;
@@ -47,12 +48,18 @@ final class Mysql
         $this->_checkGoneAway = _CLI;
         $this->_debug = $model->_debug;
         $this->_pool = $model->_controller->_PdoPool;
+        $this->_redis = $model->_controller->_config->_Redis;
         $this->lowCase = boolval($this->_CONF['lowercase'] ?? 0);
         if ($this->lowCase) {
             $this->_CONF['db'] = strtolower($this->_CONF['db']);
             $this->_CONF['prefix'] = strtolower($this->_CONF['prefix']);
         }
         $this->dbName = $this->_CONF['db'];
+    }
+
+    public function counter(string $action)
+    {
+        $this->_redis->hIncrBy('mysql_' . date('Y_m_d'), $action . '.' . strval(time()), 1);
     }
 
     /**
@@ -421,6 +428,7 @@ final class Mysql
             }
             try {
                 $run = $stmt->execute($option['param']);
+                $this->counter('update');
 //                $option['debug_sql'] = $stmt->debugDumpParams();
                 if ($run === false) {//执行预处理过的内容，如果不成功，多出现传入的值不符合字段类型的情况
                     $error = $stmt->errorInfo();
@@ -434,6 +442,7 @@ final class Mysql
         } else {
             try {
                 $run = $CONN->exec($sql);
+                $this->counter('update');
                 if ($run === false) {
                     $error = $CONN->errorInfo();
                     return null;
@@ -473,6 +482,7 @@ final class Mysql
                 foreach ($option['param'] as &$row) {
                     try {
                         $run = $stmt->execute($row);
+                        $this->counter('insert');
 //                        $option['debug_sql'] = $stmt->debugDumpParams();
                         if ($run === false) {
                             $error = $stmt->errorInfo();
@@ -488,6 +498,7 @@ final class Mysql
             } else {//无后续参数
                 try {
                     $run = $stmt->execute();
+                    $this->counter('insert');
 //                    $option['debug_sql'] = $stmt->debugDumpParams();
                     if ($run === false) {
                         $error = $stmt->errorInfo();
@@ -507,6 +518,7 @@ final class Mysql
         } else {
             try {
                 $run = $CONN->exec($sql);
+                $this->counter('insert');
                 if ($run === false) {
                     $error = $CONN->errorInfo();
                     return null;
@@ -558,6 +570,7 @@ final class Mysql
                     }
                 }
                 $run = $stmt->execute($option['param']);
+                $this->counter('select');
 //                $option['debug_sql'] = $stmt->debugDumpParams();
                 if ($run === false) {
                     $error = $stmt->errorInfo();
@@ -577,6 +590,7 @@ final class Mysql
                     }
                     $a = microtime(true);
                     $stmtC->execute($option['param']);
+                    $this->counter('select');
                     $t = microtime(true) - $a;
                     if ($t > 2) {
                         $this->debug()->error("SQL count 超时执行:{$option['_count_sql']}");
@@ -595,6 +609,7 @@ final class Mysql
         } else {
             try {
                 $stmt = $CONN->query($sql, $fetch[$option['fetch']]);
+                $this->counter('select');
                 if ($stmt === false) {
                     $error = $CONN->errorInfo();
                     return null;
@@ -603,6 +618,7 @@ final class Mysql
                 if ($option['count']) {
                     $a = microtime(true);
                     $count = $CONN->query($option['_count_sql'], \PDO::FETCH_NUM)->fetch()[0] ?? 0;
+                    $this->counter('select');
                     $t = microtime(true) - $a;
                     if ($t > 2) {
                         $this->debug()->error("SQL count 超时执行:{$option['_count_sql']}");
