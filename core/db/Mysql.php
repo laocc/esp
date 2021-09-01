@@ -19,7 +19,7 @@ final class Mysql
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
     private $_debug;
-    private $_redis;
+    private $_counter;
     private $_pool = [];//进程级的连接池，$master，$slave
     public $_error = array();//每个连接的错误信息
     public $dbName;
@@ -48,7 +48,7 @@ final class Mysql
         $this->_checkGoneAway = _CLI;
         $this->_debug = $model->_debug;
         $this->_pool = $model->_controller->_PdoPool;
-        $this->_redis = $model->_controller->_config->_Redis;
+        $this->_counter = $model->_controller->_dispatcher->_counter;
         $this->lowCase = boolval($this->_CONF['lowercase'] ?? 0);
         if ($this->lowCase) {
             $this->_CONF['db'] = strtolower($this->_CONF['db']);
@@ -57,9 +57,14 @@ final class Mysql
         $this->dbName = $this->_CONF['db'];
     }
 
+    /**
+     * 统计执行sql并发
+     * @param string $action
+     */
     public function counter(string $action)
     {
-        $this->_redis->hIncrBy('mysql_' . date('Y_m_d'), $action . '.' . strval(time()), 1);
+        if (!$this->_counter) return;
+        $this->_counter->recodeMysql($action);
     }
 
     /**
@@ -309,15 +314,35 @@ final class Mysql
          * CLI中，且用的是持久连接，检查状态
          */
         if (_CLI and $CONN->getAttribute(\PDO::ATTR_PERSISTENT)) {
-//            $info = $CONN->getAttribute(\PDO::ATTR_SERVER_INFO);
-            $info = $CONN->getAttribute(constant("\PDO::ATTR_SERVER_INFO"));
-            if (empty($info)) {//获取不到有关属性，说明连接可能已经断开
+            try {
+                $info = $CONN->getAttribute(constant("\PDO::ATTR_SERVER_INFO"));
+            } catch (\Error $error) {
+                ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
                 if ($try++ === 0) {
+                    $time = time();
                     print_r([
                         'id' => $transID,
                         'connect_time' => $this->connect_time[$transID],
-                        'now' => time(),
-                        'after' => time() - $this->connect_time[$transID],
+                        'now' => $time,
+                        'wait' => $time - $this->connect_time[$transID],
+                        'error' => $error->getMessage(),
+                        'code' => $error->getCode(),
+                    ]);
+                    unset($this->_pool[$real][$transID]);
+                    $CONN = null;
+                    goto tryExe;
+                } else {
+                    throw new EspError($error->getMessage(), $traceLevel + 1);
+                }
+            }
+            if (empty($info)) {//获取不到有关属性，说明连接可能已经断开
+                if ($try++ === 0) {
+                    $time = time();
+                    print_r([
+                        'id' => $transID,
+                        'connect_time' => $this->connect_time[$transID],
+                        'now' => $time,
+                        'wait' => $time - $this->connect_time[$transID],
                     ]);
 
                     unset($this->_pool[$real][$transID]);

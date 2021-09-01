@@ -22,7 +22,7 @@ final class Dispatcher
     public $_config;
     public $_debug;
     public $_cache;
-    private $_counter;
+    public $_counter;
 
     /**
      * Dispatcher constructor.
