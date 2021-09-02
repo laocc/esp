@@ -8,6 +8,7 @@ use esp\core\db\ext\PdoResult;
 use esp\core\Model;
 use esp\core\Debug;
 use esp\error\EspError;
+use function esp\helper\mk_dir;
 
 final class Mysql
 {
@@ -59,12 +60,16 @@ final class Mysql
 
     /**
      * 统计执行sql并发
+     *
      * @param string $action
+     * @param string $sql
+     * @param int $traceLevel
+     * @throws \ErrorException
      */
-    public function counter(string $action)
+    public function counter(string $action, string $sql, int $traceLevel)
     {
         if (!$this->_counter) return;
-        $this->_counter->recodeMysql($action);
+        $this->_counter->recodeMysql($action, $sql, $traceLevel + 1);
     }
 
     /**
@@ -373,7 +378,7 @@ final class Mysql
             'param' => json_encode($option['param'], 256 | 64),
             'ready' => microtime(true),
         ];
-        $result = $this->{$action}($CONN, $sql, $option, $error);//执行
+        $result = $this->{$action}($CONN, $sql, $option, $error, $traceLevel + 1);//执行
         $debugOption += [
             'finish' => $time_b = microtime(true),
             'runTime' => ($time_b - $debugOption['ready']) * 1000,
@@ -438,7 +443,7 @@ final class Mysql
      * @param $error
      * @return bool|int|null
      */
-    private function update(\PDO $CONN, string $sql, array &$option, &$error)
+    private function update(\PDO $CONN, string $sql, array &$option, &$error, int $traceLevel)
     {
         if (!empty($option['param']) or $option['prepare']) {
             try {
@@ -453,7 +458,7 @@ final class Mysql
             }
             try {
                 $run = $stmt->execute($option['param']);
-                $this->counter('update');
+                $this->counter('update', $sql, $traceLevel + 1);
 //                $option['debug_sql'] = $stmt->debugDumpParams();
                 if ($run === false) {//执行预处理过的内容，如果不成功，多出现传入的值不符合字段类型的情况
                     $error = $stmt->errorInfo();
@@ -467,7 +472,7 @@ final class Mysql
         } else {
             try {
                 $run = $CONN->exec($sql);
-                $this->counter('update');
+                $this->counter('update', $sql, $traceLevel + 1);
                 if ($run === false) {
                     $error = $CONN->errorInfo();
                     return null;
@@ -489,7 +494,7 @@ final class Mysql
      * @param $error
      * @return array|int|mixed|null
      */
-    private function insert(\PDO $CONN, string $sql, array &$option, &$error)
+    private function insert(\PDO $CONN, string $sql, array &$option, &$error, int $traceLevel)
     {
         if (!empty($option['param']) or $option['prepare']) {
             $result = array();
@@ -507,7 +512,7 @@ final class Mysql
                 foreach ($option['param'] as &$row) {
                     try {
                         $run = $stmt->execute($row);
-                        $this->counter('insert');
+                        $this->counter('insert', $sql, $traceLevel + 1);
 //                        $option['debug_sql'] = $stmt->debugDumpParams();
                         if ($run === false) {
                             $error = $stmt->errorInfo();
@@ -523,7 +528,7 @@ final class Mysql
             } else {//无后续参数
                 try {
                     $run = $stmt->execute();
-                    $this->counter('insert');
+                    $this->counter('insert', $sql, $traceLevel + 1);
 //                    $option['debug_sql'] = $stmt->debugDumpParams();
                     if ($run === false) {
                         $error = $stmt->errorInfo();
@@ -543,7 +548,7 @@ final class Mysql
         } else {
             try {
                 $run = $CONN->exec($sql);
-                $this->counter('insert');
+                $this->counter('insert', $sql, $traceLevel + 1);
                 if ($run === false) {
                     $error = $CONN->errorInfo();
                     return null;
@@ -565,7 +570,7 @@ final class Mysql
      * @param $error
      * @return PdoResult|null
      */
-    private function select(\PDO $CONN, string &$sql, array &$option, &$error)
+    private function select(\PDO $CONN, string &$sql, array &$option, &$error, int $traceLevel)
     {
         $fetch = [\PDO::FETCH_NUM, \PDO::FETCH_ASSOC, \PDO::FETCH_BOTH];
         if (!in_array($option['fetch'], [0, 1, 2])) $option['fetch'] = 2;
@@ -595,7 +600,7 @@ final class Mysql
                     }
                 }
                 $run = $stmt->execute($option['param']);
-                $this->counter('select');
+                $this->counter('select', $sql, $traceLevel + 1);
 //                $option['debug_sql'] = $stmt->debugDumpParams();
                 if ($run === false) {
                     $error = $stmt->errorInfo();
@@ -615,10 +620,10 @@ final class Mysql
                     }
                     $a = microtime(true);
                     $stmtC->execute($option['param']);
-                    $this->counter('select');
+                    $this->counter('select', $sql, -1);
                     $t = microtime(true) - $a;
                     if ($t > 2) {
-                        $this->debug()->error("SQL count 超时执行:{$option['_count_sql']}");
+                        $this->debug()->error("SQL count 超时2s执行:{$option['_count_sql']}");
                     }
 //                    $option['count_sql'] = $stmtC->debugDumpParams();
                     $count = $stmtC->fetchColumn(0);
@@ -634,7 +639,7 @@ final class Mysql
         } else {
             try {
                 $stmt = $CONN->query($sql, $fetch[$option['fetch']]);
-                $this->counter('select');
+                $this->counter('select', $sql, $traceLevel + 1);
                 if ($stmt === false) {
                     $error = $CONN->errorInfo();
                     return null;
@@ -643,7 +648,7 @@ final class Mysql
                 if ($option['count']) {
                     $a = microtime(true);
                     $count = $CONN->query($option['_count_sql'], \PDO::FETCH_NUM)->fetch()[0] ?? 0;
-                    $this->counter('select');
+                    $this->counter('select', $sql, -1);
                     $t = microtime(true) - $a;
                     if ($t > 2) {
                         $this->debug()->error("SQL count 超时执行:{$option['_count_sql']}");
