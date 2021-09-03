@@ -28,7 +28,7 @@ abstract class Controller
     public $_plugs;
     public $_cookies;
     public $_debug;
-    public $_buffer;
+    public $_redis;
 
     /**
      * 以下4个是用于Model中的链接缓存
@@ -60,7 +60,7 @@ abstract class Controller
         $this->_session = &$dispatcher->_session;
         $this->_cookies = &$dispatcher->_cookies;
         $this->_debug = &$dispatcher->_debug;
-        $this->_buffer = $this->_config->_Redis;
+        $this->_redis = $this->_config->_Redis;
     }
 
     /**
@@ -169,7 +169,7 @@ abstract class Controller
      */
     final protected function publish(string $action, $value)
     {
-        return $this->_buffer->publish('order', $action, $value);
+        return $this->_redis->publish('order', $action, $value);
     }
 
     /**
@@ -183,20 +183,20 @@ abstract class Controller
      */
     final public function queue(string $queKey, array $data)
     {
-        return $this->_buffer->push('task', $data + ['_action' => $queKey]);
+        return $this->_redis->push('task', $data + ['_action' => $queKey]);
     }
 
     /**
      * @return Redis
      */
-    final public function getBuffer(): Redis
+    final public function getRedis(): Redis
     {
-        return $this->_buffer;
+        return $this->_redis;
     }
 
-    final public function buffer_flush()
+    final public function _redis_flush()
     {
-        return $this->_buffer->flush();
+        return $this->_redis->flush();
     }
 
     /**

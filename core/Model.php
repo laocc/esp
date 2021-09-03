@@ -7,6 +7,7 @@ use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
 use esp\core\db\Yac;
+use esp\core\ext\Buffer;
 use esp\core\ext\Mysql as MysqlExt;
 use esp\core\ext\Paging;
 use esp\error\EspError;
@@ -22,7 +23,7 @@ abstract class Model extends Library
     private $__table_fix = 'tab';    //表前缀
     private $__table = null;        //创建对象时，或明确指定当前模型的对应表名
     private $__pri = null;          //同上，对应主键名
-    private $__cache = false;       //是否缓存，若此值被设置，则覆盖子对象的相关设置
+    private $__cache = null;       //缓存指令
     private $__tranIndex = 0;       //事务
 
     private $_print_sql;
@@ -35,6 +36,11 @@ abstract class Model extends Library
     private $_protect = true;//是否加保护符，默认加
     private $_distinct = null;//消除重复行
     private $_having = '';//having
+
+    /**
+     * @var $Buffer Buffer
+     */
+    private $Buffer = null;
 
     protected $tableJoin = array();
     protected $tableJoinCount = 0;
@@ -88,12 +94,38 @@ abstract class Model extends Library
     }
 
     /**
-     * @param bool $cache
+     * 缓存设置：
+     *
+     * get时，cache(true)，表示先从缓存读，若缓存无值，则从库读，读到后保存到缓存
+     *
+     * update,delete时，cache(['key'=>VALUE])用于删除where自身之外的相关缓存
+     * 当数据可以被缓存的键除了where中的键之外，还可以指定其他键，同时指定其值
+     *
+     * 例tabArticle中，除了artID可以被缓存外，artTitle 也可以被缓存
+     *
+     * 当删除['artID'=>10]的时候，该缓存会被删除，但是['artTitle'=>'test']这个缓存并没有删除
+     * 所以这里需要在执行delete之前指定
+     *
+     * $this->cache(['artTitle'=>'test'])->delete(['artID'=>10]);
+     * $this->cache(['artID'=>10])->update(['artTitle'=>'test']);
+     *
+     * 若只有artID可以被缓存，则需要调用：$this->cache(true)->delete(['artID'=>10]);
+     *
+     * 若需要执行$this->delete(['artID>'=>10]);这种指令，被删除的目标数据可能存在多行，此时若也要删除对应不同artTitle的缓存
+     * 则需要采用：$this->cache(['artTitle'=>['test','abc','def']])->delete(['artID>'=>10]);
+     * 也就是说 artTitle 为一个数组
+     *
+     * 作用期间，连续执行的时候：
+     * $this->cache(true)->delete(['artID'=>10]); 会删除缓存
+     * $this->delete(['artID'=>11]);              不删除，因为没指定
+     *
+     *
+     * @param bool $run
      * @return $this
      */
-    final public function cache(bool $cache = true)
+    final public function cache($run = true)
     {
-        $this->__cache = $cache;
+        $this->__cache = $run;
         return $this;
     }
 
@@ -166,21 +198,6 @@ abstract class Model extends Library
         return $val;
     }
 
-    final public function unset_cache(...$where)
-    {
-        if (!$this->__cache) return $this;
-
-        $mysql = $this->Mysql(0, [], 1);
-        $table = $this->table();
-
-        foreach ($where as $w) {
-            if (is_numeric($w)) $w = [$this->PRI() => intval($w)];
-            $kID = md5(serialize($w));
-            $this->Redis()->hash("{$mysql->dbName}.{$table}")->del("_id_{$kID}");
-        }
-        return $this;
-    }
-
     /**
      * 删
      * @param $where
@@ -197,10 +214,13 @@ abstract class Model extends Library
 
         $mysql = $this->Mysql(0, [], 1);
         $val = $mysql->table($table, $this->_protect)->where($where)->delete($this->_traceLevel);
-        if ($this->__cache === true) {
-            $kID = md5(serialize($where));
-            $this->Redis()->hash("{$mysql->dbName}.{$table}")->del("_id_{$kID}");
+        if ($this->__cache) {
+            if (is_array($this->__cache)) $where += $this->__cache;
+            if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->dbName);
+            $this->Buffer->table($table)->delete($where);
+            $this->__cache = null;
         }
+
         return $this->checkRunData('delete', $val) ?: $val;
     }
 
@@ -222,13 +242,209 @@ abstract class Model extends Library
         if (empty($where)) throw new EspError('Update Where 禁止为空', $this->_traceLevel);
         $mysql = $this->Mysql(0, [], 1);
 
-        if ($this->__cache === true) {
-            $kID = md5(serialize($where));
-            $this->Redis()->hash("{$mysql->dbName}.{$table}")->del("_id_{$kID}");
+        $val = $mysql->table($table, $this->_protect)->where($where)->update($data, true, $this->_traceLevel);
+        if ($this->__cache) {
+            if (is_array($this->__cache)) $where += $this->__cache;
+            if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->dbName);
+            $this->Buffer->table($table)->delete($where);
+            $this->__cache = null;
         }
 
-        $val = $mysql->table($table, $this->_protect)->where($where)->update($data, true, $this->_traceLevel);
         return $this->checkRunData('update', $val) ?: $val;
+    }
+
+    /**
+     * 选择一条记录
+     * @param $where
+     * @param string|null $orderBy
+     * @param string $sort
+     * @return mixed|null
+     */
+    final public function get($where, string $orderBy = null, string $sort = 'asc')
+    {
+        $mysql = $this->Mysql(0, [], 1);
+        $table = $this->table();
+        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        if (is_numeric($where)) {
+            $where = [$this->PRI() => intval($where)];
+        }
+
+        if ($this->__cache) {
+            if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->dbName);
+
+            if (!empty($data = $this->Buffer->table($table)->read($where))) {
+                $this->clear_initial();
+                $this->__cache = null;
+                $this->debug(['readByBuffer' => $where]);
+                return $data;
+            }
+        }
+
+        $obj = $mysql->table($table, $this->_protect);
+        if (is_int($this->columnKey)) $obj->fetch(0);
+
+        if (!empty($this->selectKey)) {
+            foreach ($this->selectKey as $select) $obj->select(...$select);
+        }
+        if (!empty($this->tableJoin)) {
+            foreach ($this->tableJoin as $join) $obj->join(...$join);
+        }
+        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+        if ($this->forceIndex) $obj->force($this->forceIndex);
+        if ($this->_having) $obj->having($this->_having);
+        if ($where) $obj->where($where);
+        if ($this->groupKey) $obj->group($this->groupKey);
+        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
+
+        if (!empty($this->_order)) {
+            foreach ($this->_order as $k => $a) {
+                $obj->order($a['key'], $a['sort'], $a['pro']);
+            }
+        }
+        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
+        if ($orderBy) {
+            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
+            $obj->order($orderBy, $sort);
+        }
+        $data = $obj->get(0, $this->_traceLevel);
+        $_decode = $this->_decode;
+
+        if ($c = $this->checkRunData('get', $data)) return $c;
+        $val = $data->row($this->columnKey, $_decode);
+
+        if ($this->__cache) {
+            $this->Buffer->table($table)->save($where, $val);
+            $this->debug(['saveByBuffer' => $where]);
+            $this->__cache = null;
+        }
+
+        if ($val === false) $val = null;
+
+        return $val;
+    }
+
+
+    /**
+     * @param array $where
+     * @param string|null $orderBy
+     * @param string $sort
+     * @param int $limit
+     * @return array
+     */
+    final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
+    {
+        $table = $this->table();
+        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect)->prepare();
+        if ($orderBy === 'PRI') {
+            $orderBy = $this->PRI($table);
+            if (isset($where['PRI'])) {
+                $where[$orderBy] = $where['PRI'];
+                unset($where['PRI']);
+            }
+        }
+
+        if (!empty($this->selectKey)) {
+            foreach ($this->selectKey as $select) $obj->select(...$select);
+        }
+        if (!empty($this->tableJoin)) {
+            foreach ($this->tableJoin as $join) $obj->join(...$join);
+        }
+        if ($where) $obj->where($where);
+        if ($this->groupKey) $obj->group($this->groupKey);
+        if ($this->forceIndex) $obj->force($this->forceIndex);
+        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+        if ($this->_having) $obj->having($this->_having);
+
+        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
+
+        if (!empty($this->_order)) {
+            foreach ($this->_order as $k => $a) {
+                $obj->order($a['key'], $a['sort'], $a['pro']);
+            }
+        }
+        if ($orderBy) {
+            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
+            $obj->order($orderBy, $sort);
+        }
+
+        $data = $obj->get($limit, $this->_traceLevel);
+        $_decode = $this->_decode;
+        if ($v = $this->checkRunData('all', $data)) return $v;
+
+        $data = $data->rows(0, $this->columnKey, $_decode);
+        return $data;
+    }
+
+    /**
+     * @param null $where
+     * @param null $orderBy
+     * @param string $sort
+     * @return array|mixed|null
+     * @throws EspError
+     */
+    final public function list($where = null, $orderBy = null, string $sort = 'desc')
+    {
+        $table = $this->table();
+        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect);
+        if (!empty($this->selectKey)) {
+            foreach ($this->selectKey as $select) $obj->select(...$select);
+        }
+        if (!empty($this->tableJoin)) {
+            foreach ($this->tableJoin as $join) $obj->join(...$join);
+        }
+        if (is_bool($this->_protect)) $obj->protect($this->_protect);
+        if ($this->forceIndex) $obj->force($this->forceIndex);
+        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
+        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+
+        if ($where) $obj->where($where);
+        if ($this->groupKey) $obj->group($this->groupKey);
+        if ($this->_having) $obj->having($this->_having);
+
+        if (!empty($this->_order)) {
+            foreach ($this->_order as $k => $a) {
+                $obj->order($a['key'], $a['sort'], $a['pro']);
+            }
+        }
+
+        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
+        if ($orderBy) {
+            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
+            $obj->order($orderBy, $sort);
+        }
+
+        $count = $this->_count;
+        if (is_null($count)) $count = true;
+        $obj->count($count === true);
+
+        if (is_null($this->paging)) $this->paging = new Paging();
+        $skip = ($this->paging->index - 1) * $this->paging->size;
+        $data = $obj->limit($this->paging->size, $skip)->get(0, $this->_traceLevel);
+        $_decode = $this->_decode;
+        if ($v = $this->checkRunData('list', $data)) return $v;
+
+        if ($count === true) {
+            $this->paging->calculate($data->count());
+        } else if (is_int($count)) {
+            if ($count <= 10) {
+                $this->paging->calculate(($count + ($this->paging->index - 1)) * $this->paging->size, true);
+            } else {
+                $this->paging->calculate($count);
+            }
+        } else {
+            $this->paging->calculate(0);
+        }
+
+        return $data->rows(0, null, $_decode);
+    }
+
+    final public function sql(&$sql)
+    {
+        $this->_print_sql = true;
+        $sql = $this->_print_sql;
+        return $this;
     }
 
     final public function having(string $filter)
@@ -311,201 +527,6 @@ abstract class Model extends Library
         return "polygon(" . implode(',', $val) . ")";
     }
 
-    /**
-     * 选择一条记录
-     * @param $where
-     * @param string|null $orderBy
-     * @param string $sort
-     * @return mixed|null
-     */
-    final public function get($where, string $orderBy = null, string $sort = 'asc')
-    {
-        $mysql = $this->Mysql(0, [], 1);
-        $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
-        if (is_numeric($where)) {
-            $where = [$this->PRI() => intval($where)];
-        }
-        if ($this->__cache === true) {
-            $kID = md5(serialize($where));
-            $data = $this->Redis()->hash("{$mysql->dbName}.{$table}")->get("_id_{$kID}");
-            $dbg = ['table' => $table, 'where' => $where, 'key' => $kID, 'value' => !empty($data)];
-            $this->debug($dbg, 1);
-            if (!empty($data)) {
-                $this->clear_initial();
-                return $data;
-            }
-        }
-
-        $obj = $mysql->table($table, $this->_protect);
-        if (is_int($this->columnKey)) $obj->fetch(0);
-
-        if (!empty($this->selectKey)) {
-            foreach ($this->selectKey as $select) $obj->select(...$select);
-        }
-        if (!empty($this->tableJoin)) {
-            foreach ($this->tableJoin as $join) $obj->join(...$join);
-        }
-        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
-        if ($this->forceIndex) $obj->force($this->forceIndex);
-        if ($this->_having) $obj->having($this->_having);
-        if ($where) $obj->where($where);
-        if ($this->groupKey) $obj->group($this->groupKey);
-        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
-
-        if (!empty($this->_order)) {
-            foreach ($this->_order as $k => $a) {
-                $obj->order($a['key'], $a['sort'], $a['pro']);
-            }
-        }
-        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
-        if ($orderBy) {
-            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
-            $obj->order($orderBy, $sort);
-        }
-        $data = $obj->get(0, $this->_traceLevel);
-        $_decode = $this->_decode;
-        if ($c = $this->checkRunData('get', $data)) return $c;
-
-        $val = $data->row($this->columnKey, $_decode);
-
-        if ($val === false) $val = null;
-
-        if ($this->__cache === true and isset($kID) and !empty($val)) {
-            $this->Redis()->hash("{$mysql->dbName}.{$table}")->set("_id_{$kID}", $val);
-            $this->__cache = false;
-        }
-        return $val;
-    }
-
-    /**
-     * id in
-     * @param array $ids
-     * @param null $where
-     * @param null $orderBy
-     * @param string $sort
-     * @return array|mixed
-     * @throws EspError
-     */
-    final public function in(array $ids, $where = null, $orderBy = null, $sort = 'asc')
-    {
-        if (empty($ids)) return [];
-        $table = $this->table();
-        $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect);
-        if (!empty($this->selectKey)) {
-            foreach ($this->selectKey as $select) $obj->select(...$select);
-        }
-        if (!empty($this->tableJoin)) {
-            foreach ($this->tableJoin as $join) $obj->join(...$join);
-        }
-        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
-        if ($orderBy) {
-            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
-            $obj->order($orderBy, $sort);
-        }
-        if (!empty($this->_order)) {
-            foreach ($this->_order as $k => $a) {
-                $obj->order($a['key'], $a['sort'], $a['pro']);
-            }
-        }
-        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
-        if ($this->forceIndex) $obj->force($this->forceIndex);
-        if ($this->_having) $obj->having($this->_having);
-
-        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
-        $obj = $obj->where_in($this->PRI(), $ids);
-        if ($where) $obj->where($where);
-        $data = $obj->get(0, $this->_traceLevel);
-        $_decode = $this->_decode;
-        if ($c = $this->checkRunData('in', $data)) return $c;
-
-        return $data->rows(0, null, $_decode);
-    }
-
-
-    /**
-     * 设置排序字段，优先级高于函数中指定的方式
-     * @param $key
-     * @param string $sort
-     * @param bool $addProtect
-     * @return $this
-     */
-    final public function order($key, string $sort = 'asc', bool $addProtect = null)
-    {
-        if (is_array($key)) {
-            foreach ($key as $ks) {
-                if (!isset($ks[1])) $ks[1] = 'asc';
-                if (!isset($ks[2])) $ks[2] = true;
-                if (!in_array(strtolower($ks[1]), ['asc', 'desc', 'rand'])) $ks[1] = 'ASC';
-                $this->_order[] = ['key' => $ks[0], 'sort' => $ks[1], 'pro' => $ks[2]];
-            }
-            return $this;
-        }
-        if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
-        if (is_null($addProtect)) $addProtect = $this->_protect;
-        $this->_order[] = ['key' => $key, 'sort' => $sort, 'pro' => $addProtect];
-        return $this;
-    }
-
-    final public function sql(&$sql)
-    {
-        $this->_print_sql = true;
-        $sql = $this->_print_sql;
-        return $this;
-    }
-
-    /**
-     * @param array $where
-     * @param string|null $orderBy
-     * @param string $sort
-     * @param int $limit
-     * @return array
-     */
-    final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
-    {
-        $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
-        $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect)->prepare();
-        if ($orderBy === 'PRI') {
-            $orderBy = $this->PRI($table);
-            if (isset($where['PRI'])) {
-                $where[$orderBy] = $where['PRI'];
-                unset($where['PRI']);
-            }
-        }
-
-        if (!empty($this->selectKey)) {
-            foreach ($this->selectKey as $select) $obj->select(...$select);
-        }
-        if (!empty($this->tableJoin)) {
-            foreach ($this->tableJoin as $join) $obj->join(...$join);
-        }
-        if ($where) $obj->where($where);
-        if ($this->groupKey) $obj->group($this->groupKey);
-        if ($this->forceIndex) $obj->force($this->forceIndex);
-        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
-        if ($this->_having) $obj->having($this->_having);
-
-        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
-
-        if (!empty($this->_order)) {
-            foreach ($this->_order as $k => $a) {
-                $obj->order($a['key'], $a['sort'], $a['pro']);
-            }
-        }
-        if ($orderBy) {
-            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
-            $obj->order($orderBy, $sort);
-        }
-
-        $data = $obj->get($limit, $this->_traceLevel);
-        $_decode = $this->_decode;
-        if ($v = $this->checkRunData('all', $data)) return $v;
-
-        $data = $data->rows(0, $this->columnKey, $_decode);
-        return $data;
-    }
-
 
     /**
      * 当前请求结果的总行数
@@ -545,70 +566,6 @@ abstract class Model extends Library
     {
         $this->_distinct = $bool;
         return $this;
-    }
-
-    /**
-     * @param null $where
-     * @param null $orderBy
-     * @param string $sort
-     * @return array|mixed|null
-     * @throws EspError
-     */
-    final public function list($where = null, $orderBy = null, string $sort = 'desc')
-    {
-        $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
-        $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect);
-        if (!empty($this->selectKey)) {
-            foreach ($this->selectKey as $select) $obj->select(...$select);
-        }
-        if (!empty($this->tableJoin)) {
-            foreach ($this->tableJoin as $join) $obj->join(...$join);
-        }
-        if (is_bool($this->_protect)) $obj->protect($this->_protect);
-        if ($this->forceIndex) $obj->force($this->forceIndex);
-        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
-        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
-
-        if ($where) $obj->where($where);
-        if ($this->groupKey) $obj->group($this->groupKey);
-        if ($this->_having) $obj->having($this->_having);
-
-        if (!empty($this->_order)) {
-            foreach ($this->_order as $k => $a) {
-                $obj->order($a['key'], $a['sort'], $a['pro']);
-            }
-        }
-
-        if ($orderBy === 'PRI') $orderBy = $this->PRI($table);
-        if ($orderBy) {
-            if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
-            $obj->order($orderBy, $sort);
-        }
-
-        $count = $this->_count;
-        if (is_null($count)) $count = true;
-        $obj->count($count === true);
-
-        if (is_null($this->paging)) $this->paging = new Paging();
-        $skip = ($this->paging->index - 1) * $this->paging->size;
-        $data = $obj->limit($this->paging->size, $skip)->get(0, $this->_traceLevel);
-        $_decode = $this->_decode;
-        if ($v = $this->checkRunData('list', $data)) return $v;
-
-        if ($count === true) {
-            $this->paging->calculate($data->count());
-        } else if (is_int($count)) {
-            if ($count <= 10) {
-                $this->paging->calculate(($count + ($this->paging->index - 1)) * $this->paging->size, true);
-            } else {
-                $this->paging->calculate($count);
-            }
-        } else {
-            $this->paging->calculate(0);
-        }
-
-        return $data->rows(0, null, $_decode);
     }
 
     final public function pagingSet(int $size, int $index = 0)
@@ -708,6 +665,31 @@ abstract class Model extends Library
         return $this;
     }
 
+
+    /**
+     * 设置排序字段，优先级高于函数中指定的方式
+     * @param $key
+     * @param string $sort
+     * @param bool $addProtect
+     * @return $this
+     */
+    final public function order($key, string $sort = 'asc', bool $addProtect = null)
+    {
+        if (is_array($key)) {
+            foreach ($key as $ks) {
+                if (!isset($ks[1])) $ks[1] = 'asc';
+                if (!isset($ks[2])) $ks[2] = true;
+                if (!in_array(strtolower($ks[1]), ['asc', 'desc', 'rand'])) $ks[1] = 'ASC';
+                $this->_order[] = ['key' => $ks[0], 'sort' => $ks[1], 'pro' => $ks[2]];
+            }
+            return $this;
+        }
+        if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
+        if (is_null($addProtect)) $addProtect = $this->_protect;
+        $this->_order[] = ['key' => $key, 'sort' => $sort, 'pro' => $addProtect];
+        return $this;
+    }
+
     /**
      * @param $select
      * @param bool $add_identifier
@@ -784,8 +766,10 @@ abstract class Model extends Library
         if (empty($conf) or !is_array($conf)) {
             throw new EspError("`Database.Mysql`配置信息错误", $traceLevel + 1);
         }
-        $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this, $tranID, ($_conf + $conf));
+        $conf = $_conf + $conf;
+        $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this, $tranID, $conf);
         $this->debug("New Mysql({$branchName}-{$tranID});", $traceLevel + 1);
+
         return $this->_controller->_Mysql[$branchName][$tranID];
     }
 
@@ -828,7 +812,7 @@ abstract class Model extends Library
 
         if (!isset($this->_controller->_Redis[$conf['db']])) {
             $this->_controller->_Redis[$conf['db']] = new Redis($conf);
-            $this->debug("create Redis({$conf['db']});", $traceLevel + 1);
+            $this->debug("New Redis({$conf['db']});", $traceLevel + 1);
         }
         return $this->_controller->_Redis[$conf['db']];
     }

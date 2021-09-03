@@ -8,7 +8,6 @@ use esp\core\db\ext\PdoResult;
 use esp\core\Model;
 use esp\core\Debug;
 use esp\error\EspError;
-use function esp\helper\mk_dir;
 
 final class Mysql
 {

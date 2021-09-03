@@ -16,7 +16,7 @@ abstract class Library
      */
     public $_controller;
     public $_config;
-    public $_buffer;
+    public $_redis;
     public $_debug;
 
     public function __construct(...$param)
@@ -24,7 +24,7 @@ abstract class Library
         $this->_controller = &$GLOBALS['_Controller'];
         $this->_config = $this->_controller->_config;
         $this->_debug = $this->_controller->_debug;
-        $this->_buffer = $this->_controller->_buffer;
+        $this->_redis = $this->_controller->_redis;
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $param);
@@ -85,7 +85,7 @@ abstract class Library
      */
     final public function publish(string $action, array $value)
     {
-        return $this->_buffer->publish('order', $action, $value);
+        return $this->_redis->publish('order', $action, $value);
     }
 
     /**
@@ -99,7 +99,7 @@ abstract class Library
      */
     final public function queue(string $queKey, array $data)
     {
-        return $this->_buffer->push('task', $data + ['_action' => $queKey]);
+        return $this->_redis->push('task', $data + ['_action' => $queKey]);
     }
 
     /**

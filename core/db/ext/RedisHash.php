@@ -55,7 +55,7 @@ class RedisHash
      */
     public function insert(string $hashKey, $value)
     {
-        return $this->redis->hSetNx($this->table, $hashKey, ($value));
+        return $this->redis->hSetNx($this->table, $hashKey, $value);
     }
 
 
