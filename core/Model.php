@@ -285,7 +285,7 @@ abstract class Model extends Library
                 $this->__cache = null;
                 $this->debug(['readByBuffer' => $where]);
 
-                $sql = "HitCache: " . json_encode($where, 320);
+                $sql = "HitCache({$table}) " . json_encode($where, 320);
                 $this->_controller->_dispatcher->_counter->recodeMysql('select', $sql, 1);
 
                 return $data;
