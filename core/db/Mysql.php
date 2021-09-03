@@ -23,6 +23,7 @@ final class Mysql
     private $_pool = [];//进程级的连接池，$master，$slave
     public $_error = array();//每个连接的错误信息
     public $dbName;
+    public $cacheKey;
     public $lowCase = false; //是否转换为小写
 
     /**
@@ -41,6 +42,7 @@ final class Mysql
                 'collation' => 'utf8mb4_general_ci',
 //                'persistent' => false,//是否持久连接，不指定时取值_CLI
                 'param' => true,
+                'cache' => true,
                 'timeout' => 2,
                 'prefix' => '',
             ];
@@ -54,6 +56,7 @@ final class Mysql
             $this->_CONF['db'] = strtolower($this->_CONF['db']);
             $this->_CONF['prefix'] = strtolower($this->_CONF['prefix']);
         }
+        if ($this->_CONF['cache']) $this->cacheKey = $this->_CONF['db'];
         $this->dbName = $this->_CONF['db'];
     }
 

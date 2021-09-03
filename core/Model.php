@@ -95,8 +95,14 @@ abstract class Model extends Library
 
     /**
      * 缓存设置：
+     * 建议应用环境：
+     * 例如：tabConfig表，内容相对固定，前端经常读取，这时将此表相对应值缓存，前端不需要每次读取数据库；
+     *
+     * 调用 $rds->flush(); 清除所有缓存
+     * 紧急情况，将databases.mysql.cache=false可关闭所有缓存读写
      *
      * get时，cache(true)，表示先从缓存读，若缓存无值，则从库读，读到后保存到缓存
+     * 注意：get时若有select字段，缓存结果也是只包含这些字段的值
      *
      * update,delete时，cache(['key'=>VALUE])用于删除where自身之外的相关缓存
      * 当数据可以被缓存的键除了where中的键之外，还可以指定其他键，同时指定其值
@@ -214,10 +220,11 @@ abstract class Model extends Library
 
         $mysql = $this->Mysql(0, [], 1);
         $val = $mysql->table($table, $this->_protect)->where($where)->delete($this->_traceLevel);
-        if ($this->__cache) {
+        if ($this->__cache and $mysql->cacheKey) {
             if (is_array($this->__cache)) $where += $this->__cache;
-            if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->dbName);
-            $this->Buffer->table($table)->delete($where);
+            if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->cacheKey);
+            $sc = $this->Buffer->table($table)->delete($where);
+            $this->debug(['buffer' => $where, 'delete' => $sc]);
             $this->__cache = null;
         }
 
@@ -243,10 +250,11 @@ abstract class Model extends Library
         $mysql = $this->Mysql(0, [], 1);
 
         $val = $mysql->table($table, $this->_protect)->where($where)->update($data, true, $this->_traceLevel);
-        if ($this->__cache) {
+        if ($this->__cache and $mysql->cacheKey) {
             if (is_array($this->__cache)) $where += $this->__cache;
-            if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->dbName);
-            $this->Buffer->table($table)->delete($where);
+            if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->cacheKey);
+            $sc = $this->Buffer->table($table)->delete($where);
+            $this->debug(['buffer' => $where, 'delete' => $sc]);
             $this->__cache = null;
         }
 
@@ -269,8 +277,8 @@ abstract class Model extends Library
             $where = [$this->PRI() => intval($where)];
         }
 
-        if ($this->__cache) {
-            if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->dbName);
+        if ($this->__cache and $mysql->cacheKey) {
+            if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->cacheKey);
 
             if (!empty($data = $this->Buffer->table($table)->read($where))) {
                 $this->clear_initial();
@@ -312,9 +320,9 @@ abstract class Model extends Library
         if ($c = $this->checkRunData('get', $data)) return $c;
         $val = $data->row($this->columnKey, $_decode);
 
-        if ($this->__cache) {
-            $this->Buffer->table($table)->save($where, $val);
-            $this->debug(['saveByBuffer' => $where]);
+        if ($this->__cache and $mysql->cacheKey) {
+            $sc = $this->Buffer->table($table)->save($where, $val);
+            $this->debug(['buffer' => $where, 'save' => $sc]);
             $this->__cache = null;
         }
 
