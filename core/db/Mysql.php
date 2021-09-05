@@ -71,6 +71,7 @@ final class Mysql
     public function counter(string $action, string $sql, int $traceLevel)
     {
         if (!$this->_counter) return;
+        if ($traceLevel === -1) $this->_counter->recodeMysql($action, $sql);
         $this->_counter->recodeMysql($action, $sql, $traceLevel + 1);
     }
 
