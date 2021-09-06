@@ -42,7 +42,7 @@ final class Mysql
                 'collation' => 'utf8mb4_general_ci',
 //                'persistent' => false,//是否持久连接，不指定时取值_CLI
                 'param' => true,
-                'cache' => true,
+                'cache' => false,
                 'timeout' => 2,
                 'prefix' => '',
             ];
@@ -56,7 +56,13 @@ final class Mysql
             $this->_CONF['db'] = strtolower($this->_CONF['db']);
             $this->_CONF['prefix'] = strtolower($this->_CONF['prefix']);
         }
-        if ($this->_CONF['cache']) $this->cacheKey = $this->_CONF['db'];
+        if ($this->_CONF['cache']) {
+            if (is_string($this->_CONF['cache'])) {
+                $this->cacheKey = $this->_CONF['cache'];
+            } else {
+                $this->cacheKey = $this->_CONF['db'];
+            }
+        }
         $this->dbName = $this->_CONF['db'];
     }
 

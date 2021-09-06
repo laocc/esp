@@ -205,6 +205,27 @@ abstract class Model extends Library
     }
 
     /**
+     * 直接删除相关表的缓存，一般用于批量事务完成之后
+     *
+     * @param string $table
+     * @param array $where
+     * @return $this
+     * @throws EspError
+     */
+    final public function trans_cache(string $table, array $where)
+    {
+        if (is_null($this->Buffer)) {
+            $mysql = $this->Mysql(0, [], 1);
+            $cacheKey = $mysql->cacheKey;
+            $this->Buffer = new Buffer($this->Redis(), $cacheKey);
+        }
+
+        $this->Buffer->table($table)->delete($where);
+
+        return $this;
+    }
+
+    /**
      * 删
      * @param $where
      * @return mixed
