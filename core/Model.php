@@ -582,21 +582,21 @@ abstract class Model extends Library
         return $this;
     }
 
-    final public function pagingSet(int $size, int $index = 0)
+    final public function pagingSet(int $size, int $index = 0, int $recode = null)
     {
-        $this->paging = new Paging($size, $index);
+        $this->paging = new Paging($size, $index, $recode);
+        return $this;
+    }
+
+    final public function pageSet(int $size, int $index = 0, int $recode = null)
+    {
+        $this->paging = new Paging($size, $index, $recode);
         return $this;
     }
 
     final public function pagingIndex(int $index)
     {
         $this->paging->index($index);
-        return $this;
-    }
-
-    final public function pageSet(int $size, int $index = 0)
-    {
-        $this->paging = new Paging($size, $index);
         return $this;
     }
 
