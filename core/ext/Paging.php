@@ -26,9 +26,11 @@ final class Paging
     public function __construct(int $sizeDefault = 0, int $index = 0, int $recode = null)
     {
         $this->index = intval($_GET[$this->index_key] ?? $index);
+        if ($this->index < 1) $this->index = $index ?: 1;
+
         $this->size = intval($_GET[$this->size_key] ?? $sizeDefault);
-        if ($this->index < 1) $this->index = 1;
-        if ($this->size < 2) $this->size = $this->autoSize;
+        if ($this->size < 2) $this->size = $sizeDefault ?: $this->autoSize;
+
         if (!is_null($recode)) $this->recode = $recode;
     }
 
