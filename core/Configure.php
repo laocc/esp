@@ -238,6 +238,9 @@ final class Configure
             case 'php':
                 $_config = include($file);
                 break;
+            case 'yaml':
+                $_config = yaml_parse_file($file);
+                break;
             default:
                 return [];
         }
