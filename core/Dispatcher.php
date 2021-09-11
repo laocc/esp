@@ -85,9 +85,6 @@ final class Dispatcher
         $this->_request = new Request($this, $request);
         if (_CLI) return;
 
-        if (!defined('_TIME')) define('_TIME', time());//当前时间戳
-        if (!defined('_DAY_TIME')) define('_DAY_TIME', strtotime(date('Ymd', _TIME)));//今天零时整的时间戳
-
         $counter = $this->_config->get('counter');
         if ($counter and !$counter['run']) $counter = null;
         if (is_array($counter)) {
@@ -475,7 +472,7 @@ final class Dispatcher
         if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
             $this->relayDebug("[blue;{$class}->_init() ============================]");
             $contReturn = call_user_func_array([$cont, '_init'], [$action]);
-            if (!is_null($contReturn)) {
+            if (is_bool($contReturn) or !is_null($contReturn)) {
                 $this->relayDebug(['_init' => 'return', 'return' => $contReturn]);
                 goto close;
             }
@@ -487,7 +484,7 @@ final class Dispatcher
         if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
             $this->relayDebug("[blue;{$class}->_main() =============================]");
             $contReturn = call_user_func_array([$cont, '_main'], [$action]);
-            if (!is_null($contReturn)) {
+            if (is_bool($contReturn) or !is_null($contReturn)) {
                 $this->relayDebug(['_main' => 'return', 'return' => $contReturn]);
                 goto close;
             }

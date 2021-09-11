@@ -93,7 +93,7 @@ final class Cache
         $array = [];
         $array['html'] = $value;
         $array['type'] = $this->response->getType();
-        $array['expire'] = (_TIME + $this->_option['ttl']);
+        $array['expire'] = (time() + $this->_option['ttl']);
         $this->redis->set($key, $array, $this->_option['ttl']);
     }
 
@@ -163,14 +163,15 @@ final class Cache
     {
         if (headers_sent()) return;
         $expires = $this->_option['ttl'];
+        $time = time();
 
         //判断浏览器缓存是否过期
-        if (getenv('HTTP_IF_MODIFIED_SINCE') && (strtotime(getenv('HTTP_IF_MODIFIED_SINCE')) + $expires) > _TIME) {
+        if (getenv('HTTP_IF_MODIFIED_SINCE') && (strtotime(getenv('HTTP_IF_MODIFIED_SINCE')) + $expires) > $time) {
             $protocol = getenv('SERVER_PROTOCOL') ?: 'HTTP/1.1';
             header("{$protocol} 304 Not Modified", true, 304);
         } else {
             header("Cache-Control: max-age={$expires}, public");
-            header('Expires: ' . gmdate('D, d M Y H:i:s', _TIME + $expires) . ' GMT');
+            header('Expires: ' . gmdate('D, d M Y H:i:s', $time + $expires) . ' GMT');
             header('Pragma: public');
             if ($label) header("CacheLabel: {$label}");
         }

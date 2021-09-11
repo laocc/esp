@@ -232,7 +232,7 @@ final class Session
         } else {
             $value = [];
             $value['val'] = $val;
-            $value['time'] = _TIME;
+            $value['time'] = time();
             $_SESSION[$key] = $value;
         }
         $this->update = true;

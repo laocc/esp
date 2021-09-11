@@ -168,7 +168,7 @@ final class Response
             return;
 
         } else if (is_bool($value)) {//简单表示是否立即渲染
-//            if ($value) goto display;
+            if ($value) goto display;
             return;
         }
 
