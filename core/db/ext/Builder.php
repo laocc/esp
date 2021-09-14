@@ -1610,6 +1610,7 @@ final class Builder
         if ($clause === '*') return '*';
         $clause = trim(str_replace('`', '', $clause));//先去除已存在的`号
 
+
         if (preg_match('/^[a-z]+\(.+\)$/i', $clause, $m)) {
             //userName => `userName`
             return $clause;
@@ -1620,14 +1621,21 @@ final class Builder
 
         } else if (preg_match('/^([\w\-]+)\.([\w\-]+)$/i', $clause, $m)) {
             //tabUser.userName => `tabUser`.`userName`
+            if ($this->_lowCase) $m[1] = strtolower($m[1]);
             return "`{$m[1]}`.`{$m[2]}`";
 
         } else if (preg_match('/^([\w\-]+)\.\*$/i', $clause, $m)) {
             //tabUser.* => `tabUser`.*
+            if ($this->_lowCase) $m[1] = strtolower($m[1]);
             return "`{$m[1]}`.*";
 
         } else if (preg_match('/^[\w\-]+\.?[\w\-]+\,[\w\-]+.+$/i', $clause, $m)) {
             //tabUser.userName,userMobile like
+            if ($this->_lowCase) {
+                $clause = preg_replace_callback("/([a-z]+[A-Z]\w+)\./", function ($mt) {
+                    return strtolower($mt[1]) . '.';
+                }, $clause);
+            }
             return "CONCAT({$clause})";
 
         } else if (preg_match('/^([\w\-]+)\s+AS\s+([\w\-]+)$/i', $clause, $m)) {
@@ -1636,9 +1644,10 @@ final class Builder
 
         } else if (preg_match('/^([\w\-]+)\.([\w\-]+)\s+AS\s+([\w\-]+)$/i', $clause, $m)) {
             //tabUser.userName as name => `tabUser`.`userName` as `name`
+            if ($this->_lowCase) $m[1] = strtolower($m[1]);
             return "`{$m[1]}`.`{$m[2]}` as `{$m[3]}`";
         }
-
+        
         //其他情况都加
         return "`{$clause}`";
     }
