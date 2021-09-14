@@ -1647,7 +1647,7 @@ final class Builder
             if ($this->_lowCase) $m[1] = strtolower($m[1]);
             return "`{$m[1]}`.`{$m[2]}` as `{$m[3]}`";
         }
-        
+
         //其他情况都加
         return "`{$clause}`";
     }
