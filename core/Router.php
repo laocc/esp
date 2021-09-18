@@ -28,7 +28,7 @@ final class Router
         $rdsKey = $configure->_token . '_ROUTES_' . _VIRTUAL;
         $redis = $configure->_Redis;
 
-        $cache = (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load']);
+        $cache = boolval((!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load']));
         $modRoute = (!_CLI and $cache and $redis) ? $redis->get($rdsKey) : [];
 
         if (empty($modRoute) or $modRoute === 'null') {
