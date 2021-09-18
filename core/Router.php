@@ -27,7 +27,9 @@ final class Router
     {
         $rdsKey = $configure->_token . '_ROUTES_' . _VIRTUAL;
         $redis = $configure->_Redis;
-        $modRoute = (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and $redis) ? $redis->get($rdsKey) : null;
+
+        $cache = (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load']);
+        $modRoute = (!_CLI and $cache and $redis) ? $redis->get($rdsKey) : [];
 
         if (empty($modRoute) or $modRoute === 'null') {
             $modRoute = $this->loadRouteFile($request);
@@ -122,7 +124,7 @@ final class Router
 
         if (isset($route['__default__']) and ($this->uri === '/' or $this->uri === '')) return ['/', ''];
 
-        if (isset($route['__default__']) and preg_match('#^\/[a-z][a-z0-9\-\_]+\/?.*#i', $this->uri)) {
+        if (isset($route['__default__']) and preg_match('#^\/[a-z][a-z0-9\-\_]*\/?.*#i', $this->uri)) {
             $matcher = explode('/', $this->uri);
             $matcher[0] = $this->uri;
             return $matcher;
