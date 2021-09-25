@@ -54,9 +54,13 @@ final class Response
         $this->_request = $dispatcher->_request;
         $this->_resource = new Resources($conf);
         if ($conf['adapter'] ?? null) {
-            if (is_array($conf['adapter'])) {
-                $this->_adapter = $conf['adapter'];
-                $this->_adapter['use'] = true;
+            if (is_array($conf['adapter']) and isset($conf['adapter']['class'])) {
+                $adConf = $conf['adapter'];
+                $adConf['use'] = true;
+                $adConf['layout'] = boolval($adConf['layout'] ?? false);
+                $adConf['cache'] = realpath($adConf['cache'] ?? (_RUNTIME . '/cache'));
+                if ($adConf['class'][0] !== '\\') $adConf['class'] = '\\' . $adConf['class'];
+                $this->_adapter = $adConf;
             }
         }
 
@@ -460,18 +464,15 @@ final class Response
         $view = $this->getView();
         $this->cleared_layout_val();
 
-        if (($adp = $this->_adapter) and isset($adp['class']) and $adp['use']) {
-            $adCache = $adp['cache'] ?? (_RUNTIME . '/cache');
-            $adp['layout'] = boolval($adp['layout'] ?? false);
-            if ($adp['class'][0] !== '\\') $adp['class'] = '\\' . $adp['class'];
-            $adc = new $adp['class']($adCache);
-            if ($adp['class'] === '\Smarty') $adc->setCompileDir($adCache);
+        if (($adp = $this->_adapter) and $adp['use']) {
+            $adc = new $adp['class']($adp['cache']);
+            if ($adp['class'] === '\Smarty') $adc->setCompileDir($adp['cache']);
             $view->registerAdapter($adc);
         }
 
         if ($this->_view_set['layout_use']) {
             $layout = $this->getLayout();
-            if ($adp['layout'] ?? false) $layout->registerAdapter($adc);//layout也启用解析器
+            if (isset($adc) and $adp['layout']) $layout->registerAdapter($adc);//layout也启用解析器
             $layout->assign($this->_layout_val);//送入layout变量
             $view->layout($layout);//为视图注册layout
         } else {
