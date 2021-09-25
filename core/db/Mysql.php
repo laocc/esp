@@ -324,48 +324,9 @@ final class Mysql
             }
         }
 
-        /**
-         * CLI中，且用的是持久连接，检查状态
-         */
-        if (_CLI and $CONN->getAttribute(\PDO::ATTR_PERSISTENT)) {
-            try {
-                $info = $CONN->getAttribute(constant("\PDO::ATTR_SERVER_INFO"));
-            } catch (\Error $error) {
-                ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
-                if ($try++ === 0) {
-                    $time = time();
-                    print_r([
-                        'id' => $transID,
-                        'connect_time' => $this->connect_time[$transID],
-                        'now' => $time,
-                        'wait' => $time - $this->connect_time[$transID],
-                        'error' => $error->getMessage(),
-                        'code' => $error->getCode(),
-                    ]);
-                    unset($this->_pool[$real][$transID]);
-                    $CONN = null;
-                    goto tryExe;
-                } else {
-                    throw new EspError($error->getMessage(), $traceLevel + 1);
-                }
-            }
-            if (empty($info)) {//获取不到有关属性，说明连接可能已经断开
-                if ($try++ === 0) {
-                    $time = time();
-                    print_r([
-                        'id' => $transID,
-                        'connect_time' => $this->connect_time[$transID],
-                        'now' => $time,
-                        'wait' => $time - $this->connect_time[$transID],
-                    ]);
-
-                    unset($this->_pool[$real][$transID]);
-                    $CONN = null;
-                    goto tryExe;
-                } else {
-                    throw new EspError('服务器状态错误，且无法连接成功', $traceLevel + 1);
-                }
-            }
+        if (_CLI and $this->connHasGoneAway($transID, $real, $CONN, $try++)) {
+            echo "Mysql has gone away, try Now!\n";
+            goto tryExe;
         }
 
         $debug = true;
@@ -444,6 +405,44 @@ final class Mysql
         return $result;
     }
 
+    private function connHasGoneAway(int $transID, string $real, \PDO $CONN, int $try)
+    {
+        if (!_CLI or $try > 1) return false;
+        if (!$CONN->getAttribute(\PDO::ATTR_PERSISTENT)) return false;
+
+        $time = time();
+
+        try {
+            $info = $CONN->getAttribute(constant("\PDO::ATTR_SERVER_INFO"));
+        } catch (\Error $error) {
+            ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
+            print_r([
+                'id' => $transID,
+                'connect_time' => $this->connect_time[$transID],
+                'now' => $time,
+                'wait' => $time - $this->connect_time[$transID],
+                'error' => $error->getMessage(),
+                'code' => $error->getCode(),
+            ]);
+            unset($this->_pool[$real][$transID]);
+            $CONN = null;
+            if ($try) throw new EspError($error->getMessage());
+            return true;
+        }
+        if (empty($info)) {//获取不到有关属性，说明连接可能已经断开
+            print_r([
+                'id' => $transID,
+                'connect_time' => $this->connect_time[$transID],
+                'now' => $time,
+                'wait' => $time - $this->connect_time[$transID],
+            ]);
+            unset($this->_pool[$real][$transID]);
+            $CONN = null;
+            if ($try) throw new EspError('服务器状态错误，且无法连接成功');
+            return true;
+        }
+        return false;
+    }
 
     /**
      * @param \PDO $CONN
@@ -706,7 +705,16 @@ final class Mysql
             throw new EspError("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中，或该事务未正常结束", 1);
         }
 
+        $try = 0;
+        tryExe:
+        $real = 'master';
+
         $CONN = $this->connect(true, $trans_id);//连接数据库，直接选择主库
+
+        if (_CLI and $this->connHasGoneAway($trans_id, $real, $CONN, $try++)) {
+            echo "Mysql has gone away, try Now!\n";
+            goto tryExe;
+        }
 
         if ($CONN->inTransaction()) {
             throw new EspError("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中", 1);
