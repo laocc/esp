@@ -73,18 +73,17 @@ composer dump-autoload --optimize
 
 ### 3.5.2 标签解析器
 至于用什么格式的标签，可任意，现以smarty为例，实现标签解析器注册：
+index.php
+```
+$option = include_once('../config.php');
+$dis = new \esp\core\Dispatcher($option, 'www');
+$dis->setPlugin(new \library\Plugs());
+$dis->run();
+```
+在这个`Plugs`中实现`$response->registerAdapter(new Adapter());`；
 
-前文bootstrap中为注册了一个`new Adapter()`插件，在此类`dispatchAfter()`中：
-```
-public function dispatchAfter(Request $request, Response $response)
-{
-    if ($response->getType()) return; ##如果网页格式不是默认方式，则不需要注册
-    $_adapter = new \Smarty();
-    $_adapter->setCompileDir(root('smarty/cache'));
-    $response->registerAdapter($_adapter);
-}
-```
-其他不用管了，在最后渲染视图时自动会调用此插件解析。但是须注意：标签解析器只对子视图有效，对于`layout`不起作用。控制器中可以用`$this->adapter(false);`关闭这个已注册的解析器。
+其他不用管了，在最后渲染视图时自动会调用此插件解析。但是须注意：标签解析器只对子视图有效，对于`layout`不起作用。
+控制器中可以用`$this->adapter(false);`关闭这个已注册的解析器。
 
 ### 3.5.3 视图变量
 在控制器中向视图传送变量的几种方式：

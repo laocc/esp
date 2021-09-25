@@ -51,7 +51,7 @@ final class Router
             if (!$matcher) continue;
 
             if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
-                return ('非法Method请求');
+                return '非法Method请求';
             }
 
             if (isset($route['route']['virtual'])) $request->virtual = $route['route']['virtual'];

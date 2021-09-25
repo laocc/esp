@@ -7,7 +7,6 @@ use esp\debug\Counter;
 use esp\error\Error;
 use esp\error\EspError;
 use esp\library\Result;
-use function esp\helper\same_first;
 use function esp\helper\host;
 
 final class Dispatcher
@@ -243,20 +242,21 @@ final class Dispatcher
     /**
      * 执行HOOK
      * @param string $time
-     * @param null $runValue
+     * @param null $runValue dispatchAfter之后才有该值，此值在hook中可以被修改
      * @return mixed|null
      */
-    private function plugsHook(string $time, $runValue = null)
+    private function plugsHook(string $time, &$runValue = null)
     {
         if (empty($this->_plugs)) return null;
 
-        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore', 'dispatchAfter', 'displayBefore', 'displayAfter', 'mainEnd'])) {
+        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore',
+            'dispatchAfter', 'displayBefore', 'displayAfter', 'mainEnd'])) {
             return null;
         }
 
         foreach ($this->_plugs as $plug) {
             if (method_exists($plug, $time) and is_callable([$plug, $time])) {
-                return call_user_func_array([$plug, $time], [$this->_request, $this->_response, $runValue]);
+                return call_user_func_array([$plug, $time], [$this->_request, $this->_response, &$runValue]);
             }
         }
 
@@ -329,7 +329,9 @@ final class Dispatcher
         }
 
         if (!is_null($this->_session)) {
-            if ($this->_session->debug) $this->relayDebug(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
+            if ($this->_session->debug) {
+                $this->relayDebug(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
+            }
             session_write_close();//立即保存并结束
         }
 

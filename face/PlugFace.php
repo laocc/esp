@@ -43,7 +43,7 @@ interface PlugFace
      * @param Request $request
      * @param Response $response
      */
-    public function dispatchAfter(Request $request, Response $response);
+    public function dispatchAfter(Request $request, Response $response, &$value);
 
 
     /**
@@ -51,7 +51,7 @@ interface PlugFace
      * @param Request $request
      * @param Response $response
      */
-    public function displayBefore(Request $request, Response $response);
+    public function displayBefore(Request $request, Response $response, &$value);
 
 
     /**
@@ -59,7 +59,7 @@ interface PlugFace
      * @param Request $request
      * @param Response $response
      */
-    public function displayAfter(Request $request, Response $response);
+    public function displayAfter(Request $request, Response $response, &$value);
 
 
     /**
@@ -67,5 +67,5 @@ interface PlugFace
      * @param Request $request
      * @param Response $response
      */
-    public function mainEnd(Request $request, Response $response);
+    public function mainEnd(Request $request, Response $response, &$value);
 }
