@@ -59,6 +59,7 @@ final class Response
                 $adConf['use'] = true;
                 $adConf['layout'] = boolval($adConf['layout'] ?? false);
                 $adConf['cache'] = realpath($adConf['cache'] ?? (_RUNTIME . '/cache'));
+                if (!$adConf['cache']) $adConf['cache'] = _RUNTIME . '/cache';
                 if ($adConf['class'][0] !== '\\') $adConf['class'] = '\\' . $adConf['class'];
                 $this->_adapter = $adConf;
             }
