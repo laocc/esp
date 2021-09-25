@@ -103,23 +103,23 @@ final class View
     /**
      * @return Adapter
      */
-    public function getAdapter(): Adapter
+    public function getAdapter()
     {
         return $this->_adapter;
     }
 
     /**
-     * @param $use
-     * @return $this
+     * @param bool $use
+     * @return View
      * @throws EspError
      */
-    public function setAdapter($use): View
+    public function setAdapter(bool $use): View
     {
         if ($use === false) {
             $this->_adapter_use = false;
         } elseif ($use === true) {
             if (is_null($this->_adapter)) {
-                throw new EspError('标签解析器没有注册，请在已注册过的插中注册标签解析器', 1);
+                throw new EspError('标签解析器没有注册', 1);
             }
             $this->_adapter_use = true;
         }
@@ -130,7 +130,7 @@ final class View
      * @param $object
      * @return $this
      */
-    public function registerAdapter(Adapter $object): View
+    public function registerAdapter($object): View
     {
         $this->_adapter = $object;
         $this->_adapter_use = true;

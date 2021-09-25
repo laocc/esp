@@ -140,9 +140,9 @@ abstract class Controller
         return $this->_response->getView()->getAdapter();
     }
 
-    final protected function setAdapter($bool)
+    final protected function setAdapter(bool $bool)
     {
-        return $this->_response->getView()->setAdapter($bool);
+        return $this->_response->setAdapter($bool)->getView()->setAdapter($bool);
     }
 
     /**

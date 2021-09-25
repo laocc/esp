@@ -54,7 +54,10 @@ final class Response
         $this->_request = $dispatcher->_request;
         $this->_resource = new Resources($conf);
         if ($conf['adapter'] ?? null) {
-            if (is_array($conf['adapter'])) $this->_adapter = $conf['adapter'];
+            if (is_array($conf['adapter'])) {
+                $this->_adapter = $conf['adapter'];
+                $this->_adapter['use'] = true;
+            }
         }
 
         if (isset($conf['views'])) $this->_view_set['view_path'] = $conf['views'];
@@ -204,7 +207,7 @@ final class Response
      * 返回标签解析器
      * @return Adapter
      */
-    public function getAdapter(): Adapter
+    public function getAdapter()
     {
         return $this->getView()->getAdapter();
     }
@@ -214,7 +217,7 @@ final class Response
      * @param Adapter $adapter
      * @return View
      */
-    public function registerAdapter(Adapter $adapter)
+    public function registerAdapter($adapter)
     {
         if (!$this->_view_set['view_use']) return null;
 
@@ -440,6 +443,11 @@ final class Response
         return $this->renderHtml = $this->_resource->replace($html);
     }
 
+    public function setAdapter(bool $use): Response
+    {
+        if (is_array($this->_adapter)) $this->_adapter['use'] = $use;
+        return $this;
+    }
 
     /**
      * 最后显示内容
@@ -452,7 +460,7 @@ final class Response
         $view = $this->getView();
         $this->cleared_layout_val();
 
-        if (($adp = $this->_adapter) and isset($adp['class'])) {
+        if (($adp = $this->_adapter) and isset($adp['class']) and $adp['use']) {
             $adCache = $adp['cache'] ?? (_RUNTIME . '/cache');
             $adp['layout'] = boolval($adp['layout'] ?? false);
             if ($adp['class'][0] !== '\\') $adp['class'] = '\\' . $adp['class'];
