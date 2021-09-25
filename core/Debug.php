@@ -5,6 +5,9 @@ namespace esp\core;
 
 class Debug
 {
+    public function __construct(array $conf)
+    {
+    }
 
     /**
      * 保存方式:
