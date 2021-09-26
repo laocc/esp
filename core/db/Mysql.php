@@ -201,21 +201,6 @@ final class Mysql
         }
     }
 
-    private function PdoAttribute(\PDO $pdo)
-    {
-        $attributes = array(
-            'PARAM_BOOL', 'PARAM_NULL', 'PARAM_LOB', 'PARAM_STMT', 'FETCH_NAMED', 'FETCH_NUM', 'FETCH_BOTH', 'FETCH_OBJ', 'FETCH_BOUND', 'FETCH_COLUMN', 'FETCH_CLASS', 'FETCH_KEY_PAIR',
-            'ATTR_AUTOCOMMIT', 'ATTR_ERRMODE', 'ATTR_SERVER_VERSION', 'ATTR_CLIENT_VERSION', 'ATTR_SERVER_INFO', 'ATTR_CONNECTION_STATUS', 'ATTR_CASE', 'ATTR_DRIVER_NAME', 'ATTR_ORACLE_NULLS', 'ATTR_PERSISTENT',
-            'ATTR_STATEMENT_CLASS', 'ATTR_DEFAULT_FETCH_MODE', 'ATTR_EMULATE_PREPARES', 'ERRMODE_SILENT', 'CASE_NATURAL', 'NULL_NATURAL', 'FETCH_ORI_NEXT', 'FETCH_ORI_LAST',
-            'FETCH_ORI_ABS', 'FETCH_ORI_REL', 'CURSOR_FWDONLY', 'ERR_NONE', 'PARAM_EVT_ALLOC', 'PARAM_EVT_EXEC_POST', 'PARAM_EVT_FETCH_PRE', 'PARAM_EVT_FETCH_POST', 'PARAM_EVT_NORMALIZE',
-        );
-        $attr = [];
-        foreach ($attributes as $val) {
-            $attr["PDO::{$val}"] = $pdo->getAttribute(constant("\PDO::{$val}"));
-        }
-        return $attr;
-    }
-
 
     /**
      * 从SQL语句中提取该语句的执行性质
@@ -384,11 +369,9 @@ final class Mysql
                         'now' => time(),
                         'after' => time() - $this->connect_time[$transID],
                     ]);
-                    print_r($this->PdoAttribute($CONN));
                 } else {
                     ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
                 }
-
                 unset($this->_pool[$real][$transID]);
                 $CONN = null;
                 goto tryExe; //重新执行
@@ -413,7 +396,9 @@ final class Mysql
         $time = time();
 
         try {
-            $info = $CONN->getAttribute(constant("\PDO::ATTR_SERVER_INFO"));
+
+            $info = $CONN->getAttribute(\PDO::ATTR_SERVER_INFO);
+
         } catch (\Error $error) {
             ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
             print_r([
@@ -424,11 +409,13 @@ final class Mysql
                 'error' => $error->getMessage(),
                 'code' => $error->getCode(),
             ]);
+            print_r($this->PdoAttribute($CONN));
             unset($this->_pool[$real][$transID]);
             $CONN = null;
             if ($try) throw new EspError($error->getMessage());
             return true;
         }
+
         if (empty($info)) {//获取不到有关属性，说明连接可能已经断开
             print_r([
                 'id' => $transID,
@@ -436,12 +423,28 @@ final class Mysql
                 'now' => $time,
                 'wait' => $time - $this->connect_time[$transID],
             ]);
+            print_r($this->PdoAttribute($CONN));
             unset($this->_pool[$real][$transID]);
             $CONN = null;
             if ($try) throw new EspError('服务器状态错误，且无法连接成功');
             return true;
         }
         return false;
+    }
+
+    private function PdoAttribute(\PDO $pdo)
+    {
+        $attributes = array(
+            'PARAM_BOOL', 'PARAM_NULL', 'PARAM_LOB', 'PARAM_STMT', 'FETCH_NAMED', 'FETCH_NUM', 'FETCH_BOTH', 'FETCH_OBJ', 'FETCH_BOUND', 'FETCH_COLUMN', 'FETCH_CLASS', 'FETCH_KEY_PAIR',
+            'ATTR_AUTOCOMMIT', 'ATTR_ERRMODE', 'ATTR_SERVER_VERSION', 'ATTR_CLIENT_VERSION', 'ATTR_SERVER_INFO', 'ATTR_CONNECTION_STATUS', 'ATTR_CASE', 'ATTR_DRIVER_NAME', 'ATTR_ORACLE_NULLS', 'ATTR_PERSISTENT',
+            'ATTR_STATEMENT_CLASS', 'ATTR_DEFAULT_FETCH_MODE', 'ATTR_EMULATE_PREPARES', 'ERRMODE_SILENT', 'CASE_NATURAL', 'NULL_NATURAL', 'FETCH_ORI_NEXT', 'FETCH_ORI_LAST',
+            'FETCH_ORI_ABS', 'FETCH_ORI_REL', 'CURSOR_FWDONLY', 'ERR_NONE', 'PARAM_EVT_ALLOC', 'PARAM_EVT_EXEC_POST', 'PARAM_EVT_FETCH_PRE', 'PARAM_EVT_FETCH_POST', 'PARAM_EVT_NORMALIZE',
+        );
+        $attr = [];
+        foreach ($attributes as $val) {
+            $attr["PDO::{$val}"] = $pdo->getAttribute(constant("\PDO::{$val}"));
+        }
+        return $attr;
     }
 
     /**
