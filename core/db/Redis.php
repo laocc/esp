@@ -209,7 +209,8 @@ final class Redis implements KeyValue
 
 
     /**
-     * 发送订阅，需要在swoole\redis中接收
+     * 发送订阅，需要在swoole中接收
+     *
      * @param string $channel
      * @param string $action
      * @param $message

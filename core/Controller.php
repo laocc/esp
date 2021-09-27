@@ -161,30 +161,40 @@ abstract class Controller
     }
 
     /**
-     * 发送订阅，需要在swoole\redis中接收
+     * 发送通知信息到redis管道，一般要在swoole中接收
+     *
+     * 建议不同项目定义不同_PUBLISH_KEY
+     *
+     * 发送指令到后台进程的方法有很多，比如直接用文件中转，但是在多服务器环境下则不适用
+     * 多服务器环境下建议用公共redis管道中转(比如阿里云的redis)
      *
      * @param string $action
-     * @param $value
+     * @param array $value
      * @return int
      */
-    final protected function publish(string $action, $value)
+    final public function publish(string $action, array $value)
     {
-        return $this->_redis->publish('order', $action, $value);
+        $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
+        return $this->_redis->publish($channel, $action, $value);
     }
 
     /**
-     * 发送到队列
-     * @param string $queKey
+     *
+     * 发送到队列，一般不建议在web环境中用队列，根据生产环境测试，经常发生堵塞
+     *
+     * @param string $action
      * @param array $data
      * @return int
      *
      * 用下面方法读取
      * while ($data = $this->_redis->lPop($queKey)){...}
      */
-    final public function queue(string $queKey, array $data)
+    final public function queue(string $action, array $data)
     {
-        return $this->_redis->push('task', $data + ['_action' => $queKey]);
+        $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
+        return $this->_redis->push($key, $data + ['_action' => $action]);
     }
+
 
     /**
      * @return Redis
