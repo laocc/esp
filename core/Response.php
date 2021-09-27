@@ -7,6 +7,7 @@ use esp\error\EspError;
 use esp\face\Adapter;
 use esp\library\ext\Xml;
 use function esp\helper\displayState;
+use function esp\helper\root;
 
 final class Response
 {
@@ -245,16 +246,26 @@ final class Response
     }
 
 
-    public function setViewPath(string $path = null): Response
+    /**
+     * 重新指定视图目录
+     *
+     * 若以/开头，为相对于_ROOT的目录
+     * 其他均是指相对于/application/www的目录，
+     * 如默认为    /application/www/views
+     * 改为       /application/www/PATH
+     *
+     * @param string|null $path
+     * @return $this
+     */
+    public function setViewPath(string $path): Response
     {
         $vmp = $this->_request->virtual;
         if ($this->_request->module) $vmp = "{$vmp}/{$this->_request->module}";
         if (substr($path, 0, 1) === '/') {
-            $path = "{$this->_request->directory}{$path}";
+            $this->_view_set['view_path'] = _ROOT . $path;
         } else {
-            $path = "{$this->_request->directory}/{$vmp}/{$path}";
+            $this->_view_set['view_path'] = "{$this->_request->directory}/{$vmp}/{$path}";
         }
-        $this->_view_set['view_path'] = $path;
         return $this;
     }
 
