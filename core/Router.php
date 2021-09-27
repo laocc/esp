@@ -87,10 +87,11 @@ final class Router
             if (isset($route['cache'])) {
                 $request->set('_cache_set', $route['cache']);
             } else {
-                $cacheSet = $configure->get("cache.{$request->module}.{$request->controller}.{$request->action}");
-                if ($cacheSet) {
-                    $request->set('_cache_set', $cacheSet);
+                $cKey = "cache.{$request->virtual}.{$request->controller}.{$request->action}";
+                if ($request->module) {
+                    $cKey = "cache.{$request->virtual}.{$request->module}.{$request->controller}.{$request->action}";
                 }
+                if ($cacheSet = $configure->get($cKey)) $request->set('_cache_set', $cacheSet);
             }
 
             //路由器对视图的定义

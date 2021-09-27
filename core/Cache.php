@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use function esp\helper\mk_dir;
+use function esp\helper\root;
+
 /**
  * 页面HTML缓存
  * Class Cache
@@ -13,13 +16,20 @@ final class Cache
     private $request;
     private $response;
     private $redis;
+    private $path;
 
     public function __construct(Dispatcher $dispatcher, array &$option)
     {
         $this->request = &$dispatcher->_request;
         $this->response = &$dispatcher->_response;
-        $this->redis = &$dispatcher->_config->_Redis;
+        $option += ['medium' => 'file', 'path' => _RUNTIME . '/cache'];
         $this->_option = &$option;
+
+        if ($this->_option['medium'] === 'file') {
+            $this->path = root($option['path']);
+            if (!file_exists($this->path)) mk_dir($this->path . '/');
+        } else if ($this->_option['medium'] === 'redis') $this->redis = &$dispatcher->_config->_Redis;
+
     }
 
     /**
@@ -31,17 +41,21 @@ final class Cache
     }
 
     /**
-     * 读取并显示     * 仅由Dispatcher.run()调用
+     * 读取并显示   仅由Dispatcher.run()调用
      * @return bool
      */
     public function Display()
     {
         if (_CLI or !($this->_option['run'] ?? 0) or ($this->_option['ttl'] ?? 0) < 1) goto no_cache;
         if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) goto no_cache;
+        //不显示缓存
+        if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) goto no_cache;
 
         //_cache_set是路由的设置，有可能是T/F，或需要组成KEY的数组
         $_cache_set = $this->request->get('_cache_set');
+        if (is_null($_cache_set)) $_cache_set = true;
         if (!$_cache_set) goto no_cache;
+
         //生成key
         $key = $this->build_cache_key($_cache_set);
         if (!$key) goto no_cache;
@@ -49,17 +63,64 @@ final class Cache
 
         //读取
         $this->request->set('_cache_key', $key);
-        $array = $this->redis->get($key);
+        if (isset($_GET['_cache_refresh'])) goto no_cache;
+
+        $array = $this->cache_read($key);
         if (!$array) goto no_cache;
 
-        header("Content-type: {$array['type']}", true);
-        $this->setHeader('ttl=' . $this->redis->ttl($key));
+        header("Content-type: {$array['type']}; charset=UTF-8", true);
+        $this->setHeader("ttl=" . ($array['expire'] - time()));
         echo($array['html']);
         return true;
 
         no_cache:
         $this->disable_header('disable');
         return false;
+    }
+
+    private function cache_read(string $key)
+    {
+        if ($this->_option['medium'] === 'file') {
+            if (!is_readable("{$this->path}/{$key}.php")) return null;
+            $json = include("{$this->path}/{$key}.php");
+            if (!$json) return null;
+            return $json;
+        } else {
+            return $this->redis->get($key);
+        }
+    }
+
+    private function cache_save(string $key, array $array, int $ttl)
+    {
+        if ($this->_option['medium'] === 'file') {
+            $crtTime = date('Y-m-d H:i:s');
+            $php = "<?php
+if({$array['expire']} < time()) return null;
+return array(
+    'create' => '{$crtTime}',
+    'expire' => '{$array['expire']}',
+    'ttl' => '{$this->_option['ttl']}',
+    'type' => '{$array['type']}',
+    'html' => '{$array['html']}'
+);";
+            return file_put_contents("{$this->path}/{$key}.php", $php);
+        } else {
+            return $this->redis->set($key, $array, $ttl);
+        }
+    }
+
+    /**
+     * 删除
+     * @param $key
+     * @return bool|int
+     */
+    public function Delete($key)
+    {
+        if ($this->_option['medium'] === 'file') {
+            return unlink("{$this->path}/{$key}");
+        } else {
+            return $this->redis->del($key);
+        }
     }
 
     /**
@@ -69,14 +130,17 @@ final class Cache
     public function Save()
     {
         if (_CLI or !($this->_option['run'] ?? 0) or ($this->_option['ttl'] ?? 0) < 1) return;
-        if (defined('_CACHE_DISABLE') and !!_CACHE_DISABLE) return;
-        if ($this->htmlSave()) return;
+        if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) return;
+//        if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) goto no_cache;
+
+        $value = $this->response->render();
+        if (!$value) return;
+
+        if ($this->htmlSave($value)) return;
 
         //这里的_cache_key是前面Display()生成的
         $key = $this->request->get('_cache_key');
-        if (empty($key)) return;
-        $value = $this->response->render();
-        if (!$value) return;
+        if (!$key) return;
 
         //连续两个以上空格变成一个
         if ($this->_option['space'] ?? 0) $value = preg_replace(['/\x20{2,}/'], ' ', $value);
@@ -92,26 +156,17 @@ final class Cache
 
         $array = [];
         $array['html'] = $value;
-        $array['type'] = $this->response->getType();
+        $array['type'] = $this->response->_Content_Type;
         $array['expire'] = (time() + $this->_option['ttl']);
-        $this->redis->set($key, $array, $this->_option['ttl']);
-    }
 
-    /**
-     * 删除
-     * @param $key
-     * @return bool|int
-     */
-    public function Delete($key)
-    {
-        return $this->redis->del($key);
+        $this->cache_save($key, $array, $this->_option['ttl']);
     }
 
     /**
      * 保存静态HTML
      * @return bool
      */
-    private function htmlSave()
+    private function htmlSave(string $html)
     {
         if ($this->request->get('_disable_static')) return false;
         $pattern = $this->_option['static'] ?? null;
@@ -124,7 +179,6 @@ final class Cache
             }
         }
         if (is_null($filename)) return false;
-        $html = $this->response->render();
         $save = \esp\helper\save_file($filename, $html);
         if ($save !== strlen($html)) {
             @unlink($filename);
@@ -187,6 +241,7 @@ final class Cache
         header('Cache-Control: no-cache, must-revalidate, no-store', true);
         header('Pragma: no-cache', true);
         header('Cache-Info: no cache', true);
+        header(':esp Cache: 无缓存', true);
         if ($label) header('CacheLabel: ' . $label);
     }
 

@@ -841,7 +841,7 @@ abstract class Model extends Library
         if (is_array($dbConfig)) $dbConfig = $dbConfig['config'] ?? 1;
 
         $conf = $_conf + $conf + ['db' => 0];
-        if (is_array($conf['db'])) $conf['db'] = $conf['db']['cache'] ?? 0;
+        if (is_array($conf['db'])) $conf['db'] = $conf['db']['model'] ?? 0;
 
         if ($conf['db'] === 0 or $conf['db'] === $dbConfig) return $this->_config->Redis();
 

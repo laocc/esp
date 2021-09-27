@@ -7,7 +7,6 @@ use esp\error\EspError;
 use esp\face\Adapter;
 use esp\library\ext\Xml;
 use function esp\helper\displayState;
-use function esp\helper\root;
 
 final class Response
 {
@@ -249,10 +248,14 @@ final class Response
     /**
      * 重新指定视图目录
      *
+     * 若以@开头，为系统的绝对目录，注意是否有权限读取
      * 若以/开头，为相对于_ROOT的目录
+     *
      * 其他均是指相对于/application/www的目录，
      * 如默认为    /application/www/views
      * 改为       /application/www/PATH
+     *
+     * 固定配置目录，可以在response.ini中定义：views = {_ROOT}/template/default
      *
      * @param string|null $path
      * @return $this
@@ -261,8 +264,11 @@ final class Response
     {
         $vmp = $this->_request->virtual;
         if ($this->_request->module) $vmp = "{$vmp}/{$this->_request->module}";
-        if (substr($path, 0, 1) === '/') {
+        $d = substr($path, 0, 1);
+        if ($d === '/') {
             $this->_view_set['view_path'] = _ROOT . $path;
+        } else if ($d === '@') {
+            $this->_view_set['view_path'] = $path;
         } else {
             $this->_view_set['view_path'] = "{$this->_request->directory}/{$vmp}/{$path}";
         }
