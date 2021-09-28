@@ -16,18 +16,18 @@ final class Cache
     private $request;
     private $response;
     private $redis;
-    private $path;
+    private $cache_path;
 
     public function __construct(Dispatcher $dispatcher, array &$option)
     {
         $this->request = &$dispatcher->_request;
         $this->response = &$dispatcher->_response;
-        $option += ['medium' => 'file', 'path' => _RUNTIME . '/cache'];
+        $option += ['medium' => 'file', 'cache_path' => _RUNTIME . '/cache'];
         $this->_option = &$option;
 
         if ($this->_option['medium'] === 'file') {
-            $this->path = root($option['path']);
-            if (!file_exists($this->path)) mk_dir($this->path . '/');
+            $this->cache_path = root($option['cache_path']);
+            if (!file_exists($this->cache_path)) mk_dir($this->cache_path . '/');
         } else if ($this->_option['medium'] === 'redis') $this->redis = &$dispatcher->_config->_Redis;
 
     }
@@ -48,6 +48,7 @@ final class Cache
     {
         if (_CLI or !($this->_option['run'] ?? 0) or ($this->_option['ttl'] ?? 0) < 1) goto no_cache;
         if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) goto no_cache;
+
         //不显示缓存
         if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) goto no_cache;
 
@@ -81,8 +82,8 @@ final class Cache
     private function cache_read(string $key)
     {
         if ($this->_option['medium'] === 'file') {
-            if (!is_readable("{$this->path}/{$key}.php")) return null;
-            $json = include("{$this->path}/{$key}.php");
+            if (!is_readable("{$this->cache_path}/{$key}.php")) return null;
+            $json = include("{$this->cache_path}/{$key}.php");
             if (!$json) return null;
             return $json;
         } else {
@@ -103,7 +104,7 @@ return array(
     'type' => '{$array['type']}',
     'html' => '{$array['html']}'
 );";
-            return file_put_contents("{$this->path}/{$key}.php", $php);
+            return file_put_contents("{$this->cache_path}/{$key}.php", $php);
         } else {
             return $this->redis->set($key, $array, $ttl);
         }
@@ -117,30 +118,17 @@ return array(
     public function Delete($key)
     {
         if ($this->_option['medium'] === 'file') {
-            return unlink("{$this->path}/{$key}");
+            return unlink("{$this->cache_path}/{$key}");
         } else {
             return $this->redis->del($key);
         }
     }
 
-    /**
-     * 保存
-     * 仅由Dispatcher.run()调用
-     */
-    public function Save()
+    public function Save(string $value)
     {
-        if (_CLI or !($this->_option['run'] ?? 0) or ($this->_option['ttl'] ?? 0) < 1) return;
+        if (!($this->_option['run'] ?? 0) or ($this->_option['ttl'] ?? 0) < 1) return;
         if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) return;
 //        if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) goto no_cache;
-
-        $value = $this->response->render();
-        if (!$value) return;
-
-        if ($this->htmlSave($value)) return;
-
-        //这里的_cache_key是前面Display()生成的
-        $key = $this->request->get('_cache_key');
-        if (!$key) return;
 
         //连续两个以上空格变成一个
         if ($this->_option['space'] ?? 0) $value = preg_replace(['/\x20{2,}/'], ' ', $value);
@@ -154,6 +142,12 @@ return array(
         //全部HTML归为一行
         if ($this->_option['zip'] ?? 0) $value = preg_replace(['/\s\/\/.+/', '/[\n\t\r]/s'], '', $value);
 
+        if ($this->htmlSave($value)) return;
+
+        //这里的`_cache_key`是前面Display()生成的
+        $key = $this->request->get('_cache_key');
+        if (!$key) return;
+
         $array = [];
         $array['html'] = $value;
         $array['type'] = $this->response->_Content_Type;
@@ -164,6 +158,8 @@ return array(
 
     /**
      * 保存静态HTML
+     *
+     * @param string $html
      * @return bool
      */
     private function htmlSave(string $html)
@@ -174,16 +170,23 @@ return array(
         $filename = null;
         foreach ($pattern as &$ptn) {
             if (preg_match($ptn, _URI)) {
-                $filename = dirname(getenv('SCRIPT_FILENAME')) . getenv('REQUEST_URI');
+                $filename = getenv('REQUEST_URI');
                 break;
             }
         }
         if (is_null($filename)) return false;
-        $save = \esp\helper\save_file($filename, $html);
+
+        $path = rtrim($this->_option['static_path'] ?? dirname(getenv('SCRIPT_FILENAME')), '/');
+        mk_dir($path . $filename, 0740);
+        $tag = 'cache saved ' . date('Y-m-d H:i:s');
+        str_replace('</html>', "<!-- {$tag} -->\n</html>", $html);
+        $save = file_put_contents($path . $filename, $html, LOCK_EX);
+
         if ($save !== strlen($html)) {
             @unlink($filename);
             return false;
         }
+
         return true;
     }
 

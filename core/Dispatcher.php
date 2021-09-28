@@ -241,18 +241,13 @@ final class Dispatcher
 
     /**
      * 执行HOOK
-     * @param string $time
+     * @param string $time 'router', 'dispatch', 'display', 'finish', 'shutdown'
      * @param null $runValue dispatchAfter之后才有该值，此值在hook中可以被修改
      * @return mixed|null
      */
     private function plugsHook(string $time, &$runValue = null)
     {
         if (empty($this->_plugs)) return null;
-
-        if (!in_array($time, ['routeBefore', 'routeAfter', 'dispatchBefore',
-            'dispatchAfter', 'displayBefore', 'displayAfter', 'mainEnd'])) {
-            return null;
-        }
 
         foreach ($this->_plugs as $plug) {
             if (method_exists($plug, $time) and is_callable([$plug, $time])) {
@@ -271,12 +266,12 @@ final class Dispatcher
      */
     public function run(callable $callable = null): void
     {
-        $showDebug = isset($_GET['_debug']);
+        $showDebug = boolval($_GET['_debug'] ?? 0);
         if ($this->run === false) goto end;
         if ($callable and call_user_func($callable)) goto end;
         if (_CLI) throw new EspError("cli环境中请直接调用\$this->simple()方法");
 
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('routeBefore'))) {
+        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('router'))) {
             $this->_response->display($hook);
             goto end;
         }
@@ -294,11 +289,6 @@ final class Dispatcher
             'params' => $this->_request->params,
         ]);
 
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('routeAfter'))) {
-            $this->_response->display($hook);
-            goto end;
-        }
-
         if (!is_null($this->_cache)) {
             if ($this->_cache->Display()) {
                 fastcgi_finish_request();//运行结束，客户端断开
@@ -307,7 +297,7 @@ final class Dispatcher
             }
         }
 
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('dispatchBefore'))) {
+        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('dispatch'))) {
             $this->_response->display($hook);
             goto end;
         }
@@ -318,35 +308,28 @@ final class Dispatcher
         //控制器、并发计数
         if ($this->_counter) $this->_counter->recodeCounter();
 
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('dispatchAfter', $value))) {
+        //若启用了session，立即保存并结束session
+        if ($this->_session) session_write_close();
+
+        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('display', $value))) {
             $this->_response->display($hook);
             goto end;
-        }
-
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('displayBefore', $value))) {
-            $this->_response->display($hook);
-            goto end;
-        }
-
-        if (!is_null($this->_session)) {
-            if ($this->_session->debug) {
-                $this->relayDebug(['_SESSION' => $_SESSION, 'Update' => var_export($this->_session->update, true)]);
-            }
-            session_write_close();//立即保存并结束
         }
 
         $this->_response->display($value);
 
-        $this->_plugs_count and $hook = $this->plugsHook('displayAfter', $value);
+        $this->_plugs_count and $hook = $this->plugsHook('finish', $value);
 
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
         $this->relayDebug("[blue;客户端已断开 =============================]");
 
-        if (!is_null($this->_cache)) $this->_cache->Save();
+        if (!is_null($this->_cache) and !is_null($value) and !_CLI) {
+            $this->_cache->Save($value);
+        }
 
         end:
-        $this->_plugs_count and $hook = $this->plugsHook('mainEnd');
+        $this->_plugs_count and $hook = $this->plugsHook('shutdown');
 
         if (is_null($this->_debug)) return;
 
@@ -367,13 +350,13 @@ final class Dispatcher
     }
 
     /**
-     * 不运行plugs，不执行缓存，不执行session保存
+     * 不运行plugs，不执行缓存
      *
      * @throws EspError
      */
     public function simple(): void
     {
-        $showDebug = isset($_GET['_debug']);
+        $showDebug = boolval($_GET['_debug'] ?? 0);
         if ($this->run === false) goto end;
 
         $route = (new Router())->run($this->_config, $this->_request);
@@ -400,6 +383,9 @@ final class Dispatcher
 
         //控制器、并发计数
         if ($this->_counter) $this->_counter->recodeCounter();
+
+        //若启用了session，立即保存并结束session
+        if ($this->_session) session_write_close();
 
         $this->_response->display($value);
 
