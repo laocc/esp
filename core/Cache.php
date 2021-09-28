@@ -130,17 +130,19 @@ return array(
         if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) return;
 //        if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) goto no_cache;
 
+        $compress = intval($this->_option['compress'] ?? 0);
+
         //连续两个以上空格变成一个
-        if ($this->_option['space'] ?? 0) $value = preg_replace(['/\x20{2,}/'], ' ', $value);
+        if ($compress & 2) $value = preg_replace(['/\x20{2,}/'], ' ', $value);
 
         //删除:所有HTML注释
-        if ($this->_option['notes'] ?? 0) $value = preg_replace(['/\<\!--.*?--\>/'], '', $value);
+        if ($compress & 4) $value = preg_replace(['/\<\!--.*?--\>/'], '', $value);
 
         //删除:HTML之间的空格
-        if ($this->_option['tags'] ?? 0) $value = preg_replace(['/\>([\s\x20])+\</'], '><', $value);
+        if ($compress & 8) $value = preg_replace(['/\>([\s\x20])+\</'], '><', $value);
 
         //全部HTML归为一行
-        if ($this->_option['zip'] ?? 0) $value = preg_replace(['/\s\/\/.+/', '/[\n\t\r]/s'], '', $value);
+        if ($compress & 1) $value = preg_replace(['/\s\/\/.+/', '/[\n\t\r]/s'], '', $value);
 
         if ($this->htmlSave($value)) return;
 
