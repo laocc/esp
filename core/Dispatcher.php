@@ -323,10 +323,7 @@ final class Dispatcher
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
         $this->relayDebug("[blue;客户端已断开 =============================]");
-
-        if (!is_null($this->_cache) and !is_null($value) and !_CLI) {
-            $this->_cache->Save($value);
-        }
+        if (!is_null($this->_cache) and !_CLI) $this->_cache->Save();
 
         end:
         $this->_plugs_count and $hook = $this->plugsHook('shutdown');

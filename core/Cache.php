@@ -124,11 +124,14 @@ return array(
         }
     }
 
-    public function Save(string $value)
+    public function Save()
     {
         if (!($this->_option['run'] ?? 0) or ($this->_option['ttl'] ?? 0) < 1) return;
         if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) return;
-//        if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) goto no_cache;
+        if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) return;
+
+        $value = $this->response->_display_Result;
+        if (!$value) return;
 
         $compress = intval($this->_option['compress'] ?? 0);
 
@@ -143,6 +146,9 @@ return array(
 
         //全部HTML归为一行
         if ($compress & 1) $value = preg_replace(['/\s\/\/.+/', '/[\n\t\r]/s'], '', $value);
+
+        $tag = 'cache saved ' . date('Y-m-d H:i:s');
+        $value = str_replace('</html>', "<!-- {$tag} -->\n</html>", $value);
 
         if ($this->htmlSave($value)) return;
 
@@ -180,8 +186,6 @@ return array(
 
         $path = rtrim($this->_option['static_path'] ?? dirname(getenv('SCRIPT_FILENAME')), '/');
         mk_dir($path . $filename, 0740);
-        $tag = 'cache saved ' . date('Y-m-d H:i:s');
-        str_replace('</html>', "<!-- {$tag} -->\n</html>", $html);
         $save = file_put_contents($path . $filename, $html, LOCK_EX);
 
         if ($save !== strlen($html)) {
