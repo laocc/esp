@@ -68,7 +68,13 @@ final class Router
             //分别获取各个指定参数
             $params = array();
             if (isset($route['map'])) {
-                foreach ($route['map'] as $mi => $mk) $params[$mi] = $matcher[$mk] ?? null;
+                foreach ($route['map'] as $mi => $mk) {
+                    if (is_int($mk)) {
+                        $params[$mi] = $matcher[$mk] ?? null;
+                    } else {
+                        $params[$mi] = $mk;
+                    }
+                }
             } else {
                 $params = $param;
             }
@@ -80,18 +86,6 @@ final class Router
             $request->params = $params + array_fill(0, 10, null);
             if (isset($route['static'])) {
                 $request->set('_disable_static', !$route['static']);
-            }
-
-            //缓存设置，结果可能为：true/false，或array(参与cache的$_GET参数)
-            //将结果放入request，供Cache类读取
-            if (isset($route['cache'])) {
-                $request->set('_cache_set', $route['cache']);
-            } else {
-                $cKey = "cache.{$request->virtual}.{$request->controller}.{$request->action}";
-                if ($request->module) {
-                    $cKey = "cache.{$request->virtual}.{$request->module}.{$request->controller}.{$request->action}";
-                }
-                if ($cacheSet = $configure->get($cKey)) $request->set('_cache_set', $cacheSet);
             }
 
             //路由器对视图的定义
@@ -213,41 +207,29 @@ final class Router
      * 访问请求类型判断
      *
      * $mode格式 ：
-     * ALL,HTTP,AJAX,CLI，这四项只能选一个，且必须是第一项
+     * ALL,HTTP,AJAX,CLI，这四项只能选一个
      * ALL  =   仅指get,post,cli这三种模式
      * HTTP/AJAX两项后可以跟具体的method类型，如：HTTP,GET,POST
-     * CLI  =   只能单独出现
      *
      * @param string $mode 路由中指定的类型
      * @param string $method 当前请求的实际类型，get,post,put,head,delete之一
      * @param bool $ajax
      * @return bool
      */
-    private function method_check(string $mode, string $method, bool $ajax): bool
+    private function method_check($mode, string $method, bool $ajax): bool
     {
         if (!$mode) return true;
-        list($mode, $method) = [strtoupper($mode), strtoupper($method)];
-        if ($mode === $method) return true;//正好相同
-        $modes = explode(',', $mode);
+        $method = strtoupper($method);
+        if (is_string($mode)) $mode = explode(',', $mode);
 
-        if ($modes[0] === 'ALL') {
-            if (count($modes) === 1) $modes = ['GET', 'POST'];
-            $check = in_array($method, $modes) or _CLI;
+        $modes = array_map(function ($md) {
+            return strtoupper($md);
+        }, $mode);
 
-        } elseif ($modes[0] === 'HTTP') {//限HTTP时，只能GET或POST，且不能是ajax
-            if (count($modes) === 1) $modes = ['GET', 'POST'];
-            $check = !$ajax and in_array($method, $modes);
+        if (in_array('ALL', $modes)) array_push($modes, 'GET', 'POST', 'CLI');
+        if (!$ajax && in_array('HTTP', $modes)) array_push($modes, 'GET', 'POST');
+        if ($ajax && in_array('AJAX', $modes)) array_push($modes, 'GET', 'POST');
 
-        } elseif ($modes[0] === 'AJAX') {//限AJAX时，只能GET或POST
-            if (count($modes) === 1) $modes = ['GET', 'POST'];
-            $check = $ajax and in_array($method, $modes);
-
-        } elseif ($modes[0] === 'CLI') {//限CLI
-            $check = _CLI;
-
-        } else {
-            $check = in_array($method, $modes);
-        }
-        return $check;
+        return (in_array($method, $modes));
     }
 }

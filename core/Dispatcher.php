@@ -280,6 +280,7 @@ final class Dispatcher
         if (is_string($route)) exit($route);
 
         $this->_debug->setRouter([
+            'label' => $this->_request->router,
             'virtual' => $this->_request->virtual,
             'method' => $this->_request->getMethod(),
             'module' => $this->_request->module,
@@ -361,6 +362,7 @@ final class Dispatcher
 
         if (!_CLI) {
             $this->_debug->setRouter([
+                'label' => $this->_request->router,
                 'virtual' => $this->_request->virtual,
                 'method' => $this->_request->getMethod(),
                 'module' => $this->_request->module,

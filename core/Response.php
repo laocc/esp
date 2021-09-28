@@ -329,7 +329,11 @@ final class Response
     {
         if (!is_null($this->layoutObj)) return $this->layoutObj;
         $this->_view_set['layout_use'] = true;
-        return $this->layoutObj = new View($this->getViewPath(), $this->_view_set['layout_file'], $this->_view_set['file_ext']);
+        $layout = $this->_view_set['layout_file'];
+        if ($route = $this->_request->route_view) {
+            if (isset($route['layout']) and $route['layout']) $layout = $route['layout'];
+        }
+        return $this->layoutObj = new View($this->getViewPath(), $layout, $this->_view_set['file_ext']);
     }
 
     public function setLayout($value): Response
