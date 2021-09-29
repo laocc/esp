@@ -21,7 +21,7 @@ final class Cache
 
     public function __construct(Dispatcher $dispatcher, array &$option)
     {
-        $r = $this->request = &$dispatcher->_request;
+        $this->request = &$dispatcher->_request;
         $this->response = &$dispatcher->_response;
         $option += ['medium' => 'file', 'cache_path' => _RUNTIME . '/cache', 'ttl' => 0];
         $this->_option = &$option;
@@ -30,22 +30,6 @@ final class Cache
             $this->cache_path = root($option['cache_path']);
             if (!file_exists($this->cache_path)) mk_dir($this->cache_path . '/');
         } else if ($option['medium'] === 'redis') $this->redis = &$dispatcher->_config->_Redis;
-
-
-        if (isset($option[$r->controller][$r->action])) {
-            $act = $option[$r->controller][$r->action];
-            if (is_bool($act) or $act === 0) $this->_option['run'] = boolval($act);
-            else if (is_numeric($act)) $this->_option['ttl'] = abs(intval($act));
-        }
-
-        $bud = array();
-        if (!empty($_GET) and is_array($option['params'] ?? null)) {
-            //合并需要请求的值，并反转数组，最后获取与$_GET的交集
-            $bud = array_intersect_key($_GET, array_flip($option['params']));
-        }
-
-        $cKey = "{$r->virtual}.{$r->module}.{$r->controller}.{$r->action}";
-        $this->cache_key = md5($cKey . json_encode($r->params, 320) . json_encode($bud, 320));
 
     }
 
@@ -63,11 +47,25 @@ final class Cache
      */
     public function Display()
     {
+        $r = $this->request;
+        if (isset($this->_option[$r->controller][$r->action])) {
+            $act = $this->_option[$r->controller][$r->action];
+            if (is_bool($act) or $act === 0) $this->_option['run'] = boolval($act);
+            else if (is_numeric($act)) $this->_option['ttl'] = abs(intval($act));
+        }
         if (_CLI or !($this->_option['run'] ?? 0) or ($this->_option['ttl']) < 1) goto no_cache;
         if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) goto no_cache;
 
         //不显示缓存
         if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) goto no_cache;
+
+        $bud = array();
+        if (!empty($_GET) and is_array($this->_option['params'] ?? null)) {
+            //合并需要请求的值，并反转数组，最后获取与$_GET的交集
+            $bud = array_intersect_key($_GET, array_flip($this->_option['params']));
+        }
+        $cKey = "{$r->virtual}.{$r->module}.{$r->controller}.{$r->action}";
+        $this->cache_key = md5($cKey . json_encode($r->params, 320) . json_encode($bud, 320));
 
         $array = $this->cache_read();
         if (!$array) goto no_cache;
@@ -110,9 +108,12 @@ final class Cache
         if ($compress & 1) $value = preg_replace("/\s*\n/s", "\n", $value);
 
         $tag = date('Y-m-d H:i:s');
-        $value = str_replace('</html>', "<!-- cache saved `{$tag}`; by laocc/esp Cache -->\n</html>", $value);
+        $value = str_replace('</html>', "<!-- \ncache saved `{$tag}`; by laocc/esp Cache\n-->\n</html>", $value);
 
-        if ($this->htmlSave($value)) return;
+        //_disable_static是控制器在运行中$this->cache(false);临时设置的值
+        if (!$this->request->get('_disable_static') and isset($this->_option['static'])) {
+            if ($this->htmlSave($value)) return;
+        }
 
         $array = [];
         $array['type'] = $this->response->_Content_Type;
@@ -126,8 +127,8 @@ final class Cache
     private function cache_read()
     {
         if ($this->_option['medium'] === 'file') {
-            if (!is_readable("{$this->cache_path}/{$this->cache_key}.php")) return null;
-            $json = @include("{$this->cache_path}/{$this->cache_key}.php");
+            if (!is_readable($pFile = "{$this->cache_path}/{$this->cache_key}.php")) return null;
+            $json = include $pFile;
             if (!$json) return null;
             return $json;
         } else {
@@ -139,6 +140,7 @@ final class Cache
     {
         $array['create'] = time();
         if ($this->_option['medium'] === 'file') {
+            $url = _URL;
             $php = "<?php
 if ({$array['expire']} < time()) return null;
 \$html = <<<HTML\n{$array['html']}\nHTML;
@@ -148,6 +150,7 @@ return array(
     'expire' => {$array['expire']},
     'ttl' => {$this->_option['ttl']},
     'type' => '{$array['type']}',
+    'url' => '{$url}',
     'html' => &\$html
 );\n";
             return file_put_contents("{$this->cache_path}/{$this->cache_key}.php", $php);
@@ -178,26 +181,21 @@ return array(
      */
     private function htmlSave(string $html)
     {
-        //_disable_static是控制器在运行中$this->cache(false);临时设置的值
-        if ($this->request->get('_disable_static')) return false;
-
-        $pattern = $this->_option['static'] ?? null;
-        if (empty($pattern) or !$pattern) return false;
-        $filename = null;
-        foreach ($pattern as &$ptn) {
+        $hitPtn = false;
+        foreach ($this->_option['static'] as $ptn) {
             if (preg_match($ptn, _URI)) {
-                $filename = getenv('REQUEST_URI');
+                $hitPtn = true;
                 break;
             }
         }
-        if (is_null($filename)) return false;
+        if (!$hitPtn) return false;
 
         $path = rtrim($this->_option['static_path'] ?? dirname(getenv('SCRIPT_FILENAME')), '/');
-        mk_dir($path . $filename, 0740);
-        $save = file_put_contents($path . $filename, $html, LOCK_EX);
+        mk_dir($path . _URI, 0740);
+        $save = file_put_contents($path . _URI, $html, LOCK_EX);
 
         if ($save !== strlen($html)) {
-            @unlink($filename);
+            @unlink($path . _URI);
             return false;
         }
 
