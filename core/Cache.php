@@ -64,9 +64,17 @@ final class Cache
             //合并需要请求的值，并反转数组，最后获取与$_GET的交集
             $bud = array_intersect_key($_GET, array_flip($this->_option['params']));
         }
-        $cKey = "{$r->virtual}.{$r->module}.{$r->controller}.{$r->action}";
-        if ($iso = intval($this->_option['isolation'] ?? 0)) $cKey .= ['', _HOST, _DOMAIN][$iso] ?? '';
-        $this->cache_key = md5($cKey . json_encode($r->params, 320) . json_encode($bud, 320));
+        $iso = intval($this->_option['isolation'] ?? 0);
+        $keyValue = [
+            'virtual' => $r->virtual,
+            'module' => $r->module,
+            'controller' => $r->controller,
+            'action' => $r->action,
+            'params' => $r->params,
+            'query' => $bud,
+            'host' => ['', _HOST, _DOMAIN][$iso] ?? '',
+        ];
+        $this->cache_key = urlencode(base64_encode(json_encode($keyValue, 320)));
 
         $array = $this->cache_read();
         if (!$array) goto no_cache;
@@ -93,23 +101,45 @@ final class Cache
 
         $compress = intval($this->_option['compress'] ?? 0);
 
+        $replace = ['pnt' => [], 'to' => []];
+
         //连续两个以上空格变成一个
-        if ($compress & 2) $value = preg_replace(['/\x20{2,}/'], ' ', $value);
+        if ($compress & 2) {
+            $replace['pnt'][] = '/\x20{2,}/';
+            $replace['to'][] = ' ';
+        }
 
         //删除:所有HTML注释
-        if ($compress & 4) $value = preg_replace(['/\<\!--.*?--\>/'], '', $value);
+        if ($compress & 4) {
+            $replace['pnt'][] = '/\<\!--.*?--\>/';
+            $replace['to'][] = '';
+        }
 
         //删除:HTML之间的空格
-        if ($compress & 8) $value = preg_replace(['/\>([\s\x20])+\</'], '><', $value);
+        if ($compress & 8) {
+            $replace['pnt'][] = '/\>([\s\x20])+\</';
+            $replace['to'][] = '><';
+        }
 
         //全部HTML归为一行
-        if ($compress & 16) $value = preg_replace(['/\s\/\/.+/', '/[\n\t\r]/s'], '', $value);
+        if ($compress & 16) {
+            $replace['pnt'][] = '/\s\/\/.+/';
+            $replace['pnt'][] = '/[\n\t\r]/s';
+            $replace['to'][] = '';
+            $replace['to'][] = '';
+        }
 
         //删除空行
-        if ($compress & 1) $value = preg_replace("/\s*\n/s", "\n", $value);
+        if ($compress & 1) {
+            $replace['pnt'][] = '/\s*\n/s';
+            $replace['to'][] = "\n";
+        }
+
+        if (!empty($replace['pnt'])) $value = preg_replace($replace['pnt'], $replace['to'], $value);
 
         $tag = date('Y-m-d H:i:s');
-        $value = str_replace('</html>', "<!-- \ncache saved `{$tag}`; by laocc/esp Cache\n-->\n</html>", $value);
+        $value = str_replace(['</html>', '{CACHE_KEY}', '{CACHE_TIME}'],
+            ["<!-- \ncache saved `{$tag}`; by laocc/esp Cache\n-->\n</html>", $this->cache_key, time()], $value);
 
         //_disable_static是控制器在运行中$this->cache(false);临时设置的值
         if (!$this->request->get('_disable_static') and isset($this->_option['static'])) {
@@ -127,18 +157,20 @@ final class Cache
 
     private function cache_read()
     {
+        $key = md5($this->cache_key);
         if ($this->_option['medium'] === 'file') {
-            if (!is_readable($pFile = "{$this->cache_path}/{$this->cache_key}.php")) return null;
+            if (!is_readable($pFile = "{$this->cache_path}/{$key}.php")) return null;
             $json = include $pFile;
             if (!$json) return null;
             return $json;
         } else {
-            return $this->redis->get($this->cache_key);
+            return $this->redis->get($key);
         }
     }
 
     private function cache_save(array $array)
     {
+        $key = md5($this->cache_key);
         $array['create'] = time();
         if ($this->_option['medium'] === 'file') {
             $url = _URL;
@@ -154,9 +186,9 @@ return array(
     'url' => '{$url}',
     'html' => &\$html
 );\n";
-            return file_put_contents("{$this->cache_path}/{$this->cache_key}.php", $php);
+            return file_put_contents("{$this->cache_path}/{$key}.php", $php);
         } else {
-            return $this->redis->set($this->cache_key, $array, $this->_option['ttl']);
+            return $this->redis->set($key, $array, $this->_option['ttl']);
         }
     }
 
