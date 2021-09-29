@@ -23,7 +23,7 @@ final class Cache
     {
         $this->request = &$dispatcher->_request;
         $this->response = &$dispatcher->_response;
-        $option += ['medium' => 'file', 'path' => ['cache' => _RUNTIME] . '/cache', 'ttl' => 0];
+        $option += ['medium' => 'file', 'path' => ['cache' => _RUNTIME], 'ttl' => 0];
         $this->_option = &$option;
 
         if ($option['medium'] === 'file') {
