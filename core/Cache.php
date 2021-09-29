@@ -23,11 +23,11 @@ final class Cache
     {
         $this->request = &$dispatcher->_request;
         $this->response = &$dispatcher->_response;
-        $option += ['medium' => 'file', 'cache_path' => _RUNTIME . '/cache', 'ttl' => 0];
+        $option += ['medium' => 'file', 'path' => ['cache' => _RUNTIME] . '/cache', 'ttl' => 0];
         $this->_option = &$option;
 
         if ($option['medium'] === 'file') {
-            $this->cache_path = root($option['cache_path']);
+            $this->cache_path = root($option['path']['cache']);
             if (!file_exists($this->cache_path)) mk_dir($this->cache_path . '/');
         } else if ($option['medium'] === 'redis') $this->redis = &$dispatcher->_config->_Redis;
 
@@ -65,6 +65,7 @@ final class Cache
             $bud = array_intersect_key($_GET, array_flip($this->_option['params']));
         }
         $cKey = "{$r->virtual}.{$r->module}.{$r->controller}.{$r->action}";
+        if ($iso = intval($this->_option['isolation'] ?? 0)) $cKey .= ['', _HOST, _DOMAIN][$iso] ?? '';
         $this->cache_key = md5($cKey . json_encode($r->params, 320) . json_encode($bud, 320));
 
         $array = $this->cache_read();
@@ -190,7 +191,7 @@ return array(
         }
         if (!$hitPtn) return false;
 
-        $path = rtrim($this->_option['static_path'] ?? dirname(getenv('SCRIPT_FILENAME')), '/');
+        $path = rtrim($this->_option['path']['static'] ?? dirname(getenv('SCRIPT_FILENAME')), '/');
         mk_dir($path . _URI, 0740);
         $save = file_put_contents($path . _URI, $html, LOCK_EX);
 
