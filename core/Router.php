@@ -84,6 +84,8 @@ final class Router
             $request->controller = $controller ?: 'index';
             $request->action = $action ?: 'index';
             $request->params = $params + array_fill(0, 10, null);
+            if (!defined('_MODULE')) define('_MODULE', $request->module);
+
             if (isset($route['static'])) {
                 $request->set('_disable_static', !$route['static']);
             }
