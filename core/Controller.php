@@ -261,6 +261,11 @@ abstract class Controller
         return isset($this->_plugs[$name]) ? $this->_plugs[$name] : null;
     }
 
+    final protected function getCache(): Cache
+    {
+        return $this->_dispatcher->_cache;
+    }
+
 
     /**
      * @param string $data

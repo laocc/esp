@@ -23,14 +23,10 @@ final class Cache
     {
         $this->request = &$dispatcher->_request;
         $this->response = &$dispatcher->_response;
-        $option += ['medium' => 'file', 'path' => ['cache' => _RUNTIME], 'ttl' => 0];
+        $option += ['medium' => 'file', 'path' => ['cache' => _RUNTIME], 'ttl' => -1];
         $this->_option = &$option;
 
-        if ($option['medium'] === 'file') {
-            $this->cache_path = root($option['path']['cache']);
-            if (!file_exists($this->cache_path)) mk_dir($this->cache_path . '/');
-        } else if ($option['medium'] === 'redis') $this->redis = &$dispatcher->_config->_Redis;
-
+        if ($option['medium'] === 'redis') $this->redis = &$dispatcher->_config->_Redis;
     }
 
     /**
@@ -51,9 +47,9 @@ final class Cache
         if (isset($this->_option[$r->controller][$r->action])) {
             $act = $this->_option[$r->controller][$r->action];
             if (is_bool($act) or $act === 0) $this->_option['run'] = boolval($act);
-            else if (is_numeric($act)) $this->_option['ttl'] = abs(intval($act));
+            else if (is_numeric($act)) $this->_option['ttl'] = intval($act);
         }
-        if (_CLI or !($this->_option['run'] ?? 0) or ($this->_option['ttl']) < 1) goto no_cache;
+        if (_CLI or !($this->_option['run'] ?? 0) or ($this->_option['ttl']) < 0) goto no_cache;
         if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) goto no_cache;
 
         //不显示缓存
@@ -76,9 +72,14 @@ final class Cache
         ];
         $this->cache_key = urlencode(base64_encode(json_encode($keyValue, 320)));
 
+        //只生成，不创建，若最后需要保存文件时才检查创建
+        $uri = _URI;
+        if ($uri === '/') $uri = '/index.html';
+        $this->cache_path = rtrim(root($this->_option['path']['cache']) . $uri);
+
         $array = $this->cache_read();
         if (!$array) goto no_cache;
-        if (($array['create'] + $this->_option['ttl']) < time()) goto no_cache;
+        if ($this->_option['ttl'] > 0 and ($array['create'] + $this->_option['ttl']) < time()) goto no_cache;
 
         header("Content-type: {$array['type']}; charset=UTF-8", true);
         $this->setHeader("ttl=" . ($array['expire'] - time()));
@@ -92,12 +93,12 @@ final class Cache
 
     public function Save()
     {
-        if (!($this->_option['run'] ?? 0) or ($this->_option['ttl']) < 1) return;
+        if (!($this->_option['run'] ?? 0) or ($this->_option['ttl']) < 0) return;
         if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) return;
         if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) return;
 
         $value = $this->response->_display_Result;
-        if (!$value) return;
+        if (!$value or !preg_match('#<html.+</html>#s', $value)) return;
 
         $compress = intval($this->_option['compress'] ?? 0);
 
@@ -137,22 +138,44 @@ final class Cache
 
         if (!empty($replace['pnt'])) $value = preg_replace($replace['pnt'], $replace['to'], $value);
 
-        $tag = date('Y-m-d H:i:s');
-        $value = str_replace(['</html>', '{CACHE_KEY}', '{CACHE_TIME}'],
-            ["<!-- \ncache saved `{$tag}`; by laocc/esp Cache\n-->\n</html>", $this->cache_key, time()], $value);
+        $value = str_replace(['{CACHE_KEY}', '{CACHE_TIME}'], [$this->cache_key, time()], $value);
 
         //_disable_static是控制器在运行中$this->cache(false);临时设置的值
         if (!$this->request->get('_disable_static') and isset($this->_option['static'])) {
             if ($this->htmlSave($value)) return;
         }
 
+        if (!file_exists($this->cache_path)) mk_dir($this->cache_path . '/');
+
         $array = [];
         $array['type'] = $this->response->_Content_Type;
         $array['expire'] = (time() + $this->_option['ttl']);
+        $tag = date('Y-m-d H:i:s');
         $exp = date('Y-m-d H:i:s', $array['expire']);
-        $array['html'] = str_replace('`; by laocc/esp Cache', "`; will expire `{$exp}`; by laocc/esp Cache", $value);
+        $label = "<!--\ncache saved `{$tag}`; will expire `{$exp}`; by laocc/esp Cache\n-->";
+        $array['html'] = str_replace('</html>', "{$label}\n</html>", $value);
+        $key = md5($this->cache_key);
+        $array['create'] = time();
+        if ($this->_option['medium'] === 'file') {
+            $url = _URL;
+            $php = <<<CODE
+<?php
+if ({$array['expire']} < time()) return null;
+\$html = <<<HTML\n{$array['html']}\nHTML;
 
-        $this->cache_save($array);
+return array(
+    'create' => {$array['create']},
+    'expire' => {$array['expire']},
+    'ttl' => {$this->_option['ttl']},
+    'type' => '{$array['type']}',
+    'url' => '{$url}',
+    'html' => &\$html
+);\n
+CODE;
+            file_put_contents("{$this->cache_path}/{$key}.php", $php);
+        } else {
+            $this->redis->set($key, $array, $this->_option['ttl']);
+        }
     }
 
     private function cache_read()
@@ -168,39 +191,15 @@ final class Cache
         }
     }
 
-    private function cache_save(array $array)
-    {
-        $key = md5($this->cache_key);
-        $array['create'] = time();
-        if ($this->_option['medium'] === 'file') {
-            $url = _URL;
-            $php = "<?php
-if ({$array['expire']} < time()) return null;
-\$html = <<<HTML\n{$array['html']}\nHTML;
-
-return array(
-    'create' => {$array['create']},
-    'expire' => {$array['expire']},
-    'ttl' => {$this->_option['ttl']},
-    'type' => '{$array['type']}',
-    'url' => '{$url}',
-    'html' => &\$html
-);\n";
-            return file_put_contents("{$this->cache_path}/{$key}.php", $php);
-        } else {
-            return $this->redis->set($key, $array, $this->_option['ttl']);
-        }
-    }
-
     /**
      * 删除
      * @param $key
      * @return bool|int
      */
-    public function Delete($key)
+    public function Delete(string $path, string $key)
     {
         if ($this->_option['medium'] === 'file') {
-            return unlink("{$this->cache_path}/{$key}");
+            return unlink("{$path}/{$key}.php");
         } else {
             return $this->redis->del($key);
         }
@@ -214,21 +213,33 @@ return array(
      */
     private function htmlSave(string $html)
     {
-        $hitPtn = false;
-        foreach ($this->_option['static'] as $ptn) {
+        $filename = null;
+        foreach ($this->_option['static'] as $pntKey => $ptn) {
+            if ($pntKey === 'index') {
+                if (_URI === '/') {
+                    $filename = $ptn;
+                    break;
+                } else {
+                    continue;
+                }
+            }
             if (preg_match($ptn, _URI)) {
-                $hitPtn = true;
+                $filename = _URI;
                 break;
             }
         }
-        if (!$hitPtn) return false;
+        if (!$filename) return false;
+
+        $tag = date('Y-m-d H:i:s');
+        $label = "<!--\ncache({$pntKey}) saved `{$tag}`; by laocc/esp Cache\n-->";
+        $html = str_replace('</html>', "{$label}\n</html>", $html);
 
         $path = rtrim($this->_option['path']['static'] ?? dirname(getenv('SCRIPT_FILENAME')), '/');
-        mk_dir($path . _URI, 0740);
-        $save = file_put_contents($path . _URI, $html, LOCK_EX);
+        mk_dir($path . $filename, 0740);
+        $save = file_put_contents($path . $filename, $html, LOCK_EX);
 
         if ($save !== strlen($html)) {
-            @unlink($path . _URI);
+            @unlink($path . $filename);
             return false;
         }
 
@@ -243,16 +254,16 @@ return array(
     private function setHeader(string $label = null)
     {
         if (headers_sent()) return;
-        $expires = $this->_option['ttl'];
+        $ttl = $this->_option['ttl'];
         $time = time();
 
         //判断浏览器缓存是否过期
-        if (getenv('HTTP_IF_MODIFIED_SINCE') && (strtotime(getenv('HTTP_IF_MODIFIED_SINCE')) + $expires) > $time) {
+        if (($ms = getenv('HTTP_IF_MODIFIED_SINCE')) && (strtotime($ms) + $ttl) > $time) {
             $protocol = getenv('SERVER_PROTOCOL') ?: 'HTTP/1.1';
             header("{$protocol} 304 Not Modified", true, 304);
         } else {
-            header("Cache-Control: max-age={$expires}, public");
-            header('Expires: ' . gmdate('D, d M Y H:i:s', $time + $expires) . ' GMT');
+            header("Cache-Control: max-age={$ttl}, public");
+            header('Expires: ' . gmdate('D, d M Y H:i:s', $time + $ttl) . ' GMT');
             header('Pragma: public');
             if ($label) header("CacheLabel: {$label}");
         }
