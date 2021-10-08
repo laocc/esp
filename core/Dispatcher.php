@@ -81,10 +81,12 @@ final class Dispatcher
          */
         chdir(_ROOT);
         $request = $this->_config->get('request');
+        $request = $this->mergeConf($request);
         $this->_request = new Request($this, $request);
         if (_CLI) return;
 
         $counter = $this->_config->get('counter');
+        $counter = $this->mergeConf($counter);
         if ($counter and !$counter['run']) $counter = null;
         if (is_array($counter)) {
             $counter['_key'] = md5(_ROOT);
@@ -107,7 +109,7 @@ final class Dispatcher
         }
 
         if ($cookies = $this->_config->get('cookies')) {
-            $cokConf = $this->mergeConf($cookies, ($cookies['default'] ?? []) + ['run' => false, 'debug' => false, 'domain' => 'host']);
+            $cokConf = $this->mergeConf($cookies, ['run' => false, 'debug' => false, 'domain' => 'host']);
 
             if ($cokConf['run'] ?? false) {
                 $this->_cookies = new Cookies($cokConf);
@@ -115,10 +117,9 @@ final class Dispatcher
 
                 //若不启用Cookies，则也不启用Session
                 if ($session = ($this->_config->get('session'))) {
-                    $sseConf = $this->mergeConf($session, ($session['default'] ?? []) + ['run' => false, 'domain' => $cokConf['domain']]);
+                    $sseConf = $this->mergeConf($session, ['run' => false, 'domain' => $cokConf['domain']]);
 
                     if ($sseConf['run'] ?? false) {
-
                         $rds = $this->_config->get('database.redis');
                         $cID = $rds['db'];
                         if (is_array($cID)) $cID = $cID['config'] ?? 1;
@@ -153,13 +154,14 @@ final class Dispatcher
     /**
      * 合并设置
      *
-     * @param $allConf
-     * @param null $conf
-     * @return array|null
+     * @param array $allConf
+     * @param array $conf
+     * @return array
      */
-    private function mergeConf($allConf, $conf = null): array
+    private function mergeConf(array $allConf, array $conf = []): array
     {
-        if (is_null($conf)) $conf = $allConf['default'];
+        if (!isset($allConf['default'])) return $allConf + $conf;
+        $conf = $allConf['default'] + $conf;
 
         if (isset($allConf[_VIRTUAL])) {
             $conf = array_replace_recursive($conf, $allConf[_VIRTUAL]);
