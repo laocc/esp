@@ -158,10 +158,11 @@ final class Cache
         $array['create'] = time();
         if ($this->_option['medium'] === 'file') {
             $url = _URL;
+            $htmlKey = md5($tag);
             $php = <<<CODE
 <?php
 if ({$array['expire']} < time()) return null;
-\$html = <<<HTML\n{$array['html']}\nHTML;
+\$html = <<<HTML{$htmlKey}\n{$array['html']}\nHTML{$htmlKey};
 
 return array(
     'create' => {$array['create']},

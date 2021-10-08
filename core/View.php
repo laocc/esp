@@ -71,7 +71,7 @@ final class View
 
     final public function __get(string $name)
     {
-        return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
+        return $this->_view_val[$name] ?? null;
     }
 
     final public function set(string $name, $value = null): void
@@ -85,7 +85,7 @@ final class View
      */
     final public function get(string $name)
     {
-        return isset($this->_view_val[$name]) ? $this->_view_val[$name] : null;
+        return $this->_view_val[$name] ?? null;
     }
 
 
