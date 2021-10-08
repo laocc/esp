@@ -193,7 +193,8 @@ CODE;
 
     /**
      * 删除
-     * @param $key
+     * @param string $path
+     * @param string $key
      * @return bool|int
      */
     public function Delete(string $path, string $key)
@@ -214,6 +215,7 @@ CODE;
     private function htmlSave(string $html)
     {
         $filename = null;
+        $pntKey = '';
         foreach ($this->_option['static'] as $pntKey => $ptn) {
             if ($pntKey === 'index') {
                 if (_URI === '/') {
@@ -231,7 +233,7 @@ CODE;
         if (!$filename) return false;
 
         $tag = date('Y-m-d H:i:s');
-        $label = "<!--\ncache({$pntKey}) saved `{$tag}`; by laocc/esp Cache\n-->";
+        $label = "<!--\nstatic[{$pntKey}] saved `{$tag}`; by laocc/esp Cache\n-->";
         $html = str_replace('</html>', "{$label}\n</html>", $html);
 
         $path = rtrim($this->_option['path']['static'] ?? dirname(getenv('SCRIPT_FILENAME')), '/');

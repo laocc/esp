@@ -15,6 +15,7 @@ use function esp\helper\root;
 final class Configure
 {
     private $_CONFIG_ = null;
+    private $_type;
     public $_Redis;
     public $_rpc;
     public $_token;
@@ -25,67 +26,55 @@ final class Configure
     public function __construct(array $conf)
     {
         $this->_token = md5(__FILE__);
-        $conf += ['path' => '/common/config'];
+        $conf += ['path' => '/common/config', 'type' => 'redis'];
         $conf['path'] = root($conf['path']);
-
-        $bFile = "{$conf['path']}/database.ini";
-        if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.json";
-        if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.php";
-        if (!is_readable($bFile)) throw new EspError("database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
-
-        $dbConf = $this->loadFile($bFile, 'database');
-        if (empty($dbConf)) throw new EspError('读取database失败，配置文件可能是空文件');
-
-        if (isset($conf['folder'])) {
-            $bFile = str_replace('/database.', "/{$conf['folder']}/database.", $bFile);
-            if (is_readable($bFile)) {
-                $siteConf = $this->loadFile($bFile, 'database');
-                $dbConf = array_replace_recursive($dbConf, $siteConf);
-            }
-        }
-
-        $isMaster = is_file(_RUNTIME . '/master.lock');
-
-        $rdsConf = $dbConf['database']['redis'] ?? [];
-        if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
-        $this->_Redis = new Redis($rdsConf);
+        $this->_type = strtolower($conf['type']);
         $this->_rpc = defined('_RPC') ? _RPC : ['host' => 'rpc.esp', 'port' => 80, 'ip' => ($rdsConf['master'] ?? null)];
 
+        $fun = "load_{$conf['type']}";
+        $this->{$fun}($conf);
+    }
+
+    private function load_file(array $conf)
+    {
+        $cnfFile = _RUNTIME . "/{$this->_token}_CONFIG_.json";
+        $isMaster = is_file(_RUNTIME . '/master.lock');
+
         //没有强制从文件加载
-        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
-            $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
+        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])
+            and is_readable($cnfFile)) {
+            $json = file_get_contents($cnfFile);
+            $this->_CONFIG_ = json_decode($json, true) ?: null;
             if (!empty($this->_CONFIG_)) return;
         }
-
 
         $awakenURI = '/_esp_config_awaken_';
         if (!_DEBUG and !_CLI and !$isMaster and $this->_rpc['ip']) {
-
-            $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
-
-            $tryCount = 0;
-            tryReadRedis:
-            /**
-             * 先读redis，若读不到，再进行后面的，这个虽然在前面也有读取，但是，若在从服务器，且也符合强制从文件加载时，上面的是不会执行的
-             * 所在在这里要先读redis，也就是说，从服务器无论什么情况，都是先读redis，读不到时请求rpc往redis里写
-             */
-            $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
-            if (!empty($this->_CONFIG_)) return;
-
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
-             * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
-             * 并且主服务器返回的是`$this->_token`，如果返回的不是这个，就是出错了。
-             * 然后，再次goto trySelf;从redis中读取config
-             * 这里请求$awakenURI，在主服务器中实际上会被当前文件也就是当前构造函数中最后一行拦截并返回success
+             * 则向主服务器发起请求，这里请求$awakenURI，在主服务器拦截并返回config
              */
             $rpcObj = new Http();
-            $get = $rpcObj->rpc($this->_rpc)->decode('text')->get($awakenURI)->html();
-            if ($tryCount++ > 1) throw new EspError("多次请求RPC获取到数据不合法，期望值({$this->_token})，实际获取:{$get}");
-
-            goto tryReadRedis;
+            $get = $rpcObj->rpc($this->_rpc)->decode('json')->get($awakenURI)->data();
+            if (!empty($get)) {
+                $this->_CONFIG_ = $get;
+                return;
+            }
         }
 
+        $this->mergeConfig($conf);
+
+        if (!_CLI) file_put_contents($cnfFile, json_encode($this->_CONFIG_, 448));
+
+        //负载从服务器唤醒，直接退出
+        if (_VIRTUAL === 'rpc' && _URI === $awakenURI) {
+            echo json_encode($this->_CONFIG_, 320);
+            exit;
+        }
+    }
+
+    private function mergeConfig(array $conf)
+    {
         $config = [];
         $dir = new \DirectoryIterator($conf['path']);
         foreach ($dir as $f) {
@@ -135,6 +124,67 @@ final class Configure
         }
 
         $this->_CONFIG_ = $this->re_arr($this->_CONFIG_);
+    }
+
+    private function load_redis(array $conf)
+    {
+        $isMaster = is_file(_RUNTIME . '/master.lock');
+
+        $bFile = "{$conf['path']}/database.ini";
+        if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.json";
+        if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.php";
+        if (!is_readable($bFile)) throw new EspError("database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
+
+        $dbConf = $this->loadFile($bFile, 'database');
+        if (empty($dbConf)) throw new EspError('读取database失败，配置文件可能是空文件');
+
+        if (isset($conf['folder'])) {
+            $bFile = str_replace('/database.', "/{$conf['folder']}/database.", $bFile);
+            if (is_readable($bFile)) {
+                $siteConf = $this->loadFile($bFile, 'database');
+                $dbConf = array_replace_recursive($dbConf, $siteConf);
+            }
+        }
+
+        $rdsConf = $dbConf['database']['redis'] ?? [];
+        if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
+        $this->_Redis = new Redis($rdsConf);
+
+        //没有强制从文件加载
+        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
+            $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
+            if (!empty($this->_CONFIG_)) return;
+        }
+
+
+        $awakenURI = '/_esp_config_awaken_';
+        if (!_DEBUG and !_CLI and !$isMaster and $this->_rpc['ip']) {
+
+            $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
+
+            $tryCount = 0;
+            tryReadRedis:
+            /**
+             * 先读redis，若读不到，再进行后面的，这个虽然在前面也有读取，但是，若在从服务器，且也符合强制从文件加载时，上面的是不会执行的
+             * 所在在这里要先读redis，也就是说，从服务器无论什么情况，都是先读redis，读不到时请求rpc往redis里写
+             */
+            $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
+            if (!empty($this->_CONFIG_)) return;
+
+            /**
+             * 若在子服务器里能进入到这里，说明redis中没有数据，
+             * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
+             * 并且主服务器返回的是`$this->_token`，如果返回的不是这个，就是出错了。
+             * 然后，再次goto trySelf;从redis中读取config
+             * 这里请求$awakenURI，在主服务器中实际上会被当前文件也就是当前构造函数中最后一行拦截并返回success
+             */
+            $rpcObj = new Http();
+            $get = $rpcObj->rpc($this->_rpc)->decode('text')->get($awakenURI)->html();
+            if ($tryCount++ > 1) throw new EspError("多次请求RPC获取到数据不合法，期望值({$this->_token})，实际获取:{$get}");
+
+            goto tryReadRedis;
+        }
+        $this->mergeConfig($conf);
         if (!_CLI) $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
 
         //负载从服务器唤醒，直接退出
