@@ -81,19 +81,21 @@ final class Dispatcher
          */
         chdir(_ROOT);
         $request = $this->_config->get('request');
+        if (empty($request)) $request = [];
         $request = $this->mergeConf($request);
         $this->_request = new Request($this, $request);
         if (_CLI) return;
 
-        $counter = $this->_config->get('counter');
-        $counter = $this->mergeConf($counter);
-        if ($counter and !$counter['run']) $counter = null;
-        if (is_array($counter)) {
-            $counter['_key'] = md5(_ROOT);
-            $this->_counter = new Counter($counter, $this->_config->_Redis, $this->_request);
+        if (!empty($counter = $this->_config->get('counter'))) {
+            $counter = $this->mergeConf($counter);
+            if ($counter['run'] ?? 0) {
+                $counter['_key'] = md5(_ROOT);
+                $this->_counter = new Counter($counter, $this->_config->_Redis, $this->_request);
+            }
         }
 
         $response = $this->_config->get('response') ?: $this->_config->get('resource');
+        if (empty($response)) $response = [];
         $response = $this->mergeConf($response);
         $response['_rand'] = $this->_config->_Redis->get('resourceRand') ?: date('YmdH');
         $this->_response = new Response($this, $response);
