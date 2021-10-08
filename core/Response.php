@@ -222,7 +222,7 @@ final class Response
      * @param Adapter $adapter
      * @return View
      */
-    public function registerAdapter($adapter)
+    public function registerAdapter($adapter): ?View
     {
         if (!$this->_view_set['view_use']) return null;
 

@@ -28,6 +28,7 @@ final class Request
     public $contFix;
     public $route_view;
     public $exists = true;//是否为正常的请求，请求了不存在的控制器
+    public $alias = [];//控制器映射
     private $_ajax;
 
     public function __construct(Dispatcher $dispatcher, array $config = null)
@@ -54,6 +55,7 @@ final class Request
         $this->contFix = $config['controller'];//控制器后缀，固定的
         $this->suffix = $config['suffix'];//数组，方法名后缀，在总控中根据不同请求再取值
         $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
+        if (isset($config['alias']) and is_array($config['alias'])) $this->alias = $config['alias'];
     }
 
     public function __debugInfo()
@@ -110,7 +112,7 @@ final class Request
 
     public function __get(string $name)
     {
-        return isset($this->_var[$name]) ? $this->_var[$name] : null;
+        return $this->_var[$name] ?? null;
     }
 
     /**
@@ -119,7 +121,7 @@ final class Request
      */
     public function get(string $name)
     {
-        return isset($this->_var[$name]) ? $this->_var[$name] : null;
+        return $this->_var[$name] ?? null;
     }
 
     public function __set(string $name, $value)
@@ -140,7 +142,7 @@ final class Request
 
     public function getParam(string $key)
     {
-        return isset($this->params[$key]) ? $this->params[$key] : null;
+        return $this->params[$key] ?? null;
     }
 
     public function setParam(string $name, $value)

@@ -75,7 +75,7 @@ final class Dispatcher
         if (!_CLI) $error = new Error($option['error'] ?? []);
 
         if (!isset($option['config'])) $option['config'] = [];
-        $option['config'] += ['type' => 'file'];
+        $option['config'] += ['type' => 'redis'];
         $this->_config = new Configure($option['config']);
 
         /**
@@ -84,19 +84,22 @@ final class Dispatcher
          */
         chdir(_ROOT);
         $request = $this->_config->get('request');
+        if (empty($request)) $request = [];
+        $request = $this->mergeConf($request);
         $this->_request = new Request($this, $request);
         if (_CLI) return;
 
-        $counter = $this->_config->get('counter');
-        if ($counter and !$counter['run']) $counter = null;
-        if ($option['config']['type'] === 'redis' && is_array($counter)) {
-            $counter['_key'] = md5(_ROOT);
-            $this->_counter = new Counter($counter, $this->_config->_Redis, $this->_request);
+        if (!empty($counter = $this->_config->get('counter'))) {
+            $counter = $this->mergeConf($counter);
+            if ($counter['run'] ?? 0) {
+                $counter['_key'] = md5(_ROOT);
+                $this->_counter = new Counter($counter, $this->_config->_Redis, $this->_request);
+            }
         }
 
         $response = $this->_config->get('response') ?: $this->_config->get('resource');
+        if (empty($response)) $response = [];
         $response = $this->mergeConf($response);
-//        $response['_rand'] = $this->_config->_Redis->get('resourceRand') ?: date('YmdH');
         $response['_rand'] = $this->_config->get('resourceRand') ?: date('YmdH');
         $this->_response = new Response($this, $response);
 
@@ -111,7 +114,7 @@ final class Dispatcher
         }
 
         if ($cookies = $this->_config->get('cookies')) {
-            $cokConf = $this->mergeConf($cookies, ($cookies['default'] ?? []) + ['run' => false, 'debug' => false, 'domain' => 'host']);
+            $cokConf = $this->mergeConf($cookies, ['run' => false, 'debug' => false, 'domain' => 'host']);
 
             if ($cokConf['run'] ?? false) {
                 $this->_cookies = new Cookies($cokConf);
@@ -119,7 +122,7 @@ final class Dispatcher
 
                 //若不启用Cookies，则也不启用Session
                 if ($session = ($this->_config->get('session'))) {
-                    $sseConf = $this->mergeConf($session, ($session['default'] ?? []) + ['run' => false, 'domain' => $cokConf['domain']]);
+                    $sseConf = $this->mergeConf($session, ['run' => false, 'domain' => $cokConf['domain']]);
 
                     if ($sseConf['run'] ?? false) {
                         if (!isset($sseConf['driver'])) $sseConf['driver'] = $option['config']['type'];
@@ -161,13 +164,14 @@ final class Dispatcher
     /**
      * 合并设置
      *
-     * @param $allConf
-     * @param null $conf
-     * @return array|null
+     * @param array $allConf
+     * @param array $conf
+     * @return array
      */
-    private function mergeConf($allConf, $conf = null): array
+    private function mergeConf(array $allConf, array $conf = []): array
     {
-        if (is_null($conf)) $conf = $allConf['default'];
+        if (!isset($allConf['default'])) return $allConf + $conf;
+        $conf = $allConf['default'] + $conf;
 
         if (isset($allConf[_VIRTUAL])) {
             $conf = array_replace_recursive($conf, $allConf[_VIRTUAL]);

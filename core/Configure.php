@@ -259,6 +259,30 @@ final class Configure
     }
 
     /**
+     * 将一级键名中带.号的，转换为数组，如将：abc.xyz=123转换为abc[xyz]=123
+     * 最大支持6级，即5个点
+     * @param array $array
+     * @return array
+     */
+    private function expIniArray(array $array)
+    {
+        foreach ($array as $key => $value) {
+            if (is_array($value)) $array[$key] = $value = $this->expIniArray($value);
+            else if (is_string($value)) $array[$key] = $value = trim($value);
+
+            if (!is_string($key) or strpos($key, '.') === false) continue;
+            $tmp = explode('.', $key, 6);
+            if (isset($tmp[5])) $array[$tmp[0]][$tmp[1]][$tmp[2]][$tmp[3]][$tmp[4]][$tmp[5]] = $value;
+            elseif (isset($tmp[4])) $array[$tmp[0]][$tmp[1]][$tmp[2]][$tmp[3]][$tmp[4]] = $value;
+            elseif (isset($tmp[3])) $array[$tmp[0]][$tmp[1]][$tmp[2]][$tmp[3]] = $value;
+            elseif (isset($tmp[2])) $array[$tmp[0]][$tmp[1]][$tmp[2]] = $value;
+            else $array[$tmp[0]][$tmp[1]] = $value;
+            unset($array[$key]);
+        }
+        return $array;
+    }
+
+    /**
      * @param string $file
      * @param string $byKey
      * @return array
@@ -271,15 +295,7 @@ final class Configure
             case 'ini':
                 $_config = parse_ini_file($file, true);
                 if (!is_array($_config) or empty($_config)) return [];
-                //只将一级键名中带.号的，转换为数组，如将：abc.xyz=123转换为abc[xyz]=123
-                foreach ($_config as $k => $v) {
-                    if (!is_string($k)) continue;
-                    if (strpos($k, '.')) {
-                        $tm = explode('.', $k, 2);
-                        $_config[$tm[0]][$tm[1]] = $v;
-                        unset($_config[$k]);
-                    }
-                }
+                $_config = $this->expIniArray($_config);
                 break;
             case 'json':
                 $_config = file_get_contents($file);
@@ -339,14 +355,14 @@ final class Configure
             $keys = explode('.', trim($key, '.'));
             $_config = $conf;
             foreach ($keys as $k) {
-                $_config = isset($_config[$k]) ? $_config[$k] : null;
+                $_config = $_config[$k] ?? null;
                 if (is_null($_config)) {
                     return $auto;
                 }
             }
             return $_config;
         }
-        return isset($conf[$key]) ? $conf[$key] : $auto;
+        return $conf[$key] ?? $auto;
     }
 
 

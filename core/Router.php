@@ -86,14 +86,16 @@ final class Router
             $request->params = $params + array_fill(0, 10, null);
             if (!defined('_MODULE')) define('_MODULE', $request->module);
 
-            if (isset($route['static'])) {
-                $request->set('_disable_static', !$route['static']);
-            }
+            //控制器别名转换
+            if (isset($request->alias[$request->controller])) $request->controller = $request->alias[$request->controller];
+
+            //禁用生成静态
+            if (isset($route['static'])) $request->set('_disable_static', !$route['static']);
 
             //路由器对视图的定义
             if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
             unset($modRoute, $default);
-//                print_r($request);
+
             return true;
         }
 

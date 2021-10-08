@@ -105,6 +105,17 @@ abstract class Controller
         return $this;
     }
 
+    /**
+     * 重新指定视图目录
+     *
+     * 若以@开头，为系统的绝对目录，注意是否有权限读取
+     * 若以/开头，为相对于_ROOT的目录
+     *
+     * 被指定的目录内，仍要按控制器名称规放置视图文件
+     *
+     * @param string $value
+     * @return $this
+     */
     final protected function setViewPath(string $value): Controller
     {
         $this->_response->setViewPath($value);
