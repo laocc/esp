@@ -14,11 +14,11 @@ final class Response
     private $_request;
     private $_resource;
     private $_display_type = '';
-    private $_save_cache = false;
     private $_header = [];
 
     public $_display_Result;//最终的打印结果
     public $_Content_Type;
+    public $cache;
 
     private $_view_val = array();
     private $_layout_val = [
@@ -82,6 +82,7 @@ final class Response
      * @param string $name
      * @param $value
      * @return bool
+     * @throws EspError
      */
     public function set_value(string $name, $value): bool
     {
@@ -143,6 +144,7 @@ final class Response
     /**
      * 渲染视图并返回
      * @param void $value 控制器返回的值
+     * @throws EspError
      */
     public function display($value): void
     {
@@ -220,7 +222,8 @@ final class Response
     /**
      * 视图注册标签解析器
      * @param Adapter $adapter
-     * @return View
+     * @return View|null
+     * @throws EspError
      */
     public function registerAdapter($adapter): ?View
     {
@@ -360,7 +363,8 @@ final class Response
 
     /**
      * 渲染视图并返回
-     * @return mixed|string
+     * @return string
+     * @throws EspError
      */
     public function render()
     {
@@ -431,7 +435,7 @@ final class Response
                 }
                 if (strpos($css[1][$i], $res_prev) === 0) $css[1][$i] = substr($css[1][$i], strlen($res_prev));
             }
-            $import = $this->_resource->get('importcss');
+            $import = $this->_resource->get('importCss');
             if ($import) array_push($css[1], ...$import);
 
             preg_match_all("/<script.*?src=['\"](\/\w.+?)['\"]><\/script>/i", $html, $jss, PREG_PATTERN_ORDER);
@@ -442,7 +446,7 @@ final class Response
                     continue;
                 }
 
-                if (($w = strpos($mch, '?')) > 0) {
+                if (($w = stripos($mch, '?')) > 0) {
                     $jss[1][$i] = substr($mch, 0, $w);
                 }
                 if (strpos($jss[1][$i], $res_prev) === 0) $jss[1][$i] = substr($jss[1][$i], strlen($res_prev));
@@ -478,6 +482,7 @@ final class Response
     /**
      * 最后显示内容
      * @return null|string
+     * @throws EspError
      */
     private function display_response()
     {
@@ -554,7 +559,7 @@ final class Response
             if (!empty($this->_layout_val['_css'])) {
                 $conCSS = array();
                 $http = array();
-                foreach ($this->_layout_val['_css'] as &$css) {
+                foreach ($this->_layout_val['_css'] as $css) {
                     if (substr($css, 0, 4) === 'http') {
                         $http[] = "<link rel=\"stylesheet\" href=\"{$css}\" charset=\"utf-8\" />";
                     } else {
@@ -589,7 +594,7 @@ final class Response
         $this->_layout_val['_meta']['keywords'] = $this->_layout_val['_meta']['keywords'] ?: $this->_resource->keywords();
         $this->_layout_val['_meta']['description'] = $this->_layout_val['_meta']['description'] ?: $this->_resource->description();
 
-        foreach ($this->_layout_val['_meta'] as $i => &$meta) {
+        foreach ($this->_layout_val['_meta'] as $i => $meta) {
             $this->_layout_val['_meta'][$i] = "<meta name=\"{$i}\" content=\"{$meta}\" />";
         }
         $this->_layout_val['_meta'] = implode("\n    ", $this->_layout_val['_meta']) . "\n";
@@ -676,7 +681,7 @@ final class Response
 
     public function cache(bool $save = true): void
     {
-        $this->_save_cache = $save;
+        $this->cache = $save;
     }
 
 }

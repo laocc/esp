@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use DirectoryIterator;
 use esp\http\Http;
 use esp\core\db\Redis;
 use esp\error\EspError;
@@ -76,7 +77,7 @@ final class Configure
     private function mergeConfig(array $conf)
     {
         $config = [];
-        $dir = new \DirectoryIterator($conf['path']);
+        $dir = new DirectoryIterator($conf['path']);
         foreach ($dir as $f) {
             if ($f->isFile()) {
                 $fn = $f->getFilename();
@@ -87,7 +88,7 @@ final class Configure
             if (!is_array($conf['extra'])) $conf['extra'] = [$conf['extra']];
             foreach ($conf['extra'] as $ext) {
                 if ($ext[0] !== '/') $ext = "{$conf['path']}/{$ext}";
-                $dir = new \DirectoryIterator($ext);
+                $dir = new DirectoryIterator($ext);
                 foreach ($dir as $f) {
                     if ($f->isFile()) {
                         $fn = $f->getFilename();
@@ -126,6 +127,10 @@ final class Configure
         $this->_CONFIG_ = $this->re_arr($this->_CONFIG_);
     }
 
+    /**
+     * @param array $conf
+     * @throws EspError
+     */
     private function load_redis(array $conf)
     {
         $isMaster = is_file(_RUNTIME . '/master.lock');
@@ -338,9 +343,9 @@ final class Configure
     /**
      * 加载在format时没载入的，不经过缓存
      * @param string $file
-     * @param string $key
+     * @param string|null $key
      * @param null $auto
-     * @return array|bool|mixed|null
+     * @return array|mixed|null
      */
     public function load(string $file, string $key = null, $auto = null)
     {

@@ -56,7 +56,7 @@ final class Resources
 
     public function get(string $key)
     {
-        return $this->conf[$key] ?? null;
+        return $this->conf[strtolower($key)] ?? null;
     }
 
     public function rand(): string

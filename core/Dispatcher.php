@@ -80,7 +80,7 @@ final class Dispatcher
 
         /**
          * 切换之前是nginx中指定的root入口目录，
-         * 切换后getcwd()的结果为_ROOT
+         * 切换后 getcwd() 的结果为_ROOT
          */
         chdir(_ROOT);
         $request = $this->_config->get('request');
@@ -150,7 +150,10 @@ final class Dispatcher
 
         if ($cacheConf = $this->_config->get('cache')) {
             $cache = $this->mergeConf($cacheConf);
-            if ($cache['run'] ?? 0) $this->_cache = new Cache($this, $cache);
+            if ($cache['run'] ?? 0) {
+                $this->_cache = new Cache($this, $cache);
+                $this->_response->cache(true);
+            }
         }
 
         if (isset($option['after'])) $option['after']($option);
@@ -209,7 +212,7 @@ final class Dispatcher
     }
 
     /**
-     * @param string $class
+     * @param $class
      * @return Dispatcher
      * @throws EspError
      */
@@ -303,7 +306,7 @@ final class Dispatcher
         ]);
 
         if (!is_null($this->_cache)) {
-            if ($this->_cache->Display()) {
+            if ($this->_response->cache && $this->_cache->Display()) {
                 fastcgi_finish_request();//运行结束，客户端断开
                 $this->relayDebug("[blue;客户端已断开 =============================]");
                 goto end;
@@ -336,7 +339,7 @@ final class Dispatcher
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
         $this->relayDebug("[blue;客户端已断开 =============================]");
-        if (!is_null($this->_cache) and !_CLI) $this->_cache->Save();
+        if (!is_null($this->_cache) && $this->_response->cache and !_CLI) $this->_cache->Save();
 
         end:
         $this->_plugs_count and $hook = $this->plugsHook('shutdown');
@@ -420,6 +423,9 @@ final class Dispatcher
         }
     }
 
+    /**
+     * @throws EspError
+     */
     public function min(): void
     {
         $this->simple();
