@@ -8,7 +8,7 @@ use esp\face\Adapter;
 use esp\library\ext\MarkdownObject;
 use function \esp\helper\root;
 
-final class View
+final class View implements Adapter
 {
     private $_path = [
         'dir' => null,
@@ -251,15 +251,22 @@ final class View
 
     /**
      * 显示解析视图结果
-     * @param $file
-     * @param $value
-     * @throws EspError
+     *
+     * @param string $__file__
+     * @param array $__value__
      */
-    public function display($file, $value): void
+    public function display(string $__file__, array $__value__): void
     {
-        echo $this->render($file, $value);
+        if ($this->_adapter_use and !is_null($this->_adapter)) {
+            $this->_adapter->assign($this->_view_val);
+            $this->_adapter->display($__file__, $__value__);
+            return;
+        }
+        ob_start();
+        extract($__value__);
+        include $__file__;
+        echo ob_get_clean();
     }
-
 
     /**
      * 解析视图并返回
@@ -267,7 +274,7 @@ final class View
      * @param array $__value__
      * @return string
      */
-    private function fetch(string $__file__, array $__value__): string
+    public function fetch(string $__file__, array $__value__): string
     {
         if ($this->_adapter_use and !is_null($this->_adapter)) {
             $this->_adapter->assign($this->_view_val);
@@ -276,8 +283,6 @@ final class View
         ob_start();
         extract($__value__);
         include $__file__;
-        $content = ob_get_contents();
-        ob_end_clean();
-        return $content;
+        return ob_get_clean();
     }
 }
