@@ -41,7 +41,7 @@ final class Cache
      * 读取并显示   仅由Dispatcher.run()调用
      * @return bool
      */
-    public function Display()
+    public function Display(): bool
     {
         $r = $this->request;
         if (isset($this->_option[$r->controller][$r->action])) {
@@ -93,8 +93,7 @@ final class Cache
 
     public function Save()
     {
-        if (!($this->_option['run'] ?? 0) or ($this->_option['ttl']) < 0) return;
-        if (defined('_CACHE_DISABLE') and _CACHE_DISABLE) return;
+        if (!($this->_option['run'] ?? 0) or ($this->_option['ttl'] < 0) or !$this->response->cache) return;
         if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) return;
 
         $value = $this->response->_display_Result;
@@ -141,7 +140,7 @@ final class Cache
         $value = str_replace(['{CACHE_KEY}', '{CACHE_TIME}'], [$this->cache_key, time()], $value);
 
         //_disable_static是控制器在运行中$this->cache(false);临时设置的值
-        if (!$this->request->get('_disable_static') and isset($this->_option['static'])) {
+        if ($this->response->cache and isset($this->_option['static'])) {
             if ($this->htmlSave($value)) return;
         }
 
@@ -213,7 +212,7 @@ CODE;
      * @param string $html
      * @return bool
      */
-    private function htmlSave(string $html)
+    private function htmlSave(string $html): bool
     {
         $filename = null;
         $pntKey = '';

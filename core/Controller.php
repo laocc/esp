@@ -318,7 +318,7 @@ abstract class Controller
      * @param int $code
      * @return bool
      */
-    final protected function redirect(string $url, int $code = 302)
+    final protected function redirect(string $url, int $code = 302): bool
     {
         if (headers_sent($filename, $line)) {
             !is_null($this->_debug) && $this->_debug->relay([

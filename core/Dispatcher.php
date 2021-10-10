@@ -292,7 +292,7 @@ final class Dispatcher
         }
 
         $route = (new Router())->run($this->_config, $this->_request);
-        if (is_string($route)) exit($route);
+        if ($route !== true) exit($route);
 
         $this->_debug->setRouter([
             'label' => $this->_request->router,

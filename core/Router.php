@@ -21,9 +21,9 @@ final class Router
      * 路由中心
      * @param Configure $configure
      * @param Request $request
-     * @return bool|string
+     * @return string
      */
-    public function run(Configure $configure, Request $request)
+    public function run(Configure $configure, Request $request): ?string
     {
         $rdsKey = $configure->_token . '_ROUTES_' . _VIRTUAL;
         $redis = $configure->_Redis;
@@ -52,6 +52,30 @@ final class Router
 
             if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
                 return '非法Method请求';
+            }
+
+            if (isset($route['return']) and !empty($route['return'])) {
+                $ret = substr($route['return'], 0, 6);
+                if ($ret === 'http:/' or $ret === 'https:') {
+                    header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1) . ' GMT');
+                    header("Cache-Control: no-cache");
+                    header("Pragma: no-cache");
+                    header("Location: {$route['return']}", true, 301);
+                    fastcgi_finish_request();
+                    return '';
+
+                } else if ($ret === 'redis:') {
+                    return strval($redis->get(substr($route['return'], 6)));
+
+                } else if (strpos($route['return'], '/') === 0) {
+                    if (!is_readable(_ROOT . $route['return'])) return "route return `{$route['return']}` not exists.";
+                    include_once _ROOT . $route['return'];
+                    return '';
+
+                } else {
+                    header("Content-type: text/plain; charset=UTF-8", true, 200);
+                    return strval(str_replace(['\r', '\n'], ["\r", "\n"], trim($route['return'])));
+                }
             }
 
             if (isset($route['route']['virtual'])) $request->virtual = $route['route']['virtual'];
@@ -89,14 +113,11 @@ final class Router
             //控制器别名转换
             if (isset($request->alias[$request->controller])) $request->controller = $request->alias[$request->controller];
 
-            //禁用生成静态
-            if (isset($route['static'])) $request->set('_disable_static', !$route['static']);
-
             //路由器对视图的定义
             if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
             unset($modRoute, $default);
 
-            return true;
+            return null;
         }
 
         return '系统路由没有获取到相应内容，或非法请求URL。';

@@ -271,7 +271,7 @@ final class Response
         if ($d === '/') {
             $this->_view_set['view_path'] = _ROOT . $path;
         } else if ($d === '@') {
-            $this->_view_set['view_path'] = $path;
+            $this->_view_set['view_path'] = substr($path, 1);
         } else {
             $this->_view_set['view_path'] = "{$this->_request->directory}/{$vmp}/{$path}";
         }
@@ -679,9 +679,14 @@ final class Response
         $this->_layout_val['_meta']['description'] = $value;
     }
 
-    public function cache(bool $save = true): void
+    /**
+     * 设置缓存
+     *
+     * @param bool $run
+     */
+    public function cache(bool $run = true): void
     {
-        $this->cache = $save;
+        $this->cache = $run;
     }
 
 }
