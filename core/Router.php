@@ -54,27 +54,33 @@ final class Router
                 return '非法Method请求';
             }
 
-            if (isset($route['return']) and !empty($route['return'])) {
-                $ret = substr($route['return'], 0, 6);
-                if ($ret === 'http:/' or $ret === 'https:') {
+            if (isset($route['return']) and !empty($ret = trim($route['return']))) {
+                $rHd = substr(strtolower($ret), 0, 6);
+                $rHs = $ret[0];
+                if ($rHd === 'http:/' or $rHd === 'https:') {
                     header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1) . ' GMT');
                     header("Cache-Control: no-cache");
                     header("Pragma: no-cache");
-                    header("Location: {$route['return']}", true, 301);
+                    header("Location: {$ret}", true, 301);
                     fastcgi_finish_request();
                     return '';
 
-                } else if ($ret === 'redis:') {
-                    return strval($redis->get(substr($route['return'], 6)));
+                } else if ($rHd === 'redis:') {
+                    header("Content-type: text/plain; charset=UTF-8", true, 200);
+                    return strval($redis->get(substr($ret, 6)));
 
-                } else if (strpos($route['return'], '/') === 0) {
-                    if (!is_readable(_ROOT . $route['return'])) return "route return `{$route['return']}` not exists.";
-                    include_once _ROOT . $route['return'];
+                } else if ($ret[0] === '/') {
+                    if (!is_readable(_ROOT . $ret)) return "route return `{$ret}` not exists.";
+                    include_once _ROOT . $ret;
                     return '';
+
+                } else if ($ret[0] === '{') {
+                    header("Content-type: application/json; charset=UTF-8", true, 200);
+                    return $ret;
 
                 } else {
                     header("Content-type: text/plain; charset=UTF-8", true, 200);
-                    return strval(str_replace(['\r', '\n'], ["\r", "\n"], trim($route['return'])));
+                    return strval(str_replace(['\r', '\n'], ["\r", "\n"], $ret));
                 }
             }
 

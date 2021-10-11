@@ -169,11 +169,10 @@ final class Response
         } else if (is_string($value)) {//直接按文本显示
             if (!empty($value) and $value[0] === '<') {
                 $this->_Content_Type = 'text/html';
-                header("Content-type: {$this->_Content_Type}; charset=UTF-8", true, 200);
             } else {
                 $this->_Content_Type = 'text/plain';
-                header("Content-type: {$this->_Content_Type}; charset=UTF-8", true, 200);
             }
+            header("Content-type: {$this->_Content_Type}; charset=UTF-8", true, 200);
             echo $this->_display_Result = &$value;
             return;
 

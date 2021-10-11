@@ -58,22 +58,36 @@ final class Request
         if (isset($config['alias']) and is_array($config['alias'])) $this->alias = $config['alias'];
     }
 
-    public function __debugInfo()
+    /**
+     * 路由结果
+     *
+     * @return array
+     */
+    public function RouterValue(): array
     {
-        return ([
-            'method' => $this->method,
+        return [
+            'label' => $this->router,
             'virtual' => $this->virtual,
+            'method' => $this->method,
             'module' => $this->module,
             'controller' => $this->controller,
             'action' => $this->action,
+            'exists' => $this->exists,
             'params' => $this->params,
-            'directory' => $this->directory,
-            'router_path' => $this->router_path,
-            'contFix' => $this->contFix,
-            'suffix' => $this->suffix,
-            'referer' => $this->referer,
-            'uri' => _URI,
-        ]);
+        ];
+    }
+
+    public function __debugInfo()
+    {
+        return $this->RouterValue() +
+            [
+                'directory' => $this->directory,
+                'router_path' => $this->router_path,
+                'contFix' => $this->contFix,
+                'suffix' => $this->suffix,
+                'referer' => $this->referer,
+                'uri' => _URI,
+            ];
     }
 
     public function __toString(): string

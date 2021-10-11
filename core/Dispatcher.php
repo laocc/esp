@@ -12,7 +12,7 @@ use function esp\helper\host;
 final class Dispatcher
 {
     private $_plugs_count = 0;//引入的plugs数量
-    private $run = true;//任一个钩子若返回false，则不再执行run()方法中的后续内容
+    private $run = true;//任一个bootstrap若返回false，则不再执行run()方法中的后续内容
     public $_plugs = array();
     public $_request;
     public $_response;
@@ -97,7 +97,7 @@ final class Dispatcher
             }
         }
 
-        $response = $this->_config->get('response') ?: $this->_config->get('resource');
+        $response = $this->_config->get('response');
         if (empty($response)) $response = [];
         $response = $this->mergeConf($response);
         $response['_rand'] = $this->_config->get('resourceRand') ?: date('YmdH');
@@ -161,6 +161,135 @@ final class Dispatcher
         unset($GLOBALS['option']);
         if (headers_sent($file, $line)) {
             throw new EspError("在{$file}[{$line}]行已有数据输出，系统无法启动");
+        }
+    }
+
+    /**
+     * 系统运行调度中心
+     * @throws EspError
+     */
+    public function run(): void
+    {
+        $showDebug = boolval($_GET['_debug'] ?? 0);
+        if ($this->run === false) goto end;
+        if (_CLI) throw new EspError("cli环境中请直接调用\$this->simple()方法");
+
+        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('router'))) {
+            $this->_response->display($hook);
+            goto end;
+        }
+
+        $route = (new Router())->run($this->_config, $this->_request);
+        if ($route) exit($route);
+
+        $this->_debug->setRouter($this->_request->RouterValue());
+
+        if (!is_null($this->_cache)) {
+            if ($this->_response->cache && $this->_cache->Display()) {
+                fastcgi_finish_request();//运行结束，客户端断开
+                $this->relayDebug("[blue;客户端已断开 =============================]");
+                goto end;
+            }
+        }
+
+        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('dispatch'))) {
+            $this->_response->display($hook);
+            goto end;
+        }
+
+        //TODO 运行控制器->方法
+        $value = $this->dispatch();
+
+        //控制器、并发计数
+        if ($this->_counter) $this->_counter->recodeCounter();
+
+        //若启用了session，立即保存并结束session
+        if ($this->_session) session_write_close();
+
+        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('display', $value))) {
+            $this->_response->display($hook);
+            goto end;
+        }
+
+        $this->_response->display($value);
+
+        $this->_plugs_count and $hook = $this->plugsHook('finish', $value);
+
+        if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
+
+        $this->relayDebug("[blue;客户端已断开 =============================]");
+        if (!is_null($this->_cache) && $this->_response->cache and !_CLI) $this->_cache->Save();
+
+        end:
+        $this->_plugs_count and $hook = $this->plugsHook('shutdown');
+
+        if (is_null($this->_debug)) return;
+
+        $this->_debug->setResponse([
+            'type' => $this->_response->_Content_Type,
+            'display' => $this->_response->_display_Result
+        ]);
+
+        if ($this->_debug->mode === 'cgi' or $showDebug) {
+            $save = $this->_debug->save_logs('run.Dispatcher.Cgi');
+            if ($showDebug) var_dump($save);
+
+        } else {
+            register_shutdown_function(function () {
+                $this->_debug->save_logs('run.Dispatcher.Shutdown');
+            });
+        }
+    }
+
+    /**
+     * 不运行plugs，不执行缓存
+     *
+     * @throws EspError
+     */
+    public function simple(): void
+    {
+        $showDebug = boolval($_GET['_debug'] ?? 0);
+        if ($this->run === false) goto end;
+
+        $route = (new Router())->run($this->_config, $this->_request);
+        if ($route) exit($route);
+
+        if (!_CLI) {
+            $this->_debug->setRouter($this->_request->RouterValue());
+        }
+
+        $value = $this->dispatch();
+
+        if (_CLI) {
+            print_r($value);
+            return;
+        }
+
+        //控制器、并发计数
+        if ($this->_counter) $this->_counter->recodeCounter();
+
+        //若启用了session，立即保存并结束session
+        if ($this->_session) session_write_close();
+
+        $this->_response->display($value);
+
+        end:
+        if (!_DEBUG and !$showDebug) fastcgi_finish_request();
+
+        if (is_null($this->_debug)) return;
+
+        $this->_debug->setResponse([
+            'type' => $this->_response->_Content_Type,
+            'display' => $this->_response->_display_Result
+        ]);
+
+        if ($this->_debug->mode === 'cgi' or $showDebug) {
+            $save = $this->_debug->save_logs('simple.Dispatcher.Cgi');
+            if ($showDebug) var_dump($save);
+        } else {
+            register_shutdown_function(function () {
+                $this->_debug->save_logs('simple.Dispatcher.Shutdown');
+            });
         }
     }
 
@@ -273,155 +402,6 @@ final class Dispatcher
         return null;
     }
 
-
-    /**
-     * 系统运行调度中心
-     * @param callable|null $callable
-     * @throws EspError
-     */
-    public function run(callable $callable = null): void
-    {
-        $showDebug = boolval($_GET['_debug'] ?? 0);
-        if ($this->run === false) goto end;
-        if ($callable and call_user_func($callable)) goto end;
-        if (_CLI) throw new EspError("cli环境中请直接调用\$this->simple()方法");
-
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('router'))) {
-            $this->_response->display($hook);
-            goto end;
-        }
-
-        $route = (new Router())->run($this->_config, $this->_request);
-        if ($route) exit($route);
-
-        $this->_debug->setRouter([
-            'label' => $this->_request->router,
-            'virtual' => $this->_request->virtual,
-            'method' => $this->_request->getMethod(),
-            'module' => $this->_request->module,
-            'controller' => $this->_request->controller,
-            'action' => $this->_request->action,
-            'exists' => $this->_request->exists,
-            'params' => $this->_request->params,
-        ]);
-
-        if (!is_null($this->_cache)) {
-            if ($this->_response->cache && $this->_cache->Display()) {
-                fastcgi_finish_request();//运行结束，客户端断开
-                $this->relayDebug("[blue;客户端已断开 =============================]");
-                goto end;
-            }
-        }
-
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('dispatch'))) {
-            $this->_response->display($hook);
-            goto end;
-        }
-
-        //TODO 运行控制器->方法
-        $value = $this->dispatch();
-
-        //控制器、并发计数
-        if ($this->_counter) $this->_counter->recodeCounter();
-
-        //若启用了session，立即保存并结束session
-        if ($this->_session) session_write_close();
-
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('display', $value))) {
-            $this->_response->display($hook);
-            goto end;
-        }
-
-        $this->_response->display($value);
-
-        $this->_plugs_count and $hook = $this->plugsHook('finish', $value);
-
-        if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
-
-        $this->relayDebug("[blue;客户端已断开 =============================]");
-        if (!is_null($this->_cache) && $this->_response->cache and !_CLI) $this->_cache->Save();
-
-        end:
-        $this->_plugs_count and $hook = $this->plugsHook('shutdown');
-
-        if (is_null($this->_debug)) return;
-
-        $this->_debug->setResponse([
-            'type' => $this->_response->_Content_Type,
-            'display' => $this->_response->_display_Result
-        ]);
-
-        if ($this->_debug->mode === 'cgi' or $showDebug) {
-            $save = $this->_debug->save_logs('run.Dispatcher.Cgi');
-            if ($showDebug) var_dump($save);
-
-        } else {
-            register_shutdown_function(function () {
-                $this->_debug->save_logs('run.Dispatcher.Shutdown');
-            });
-        }
-    }
-
-    /**
-     * 不运行plugs，不执行缓存
-     *
-     * @throws EspError
-     */
-    public function simple(): void
-    {
-        $showDebug = boolval($_GET['_debug'] ?? 0);
-        if ($this->run === false) goto end;
-
-        $route = (new Router())->run($this->_config, $this->_request);
-        if (is_string($route)) exit($route);
-
-        if (!_CLI) {
-            $this->_debug->setRouter([
-                'label' => $this->_request->router,
-                'virtual' => $this->_request->virtual,
-                'method' => $this->_request->getMethod(),
-                'module' => $this->_request->module,
-                'controller' => $this->_request->controller,
-                'action' => $this->_request->action,
-                'exists' => $this->_request->exists,
-                'params' => $this->_request->params,
-            ]);
-        }
-
-        $value = $this->dispatch();
-
-        if (_CLI) {
-            print_r($value);
-            return;
-        }
-
-        //控制器、并发计数
-        if ($this->_counter) $this->_counter->recodeCounter();
-
-        //若启用了session，立即保存并结束session
-        if ($this->_session) session_write_close();
-
-        $this->_response->display($value);
-
-        end:
-        if (!_DEBUG and !$showDebug) fastcgi_finish_request();
-
-        if (is_null($this->_debug)) return;
-
-        $this->_debug->setResponse([
-            'type' => $this->_response->_Content_Type,
-            'display' => $this->_response->_display_Result
-        ]);
-
-        if ($this->_debug->mode === 'cgi' or $showDebug) {
-            $save = $this->_debug->save_logs('simple.Dispatcher.Cgi');
-            if ($showDebug) var_dump($save);
-        } else {
-            register_shutdown_function(function () {
-                $this->_debug->save_logs('simple.Dispatcher.Shutdown');
-            });
-        }
-    }
 
     /**
      * @throws EspError
