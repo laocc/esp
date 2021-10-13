@@ -659,7 +659,15 @@ final class Response
         $this->_layout_val['_meta'][$name] = $value;
     }
 
-
+    /**
+     * @param string $title
+     * @param bool|null $overwrite
+     *
+     *      * $overwrite:
+     * 默认null：最终的<title>为 $title + response.title
+     * =true：覆盖response.title中的值
+     * =false：仅显示 $title
+     */
     public function title(string $title, bool $overwrite = null): void
     {
         if ($overwrite === true) {
