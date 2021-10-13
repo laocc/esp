@@ -18,11 +18,15 @@ abstract class Controller
     public $_dispatcher;
     /**
      * @var $_config Configure
-     * @var $_request Request
-     * @var $_response Response
      */
     public $_config;
+    /**
+     * @var $_request Request
+     */
     public $_request;
+    /**
+     * @var $_response Response
+     */
     public $_response;
     public $_session;
     public $_plugs;
@@ -485,12 +489,24 @@ abstract class Controller
 
     /**
      * @param string $title
-     * @param bool $default
+     * @param bool $overwrite
      * @return $this
+     *
+     * $overwrite:
+     * 默认null：最终的<title>为 $title + response.title
+     * =true：覆盖response.title中的值
+     * =false：仅显示 $title
+     *
+     * 例如：response.title=我的网站
+     * 未调用此方法的时候，最终title=我的网站
+     * 之后调用：->title('这是文章标题')，最终title为  这是文章标题 - 我的网站
+     *
+     * 第一次调用：->title('新的名称',true)，即将response.title改为新的名称
+     * 之后调用：->title('这是文章标题')，最终title为  这是文章标题 - 新的名称
      */
-    final protected function title(string $title, bool $default = false): Controller
+    final protected function title(string $title, bool $overwrite = null): Controller
     {
-        $this->_response->title($title, $default);
+        $this->_response->title($title, $overwrite);
         return $this;
     }
 

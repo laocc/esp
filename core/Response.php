@@ -660,10 +660,15 @@ final class Response
     }
 
 
-    public function title(string $title, bool $default = true): void
+    public function title(string $title, bool $overwrite = null): void
     {
+        if ($overwrite === true) {
+            $this->_resource->title($title);
+            return;
+        } else if ($overwrite === false) {
+            $this->_layout_val['_title_default'] = false;
+        }
         $this->_layout_val['_title'] = $title;
-        if (!$default) $this->_layout_val['_title_default'] = false;
     }
 
 
