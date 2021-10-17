@@ -459,6 +459,7 @@ final class Dispatcher
             $contReturn = call_user_func_array([$cont, '_init'], [$action]);
             if (is_bool($contReturn) or !is_null($contReturn)) {
                 $this->relayDebug(['_init' => 'return', 'return' => $contReturn]);
+                if ($contReturn === false) $contReturn = null;
                 goto close;
             }
         }
@@ -471,6 +472,7 @@ final class Dispatcher
             $contReturn = call_user_func_array([$cont, '_main'], [$action]);
             if (is_bool($contReturn) or !is_null($contReturn)) {
                 $this->relayDebug(['_main' => 'return', 'return' => $contReturn]);
+                if ($contReturn === false) $contReturn = null;
                 goto close;
             }
         }
@@ -494,7 +496,7 @@ final class Dispatcher
         //运行结束方法
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
             $clo = call_user_func_array([$cont, '_close'], [$action, $contReturn]);
-            if (!is_null($clo)) $contReturn = $clo;
+            if (!is_null($clo) and is_null($contReturn)) $contReturn = $clo;
             $this->relayDebug("[red;{$class}->_close() ==================================]");
         }
 
