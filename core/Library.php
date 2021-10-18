@@ -120,4 +120,11 @@ abstract class Library
         register_shutdown_function($fun, ...$parameter);
         return $this;
     }
+
+    public function redirect(string $url)
+    {
+        $this->_controller->redirect($url);
+    }
+
+
 }
