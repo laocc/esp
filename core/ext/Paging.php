@@ -8,7 +8,6 @@ namespace esp\core\ext;
  * Model中用的分页
  *
  * Class Paging
- * @package esp\library
  */
 final class Paging
 {
