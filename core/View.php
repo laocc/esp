@@ -5,7 +5,7 @@ namespace esp\core;
 
 use esp\error\EspError;
 use esp\face\Adapter;
-use esp\library\ext\MarkdownObject;
+use esp\helper\library\ext\MarkdownObject;
 use function \esp\helper\root;
 
 final class View implements Adapter

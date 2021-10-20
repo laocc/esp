@@ -6,7 +6,7 @@ namespace esp\core;
 use esp\debug\Counter;
 use esp\error\Error;
 use esp\error\EspError;
-use esp\library\Result;
+use esp\helper\library\Result;
 use function esp\helper\host;
 
 final class Dispatcher
