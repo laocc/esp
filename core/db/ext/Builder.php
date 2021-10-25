@@ -583,28 +583,20 @@ final class Builder
                         $in = '=0';
                         $field = substr($field, 0, -1);
                     }
+
+                    if (is_array($value)) $value = array_sum($value);
+                    else $value = intval($value);
+
                     $fieldPro = $this->protect_identifier($field);
-                    if (!is_array($value)) $value = intval($value);
+
                     if ($this->_param) {//采用占位符后置内容方式
-                        if (is_array($value)) {
-                            $_aw = [];
-                            foreach ($value as $val) {
-                                $key = $this->paramKey($field);
-                                $this->_param_data[$key] = $val;
-                                $_aw[] = "({$fieldPro} & {$key}){$in}";
-                            }
-                            $_where = "({$fieldPro} >0 and (" . implode(' or ', $_aw) . "))";
-
+                        if ($value === 0) {
+                            $_where = "({$fieldPro} = 0 )";
                         } else {
-                            if ($value === 0) {
-                                $_where = "({$fieldPro} = 0 )";
-                            } else {
-                                $key = $this->paramKey($field);
-                                $this->_param_data[$key] = $value;
-                                $_where = "({$fieldPro} >0 and ({$fieldPro} & {$key}){$in})";
-                            }
+                            $key = $this->paramKey($field);
+                            $this->_param_data[$key] = $value;
+                            $_where = "({$fieldPro} >0 and ({$fieldPro} & {$key}){$in})";
                         }
-
                     } else {
                         if ($value === 0) {
                             $_where = "({$fieldPro} = 0 )";
