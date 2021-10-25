@@ -93,7 +93,7 @@ final class Cache
 
     public function Save()
     {
-        if (!($this->_option['run'] ?? 0) or ($this->_option['ttl'] < 0) or !$this->response->cache) return;
+        if (!($this->_option['run'] ?? 0) or ($this->_option['ttl'] < 1) or !$this->response->cache) return;
         if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) return;
 
         $value = $this->response->_display_Result;
@@ -143,6 +143,8 @@ final class Cache
         if ($this->response->cache and isset($this->_option['static'])) {
             if ($this->htmlSave($value)) return;
         }
+
+        if ($this->_option['ttl'] < 5) return;
 
         if (!file_exists($this->cache_path)) mk_dir($this->cache_path . '/');
 
