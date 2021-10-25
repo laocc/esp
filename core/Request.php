@@ -28,7 +28,10 @@ final class Request
     public $contFix;
     public $route_view;
     public $exists = true;//是否为正常的请求，请求了不存在的控制器
-    public $alias = [];//控制器映射
+
+    private $alias = [];//控制器映射
+    private $allow = [];//仅允许的控制器
+    private $disallow = [];//禁止的控制器
     private $_ajax;
 
     public function __construct(Dispatcher $dispatcher, array $config = null)
@@ -44,7 +47,15 @@ final class Request
             'directory' => '/application',
             'router' => '/common/routes',
             'controller' => '',
-            'suffix' => ['auto' => 'Action', 'get' => 'Get', 'ajax' => 'Ajax', 'post' => 'Post', 'cli' => 'Cli'],
+            'suffix' => [
+                'auto' => 'Action',
+                'get' => 'Get',
+                'ajax' => 'Ajax',
+                'post' => 'Post',
+                'cli' => 'Cli',
+                'controller' => 'Controller',
+                'model' => 'Model',
+            ],
         ];
 
         $this->_dispatcher = $dispatcher;
@@ -52,10 +63,14 @@ final class Request
         $this->module = '';//虚拟机下模块
         $this->directory = root($config['directory']);
         $this->router_path = root($config['router']);
-        $this->contFix = $config['controller'];//控制器后缀，固定的
+        $this->contFix = ucfirst($config['suffix']['controller'] ?? 'Controller');//控制器后缀，固定的
+        unset($config['suffix']['controller'], $config['suffix']['model']);
         $this->suffix = $config['suffix'];//数组，方法名后缀，在总控中根据不同请求再取值
         $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
+
         if (isset($config['alias']) and is_array($config['alias'])) $this->alias = $config['alias'];
+        if (isset($config['allow']) and is_array($config['allow'])) $this->allow = $config['allow'];
+        if (isset($config['disallow']) and is_array($config['disallow'])) $this->disallow = $config['disallow'];
     }
 
     /**
@@ -108,6 +123,24 @@ final class Request
     {
         return $this->virtual . $this->directory . $this->module . $this->controller . $this->action . json_encode($this->params);
     }
+
+    /**
+     * 检查控制器是否允许或禁止
+     *
+     * @return string|null
+     */
+    public function checkController(): ?string
+    {
+        if (!empty($this->allow) and !in_array($this->controller, $this->allow)) return 'disallow';
+        if (!empty($this->disallow) and in_array($this->controller, $this->disallow)) return 'disallow';
+        //控制器别名转换
+        if (!empty($this->alias) and isset($request->alias[$this->controller])) {
+            $this->controller = $request->alias[$this->controller];
+        }
+
+        return null;
+    }
+
 
     /**
      * 控制器方法后缀

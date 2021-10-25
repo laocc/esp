@@ -418,14 +418,13 @@ final class Dispatcher
      */
     private function dispatch()
     {
-        $contExt = $this->_request->contFix ?: 'Controller';
         $actionExt = $this->_request->getActionExt();
 
         LOOP:
         $virtual = $this->_request->virtual;
         if ($this->_request->module) $virtual .= '\\' . $this->_request->module;
 
-        $controller = ucfirst($this->_request->controller) . $contExt;
+        $controller = ucfirst($this->_request->controller) . $this->_request->contFix;
         $action = strtolower($this->_request->action) . $actionExt;
 
         $class = "\\application\\{$virtual}\\controllers\\{$controller}";

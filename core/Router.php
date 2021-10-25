@@ -116,8 +116,8 @@ final class Router
             $request->params = $params + array_fill(0, 10, null);
             if (!defined('_MODULE')) define('_MODULE', $request->module);
 
-            //控制器别名转换
-            if (isset($request->alias[$request->controller])) $request->controller = $request->alias[$request->controller];
+            $check = $request->checkController();
+            if (is_string($check)) return $check;
 
             //路由器对视图的定义
             if (isset($route['view']) and $route['view']) $request->route_view = $route['view'];
@@ -159,6 +159,12 @@ final class Router
         return null;
     }
 
+    /**
+     * 加载路由文件
+     *
+     * @param Request $request
+     * @return mixed|array|bool|string
+     */
     private function loadRouteFile(Request $request)
     {
         if (is_readable($file = ($request->router_path . '/' . _VIRTUAL . '.php'))) {
