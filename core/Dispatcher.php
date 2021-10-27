@@ -54,8 +54,8 @@ final class Dispatcher
         if (_CLI) {
             if (!defined('_URI')) define('_URI', ('/' . trim(implode('/', array_slice($GLOBALS['argv'], 1)), '/')));
         } else {
-            if (!defined('_URI')) define('_URI', parse_url(getenv('REQUEST_URI'), PHP_URL_PATH));
-            //对于favicon.ico，建议在nginx中直接拦截
+            if (!defined('_URI')) define('_URI', parse_url(str_replace('//', '/', getenv('REQUEST_URI') ?: '/'), PHP_URL_PATH) ?: '/');
+            //对于favicon.ico，建议在根目录直接放一个该文件，或在nginx中直接拦截
             if (_URI === '/favicon.ico') {
                 header('Content-type: image/x-icon', true);
                 exit('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAQSURBVHjaYvj//z8DQIABAAj8Av7bok0WAAAAAElFTkSuQmCC');

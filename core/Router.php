@@ -138,21 +138,33 @@ final class Router
      */
     private function getMatcher(string $key, array $route)
     {
-        if ((isset($route['path']) and $route['path'] === $this->uri) or
-            (isset($route['uri']) and (stripos($this->uri, $route['uri']) === 0)) or
-            (isset($route['like']) and (stripos($this->uri, $route['like'])) !== false)) {
-            $matcher = explode('/', $this->uri);
-            $matcher[0] = $this->uri;
+        if (_URI === '/' or !_URI) return ['/', ''];
+
+        /**
+         * 1，指定了path，需完全相等
+         * 2，指定了uri，需以际URI开头
+         * 3，指定了相似，也就是URI是此值的一部分
+         */
+        if ((isset($route['path']) and $route['path'] === _URI) or
+            (isset($route['uri']) and (stripos(_URI, $route['uri']) === 0)) or
+            (isset($route['like']) and (stripos(_URI, $route['like'])) !== false)) {
+            $matcher = explode('/', _URI);
+            $matcher[0] = _URI;
             return $matcher;
         }
 
-        if (isset($route['match']) and preg_match($route['match'], $this->uri, $matcher)) return $matcher;
+        /**
+         * 以正则方式匹配
+         */
+        if (isset($route['match']) and preg_match($route['match'], _URI, $matcher)) return $matcher;
 
-        if (isset($route['__default__']) and ($this->uri === '/' or $this->uri === '')) return ['/', ''];
-
-        if (isset($route['__default__']) and preg_match('#^\/[a-z][a-z0-9\-\_]*\/?.*#i', $this->uri)) {
-            $matcher = explode('/', $this->uri);
-            $matcher[0] = $this->uri;
+        /**
+         * 默认路由
+         */
+        //#^/[a-z][a-z0-9\-_]*/?.*#i
+        if (isset($route['__default__']) and preg_match('#^/[a-z]\w*/?.*#i', _URI)) {
+            $matcher = explode('/', _URI);
+            $matcher[0] = _URI;
             return $matcher;
         }
 
