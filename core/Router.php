@@ -138,8 +138,6 @@ final class Router
      */
     private function getMatcher(string $key, array $route)
     {
-        if (_URI === '/' or !_URI) return ['/', ''];
-
         /**
          * 1，指定了path，需完全相等
          * 2，指定了uri，需以际URI开头
@@ -157,6 +155,8 @@ final class Router
          * 以正则方式匹配
          */
         if (isset($route['match']) and preg_match($route['match'], _URI, $matcher)) return $matcher;
+
+        if (isset($route['__default__']) and (_URI === '/' or !_URI)) return ['/', ''];
 
         /**
          * 默认路由
