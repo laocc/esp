@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core\db\ext;
 
+use PDOStatement;
 use function esp\helper\xml_decode;
 
 final class PdoResult
@@ -14,11 +15,11 @@ final class PdoResult
 
     /**
      * PdoResult constructor.
-     * @param \PDOStatement $result
+     * @param PDOStatement $result
      * @param $count
      * @param $sql
      */
-    public function __construct(\PDOStatement $result, $count, $sql)
+    public function __construct(PDOStatement $result, $count, $sql)
     {
         $this->rs = $result;
         $this->count = $count;
@@ -99,8 +100,9 @@ final class PdoResult
 
     /**
      * 以数组形式返回结果集中的所有行
+     *
      * @param int $row
-     * @param int $col 返回第x列
+     * @param int|null $col 返回第x列
      * @param array $decode
      * @return array|mixed
      */

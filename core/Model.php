@@ -630,6 +630,21 @@ abstract class Model extends Library
         return $this->Mysql(0, [], 1)->quote($string);
     }
 
+    /**
+     * 断开所有链接，
+     *
+     */
+    final public function close(): void
+    {
+        $branchName = $this->_branch ?? 'auto';
+        $mysql = $this->_controller->_Mysql[$branchName][0];
+//        $model->_controller->_PdoPool;
+        /**
+         * @var $mysql Mysql
+         */
+        $mysql->close();
+    }
+
 
     final public function join(...$data)
     {

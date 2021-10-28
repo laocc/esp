@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 namespace esp\core\db;
 
+use ErrorException;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\PdoResult;
 use esp\core\Model;
 use esp\core\Debug;
 use esp\error\EspError;
+use PDO;
 
 final class Mysql
 {
@@ -72,7 +74,6 @@ final class Mysql
      * @param string $action
      * @param string $sql
      * @param int $traceLevel
-     * @throws \ErrorException
      */
     public function counter(string $action, string $sql, int $traceLevel)
     {
@@ -122,7 +123,8 @@ final class Mysql
      * @param bool $upData
      * @param int $trans_id
      * @param int $traceLevel
-     * @return mixed
+     * @return mixed|PDO
+     * @throws EspError
      */
     private function connect(bool $upData, int $trans_id = 0, int $traceLevel = 0)
     {
@@ -162,11 +164,11 @@ final class Mysql
 
         try {
             $opts = array(
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,//错误等级
-                \PDO::ATTR_AUTOCOMMIT => $autoCommit,//自动提交事务=false，默认true,如果有事务ID，则为false
-                \PDO::ATTR_EMULATE_PREPARES => false,//是否使用PHP本地模拟prepare,禁止
-                \PDO::ATTR_PERSISTENT => $persistent,//是否启用持久连接
-                \PDO::ATTR_TIMEOUT => intval($cnf['timeout']), //设置超时时间，秒，默认=2
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,//错误等级
+                PDO::ATTR_AUTOCOMMIT => $autoCommit,//自动提交事务=false，默认true,如果有事务ID，则为false
+                PDO::ATTR_EMULATE_PREPARES => false,//是否使用PHP本地模拟prepare,禁止
+                PDO::ATTR_PERSISTENT => $persistent,//是否启用持久连接
+                PDO::ATTR_TIMEOUT => intval($cnf['timeout']), //设置超时时间，秒，默认=2
             );
             if ($host[0] === '/') {//unix_socket
                 $conStr = "mysql:dbname={$cnf['db']};unix_socket={$host};charset={$cnf['charset']};id={$trans_id};";
@@ -177,7 +179,7 @@ final class Mysql
             }
 
             try {
-                $pdo = new \PDO($conStr, $cnf['username'], $cnf['password'], $opts);
+                $pdo = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
                 (!_CLI) and $this->debug("{$real}({$trans_id}):{$conStr}");
 
             } catch (\PDOException $PdoError) {
@@ -248,12 +250,12 @@ final class Mysql
      * 此方法内若发生错误，必须以string返回
      * @param string $sql
      * @param array $option
-     * @param \PDO|null $CONN
+     * @param PDO|null $CONN
      * @param int $traceLevel
      * @return bool|string|int
      * @throws EspError
      */
-    public function query(string $sql, array $option = [], \PDO $CONN = null, int $traceLevel = 0)
+    public function query(string $sql, array $option = [], PDO $CONN = null, int $traceLevel = 0)
     {
         if (empty($sql)) {
             throw new EspError("PDO_Error :  SQL语句不能为空", $traceLevel + 1);
@@ -327,7 +329,7 @@ final class Mysql
 
         $debugOption = [
             'trans' => var_export($transID, true),
-            'server' => $CONN->getAttribute(\PDO::FETCH_COLUMN),//服务器IP
+            'server' => $CONN->getAttribute(PDO::FETCH_COLUMN),//服务器IP
             'sql' => $sql,
             'prepare' => (!empty($option['param']) or $option['prepare']) ? 'YES' : 'NO',
             'param' => json_encode($option['param'], 256 | 64),
@@ -388,16 +390,16 @@ final class Mysql
         return $result;
     }
 
-    private function connHasGoneAway(int $transID, string $real, \PDO $CONN, int $try)
+    private function connHasGoneAway(int $transID, string $real, PDO $CONN, int $try)
     {
         if (!_CLI or $try > 1) return false;
-        if (!$CONN->getAttribute(\PDO::ATTR_PERSISTENT)) return false;
+        if (!$CONN->getAttribute(PDO::ATTR_PERSISTENT)) return false;
 
         $time = time();
 
         try {
 
-            $info = $CONN->getAttribute(\PDO::ATTR_SERVER_INFO);
+            $info = $CONN->getAttribute(PDO::ATTR_SERVER_INFO);
 
         } catch (\Error $error) {
             ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
@@ -432,7 +434,7 @@ final class Mysql
         return false;
     }
 
-    private function PdoAttribute(\PDO $pdo)
+    private function PdoAttribute(PDO $pdo)
     {
         $attributes = array(
             'PARAM_BOOL', 'PARAM_NULL', 'PARAM_LOB', 'PARAM_STMT', 'FETCH_NAMED', 'FETCH_NUM', 'FETCH_BOTH', 'FETCH_OBJ', 'FETCH_BOUND', 'FETCH_COLUMN', 'FETCH_CLASS', 'FETCH_KEY_PAIR',
@@ -448,23 +450,27 @@ final class Mysql
     }
 
     /**
-     * @param \PDO $CONN
-     * @param $sql
+     * @param PDO $CONN
+     * @param string $sql
      * @param array $option
      * @param $error
-     * @return bool|int|null
+     * @param int $traceLevel
+     * @return int|null
+     * @throws ErrorException
      */
-    private function update(\PDO $CONN, string $sql, array &$option, &$error, int $traceLevel)
+    private function update(PDO $CONN, string $sql, array &$option, &$error, int $traceLevel)
     {
         if (!empty($option['param']) or $option['prepare']) {
             try {
-                $stmt = $CONN->prepare($sql, [\PDO::MYSQL_ATTR_FOUND_ROWS => true]);
+                $stmt = $CONN->prepare($sql, [PDO::MYSQL_ATTR_FOUND_ROWS => true]);
                 if ($stmt === false) {//预处理时就出错，一般是不应该的，有可能是字段名不对等等
                     $error = $CONN->errorInfo();
+                    $stmt = null;
                     return null;
                 }
             } catch (\PDOException $PdoError) {//执行预处理，如果出错，很少见，还没遇到过
                 $error = $PdoError->errorInfo;
+                $stmt = null;
                 return null;
             }
             try {
@@ -473,13 +479,16 @@ final class Mysql
 //                $option['debug_sql'] = $stmt->debugDumpParams();
                 if ($run === false) {//执行预处理过的内容，如果不成功，多出现传入的值不符合字段类型的情况
                     $error = $stmt->errorInfo();
+                    $stmt = null;
                     return null;
                 }
             } catch (\PDOException $PdoError) {//执行预处理过的SQL，如果出错，很少见，还没遇到过
                 $error = $PdoError->errorInfo;
                 return null;
             }
-            return $stmt->rowCount();//受影响的行数
+            $rowCount = $stmt->rowCount();
+            $stmt = null;
+            return $rowCount;//受影响的行数
         } else {
             try {
                 $run = $CONN->exec($sql);
@@ -499,13 +508,15 @@ final class Mysql
 
     /**
      * 最后插入的ID，若批量插入则返回值是数组
-     * @param \PDO $CONN
-     * @param $sql
+     * @param PDO $CONN
+     * @param string $sql
      * @param array $option
      * @param $error
+     * @param int $traceLevel
      * @return array|int|mixed|null
+     * @throws ErrorException
      */
-    private function insert(\PDO $CONN, string $sql, array &$option, &$error, int $traceLevel)
+    private function insert(PDO $CONN, string $sql, array &$option, &$error, int $traceLevel)
     {
         if (!empty($option['param']) or $option['prepare']) {
             $result = array();
@@ -513,10 +524,12 @@ final class Mysql
                 $stmt = $CONN->prepare($sql);
                 if ($stmt === false) {
                     $error = $CONN->errorInfo();
+                    $stmt = null;
                     return null;
                 }
             } catch (\PDOException $PdoError) {//执行预处理，如果出错，很少见，还没遇到过
                 $error = $PdoError->errorInfo;
+                $stmt = null;
                 return null;
             }
             if (!empty($option['param'])) {//有后续参数
@@ -527,12 +540,14 @@ final class Mysql
 //                        $option['debug_sql'] = $stmt->debugDumpParams();
                         if ($run === false) {
                             $error = $stmt->errorInfo();
+                            $stmt = null;
                             return null;
                         } else {
                             $result[] = (int)$CONN->lastInsertId();//最后插入的ID
                         }
                     } catch (\PDOException $PdoError) {
                         $error = $PdoError->errorInfo;
+                        $stmt = null;
                         return null;
                     }
                 }
@@ -543,16 +558,17 @@ final class Mysql
 //                    $option['debug_sql'] = $stmt->debugDumpParams();
                     if ($run === false) {
                         $error = $stmt->errorInfo();
+                        $stmt = null;
                         return null;
                     } else {
-                        $result[] = (int)$CONN->lastInsertId();
+                        $result[] = $CONN->lastInsertId();
                     }
                 } catch (\PDOException $PdoError) {
                     $error = $PdoError->errorInfo;
                     return null;
                 }
             }
-
+            $stmt = null;
             //只有一条的情况下返回一个ID
             return (count($result) === 1) ? $result[0] : $result;
 
@@ -575,27 +591,31 @@ final class Mysql
 
 
     /**
-     * @param \PDO $CONN
+     * @param PDO $CONN
      * @param string $sql
      * @param array $option
      * @param $error
+     * @param int $traceLevel
      * @return PdoResult|null
+     * @throws ErrorException
      */
-    private function select(\PDO $CONN, string &$sql, array &$option, &$error, int $traceLevel)
+    private function select(PDO $CONN, string &$sql, array &$option, &$error, int $traceLevel)
     {
-        $fetch = [\PDO::FETCH_NUM, \PDO::FETCH_ASSOC, \PDO::FETCH_BOTH];
+        $fetch = [PDO::FETCH_NUM, PDO::FETCH_ASSOC, PDO::FETCH_BOTH];
         if (!in_array($option['fetch'], [0, 1, 2])) $option['fetch'] = 2;
         $count = null;
         if (!empty($option['param']) or $option['prepare']) {
             try {
                 //预处理，返回结果允许游标上下移动
-                $stmt = $CONN->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_SCROLL]);
+                $stmt = $CONN->prepare($sql, [PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL]);
                 if ($stmt === false) {
                     $error = $CONN->errorInfo();
+                    $stmt = null;
                     return null;
                 }
             } catch (\PDOException $PdoError) {//执行预处理，如果出错，很少见，还没遇到过
                 $error = $PdoError->errorInfo;
+                $stmt = null;
                 return null;
             }
 
@@ -645,6 +665,7 @@ final class Mysql
 
             } catch (\PDOException $PdoError) {
                 $error = $PdoError->errorInfo;
+                $stmt = null;
                 return null;
             }
         } else {
@@ -658,7 +679,7 @@ final class Mysql
 
                 if ($option['count']) {
                     $a = microtime(true);
-                    $count = $CONN->query($option['_count_sql'], \PDO::FETCH_NUM)->fetch()[0] ?? 0;
+                    $count = $CONN->query($option['_count_sql'], PDO::FETCH_NUM)->fetch()[0] ?? 0;
                     $this->counter('select', $sql, -1);
                     $t = microtime(true) - $a;
                     if ($t > 2) {
@@ -684,6 +705,18 @@ final class Mysql
     public function ping()
     {
         return isset($this->_pool['master']);
+    }
+
+    /**
+     * 断开所有链接
+     */
+    public function close(): void
+    {
+        foreach ($this->_pool as $r => &$pool) {
+            foreach ($pool as $id => &$p) $p = null;
+            $pool = null;
+        }
+        $this->_pool = [];
     }
 
     /**
@@ -765,7 +798,7 @@ final class Mysql
             return false;
         }
         /**
-         * @var $CONN \PDO
+         * @var $CONN PDO
          */
         $CONN = $this->_pool['master'][$trans_id];
         if (!$CONN->inTransaction()) {
@@ -785,7 +818,7 @@ final class Mysql
     {
         $this->_trans_run[$trans_id] = false;
         /**
-         * @var $CONN \PDO
+         * @var $CONN PDO
          */
         $CONN = $this->_pool['master'][$trans_id];
         if (!$CONN->inTransaction()) {
@@ -807,11 +840,11 @@ final class Mysql
 
     /**
      * 检查当前连接是否还在事务之中
-     * @param \PDO $CONN
+     * @param PDO $CONN
      * @param $trans_id
      * @return bool
      */
-    public function trans_in(\PDO $CONN, $trans_id)
+    public function trans_in(PDO $CONN, $trans_id)
     {
         return $CONN->inTransaction();
     }
