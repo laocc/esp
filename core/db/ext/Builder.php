@@ -399,15 +399,15 @@ final class Builder
      * 则需改为：where tabUser.userAge>10 and orderAmount>100
      * 如果不加表名，则在不考虑userAge条件的情况下计算总数
      *
-     * @param string $field
+     * @param $field
      * @param null $value
      * @param null $is_OR 若=0则返回组合后的where而不加入现有sql中
      * @return $this|string
      * @throws EspError
      */
-    public function where($field = '', $value = null, $is_OR = null)
+    public function where($field, $value = null, $is_OR = null)
     {
-        if (empty($field)) return $this;
+        if (empty($field) and is_null($value)) return $this;
 
         //省略了第三个参数，第二个是布尔型
         if (is_bool($value) and $is_OR === null) {
@@ -467,6 +467,16 @@ final class Builder
                 }
             }
             return $this;
+        }
+
+        if (is_int($field)) {
+            if (is_string($value)) {
+                $field = $value;
+                $value = null;
+            } else {
+//                print_r($this->_where);
+                throw new EspError("DB_ERROR: where 条件异常，第4级条件只能是字符串形式的原生SQL语句", 1);
+            }
         }
 
         if (!is_string($field)) {

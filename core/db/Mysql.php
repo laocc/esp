@@ -476,7 +476,6 @@ final class Mysql
             try {
                 $run = $stmt->execute($option['param']);
                 $this->counter('update', $sql, $traceLevel + 1);
-//                $option['debug_sql'] = $stmt->debugDumpParams();
                 if ($run === false) {//执行预处理过的内容，如果不成功，多出现传入的值不符合字段类型的情况
                     $error = $stmt->errorInfo();
                     $stmt = null;
@@ -537,7 +536,6 @@ final class Mysql
                     try {
                         $run = $stmt->execute($row);
                         $this->counter('insert', $sql, $traceLevel + 1);
-//                        $option['debug_sql'] = $stmt->debugDumpParams();
                         if ($run === false) {
                             $error = $stmt->errorInfo();
                             $stmt = null;
@@ -555,7 +553,6 @@ final class Mysql
                 try {
                     $run = $stmt->execute();
                     $this->counter('insert', $sql, $traceLevel + 1);
-//                    $option['debug_sql'] = $stmt->debugDumpParams();
                     if ($run === false) {
                         $error = $stmt->errorInfo();
                         $stmt = null;
@@ -632,7 +629,6 @@ final class Mysql
                 }
                 $run = $stmt->execute($option['param']);
                 $this->counter('select', $sql, $traceLevel + 1);
-//                $option['debug_sql'] = $stmt->debugDumpParams();
                 if ($run === false) {
                     $error = $stmt->errorInfo();
                     return null;
@@ -656,7 +652,6 @@ final class Mysql
                     if ($t > 2) {
                         $this->debug()->error("SQL count 超时2s执行:{$option['_count_sql']}");
                     }
-//                    $option['count_sql'] = $stmtC->debugDumpParams();
                     $count = $stmtC->fetchColumn(0);
                     if (!$count) $count = 0;
 //                    $count = $stmtC->fetch()[0] ?? 0;
