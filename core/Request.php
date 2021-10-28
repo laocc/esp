@@ -131,7 +131,7 @@ final class Request
      */
     public function checkController(): ?string
     {
-        if (!empty($this->allow) and !in_array($this->controller, $this->allow)) return 'disallow';
+        if (!empty($this->allow) and !in_array($this->controller, $this->allow)) return 'not exist in allowed';
         if (!empty($this->disallow) and in_array($this->controller, $this->disallow)) return 'disallow';
         //控制器别名转换
         if (!empty($this->alias) and isset($request->alias[$this->controller])) {
