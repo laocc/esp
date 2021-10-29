@@ -91,7 +91,7 @@ final class Router
             else if (isset($route['directory'])) $request->directory = root($route['directory']);
 
             //分别获取模块、控制器、动作的实际值
-            $routeValue = $this->fill_route($request->virtual, $request->directory, $matcher, $route['route']);
+            $routeValue = $this->fill_route($request->virtual, $request->directory, $matcher, $route['route'] ?? []);
             if (is_string($routeValue)) return $routeValue;
             list($module, $controller, $action, $param) = $routeValue;
 
@@ -99,8 +99,8 @@ final class Router
             $params = array();
             if (isset($route['map'])) {
                 foreach ($route['map'] as $mi => $mk) {
-                    if (is_int($mk)) {
-                        $params[$mi] = $matcher[$mk] ?? null;
+                    if (preg_match('/^\$?(\d+)$/', $mk, $mp)) {
+                        $params[$mi] = $matcher[intval($mp[1])] ?? null;
                     } else {
                         $params[$mi] = $mk;
                     }
@@ -196,14 +196,14 @@ final class Router
         }
         if (empty($modRoute)) return [];
 
+        if (!_DEBUG) return $modRoute;
+
         foreach ($modRoute as $r => $route) {
             if (isset($route['match']) and !is_match($route['match']))
                 return ("Route[Match]：{$route['match']} 不是有效正则表达式");
 
             if (isset($route['uri']) and !is_uri($route['uri']))
                 return ("Route[uri]：{$route['uri']} 不是合法的URI格式");
-
-            if (!isset($route['route'])) $modRoute[$r]['route'] = [];
         }
         return $modRoute;
     }
