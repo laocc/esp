@@ -401,7 +401,7 @@ final class Response
 
             case 'xml':
                 if (is_array($this->_display_value[1])) {
-                    $html = (new Xml($this->_display_value[1], $this->_display_value[0]))->render();
+                    $html = (new Xml($this->_display_value[1], $this->_display_value[0]))->useCData(false)->render();
                 } else {
                     $html = $this->_display_value[1];
                 }
