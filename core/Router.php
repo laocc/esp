@@ -99,7 +99,9 @@ final class Router
             $params = array();
             if (isset($route['map'])) {
                 foreach ($route['map'] as $mi => $mk) {
-                    if (preg_match('/^\$?(\d+)$/', $mk, $mp)) {
+                    if (is_numeric($mk)) {
+                        $params[$mi] = $matcher[intval($mk)] ?? null;
+                    } else if (preg_match('/^\$?(\d+)$/', strval($mk), $mp)) {
                         $params[$mi] = $matcher[intval($mp[1])] ?? null;
                     } else {
                         $params[$mi] = $mk;
