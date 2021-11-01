@@ -129,7 +129,7 @@ abstract class Model extends Library
      * @param bool $run
      * @return $this
      */
-    final public function cache($run = true)
+    final public function cache($run = true): Model
     {
         $this->__cache = $run;
         return $this;
@@ -328,7 +328,7 @@ abstract class Model extends Library
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if ($this->_having) $obj->having($this->_having);
         if ($where) $obj->where($where);
-        if ($this->groupKey) $obj->group($this->groupKey);
+        if (is_string($this->groupKey)) $obj->group($this->groupKey);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if (!empty($this->_order)) {
@@ -386,7 +386,7 @@ abstract class Model extends Library
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
         if ($where) $obj->where($where);
-        if ($this->groupKey) $obj->group($this->groupKey);
+        if (is_string($this->groupKey)) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->_having) $obj->having($this->_having);
@@ -434,7 +434,7 @@ abstract class Model extends Library
         if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
 
         if ($where) $obj->where($where);
-        if ($this->groupKey) $obj->group($this->groupKey);
+        if (is_string($this->groupKey)) $obj->group($this->groupKey);
         if ($this->_having) $obj->having($this->_having);
 
         if (!empty($this->_order)) {

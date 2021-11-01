@@ -89,6 +89,7 @@ final class Paging
             'total' => $this->total,
             'last' => $this->last,
             'key' => $this->index_key,
+            'sum' => $this->sum,
         ];
     }
 

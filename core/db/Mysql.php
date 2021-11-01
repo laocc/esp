@@ -10,6 +10,7 @@ use esp\core\Model;
 use esp\core\Debug;
 use esp\error\EspError;
 use PDO;
+use PDOException;
 
 final class Mysql
 {
@@ -181,7 +182,7 @@ final class Mysql
                 $pdo = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
                 (!_CLI) and $this->debug("{$real}({$trans_id}):{$conStr}");
 
-            } catch (\PDOException $PdoError) {
+            } catch (PDOException $PdoError) {
                 $err = [];
                 $err['code'] = $PdoError->getCode();
                 $err['msg'] = $PdoError->getMessage();
@@ -191,7 +192,7 @@ final class Mysql
             $this->connect_time[$trans_id] = time();
             return $this->_pool[$real][$trans_id] = $pdo;
 
-        } catch (\PDOException $PdoError) {
+        } catch (PDOException $PdoError) {
             /*
              *信息详细程度取决于$opts里PDO::ATTR_ERRMODE =>
              * PDO::ERRMODE_SILENT，只简单地设置错误码，默认值
@@ -467,7 +468,7 @@ final class Mysql
                     $stmt = null;
                     return null;
                 }
-            } catch (\PDOException $PdoError) {//执行预处理，如果出错，很少见，还没遇到过
+            } catch (PDOException $PdoError) {//执行预处理，如果出错，很少见，还没遇到过
                 $error = $PdoError->errorInfo;
                 $stmt = null;
                 return null;
@@ -480,7 +481,7 @@ final class Mysql
                     $stmt = null;
                     return null;
                 }
-            } catch (\PDOException $PdoError) {//执行预处理过的SQL，如果出错，很少见，还没遇到过
+            } catch (PDOException $PdoError) {//执行预处理过的SQL，如果出错，很少见，还没遇到过
                 $error = $PdoError->errorInfo;
                 return null;
             }
@@ -497,7 +498,7 @@ final class Mysql
                 } else {
                     return $run;//受影响的行数
                 }
-            } catch (\PDOException $PdoError) {
+            } catch (PDOException $PdoError) {
                 $error = $PdoError->errorInfo;
                 return null;
             }
@@ -525,7 +526,7 @@ final class Mysql
                     $stmt = null;
                     return null;
                 }
-            } catch (\PDOException $PdoError) {//执行预处理，如果出错，很少见，还没遇到过
+            } catch (PDOException $PdoError) {//执行预处理，如果出错，很少见，还没遇到过
                 $error = $PdoError->errorInfo;
                 $stmt = null;
                 return null;
@@ -542,7 +543,7 @@ final class Mysql
                         } else {
                             $result[] = (int)$CONN->lastInsertId();//最后插入的ID
                         }
-                    } catch (\PDOException $PdoError) {
+                    } catch (PDOException $PdoError) {
                         $error = $PdoError->errorInfo;
                         $stmt = null;
                         return null;
@@ -559,7 +560,7 @@ final class Mysql
                     } else {
                         $result[] = $CONN->lastInsertId();
                     }
-                } catch (\PDOException $PdoError) {
+                } catch (PDOException $PdoError) {
                     $error = $PdoError->errorInfo;
                     return null;
                 }
@@ -578,7 +579,7 @@ final class Mysql
                 } else {
                     return (int)$CONN->lastInsertId();
                 }
-            } catch (\PDOException $PdoError) {
+            } catch (PDOException $PdoError) {
                 $error = $PdoError->errorInfo;
                 return null;
             }
@@ -609,7 +610,7 @@ final class Mysql
                     $stmt = null;
                     return null;
                 }
-            } catch (\PDOException $PdoError) {//执行预处理，如果出错，很少见，还没遇到过
+            } catch (PDOException $PdoError) {//执行预处理，如果出错，很少见，还没遇到过
                 $error = $PdoError->errorInfo;
                 $stmt = null;
                 return null;
@@ -655,7 +656,7 @@ final class Mysql
                 }
 
 
-            } catch (\PDOException $PdoError) {
+            } catch (PDOException $PdoError) {
                 $error = $PdoError->errorInfo;
                 $stmt = null;
                 return null;
@@ -680,7 +681,7 @@ final class Mysql
                 }
 
 
-            } catch (\PDOException $PdoError) {
+            } catch (PDOException $PdoError) {
                 $error = $PdoError->errorInfo;
                 return null;
             }
