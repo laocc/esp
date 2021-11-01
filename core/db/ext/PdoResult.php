@@ -8,22 +8,24 @@ use function esp\helper\xml_decode;
 
 final class PdoResult
 {
-
     private $rs;//结果对象
     private $count = 0;
     private $sql;
+    private $sum = [];
 
     /**
      * PdoResult constructor.
      * @param PDOStatement $result
-     * @param $count
-     * @param $sql
+     * @param array $count
+     * @param string $sql
      */
-    public function __construct(PDOStatement $result, $count, $sql)
+    public function __construct(PDOStatement $result, array $count, string $sql)
     {
         $this->rs = $result;
-        $this->count = $count;
         $this->sql = $sql;
+        $this->count = $count['count'] ?? 0;
+        unset($count['count']);
+        $this->sum = $count;
     }
 
     public function __destruct()
@@ -34,18 +36,18 @@ final class PdoResult
     public function __get($key)
     {
         $rs = $this->rs->fetch();
-        return isset($rs->{$key}) ? $rs->{$key} : null;
+        return $rs->{$key} ?? null;
     }
 
     /**
      * @return bool
      */
-    public function close()
+    public function close(): bool
     {
         return $this->rs->closeCursor();
     }
 
-    public function sql()
+    public function sql(): string
     {
         return $this->sql;
     }
@@ -98,6 +100,11 @@ final class PdoResult
         return $this->row($col, $decode);
     }
 
+    public function sum(): array
+    {
+        return $this->sum;
+    }
+
     /**
      * 以数组形式返回结果集中的所有行
      *
@@ -146,7 +153,7 @@ final class PdoResult
      * 但是在构造查询时须加count()方法，否则获取到的只是当前批次的记录数。
      * @return int
      */
-    public function count()
+    public function count(): int
     {
         return ($this->count === null) ?
             $this->rs->rowCount() :
@@ -157,7 +164,7 @@ final class PdoResult
      * 返回当前查询结果的字段列数
      * @return int
      */
-    public function column()
+    public function column(): int
     {
         return $this->rs->columnCount();
     }
@@ -166,7 +173,7 @@ final class PdoResult
      * 本次执行是否有错误
      * @return null|string
      */
-    public function error()
+    public function error(): ?string
     {
         if (!$this->rs->errorCode()) return null;
         return $this->rs->errorCode() . ' ' . json_encode($this->rs->errorInfo());

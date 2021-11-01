@@ -87,7 +87,7 @@ abstract class Model extends Library
         return json_encode(['table' => $this->_table, 'id' => $this->_id]);
     }
 
-    final public function debug_sql(bool $df = false)
+    final public function debug_sql(bool $df = false): Model
     {
         $this->_debug_sql = $df;
         return $this;
@@ -212,7 +212,7 @@ abstract class Model extends Library
      * @return $this
      * @throws EspError
      */
-    final public function trans_cache(string $table, array $where)
+    final public function trans_cache(string $table, array $where): Model
     {
         if (is_null($this->Buffer)) {
             $mysql = $this->Mysql(0, [], 1);
@@ -228,7 +228,7 @@ abstract class Model extends Library
     /**
      * 删
      * @param $where
-     * @return mixed
+     * @return bool|int|string
      * @throws EspError
      */
     final public function delete($where)
@@ -257,7 +257,7 @@ abstract class Model extends Library
      * 改
      * @param $where
      * @param array $data
-     * @return bool|db\ext\PdoResult|null
+     * @return bool|null
      * @throws EspError
      */
     final public function update($where, array $data)
@@ -407,8 +407,7 @@ abstract class Model extends Library
         $_decode = $this->_decode;
         if ($v = $this->checkRunData('all', $data)) return $v;
 
-        $data = $data->rows(0, $this->columnKey, $_decode);
-        return $data;
+        return $data->rows(0, $this->columnKey, $_decode);
     }
 
     /**
@@ -453,12 +452,15 @@ abstract class Model extends Library
         $count = $this->_count;
         if (is_null($count)) $count = true;
         $obj->count($count === true);
+        if (is_string($this->sumKey)) $obj->sum($this->sumKey);
 
         if (is_null($this->paging)) $this->paging = new Paging();
         $skip = ($this->paging->index - 1) * $this->paging->size;
         $data = $obj->limit($this->paging->size, $skip)->get(0, $this->_traceLevel);
         $_decode = $this->_decode;
         if ($v = $this->checkRunData('list', $data)) return $v;
+
+        if ($this->sumKey) $this->paging->sum($data->sum());
 
         if ($count === true) {
             $this->paging->calculate($data->count());
@@ -475,14 +477,14 @@ abstract class Model extends Library
         return $data->rows(0, null, $_decode);
     }
 
-    final public function sql(&$sql)
+    final public function sql(&$sql): Model
     {
         $this->_print_sql = true;
         $sql = $this->_print_sql;
         return $this;
     }
 
-    final public function having(string $filter)
+    final public function having(string $filter): Model
     {
         $this->_having = $filter;
         return $this;
@@ -516,7 +518,7 @@ abstract class Model extends Library
         }
     }
 
-    final public function decode(string $cols, string $type = 'json')
+    final public function decode(string $cols, string $type = 'json'): Model
     {
         if (!isset($this->_decode[$type])) $this->_decode[$type] = [];
         array_push($this->_decode[$type], ...array_map(function ($col) {
@@ -532,7 +534,7 @@ abstract class Model extends Library
      * @param null $lat
      * @return string
      */
-    final public function point($lng, $lat = null)
+    final public function point($lng, $lat = null): string
     {
         if (is_null($lat) and is_array($lng)) {
             $lat = $lng['lat'] ?? ($lng[1] ?? 0);
@@ -547,7 +549,7 @@ abstract class Model extends Library
      * @return string
      * @throws EspError
      */
-    final public function polygon(array $location)
+    final public function polygon(array $location): string
     {
         if (count($location) < 3) throw new EspError("空间区域至少需要3个点");
         $val = [];
@@ -562,6 +564,14 @@ abstract class Model extends Library
         return "polygon(" . implode(',', $val) . ")";
     }
 
+    private $sumKey = null;
+
+    final public function sum(string $sumKey): Model
+    {
+        $this->sumKey = $sumKey;
+        $this->_count = true;
+        return $this;
+    }
 
     /**
      * 当前请求结果的总行数
@@ -574,7 +584,7 @@ abstract class Model extends Library
      * 1-10     :size的倍数，为了分页不至于显示0页
      * 10以上    :为指定总数
      */
-    final public function count($count = true)
+    final public function count($count = true): Model
     {
         $this->_count = $count;
         if ($count === 0) $this->_count = false;
@@ -586,7 +596,7 @@ abstract class Model extends Library
      * @param bool $protect
      * @return $this
      */
-    final public function protect(bool $protect)
+    final public function protect(bool $protect): Model
     {
         $this->_protect = $protect;
         return $this;
@@ -597,25 +607,25 @@ abstract class Model extends Library
      * @param bool $bool
      * @return $this
      */
-    final public function distinct(bool $bool = true)
+    final public function distinct(bool $bool = true): Model
     {
         $this->_distinct = $bool;
         return $this;
     }
 
-    final public function pagingSet(int $size, int $index = 0, int $recode = null)
+    final public function pagingSet(int $size, int $index = 0, int $recode = null): Model
     {
         $this->paging = new Paging($size, $index, $recode);
         return $this;
     }
 
-    final public function pageSet(int $size, int $index = 0, int $recode = null)
+    final public function pageSet(int $size, int $index = 0, int $recode = null): Model
     {
         $this->paging = new Paging($size, $index, $recode);
         return $this;
     }
 
-    final public function pagingIndex(int $index)
+    final public function pagingIndex(int $index): Model
     {
         $this->paging->index($index);
         return $this;
@@ -646,7 +656,7 @@ abstract class Model extends Library
     }
 
 
-    final public function join(...$data)
+    final public function join(...$data): Model
     {
         if (empty($data)) {
             $this->tableJoin = array();
@@ -656,7 +666,7 @@ abstract class Model extends Library
         return $this;
     }
 
-    final public function group(string $groupKey, bool $only = false)
+    final public function group(string $groupKey, bool $only = false): Model
     {
         if ($only) $this->columnKey = 0;
         $this->groupKey = $groupKey;
@@ -669,7 +679,7 @@ abstract class Model extends Library
      * @param string $field
      * @return $this
      */
-    final public function field(string $field)
+    final public function field(string $field): Model
     {
         $this->columnKey = 0;
         $this->selectKey = [[$field, true]];
@@ -681,7 +691,7 @@ abstract class Model extends Library
      * @param int $field
      * @return $this
      */
-    final public function column(int $field = 0)
+    final public function column(int $field = 0): Model
     {
         $this->columnKey = $field;
         return $this;
@@ -692,7 +702,7 @@ abstract class Model extends Library
      * @param $index
      * @return $this
      */
-    final public function force($index)
+    final public function force($index): Model
     {
         if (empty($index)) return $this;
         if (is_string($index)) $index = explode(',', $index);
@@ -706,7 +716,7 @@ abstract class Model extends Library
      * @param string $index
      * @return $this
      */
-    final public function index($index)
+    final public function index($index): Model
     {
         if (empty($index)) return $this;
         if (is_string($index)) $index = explode(',', $index);
@@ -723,7 +733,7 @@ abstract class Model extends Library
      * @param bool $addProtect
      * @return $this
      */
-    final public function order($key, string $sort = 'asc', bool $addProtect = null)
+    final public function order($key, string $sort = 'asc', bool $addProtect = null): Model
     {
         if (is_array($key)) {
             foreach ($key as $ks) {
@@ -746,7 +756,7 @@ abstract class Model extends Library
      * @return $this
      * @throws EspError
      */
-    final public function select($select, $add_identifier = null)
+    final public function select($select, $add_identifier = null): Model
     {
         if (is_int($add_identifier)) {
             //当$add_identifier是整数时，表示返回第x列数据
@@ -874,7 +884,7 @@ abstract class Model extends Library
      * @param string $table
      * @return db\ext\RedisHash
      */
-    final public function Hash(string $table)
+    final public function Hash(string $table): db\ext\RedisHash
     {
         return $this->Redis()->hash($table);
     }

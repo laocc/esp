@@ -88,7 +88,7 @@ final class Mysql
      * @return Builder
      * @throws EspError
      */
-    public function table(string $tabName, bool $_protect = null)
+    public function table(string $tabName, bool $_protect = null): Builder
     {
         if (!is_string($tabName) || empty($tabName)) {
             throw new EspError('PDO_Error :  数据表名错误', 1);
@@ -97,7 +97,7 @@ final class Mysql
         return $bud->table($tabName, $_protect);
     }
 
-    public function print(bool $boolPrint = false)
+    public function print(bool $boolPrint = false): Mysql
     {
         $this->_cli_print_sql = $boolPrint;
         return $this;
@@ -112,7 +112,6 @@ final class Mysql
     {
         if (is_null($this->_debug)) return null;
         if ($value === '_RETURN_DEBUG_') return $this->_debug;
-        if (is_null($this->_debug)) return false;
         if ($traceLevel > 10) $traceLevel = 2;
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($traceLevel + 1));
         $trace = $trace[$traceLevel] ?? [];
@@ -311,7 +310,7 @@ final class Mysql
             }
         }
 
-        if (_CLI and $this->connHasGoneAway($transID, $real, $CONN, $try++)) {
+        if ($this->_checkGoneAway and $this->connHasGoneAway($transID, $real, $CONN, $try++)) {
             echo "Mysql has gone away, try Now!\n";
             goto tryExe;
         }
@@ -390,7 +389,7 @@ final class Mysql
         return $result;
     }
 
-    private function connHasGoneAway(int $transID, string $real, PDO $CONN, int $try)
+    private function connHasGoneAway(int $transID, string $real, PDO $CONN, int $try): bool
     {
         if (!_CLI or $try > 1) return false;
         if (!$CONN->getAttribute(PDO::ATTR_PERSISTENT)) return false;
@@ -434,7 +433,7 @@ final class Mysql
         return false;
     }
 
-    private function PdoAttribute(PDO $pdo)
+    private function PdoAttribute(PDO $pdo): array
     {
         $attributes = array(
             'PARAM_BOOL', 'PARAM_NULL', 'PARAM_LOB', 'PARAM_STMT', 'FETCH_NAMED', 'FETCH_NUM', 'FETCH_BOTH', 'FETCH_OBJ', 'FETCH_BOUND', 'FETCH_COLUMN', 'FETCH_CLASS', 'FETCH_KEY_PAIR',
@@ -458,7 +457,7 @@ final class Mysql
      * @return int|null
      * @throws ErrorException
      */
-    private function update(PDO $CONN, string $sql, array &$option, &$error, int $traceLevel)
+    private function update(PDO $CONN, string $sql, array &$option, &$error, int $traceLevel): ?int
     {
         if (!empty($option['param']) or $option['prepare']) {
             try {
@@ -596,11 +595,11 @@ final class Mysql
      * @return PdoResult|null
      * @throws ErrorException
      */
-    private function select(PDO $CONN, string &$sql, array &$option, &$error, int $traceLevel)
+    private function select(PDO $CONN, string &$sql, array &$option, &$error, int $traceLevel): ?PdoResult
     {
         $fetch = [PDO::FETCH_NUM, PDO::FETCH_ASSOC, PDO::FETCH_BOTH];
         if (!in_array($option['fetch'], [0, 1, 2])) $option['fetch'] = 2;
-        $count = null;
+        $count = [];
         if (!empty($option['param']) or $option['prepare']) {
             try {
                 //预处理，返回结果允许游标上下移动
@@ -652,9 +651,7 @@ final class Mysql
                     if ($t > 2) {
                         $this->debug()->error("SQL count 超时2s执行:{$option['_count_sql']}");
                     }
-                    $count = $stmtC->fetchColumn(0);
-                    if (!$count) $count = 0;
-//                    $count = $stmtC->fetch()[0] ?? 0;
+                    $count = $stmtC->fetch(PDO::FETCH_ASSOC);
                 }
 
 
@@ -674,13 +671,12 @@ final class Mysql
 
                 if ($option['count']) {
                     $a = microtime(true);
-                    $count = $CONN->query($option['_count_sql'], PDO::FETCH_NUM)->fetch()[0] ?? 0;
+                    $count = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetch();
                     $this->counter('select', $sql, -1);
                     $t = microtime(true) - $a;
                     if ($t > 2) {
                         $this->debug()->error("SQL count 超时执行:{$option['_count_sql']}");
                     }
-                    if (!$count) $count = 0;
                 }
 
 
@@ -697,7 +693,7 @@ final class Mysql
      * 暂未实现ping
      * @return bool
      */
-    public function ping()
+    public function ping(): bool
     {
         return isset($this->_pool['master']);
     }
@@ -729,7 +725,7 @@ final class Mysql
     public function trans(int $trans_id = 1, array $batch_SQLs = [])
     {
         if ($trans_id === 0) {
-            if ($trans_id === 0) throw new EspError("Trans Error: 事务ID须从1开始，不可以为0。", 1);
+            throw new EspError("Trans Error: 事务ID须从1开始，不可以为0。", 1);
         }
 
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id]) {
@@ -809,7 +805,7 @@ final class Mysql
      * @param null $error
      * @return bool
      */
-    public function trans_back($trans_id = 0, $error = null)
+    public function trans_back(int $trans_id = 0, $error = null): bool
     {
         $this->_trans_run[$trans_id] = false;
         /**
@@ -839,7 +835,7 @@ final class Mysql
      * @param $trans_id
      * @return bool
      */
-    public function trans_in(PDO $CONN, $trans_id)
+    public function trans_in(PDO $CONN, $trans_id): bool
     {
         return $CONN->inTransaction();
     }

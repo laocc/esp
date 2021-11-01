@@ -69,7 +69,7 @@ final class Builder
      * 清除所有现有的`Query_builder`设置内容
      * @param bool $clean_all
      */
-    private function clean_builder($clean_all = true)
+    private function clean_builder(bool $clean_all = true)
     {
         $this->_table = $this->_where = $this->_limit = $this->_having = $this->_order_by = '';
         $this->_select = $this->_join = $this->_join_select = array();
@@ -99,7 +99,7 @@ final class Builder
      * @param bool|null $_protect
      * @return $this
      */
-    public function table(string $tableName = null, bool $_protect = null)
+    public function table(string $tableName = null, bool $_protect = null): Builder
     {
         $this->clean_builder(false);
         if ($this->_table_prefix and stripos($tableName, $this->_table_prefix) === false) {
@@ -129,7 +129,7 @@ final class Builder
      * @param bool $value ，为bool表达式结果，一般如：!!$ID，或：$val>0
      * @return bool 返回$value相反的值，即：返回true表示被回滚了，false表示正常
      */
-    public function back(bool $value)
+    public function back(bool $value): bool
     {
         if ($value) return false;
         return $this->_MySQL->trans_back($this->_Trans_ID);
@@ -139,7 +139,7 @@ final class Builder
      * 相关错误
      * @return array
      */
-    public function error()
+    public function error(): array
     {
         return $this->_MySQL->_error[$this->_Trans_ID];
     }
@@ -150,7 +150,7 @@ final class Builder
      * @param bool|true $bool
      * @return $this
      */
-    public function prepare(bool $bool = true)
+    public function prepare(bool $bool = true): Builder
     {
         $this->_prepare = $bool;
         return $this;
@@ -162,7 +162,7 @@ final class Builder
      * @param bool|true $bool
      * @return $this
      */
-    public function param(bool $bool = true)
+    public function param(bool $bool = true): Builder
     {
         $this->_param = $bool;
         if ($bool and !$this->_prepare) {
@@ -176,7 +176,7 @@ final class Builder
      * @param null $param
      * @return $this
      */
-    public function bind($key, $param = null)
+    public function bind($key, $param = null): Builder
     {
         if ($key === 0) {
             throw new EspError('PDO数据列绑定下标应该从1开始', 1);
@@ -196,7 +196,7 @@ final class Builder
      * @param bool $bool
      * @return $this
      */
-    public function distinct(bool $bool = true)
+    public function distinct(bool $bool = true): Builder
     {
         $this->_distinct = $bool;
         return $this;
@@ -211,7 +211,7 @@ final class Builder
      * @param int $type
      * @return $this
      */
-    public function fetch(int $type = 1)
+    public function fetch(int $type = 1): Builder
     {
         $this->_fetch_type = $type;
         return $this;
@@ -219,7 +219,7 @@ final class Builder
 
     /**
      * 传回mysql的选项
-     * @param $action
+     * @param string $action
      * @return array
      */
     private function option(string $action): array
@@ -253,7 +253,7 @@ final class Builder
      * @param bool $add_identifier 是否自动添加标识符，默认是true，对于复杂查询及带函数的查询请设置为false
      * @return $this
      */
-    public function select($fields, bool $add_identifier = null)
+    public function select($fields, bool $add_identifier = null): Builder
     {
         if (is_array($fields) and !empty($fields)) {
             foreach ($fields as $field) {
@@ -293,7 +293,7 @@ final class Builder
      * @param null $rename
      * @return $this
      */
-    public function select_max($fields, $rename = null)
+    public function select_max($fields, $rename = null): Builder
     {
         return $this->select_func('MAX', $fields, $rename);
     }
@@ -305,7 +305,7 @@ final class Builder
      * @param null $rename
      * @return $this
      */
-    public function select_min($fields, $rename = null)
+    public function select_min($fields, $rename = null): Builder
     {
         return $this->select_func('MIN', $fields, $rename);
     }
@@ -317,7 +317,7 @@ final class Builder
      * @param null $rename
      * @return $this
      */
-    public function select_avg($fields, $rename = null)
+    public function select_avg($fields, $rename = null): Builder
     {
         return $this->select_func('AVG', $fields, $rename);
     }
@@ -329,7 +329,7 @@ final class Builder
      * @param null $rename
      * @return $this
      */
-    public function select_sum($fields, $rename = null)
+    public function select_sum($fields, $rename = null): Builder
     {
         return $this->select_func('SUM', $fields, $rename);
     }
@@ -341,7 +341,7 @@ final class Builder
      * @param null $rename
      * @return Builder
      */
-    public function select_count($fields = '*', $rename = null)
+    public function select_count(string $fields = '*', $rename = null): Builder
     {
         return $this->select_func('COUNT', $fields, $rename);
     }
@@ -354,7 +354,7 @@ final class Builder
      * @param string|null $AS 如果需要重命名返回字段，这里是新的字段名
      * @return $this
      */
-    private function select_func($func, $select = '*', string $AS = null)
+    private function select_func(string $func, string $select = '*', string $AS = null): Builder
     {
         $select = $this->protect_identifier($select);
         $this->_select[] = strtoupper($func) . "({$select})" . ($AS ? " AS `{$AS}`" : '');
@@ -365,7 +365,7 @@ final class Builder
      * 根据当前选择字符串生成完成的select 语句
      * @return string
      */
-    private function _build_select()
+    private function _build_select(): string
     {
         //($this->_count ? ' SQL_CALC_FOUND_ROWS ' : '') .
         if (empty($this->_join)) {
@@ -824,7 +824,7 @@ final class Builder
      * @param bool $isNot
      * @return $this
      */
-    public function where_in(string $field, array $data, bool $is_OR = false, bool $isNot = false)
+    public function where_in(string $field, array $data, bool $is_OR = false, bool $isNot = false): Builder
     {
         if (empty($field)) {
             throw new EspError('DB_ERROR: where in 条件不可为空', 1);
@@ -854,7 +854,7 @@ final class Builder
      * @param bool $is_OR
      * @return Builder
      */
-    public function where_not_in($field, $data, $is_OR = false)
+    public function where_not_in($field, $data, $is_OR = false): Builder
     {
         return $this->where_in($field, $data, $is_OR, true);
     }
@@ -866,7 +866,7 @@ final class Builder
      * @param array $data
      * @return Builder
      */
-    public function or_where_in($field, array $data)
+    public function or_where_in($field, array $data): Builder
     {
         return $this->where_in($field, $data, true);
     }
@@ -879,7 +879,7 @@ final class Builder
      * @param bool $is_OR
      * @return $this
      */
-    public function where_like($field, $value, $is_OR = false)
+    public function where_like($field, $value, $is_OR = false): Builder
     {
         if (empty($field) || empty($value)) {
             throw new EspError('DB_ERROR: where like 条件不能为空', 1);
@@ -920,7 +920,7 @@ final class Builder
      * @param bool $is_OR
      * @return $this
      */
-    public function where_group_start(bool $is_OR = false)
+    public function where_group_start(bool $is_OR = false): Builder
     {
         if ($this->_where_group_in) {
             throw new EspError('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end', 1);
@@ -938,7 +938,7 @@ final class Builder
      * 结束一个where组，为语句加上后括号
      * @return $this
      */
-    public function where_group_end()
+    public function where_group_end(): Builder
     {
         if (!$this->_where_group_in) {
             throw new EspError('DB_ERROR: 当前未处于Where Group之中', 1);
@@ -957,7 +957,7 @@ final class Builder
      * @return Builder
      * @see $this->where_group_start
      */
-    public function or_where_group_start()
+    public function or_where_group_start(): Builder
     {
         return $this->where_group_start(true);
     }
@@ -966,7 +966,7 @@ final class Builder
      * 创建Where查询字符串
      * @return string
      */
-    private function _build_where()
+    private function _build_where(): string
     {
         if (empty($this->_where)) return '';
         if ($this->_where_group_in) {
@@ -982,12 +982,20 @@ final class Builder
 
     /**
      * limit的辅助跳过
-     * @param $n
+     * @param int $n
      * @return $this
      */
-    public function skip(int $n)
+    public function skip(int $n): Builder
     {
         $this->_skip = $n;
+        return $this;
+    }
+
+    private $sumKey = null;
+
+    public function sum(string $sumKey): Builder
+    {
+        $this->sumKey = $sumKey;
         return $this;
     }
 
@@ -996,14 +1004,14 @@ final class Builder
      * @param bool|true $bool
      * @return $this
      */
-    public function count(bool $bool = true)
+    public function count(bool $bool = true): Builder
     {
         $this->_count = $bool;
         return $this;
     }
 
 
-    public function debug_sql(bool $df = false)
+    public function debug_sql(bool $df = false): Builder
     {
         $this->_debug_sql = $df;
         return $this;
@@ -1016,7 +1024,7 @@ final class Builder
      * @param int $skip 偏移
      * @return $this
      */
-    public function limit(int $size, int $skip = 0)
+    public function limit(int $size, int $skip = 0): Builder
     {
         $skip = $skip ?: $this->_skip;
         if ($skip < 0) $skip = 0;
@@ -1033,12 +1041,13 @@ final class Builder
      * 创建一个联合查询
      * @param string $table 要联查的表的名称
      * @param null $_filter 条件
-     * @param string $select 选择字段
+     * @param string|null $select 选择字段
      * @param string $method 联查的类型，默认是NULL，可选值为'left','right','inner','outer','full','using'
      * @param bool $identifier 是否加保护符
      * @return $this
+     * @throws EspError
      */
-    public function join(string $table, $_filter, string $select = null, string $method = 'left', bool $identifier = true)
+    public function join(string $table, $_filter, string $select = null, string $method = 'left', bool $identifier = true): Builder
     {
         $method = strtoupper($method);
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
@@ -1101,7 +1110,7 @@ final class Builder
      * @return $this
      * @throws EspError
      */
-    public function order($field, $method = 'ASC', bool $addProtect = null)
+    public function order(string $field, string $method = 'ASC', bool $addProtect = null): Builder
     {
         /**
          * 检查传入的排序方式是否被支持
@@ -1137,13 +1146,13 @@ final class Builder
      *
      * $sql="select orgGoodsID,count(*) as orgCount from tabs group by orgGoodsID having orgCount>1";
      */
-    public function group($field)
+    public function group(string $field): Builder
     {
         $this->_group = $field;
         return $this;
     }
 
-    public function force(array $index)
+    public function force(array $index): Builder
     {
         $this->_forceIndex = implode(',', $index);
         return $this;
@@ -1153,7 +1162,7 @@ final class Builder
      * @param string $filter
      * @return $this
      */
-    public function having(string $filter)
+    public function having(string $filter): Builder
     {
         $this->_having = $filter;
         return $this;
@@ -1163,7 +1172,7 @@ final class Builder
     /**
      * @return string
      */
-    public function _build_get()
+    public function _build_get(): string
     {
         $sql = array();
         $sql[] = "SELECT " . ($this->_distinct ? 'DISTINCT ' : '') . $this->_build_select();
@@ -1192,11 +1201,15 @@ final class Builder
     }
 
 
-    public function _build_count_sql()
+    private function _build_sum_sql(): string
     {
         $sql = array();
-        $sql[] = "SELECT";
-        $sql[] = "count(1) FROM {$this->_table}";
+        $sum = ['count(1) as count'];
+        if (is_string($this->sumKey)) {
+            foreach (explode(',', $this->sumKey) as $k) $sum[] = "sum(`{$k}`) as `{$k}`";
+        }
+        $sum = implode(',', $sum);
+        $sql[] = "SELECT {$sum} FROM {$this->_table}";
         if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
 
         $where = $this->_build_where();
@@ -1227,7 +1240,7 @@ final class Builder
      * 获取查询结果
      * @param int $row
      * @param int $tractLevel
-     * @return bool|mixed|null
+     * @return bool|int|string|null
      */
     public function get(int $row = 0, int $tractLevel = 0)
     {
@@ -1237,10 +1250,12 @@ final class Builder
         $_build_sql = $this->_build_get();
         $this->replace_tempTable($_build_sql);
 
-        if ($option['count']) {
-            $option['_count_sql'] = $this->_build_count_sql();
+        if ($this->sumKey or $option['count']) {
+            $option['count'] = true;
+            $option['_count_sql'] = $this->_build_sum_sql();
             $this->replace_tempTable($option['_count_sql']);
         }
+
         $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
 
         if (is_string($get)) throw new EspError($get, $tractLevel + 1);
@@ -1252,7 +1267,7 @@ final class Builder
      * 组合SQL，并不执行，暂存起来，供后面调用
      * @return string
      */
-    public function temp()
+    public function temp(): string
     {
         $tmpID = uniqid();
         $this->_temp_table[$tmpID] = $this->_build_get();
@@ -1265,7 +1280,7 @@ final class Builder
     /**
      * @return string
      */
-    public function sql()
+    public function sql(): string
     {
         return $this->_build_get();
     }
@@ -1316,7 +1331,7 @@ final class Builder
      * @param array $data
      * @param bool $is_REPLACE
      * @param int $tractLevel
-     * @return int
+     * @return bool|int|string|null|array
      * 注：在一次插入很多记录时，不用预处理或许速度更快，若一次插入数据只有几条或十几条，这种性能损失可以忽略不计。
      */
     public function insert(array $data, bool $is_REPLACE = false, int $tractLevel = 0)
@@ -1437,7 +1452,7 @@ final class Builder
      * @param array $data
      * @param bool $add_identifier
      * @param int $tractLevel
-     * @return bool|null
+     * @return bool|int|null
      */
     public function update(array $data, bool $add_identifier = true, int $tractLevel = 0)
     {
@@ -1589,7 +1604,7 @@ final class Builder
      * @param bool $protect
      * @return $this
      */
-    public function protect(bool $protect)
+    public function protect(bool $protect): Builder
     {
         $this->_protect = $protect;
         return $this;
@@ -1691,7 +1706,7 @@ final class Builder
      * @param null $lat
      * @return string
      */
-    public function point($lng, $lat = null)
+    public function point($lng, $lat = null): string
     {
         if (is_null($lat) and is_array($lng)) {
             $lat = $lng['lat'] ?? ($lng[1] ?? 0);
@@ -1706,7 +1721,7 @@ final class Builder
      * @return string
      * @throws EspError
      */
-    public function polygon(array $location)
+    public function polygon(array $location): string
     {
         if (count($location) < 3) throw new EspError("空间的一个区域至少需要3个点");
         $val = [];
