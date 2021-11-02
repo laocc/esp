@@ -42,11 +42,12 @@ final class Paging
     /**
      * Model中调用，送入求和数据
      *
-     * @param array $sum
-     * @return $this
+     * @param array|null $sum
+     * @return $this|array
      */
-    public function sum(array $sum): Paging
+    public function sum(array $sum = null)
     {
+        if (is_null($sum)) return $this->sum;
         $this->sum = $sum;
         return $this;
     }

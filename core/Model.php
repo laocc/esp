@@ -6,6 +6,7 @@ namespace esp\core;
 use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
+use esp\core\db\Sqlite;
 use esp\core\db\Yac;
 use esp\core\ext\Buffer;
 use esp\core\ext\Mysql as MysqlExt;
@@ -792,6 +793,24 @@ abstract class Model extends Library
             $this->debug("New Yac({$tab});", $traceLevel + 1);
         }
         return $this->_controller->_Yac[$tab];
+    }
+
+    /**
+     * @param string $dbFile
+     * @param int $traceLevel
+     * @return Sqlite
+     */
+    final public function Sqlite(string $dbFile, int $traceLevel = 0): Sqlite
+    {
+        $key = md5($dbFile);
+        if (!isset($this->_controller->_Sqlite[$key])) {
+            $conf = $this->_config->get('database.sqlite');
+            if (!$conf) $conf = [];
+            $conf['db'] = $dbFile;
+            $this->_controller->_Sqlite[$key] = new Sqlite($this, $conf);
+            $this->debug("New Sqlite({$dbFile});", $traceLevel + 1);
+        }
+        return $this->_controller->_Sqlite[$key];
     }
 
     /**
