@@ -187,7 +187,7 @@ final class Mysql
                 $err['code'] = $PdoError->getCode();
                 $err['msg'] = $PdoError->getMessage();
                 $err['host'] = $host;
-                throw new EspError("Mysql Connection failed:" . json_encode($err, 256 | 64));
+                throw new EspError("Mysql Connection failed:" . json_encode($err, 256 | 64), 1, 1);
             }
             $this->connect_time[$trans_id] = time();
             return $this->_pool[$real][$trans_id] = $pdo;
@@ -199,7 +199,7 @@ final class Mysql
              * PDO::ERRMODE_WARNING： 还将发出一条传统的 E_WARNING 信息，
              * PDO::ERRMODE_EXCEPTION，还将抛出一个 PDOException 异常类并设置它的属性来反射错误码和错误信息，
             */
-            throw new EspError("Mysql Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage());
+            throw new EspError("Mysql Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage(), 1, 1);
         }
     }
 
@@ -414,7 +414,7 @@ final class Mysql
             print_r($this->PdoAttribute($CONN));
             unset($this->_pool[$real][$transID]);
             $CONN = null;
-            if ($try) throw new EspError($error->getMessage());
+            if ($try) throw new EspError($error->getMessage(), 1, 1);
             return true;
         }
 
@@ -428,7 +428,7 @@ final class Mysql
             print_r($this->PdoAttribute($CONN));
             unset($this->_pool[$real][$transID]);
             $CONN = null;
-            if ($try) throw new EspError('服务器状态错误，且无法连接成功');
+            if ($try) throw new EspError('服务器状态错误，且无法连接成功', 1, 1);
             return true;
         }
         return false;

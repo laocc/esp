@@ -34,7 +34,7 @@ class EspError extends \ErrorException
         $err['error'] = $this->getCode();
         $err['message'] = $this->getMessage();
         $err['file'] = $this->file();
-        $err['trace'] = $this->getTrace();
+        if ($err['error'] > 1) $err['trace'] = $this->getTrace();
         return $err;
     }
 
@@ -45,21 +45,23 @@ class EspError extends \ErrorException
         $err['error'] = $this->getCode();
         $err['message'] = $this->getMessage();
         $err['file'] = $this->file();
-        $err['trace'] = array_map(function ($e) {
-            if (isset($e['file'])) {
-                return "{$e['file']}({$e['line']})";
+        if ($err['error'] > 1) {
+            $err['trace'] = array_map(function ($e) {
+                if (isset($e['file'])) {
+                    return "{$e['file']}({$e['line']})";
 
-            } else if (isset($e['class'])) {
-                if (isset($e['function'])) {
-                    return "{$e['class']}->{$e['function']}()";
+                } else if (isset($e['class'])) {
+                    if (isset($e['function'])) {
+                        return "{$e['class']}->{$e['function']}()";
+                    }
+                    return "{$e['class']}";
+
+                } else if (isset($e['function'])) {
+                    return "{$e['function']}()";
                 }
-                return "{$e['class']}";
-
-            } else if (isset($e['function'])) {
-                return "{$e['function']}()";
-            }
-            return $e;
-        }, $this->getTrace());
+                return $e;
+            }, $this->getTrace());
+        }
 
         if ($err['message'][0] === '{') {
             $ems = json_decode($err['message'], true);
