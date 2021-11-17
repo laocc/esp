@@ -650,8 +650,8 @@ final class Mysql
                     $this->counter('select', $sql, -1);
                     if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
                         $this->debug()
-                            ->error("SQL count 超时{$this->_CONF['time_limit']}s")
-                            ->relay($option['_count_sql']);
+                            ->relay($option['_count_sql'])
+                            ->error("SQL count 超时{$this->_CONF['time_limit']}s");
                     }
                     $count = $stmtC->fetch(PDO::FETCH_ASSOC);
                 }
@@ -676,9 +676,8 @@ final class Mysql
                     $count = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetch();
                     $this->counter('select', $sql, -1);
                     if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
-                        $this->debug()
-                            ->error("SQL count 超时{$this->_CONF['time_limit']}s")
-                            ->relay($option['_count_sql']);
+                        $this->debug()->relay($option['_count_sql'])
+                            ->error("SQL count 超时{$this->_CONF['time_limit']}s");
                     }
                 }
 
