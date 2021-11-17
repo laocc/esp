@@ -47,7 +47,7 @@ final class Mysql
                 'param' => true,
                 'cache' => false,
                 'timeout' => 2,
-                'timelimit' => 5,//单条sql超时报警
+                'time_limit' => 5,//单条sql超时报警
                 'prefix' => '',
             ];
         $this->transID = $tranID;
@@ -648,8 +648,10 @@ final class Mysql
                     $a = microtime(true);
                     $stmtC->execute($option['param']);
                     $this->counter('select', $sql, -1);
-                    if ((microtime(true) - $a) > $this->_CONF['timelimit']) {
-                        $this->debug()->error("SQL count 超时{$this->_CONF['timelimit']}s执行:{$option['_count_sql']}");
+                    if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
+                        $this->debug()
+                            ->error("SQL count 超时{$this->_CONF['time_limit']}s")
+                            ->relay($option['_count_sql']);
                     }
                     $count = $stmtC->fetch(PDO::FETCH_ASSOC);
                 }
@@ -673,8 +675,10 @@ final class Mysql
                     $a = microtime(true);
                     $count = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetch();
                     $this->counter('select', $sql, -1);
-                    if ((microtime(true) - $a) > $this->_CONF['timelimit']) {
-                        $this->debug()->error("SQL count 超时{$this->_CONF['timelimit']}s执行:{$option['_count_sql']}");
+                    if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
+                        $this->debug()
+                            ->error("SQL count 超时{$this->_CONF['time_limit']}s")
+                            ->relay($option['_count_sql']);
                     }
                 }
 
