@@ -47,6 +47,7 @@ final class Mysql
                 'param' => true,
                 'cache' => false,
                 'timeout' => 2,
+                'timelimit' => 5,//单条sql超时报警
                 'prefix' => '',
             ];
         $this->transID = $tranID;
@@ -208,6 +209,7 @@ final class Mysql
      * 从SQL语句中提取该语句的执行性质
      * @param string $sql
      * @return mixed
+     * @throws EspError
      */
     public function sqlAction(string $sql)
     {
@@ -230,6 +232,7 @@ final class Mysql
      * @param string $sql
      * @param array $param
      * @return bool|null
+     * @throws EspError
      */
     private function query_dddd(string $sql, array $param = [])
     {
@@ -456,7 +459,6 @@ final class Mysql
      * @param $error
      * @param int $traceLevel
      * @return int|null
-     * @throws ErrorException
      */
     private function update(PDO $CONN, string $sql, array &$option, &$error, int $traceLevel): ?int
     {
@@ -513,7 +515,6 @@ final class Mysql
      * @param $error
      * @param int $traceLevel
      * @return array|int|mixed|null
-     * @throws ErrorException
      */
     private function insert(PDO $CONN, string $sql, array &$option, &$error, int $traceLevel)
     {
@@ -594,7 +595,6 @@ final class Mysql
      * @param $error
      * @param int $traceLevel
      * @return PdoResult|null
-     * @throws ErrorException
      */
     private function select(PDO $CONN, string &$sql, array &$option, &$error, int $traceLevel): ?PdoResult
     {
@@ -648,9 +648,8 @@ final class Mysql
                     $a = microtime(true);
                     $stmtC->execute($option['param']);
                     $this->counter('select', $sql, -1);
-                    $t = microtime(true) - $a;
-                    if ($t > 2) {
-                        $this->debug()->error("SQL count 超时2s执行:{$option['_count_sql']}");
+                    if ((microtime(true) - $a) > $this->_CONF['timelimit']) {
+                        $this->debug()->error("SQL count 超时{$this->_CONF['timelimit']}s执行:{$option['_count_sql']}");
                     }
                     $count = $stmtC->fetch(PDO::FETCH_ASSOC);
                 }
@@ -674,9 +673,8 @@ final class Mysql
                     $a = microtime(true);
                     $count = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetch();
                     $this->counter('select', $sql, -1);
-                    $t = microtime(true) - $a;
-                    if ($t > 2) {
-                        $this->debug()->error("SQL count 超时执行:{$option['_count_sql']}");
+                    if ((microtime(true) - $a) > $this->_CONF['timelimit']) {
+                        $this->debug()->error("SQL count 超时{$this->_CONF['timelimit']}s执行:{$option['_count_sql']}");
                     }
                 }
 
