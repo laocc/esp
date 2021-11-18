@@ -385,11 +385,14 @@ final class Configure
 
         if (substr($value, 0, 1) === '[' and substr($value, -1, 1) === ']') {
             $arr = json_decode($value, true);
-            if (is_array($arr)) {
-                $value = $arr;
-            }
+            if (is_array($arr)) $value = $arr;
+
         } elseif (is_numeric($value) and strlen($value) < 10) {
-            $value = intval($value);
+            if (strpos($value, '.') > 0) {
+                $value = floatval($value);
+            } else {
+                $value = intval($value);
+            }
         }
         return $value;
     }
