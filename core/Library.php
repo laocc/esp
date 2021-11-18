@@ -34,7 +34,7 @@ abstract class Library
     /**
      * @return Controller
      */
-    final public function Controller()
+    final public function Controller(): Controller
     {
         return $this->_controller;
     }
@@ -59,13 +59,35 @@ abstract class Library
         return $this->_debug->relay($value, $trace);
     }
 
+    /**
+     * 框架范围内(Library)全局唯一锁
+     * 若需要和控制器用同一个锁，则选获取控制器再执行
+     *
+     * @param callable $fun
+     * @param mixed ...$params
+     * @return mixed
+     */
+    public function locked(callable $fun, array ...$params)
+    {
+        $fn = fopen(__FILE__, 'r');
+        if ($fn === false) return false;
+        $val = null;
+        if (flock($fn, LOCK_EX)) {
+            $val = $fun(...$params);
+            flock($fn, LOCK_UN);
+        }
+        $close = fclose($fn);
+        if (!is_null($val)) return $val;
+        return $close;
+    }
+
 
     /**
      * 设置并返回debug文件名
      * @param string|null $filename
      * @return string
      */
-    final public function debug_file(string $filename = null)
+    final public function debug_file(string $filename = null): string
     {
         if (is_null($this->_debug)) return 'null';
         return $this->_debug->filename($filename);
@@ -86,7 +108,7 @@ abstract class Library
      * @param array $value
      * @return int
      */
-    final public function publish(string $action, array $value)
+    final public function publish(string $action, array $value): int
     {
         $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
         return $this->_redis->publish($channel, $action, $value);
@@ -103,7 +125,7 @@ abstract class Library
      * 用下面方法读取
      * while ($data = $this->_redis->lPop($queKey)){...}
      */
-    final public function queue(string $action, array $data)
+    final public function queue(string $action, array $data): int
     {
         $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
         return $this->_redis->push($key, $data + ['_action' => $action]);
@@ -115,7 +137,7 @@ abstract class Library
      * @param mixed ...$parameter
      * @return $this
      */
-    final public function shutdown(callable $fun, ...$parameter)
+    final public function shutdown(callable $fun, ...$parameter): Library
     {
         register_shutdown_function($fun, ...$parameter);
         return $this;

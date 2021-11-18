@@ -274,7 +274,7 @@ abstract class Controller
     final public function getPlugin(string $name)
     {
         $name = ucfirst($name);
-        return isset($this->_plugs[$name]) ? $this->_plugs[$name] : null;
+        return $this->_plugs[$name] ?? null;
     }
 
     final protected function getCache(): Cache
@@ -635,6 +635,26 @@ abstract class Controller
         return $this;
     }
 
+    /**
+     * 框架范围内(控制器)全局唯一锁
+     *
+     * @param callable $fun
+     * @param mixed ...$params
+     * @return mixed
+     */
+    public function locked(callable $fun, ...$params)
+    {
+        $fn = fopen(__FILE__, 'r');
+        if ($fn === false) return false;
+        $val = null;
+        if (flock($fn, LOCK_EX)) {
+            $val = $fun(...$params);
+            flock($fn, LOCK_UN);
+        }
+        $close = fclose($fn);
+        if (!is_null($val)) return $val;
+        return $close;
+    }
 
     /**
      * 主要依赖版本号
