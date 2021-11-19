@@ -50,9 +50,9 @@ class Debug
     /**
      * @param string $filename
      * @param string $data
-     * @return string
+     * @return $this
      */
-    public function save_file(string $filename, string $data)
+    public function save_debug_file(string $filename, string $data)
     {
         return $this;
     }
