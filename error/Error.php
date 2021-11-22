@@ -278,7 +278,7 @@ final class Error
                 unset($info['Error']['trace']);
                 $jsonTxt = json_encode($info, 256 | 64 | 128);
             }
-            if ($this->debug->save_file($filename, $jsonTxt)) return;
+            if ($this->debug->save_debug_file($filename, $jsonTxt)) return;
         }
 
         if (!is_dir($path)) mkdir($path, 0740, true);
@@ -288,7 +288,7 @@ final class Error
 
     /**
      * 显示并停止所有操作
-     * @param $error
+     * @param array $error
      */
     private function displayError(array $error)
     {
