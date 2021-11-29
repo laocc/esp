@@ -49,8 +49,7 @@ final class Session
 {
     private $SessionHandler;
     private $run = true;
-    public $debug;
-    public $update = false;
+    private $debug;
 
     public function __construct(array $config, Debug $debug = null)
     {
@@ -75,7 +74,7 @@ final class Session
         if ($config['cookie'] < $config['expire']) $config['cookie'] = $config['expire'];
         if ($config['debug']) $this->debug = $debug;
 
-        $this->SessionHandler = new SessionRedis($this->debug, $config['object'], boolval($config['delay']), $config['prefix']);
+        $this->SessionHandler = new SessionRedis($debug, $config['object'], boolval($config['delay']), $config['prefix']);
         $handler = session_set_save_handler($this->SessionHandler, true);
 
         $option = [];
@@ -156,9 +155,9 @@ final class Session
      * 设置某值，同时重新设置有效时间
      * @param $key
      * @param null $value
-     * @return bool
+     * @return Session
      */
-    public function set($key, $value = null)
+    public function set($key, $value = null): Session
     {
         if (is_array($key)) {
             foreach ($key as $k => $v) {
@@ -167,8 +166,7 @@ final class Session
         } else {
             $_SESSION[$key] = $value;
         }
-        $this->update = true;
-        return $this->SessionHandler->update(true);
+        return $this;
     }
 
     /**
@@ -197,13 +195,11 @@ final class Session
 
     /**
      * @param string ...$keys
-     * @return $this
+     * @return Session
      */
-    public function del(string ...$keys)
+    public function del(string ...$keys): Session
     {
         foreach ($keys as $key) $_SESSION[$key] = null;
-        $this->SessionHandler->update(true);
-        $this->update = true;
         return $this;
     }
 
@@ -235,19 +231,16 @@ final class Session
             $value['time'] = time();
             $_SESSION[$key] = $value;
         }
-        $this->update = true;
-        return $this->SessionHandler->update(true);
+        return true;
     }
 
     /**
      * 清空session
      */
-    public function empty()
+    public function empty(): bool
     {
-        $_SESSION = null;
-        $this->SessionHandler->update(true);
-        $this->update = true;
-        session_destroy();
+        $_SESSION = [];
+        return session_destroy();
     }
 
     /**
@@ -256,7 +249,7 @@ final class Session
      * 撤销本次请求对session的改动
      * @return bool
      */
-    public function reset()
+    public function reset(): bool
     {
         return session_abort();
     }
@@ -264,7 +257,7 @@ final class Session
     /**
      * 结束session
      */
-    public function destroy()
+    public function destroy(): bool
     {
         return session_destroy();
     }

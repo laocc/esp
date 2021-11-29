@@ -5,23 +5,24 @@ namespace esp\core\ext;
 
 use esp\core\Debug;
 use esp\error\EspError;
+use Redis;
 
-class SessionRedis implements \SessionHandlerInterface
+final class SessionRedis implements \SessionHandlerInterface
 {
     private $_Redis;
-    private $_update = false;
-    private $_delay = false;
-    private $_prefix = '';
+    private $_delay;
+    private $_prefix;
     private $_debug;
+    private $_realKey;
 
     /**
      * SessionRedis constructor.
-     * @param Debug $debug
-     * @param \Redis $redis
+     * @param Debug|null $debug
+     * @param Redis|null $redis
      * @param bool $delay
      * @param string $prefix
      */
-    public function __construct(Debug $debug = null, \Redis $redis = null, bool $delay = false, string $prefix = '')
+    public function __construct(Debug $debug = null, Redis $redis = null, bool $delay = false, string $prefix = '')
     {
         $this->_debug = $debug;
         $this->_delay = $delay;
@@ -45,7 +46,7 @@ class SessionRedis implements \SessionHandlerInterface
 
         $conf = unserialize($save_path);
 
-        $this->_Redis = new \Redis();
+        $this->_Redis = new Redis();
         if ($conf['host'][0] === '/') {
             if (!$this->_Redis->connect($conf['host'])) {//sock方式
                 throw new EspError("Redis服务器【{$conf['host']}】无法连接。");
@@ -63,7 +64,8 @@ class SessionRedis implements \SessionHandlerInterface
         if (!$select) {
             throw new EspError("Redis选择库【{$conf['db']}】失败。" . json_encode($conf, 256 | 64));
         }
-        return boolval($select);
+
+        return true;
     }
 
     /**
@@ -84,7 +86,9 @@ class SessionRedis implements \SessionHandlerInterface
                 'value' => $dataString,
                 'time' => microtime(true)]
         ]);
-        return (!$dataString) ? 'a:0:{}' : $dataString;
+        $session = (!$dataString) ? 'a:0:{}' : $dataString;
+        $this->_realKey = md5($session);
+        return $session;
     }
 
 
@@ -164,7 +168,9 @@ class SessionRedis implements \SessionHandlerInterface
      */
     public function write($session_id, $session_data)
     {
-        if (!$this->_update or $session_data === 'a:0:{}' or empty($session_data)) return true;
+        if (empty($session_data)) return true;
+        if ($this->_realKey === md5($session_data)) return true;//session未变更
+
         if ($this->_delay) {
             $ttl = session_cache_expire() * 60;
         } else {
@@ -202,17 +208,7 @@ class SessionRedis implements \SessionHandlerInterface
     }
 
     /**
-     * @param bool $update
-     * @return bool
-     */
-    public function update(bool $update)
-    {
-        $this->_update = $update;
-        return true;
-    }
-
-    /**
-     * @return \Redis
+     * @return Redis
      */
     public function Redis()
     {

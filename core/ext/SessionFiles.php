@@ -3,13 +3,12 @@ declare(strict_types=1);
 
 namespace esp\core\ext;
 
-
-class SessionFiles implements \SessionHandlerInterface
+final class SessionFiles implements \SessionHandlerInterface
 {
     private $savePath;
-    private $_update = false;
-    private $_delay = false;
-    private $_prefix = '';
+    private $_delay;//自动延时，windows下无效
+    private $_prefix;
+    private $_realKey;
 
     public function __construct(bool $delay = false, string $prefix = '')
     {
@@ -31,21 +30,44 @@ class SessionFiles implements \SessionHandlerInterface
 
     function read($id)
     {
-        if (!file_exists($fil = "{$this->savePath}/{$id}")) return 'a:0:{}';
-        return (string)@file_get_contents($fil);
+        if (!file_exists($fil = "{$this->savePath}/{$id}")) {
+            $session = 'a:0:{}';
+        } else {
+            if (DIRECTORY_SEPARATOR === '/' && ($time = filemtime($fil)) < time()) {
+                $session = 'a:0:{}';
+            } else {
+                $session = file_get_contents($fil);
+                if (empty($session)) $session = 'a:0:{}';
+            }
+        }
+        $this->_realKey = md5($session);
+        return $session;
     }
 
     function write($id, $data)
     {
-        if (!$this->_update or $data === 'a:0:{}' or empty($data)) return true;
+        if (empty($data)) return true;
+        if (empty($session_data)) return true;
+        if ($this->_realKey === md5($session_data)) return true;//session未变更
+        $file = "{$this->savePath}/{$id}";
 
-        return file_put_contents("{$this->savePath}/{$id}", $data) === false ? false : true;
+        $sv = file_put_contents($file, $data);
+
+        if ($this->_delay) {
+            $ttl = time() + session_cache_expire() * 60;
+            touch($file, $ttl);
+        }
+
+        return $sv > 0;
     }
 
-    public function update(bool $update)
+    /**
+     * 当需要新的会话 ID 时被调用的回调函数。返回值应该是一个字符串格式的、有效的会话 ID。
+     * session_create_id()里的参数为新产生的ID前缀
+     */
+    public function create_sid()
     {
-        $this->_update = $update;
-        return true;
+        return session_create_id($this->_prefix);
     }
 
     function destroy($id)
