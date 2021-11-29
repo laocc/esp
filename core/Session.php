@@ -74,7 +74,7 @@ final class Session
         if ($config['cookie'] < $config['expire']) $config['cookie'] = $config['expire'];
         if ($config['debug']) $this->debug = $debug;
 
-        $this->SessionHandler = new SessionRedis($debug, $config['object'], boolval($config['delay']), $config['prefix']);
+        $this->SessionHandler = new SessionRedis($this->debug, $config['object'], boolval($config['delay']), $config['prefix']);
         $handler = session_set_save_handler($this->SessionHandler, true);
 
         $option = [];

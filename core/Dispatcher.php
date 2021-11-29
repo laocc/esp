@@ -141,7 +141,7 @@ final class Dispatcher
                         }
 
                         $this->_session = new Session($sseConf, $this->_debug);
-                        if ($this->_session->debug) $this->relayDebug(['session' => $_SESSION]);
+                        if (($sseConf['debug'] ?? 0) && $this->_debug) $this->relayDebug(['session' => $_SESSION]);
 
                     }
                 }
