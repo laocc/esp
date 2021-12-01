@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\error;
 
 use esp\core\Debug;
+use Throwable;
 use function esp\helper\mk_dir;
 use function esp\helper\replace_array;
 use function esp\helper\displayState;
@@ -65,6 +66,7 @@ final class Error
             $error = new EspError($prev);
 
             $err = array();
+            $err['err_type'] = 'register_handler';
             $err['success'] = 0;
             $err['time'] = date('Y-m-d H:i:s');
             $err['error'] = $errNo ?: 500;
@@ -99,7 +101,7 @@ final class Error
 
                 case ($option['display'] === 'json'):
                     unset($err['trace'], $err['context']);
-                    echo '<pre>' . json_encode($err, 256 | 128 | 64) . '</pre>';
+                    echo json_encode($err, 256 | 128 | 64);
                     break;
 
                 case ($option['display'] === 'html'):
@@ -122,11 +124,12 @@ final class Error
 
         /**
          * 严重错误
-         * @param $error
+         * @param Throwable $error
          */
-        $handler_exception = function (\Throwable $error) use ($option) {
+        $handler_exception = function (Throwable $error) use ($option) {
 //            Session::reset();
             $err = array();
+            $err['err_type'] = 'handler_exception';
             $err['success'] = 0;
             $err['time'] = date('Y-m-d H:i:s');
             $err['error'] = $error->getCode() ?: 500;
@@ -160,7 +163,7 @@ final class Error
 
                 case ($option['display'] === 'json'):
                     unset($err['trace'], $err['context']);
-                    echo '<pre>' . json_encode($err, 256 | 128 | 64) . '</pre>';
+                    echo json_encode($err, 256 | 128 | 64);
                     break;
 
                 case ($option['display'] === 'html'):
@@ -265,7 +268,7 @@ final class Error
             'prev' => $prev
         ];
         if (strlen($info['Post']) > 10000) $info['Post'] = substr($info['Post'], 0, 10000);
-        $filename = date($filename) . mt_rand() . '.md';
+        $filename = date($filename) . mt_rand() . '.json';
         $filename = trim($filename, '/');
 
         if (!is_null($this->debug)) {
