@@ -224,8 +224,17 @@ final class View implements Adapter
      */
     public function builderViewFile(string $viewPath): string
     {
-        $dir0 = rtrim($this->_path['dir'], '/');
         if (!empty($this->_path['file'])) {
+
+            if ($this->_path['file'][0] === '/') {
+                if (is_readable(_ROOT . $this->_path['file'])) return _ROOT . $this->_path['file'];
+                if (is_readable($lyFile = (_ROOT . '/application/' . _VIRTUAL . '/views' . $this->_path['file']))) {
+                    $this->_path['file'] = '/application/' . _VIRTUAL . '/views' . $this->_path['file'];
+                    return $lyFile;
+                }
+            }
+
+            $dir0 = rtrim($this->_path['dir'], '/');
             $file = $dir0 . '/' . ltrim($this->_path['file'], '/');
             if (!is_readable($file)) {
                 throw new EspError("指定的框架视图文件({$file})不存在.", 1);
@@ -235,6 +244,7 @@ final class View implements Adapter
 
         $viewPath = dirname($viewPath);
         $dir1 = dirname($this->_path['dir']);
+        $dir0 = rtrim($this->_path['dir'], '/');
 
         if ($this->_path['ext'] !== '.php') {
             if (is_readable($layout_file = "{$viewPath}/layout{$this->_path['ext']}")) return $layout_file;

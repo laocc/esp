@@ -170,6 +170,19 @@ abstract class Controller
         return $this->_response->getLayout();
     }
 
+    /**
+     * 指定layout文件
+     * 1，以/开头的绝对路径，查询顺序：
+     *      _ROOT/path/file.php
+     *      _ROOT/application/_VIRTUAL/views/path/file.php
+     *      _ROOT/application/_VIRTUAL/_MODULE/views/path/file.php
+     *
+     * 2，不是以/开头的，指控制器所在模块下的views目录下，查询顺序：
+     *      _ROOT/application/_VIRTUAL/_MODULE/views/path/file.php
+     *
+     * @param $value
+     * @return $this
+     */
     final protected function setLayout($value): Controller
     {
         $this->_response->setLayout($value);
