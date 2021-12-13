@@ -106,7 +106,7 @@ final class Mysql
     }
 
     /**
-     * @param string $value
+     * @param $value
      * @param int $traceLevel
      * @return false|null|Debug
      */
@@ -124,10 +124,11 @@ final class Mysql
      * @param bool $upData
      * @param int $trans_id
      * @param int $traceLevel
+     * @param int $try
      * @return mixed|PDO
      * @throws EspError
      */
-    private function connect(bool $upData, int $trans_id = 0, int $traceLevel = 0)
+    private function connect(bool $upData, int $trans_id = 0, int $traceLevel = 0, int $try = 0)
     {
         $real = $upData ? 'master' : 'slave';
         if (!$upData and !isset($this->_CONF['slave'])) $real = 'master';
@@ -180,8 +181,13 @@ final class Mysql
             }
 
             try {
+
                 $pdo = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
                 (!_CLI) and $this->debug("{$real}({$trans_id}):{$conStr}");
+
+                if (_CLI and $try > 0) {
+                    print_r([$opts, $cnf, $conStr]);
+                }
 
             } catch (PDOException $PdoError) {
                 $err = [];
@@ -310,7 +316,7 @@ final class Mysql
             if (isset($this->_pool[$real][$transID]) and !empty($this->_pool[$real][$transID])) {
                 $CONN = $this->_pool[$real][$transID];
             } else {
-                $CONN = $this->connect($upData, $transID, $traceLevel + 1);
+                $CONN = $this->connect($upData, $transID, $traceLevel + 1, $try);
             }
         }
 
@@ -687,6 +693,13 @@ final class Mysql
                 return null;
             }
         }
+
+        if (is_bool($count)) {
+            $error = $CONN->errorInfo();
+            if ($error[0] === '00000') $error[0] = '合计计数出错，可能是sql语句执行错误，请检查sql语句';
+            return null;
+        }
+
         return new PdoResult($stmt, $count, $sql);
     }
 
