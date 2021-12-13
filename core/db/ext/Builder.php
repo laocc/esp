@@ -499,13 +499,19 @@ final class Builder
             $findType = strtolower($field[-1]);
             if ($findType === '\\') {
                 //where字段后加\号，如：$where['value<=\\'] = "(select num from table where expID={$expID})";
-                $brackets = (is_string($value) and $value[0] === '(' and $value[-1] === ')');
+                $brackets = is_numeric($value) or ((is_string($value) and $value[0] === '(' and $value[-1] === ')'));
                 if (!$brackets) {
                     throw new EspError("DB_ERROR: where 直接引用SQL时，被引用的SQL要用括号圈定完整语句", 1);
                 }
                 $field = substr($field, 0, -1);
                 $findType = strtolower($field[-1]);
                 $sqlVal = true;
+            }
+
+            $identifier = true;
+            if ($field[0] === '\\') {
+                $identifier = false;//字段名不加保护符
+                $field = substr($field, 1);
             }
 
             switch ($findType) {
@@ -525,7 +531,7 @@ final class Builder
                             else if ($value[-1] !== '%') $value = "{$value}%";
                         }
                     }
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
                     if ($this->_param) {//采用占位符后置内容方式
                         $key = $this->paramKey($field);
                         $this->_param_data[$key] = $value;
@@ -542,7 +548,7 @@ final class Builder
                         $pos = '=0';
                         $field = substr($field, 0, -1);
                     }
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
                     if ($this->_param) {//采用占位符后置内容方式
                         $key = $this->paramKey($field);
                         $this->_param_data[$key] = $value;
@@ -558,7 +564,7 @@ final class Builder
                         $pos = '<=';
                         $field = substr($field, 0, -1);
                     }
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
                     if (!is_array($value)) $value = [$value, 0];
                     if (!is_float($value[1])) throw new EspError("MATCH第2个值只能是浮点型值，表示匹配度", 1);
 
@@ -572,7 +578,7 @@ final class Builder
                     break;
                 case '!'://等同于 !=
                     $field = substr($field, 0, -1);
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
 
                     if ($sqlVal) {
                         $_where = "{$fieldPro} != {$value}";
@@ -597,7 +603,7 @@ final class Builder
                     if (is_array($value)) $value = array_sum($value);
                     else $value = intval($value);
 
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
 
                     if ($this->_param) {//采用占位符后置内容方式
                         if ($value === 0) {
@@ -617,7 +623,7 @@ final class Builder
                     break;
                 case '*'://正则表达式
                     $field = substr($field, 0, -1);
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
                     if ($this->_param) {//采用占位符后置内容方式
                         $key = $this->paramKey($field);
                         $this->_param_data[$key] = $value;
@@ -635,7 +641,7 @@ final class Builder
                     }
 
                     if (empty($value)) $value = [0, 0];
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
 
                     if ($this->_param) {//采用占位符后置内容方式
                         if (is_array($value[0])) {
@@ -667,7 +673,7 @@ final class Builder
                         $in = 'not in';
                         $field = substr($field, 0, -1);
                     }
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
 
                     if ($sqlVal) {
                         //in的结果是一个SQL语句
@@ -703,7 +709,7 @@ final class Builder
                         throw new EspError("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]", 1);
                     }
                     if (empty($value)) $value = [2, 1];
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
 
                     if ($this->_param) {//采用占位符后置内容方式
                         $key = $this->paramKey($field);
@@ -726,7 +732,7 @@ final class Builder
                         $in = '<=';
                         $field = substr($field, 0, -1);
                     }
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
                     if ($sqlVal) {
                         $_where = "{$fieldPro} {$in} {$value}";
 
@@ -742,7 +748,7 @@ final class Builder
                 case '>':
                 case '<':
                     $field = substr($field, 0, -1);
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
 
                     if ($sqlVal) {
                         $_where = "{$fieldPro} {$findType} {$value}";
@@ -763,7 +769,7 @@ final class Builder
                     if (in_array($findType, ['-', '+', ',', '.', '?', '/'])) {
                         $field = substr($field, 0, -1);
                     }
-                    $fieldPro = $this->protect_identifier($field);
+                    $fieldPro = $this->protect_identifier($field, $identifier);
 
                     if ($sqlVal) {
                         $_where = "{$fieldPro} = {$value}";
@@ -1331,7 +1337,7 @@ final class Builder
      * @param array $data
      * @param bool $is_REPLACE
      * @param int $tractLevel
-     * @return bool|int|string|null|array
+     * @return bool|int|string|null
      * 注：在一次插入很多记录时，不用预处理或许速度更快，若一次插入数据只有几条或十几条，这种性能损失可以忽略不计。
      */
     public function insert(array $data, bool $is_REPLACE = false, int $tractLevel = 0)
@@ -1618,19 +1624,20 @@ final class Builder
      *      def AS hij
      *      abc.def AS hij
      *
-     * @param string|array $clause
-     * @return mixed|string
+     * @param $clause
+     * @param bool $identifier
+     * @return array|mixed|string
      */
-    private function protect_identifier($clause)
+    private function protect_identifier($clause, bool $identifier = true)
     {
-        if (!$this->_protect) return $clause;
+        if (!$this->_protect or !$identifier) return $clause;
         /**
          * 处理数组形式传入参数
          */
         if (is_array($clause)) {
             $r = array();
             foreach ($clause as $cls) {
-                $r[] = $this->protect_identifier($cls);
+                $r[] = $this->protect_identifier($cls, $identifier);
             }
             return $r;
         }
