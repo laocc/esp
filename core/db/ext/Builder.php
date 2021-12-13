@@ -499,8 +499,7 @@ final class Builder
             $findType = strtolower($field[-1]);
             if ($findType === '\\') {
                 //where字段后加\号，如：$where['value<=\\'] = "(select num from table where expID={$expID})";
-                $brackets = is_numeric($value) or ((is_string($value) and $value[0] === '(' and $value[-1] === ')'));
-                if (!$brackets) {
+                if (!(is_numeric($value) or (is_string($value) and $value[0] === '(' and $value[-1] === ')'))) {
                     throw new EspError("DB_ERROR: where 直接引用SQL时，被引用的SQL要用括号圈定完整语句", 1);
                 }
                 $field = substr($field, 0, -1);
