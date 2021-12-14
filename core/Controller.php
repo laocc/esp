@@ -110,6 +110,7 @@ abstract class Controller
         return $this;
     }
 
+
     /**
      * 重新指定视图目录
      *
@@ -224,6 +225,20 @@ abstract class Controller
         return $this->_redis->push($key, $data + ['_action' => $action]);
     }
 
+    /**
+     * 清空当前控制器中db连接池，一般只用在CLI环境下
+     * @return $this
+     */
+    final protected function flush_db_pool(): Controller
+    {
+        $this->_Yac = [];
+        $this->_Mysql = [];
+        $this->_Mongodb = [];
+        $this->_Redis = [];
+        $this->_PdoPool = [];
+        $this->_Sqlite = [];
+        return $this;
+    }
 
     /**
      * @return Redis
