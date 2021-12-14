@@ -849,7 +849,7 @@ abstract class Model extends Library
 
         if ($tranID === 1) $tranID = $this->__tranIndex++;
 
-        if (isset($this->_controller->_Mysql[$branchName][$tranID])) {
+        if (!_CLI and isset($this->_controller->_Mysql[$branchName][$tranID])) {
             return $this->_controller->_Mysql[$branchName][$tranID];
         }
 
@@ -884,15 +884,17 @@ abstract class Model extends Library
      */
     final public function Mongodb(string $db = 'temp', array $_conf = [], int $traceLevel = 0): Mongodb
     {
-        if (!isset($this->_controller->_Mongodb[$db])) {
-            $conf = $this->_config->get('database.mongodb');
-            if (empty($conf)) {
-                throw new EspError('无法读取mongodb配置信息', $traceLevel + 1);
-            }
-            $this->_controller->_Mongodb[$db] = new Mongodb($_conf + $conf, $db);
-
-            $this->debug("New Mongodb({$db});", $traceLevel + 1);
+        if (!_CLI and isset($this->_controller->_Mongodb[$db])) {
+            return $this->_controller->_Mongodb[$db];
         }
+
+        $conf = $this->_config->get('database.mongodb');
+        if (empty($conf)) {
+            throw new EspError('无法读取mongodb配置信息', $traceLevel + 1);
+        }
+
+        $this->_controller->_Mongodb[$db] = new Mongodb($_conf + $conf, $db);
+        $this->debug("New Mongodb({$db});", $traceLevel + 1);
         return $this->_controller->_Mongodb[$db];
     }
 
@@ -912,10 +914,12 @@ abstract class Model extends Library
 
         if ($conf['db'] === 0 or $conf['db'] === $dbConfig) return $this->_config->Redis();
 
-        if (!isset($this->_controller->_Redis[$conf['db']])) {
-            $this->_controller->_Redis[$conf['db']] = new Redis($conf);
-            $this->debug("New Redis({$conf['db']});", $traceLevel + 1);
+        if (!_CLI and isset($this->_controller->_Redis[$conf['db']])) {
+            return $this->_controller->_Redis[$conf['db']];
         }
+
+        $this->_controller->_Redis[$conf['db']] = new Redis($conf);
+        $this->debug("New Redis({$conf['db']});", $traceLevel + 1);
         return $this->_controller->_Redis[$conf['db']];
     }
 
