@@ -265,15 +265,21 @@ final class Configure
 
     /**
      * 将一级键名中带.号的，转换为数组，如将：abc.xyz=123转换为abc[xyz]=123
+     * 将值符合[a,b,c]的转换为数组，不支持json格式
      * 最大支持6级，即5个点
      * @param array $array
      * @return array
      */
-    private function expIniArray(array $array)
+    private function expIniArray(array $array): array
     {
         foreach ($array as $key => $value) {
             if (is_array($value)) $array[$key] = $value = $this->expIniArray($value);
-            else if (is_string($value)) $array[$key] = $value = trim($value);
+            else if (is_string($value)) {
+                $array[$key] = $value = trim($value);
+                if (strpos($value, ',') > 0 and preg_match('/^\[(.+)\]$/', $value, $mth)) {
+                    $array[$key] = $value = explode(',', $mth[1]);
+                }
+            }
 
             if (!is_string($key) or strpos($key, '.') === false) continue;
             $tmp = explode('.', $key, 6);
