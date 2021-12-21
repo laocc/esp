@@ -453,7 +453,12 @@ final class Mysql
         );
         $attr = [];
         foreach ($attributes as $val) {
-            $attr["PDO::{$val}"] = $pdo->getAttribute(constant("\PDO::{$val}"));
+            $it = constant("\PDO::{$val}");
+            if (is_int($it)) {
+                $attr["PDO::{$val}"] = $pdo->getAttribute($it);
+            } else {
+                $attr["PDO::{$val}"] = $it;
+            }
         }
         return $attr;
     }
