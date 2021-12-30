@@ -672,12 +672,14 @@ abstract class Controller
     public function locked(string $lockKey, callable $callable, ...$args)
     {
         $rest = null;
-        [$min, $time] = explode(' ', microtime());
-        $min = substr($min, 2, 4);
+        $lTime = microtime(true);
+        [$time, $min] = explode('.', strval($lTime));
+        $min = substr($min, 0, 4);
         $time = intval($time);
         $lockKey = str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
         $path = _RUNTIME . '/flock/' . date('Y-m-d/');
         if (!is_dir($path)) mkdir($path, 0740, true);
+        $this->debug(['lockedKey' => $lockKey, 'lockedStar' => $lTime]);
         $fn = fopen("{$path}{$lockKey}.lock", 'a');
         if (flock($fn, LOCK_EX)) {//加锁
             try {
@@ -690,6 +692,10 @@ abstract class Controller
             flock($fn, LOCK_UN);//解锁
         }
         fclose($fn);
+        $fTime = microtime(true);
+        $this->debug(['lockedKey' => $lockKey,
+            'lockedStar' => $lTime, 'lockedEnd' => $fTime,
+            'runTime' => ($fTime - $lTime) * 1000]);
         return $rest;
     }
 
