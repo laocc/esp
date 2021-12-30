@@ -17,6 +17,9 @@ final class Configure
 {
     private $_CONFIG_;
 
+    /**
+     * @var $_Redis Redis
+     */
     public $_Redis;
     public $_rpc;
     public $_token;

@@ -70,7 +70,7 @@ abstract class Library
      */
     public function locked(string $lockKey, callable $callable, ...$args)
     {
-        return $this->_controller->locked($lockKey, $callable, $args);
+        return $this->_controller->locked($lockKey, $callable, ...$args);
     }
 
 

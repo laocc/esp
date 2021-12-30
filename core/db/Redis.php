@@ -15,7 +15,11 @@ use esp\error\EspError;
  */
 final class Redis implements KeyValue
 {
+    /**
+     * @var $redis \Redis
+     */
     public $redis;
+
     private $host;
     private $conf;
     private $dbIndex = 0;
@@ -93,7 +97,7 @@ final class Redis implements KeyValue
 
     /**
      * 重新选择库ID
-     * @param int $db
+     * @param int|null $db
      * @return \Redis
      */
     public function select(int $db = null)
