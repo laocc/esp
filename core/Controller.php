@@ -55,8 +55,6 @@ abstract class Controller
      */
     public function __construct(Dispatcher $dispatcher)
     {
-        $GLOBALS['_Controller'] = &$this;//放入公共变量，供Library读取
-
         $this->_dispatcher = &$dispatcher;
         $this->_config = &$dispatcher->_config;
         $this->_plugs = &$dispatcher->_plugs;
@@ -664,13 +662,46 @@ abstract class Controller
     }
 
     /**
+     * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
+     * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
+     * 出口处判断如果是字符串即表示出错信息
+     *
+     * @param string $lockKey 任意可以用作文件名的字符串，同时也表示同一种任务
+     * @param callable $callable 该回调方法内返回的值即为当前函数返回值
+     * @param mixed ...$args
+     * @return null
+     */
+    public function locked(string $lockKey, callable $callable, ...$args)
+    {
+        $rest = null;
+        [$min, $time] = explode(' ', microtime());
+        $min = substr($min, 2, 4);
+        $lockKey = str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
+        $path = _RUNTIME . '/flock/' . date('Y-m-d/');
+        if (!is_dir($path)) mkdir($path, 0740, true);
+        $fn = fopen("{$path}{$lockKey}.lock", 'a');
+        if (flock($fn, LOCK_EX)) {//加锁
+            try {
+                $rest = $callable(...$args);//执行
+                fwrite($fn, date("Y-m-d H:i:s", $time) . ".{$min}\tTRUE\n");
+            } catch (\Exception $exception) {
+                $rest = $exception->getMessage();
+                fwrite($fn, date("Y-m-d H:i:s", $time) . ".{$min}\t{$rest}\n");
+            }
+            flock($fn, LOCK_UN);//解锁
+        }
+        fclose($fn);
+        return $rest;
+    }
+
+    /**
      * 框架范围内(控制器)全局唯一锁
      *
      * @param callable $fun
      * @param mixed ...$params
      * @return mixed
      */
-    public function locked(callable $fun, ...$params)
+    public function locked2(callable $fun, ...$params)
     {
         $fn = fopen(__FILE__, 'r');
         if ($fn === false) return false;

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\core\db\Redis;
+
 /**
  * Model是此类的子类，实际业务中所创建的类可以直接引用此类
  *
@@ -15,13 +17,32 @@ abstract class Library
      * @var $_controller Controller
      */
     public $_controller;
+    /**
+     * @var $_config Configure
+     */
     public $_config;
+    /**
+     * @var $_redis Redis
+     */
     public $_redis;
+    /**
+     * @var $_debug Debug
+     */
     public $_debug;
 
     public function __construct(...$param)
     {
-        $this->_controller = &$GLOBALS['_Controller'];
+        foreach (debug_backtrace() as $i => $trace) {
+            if (!isset($trace['object'])) continue;
+            if ($trace['object'] instanceof Controller) {
+                $this->_controller = $trace['object'];
+                break;
+            } else if (($trace['object'] instanceof Library) and $trace['object']->_controller) {
+                $this->_controller = $trace['object']->_controller;
+                break;
+            }
+        }
+
         $this->_config = $this->_controller->_config;
         $this->_debug = $this->_controller->_debug;
         $this->_redis = $this->_controller->_redis;
@@ -60,25 +81,14 @@ abstract class Library
     }
 
     /**
-     * 框架范围内(Library)全局唯一锁
-     * 若需要和控制器用同一个锁，则选获取控制器再执行
-     *
-     * @param callable $fun
-     * @param mixed ...$params
-     * @return mixed
+     * @param string $lockKey
+     * @param callable $callable
+     * @param mixed ...$args
+     * @return null
      */
-    public function locked(callable $fun, array ...$params)
+    public function locked(string $lockKey, callable $callable, ...$args)
     {
-        $fn = fopen(__FILE__, 'r');
-        if ($fn === false) return false;
-        $val = null;
-        if (flock($fn, LOCK_EX)) {
-            $val = $fun(...$params);
-            flock($fn, LOCK_UN);
-        }
-        $close = fclose($fn);
-        if (!is_null($val)) return $val;
-        return $close;
+        return $this->_controller->locked($lockKey, $callable, $args);
     }
 
 
