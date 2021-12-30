@@ -15,8 +15,8 @@ use function esp\helper\root;
  */
 final class Configure
 {
-    private $_CONFIG_ = null;
-    private $_type;
+    private $_CONFIG_;
+
     public $_Redis;
     public $_rpc;
     public $_token;
@@ -29,7 +29,6 @@ final class Configure
         $this->_token = md5(__FILE__);
         $conf += ['path' => '/common/config', 'type' => 'redis'];
         $conf['path'] = root($conf['path']);
-        $this->_type = strtolower($conf['type']);
         $this->_rpc = defined('_RPC') ? _RPC : ['host' => 'rpc.esp', 'port' => 80, 'ip' => ($rdsConf['master'] ?? null)];
 
         $fun = "load_{$conf['type']}";

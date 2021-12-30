@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace esp\core\db;
 
-use ErrorException;
-use esp\core\db\ext\Builder;
-use esp\core\db\ext\PdoResult;
-use esp\core\Model;
-use esp\core\Debug;
-use esp\error\EspError;
 use PDO;
 use PDOException;
+use esp\core\Controller;
+use esp\core\db\ext\Builder;
+use esp\core\db\ext\PdoResult;
+use esp\core\Debug;
+use esp\error\EspError;
+
 
 final class Mysql
 {
@@ -31,12 +31,12 @@ final class Mysql
 
     /**
      * Mysql constructor.
-     * @param Model $model
+     * @param Controller $controller
      * @param int $tranID
      * @param array|null $conf
      * @throws EspError
      */
-    public function __construct(Model $model, int $tranID = 0, array $conf = null)
+    public function __construct(Controller $controller, int $tranID = 0, array $conf = null)
     {
         if (is_array($tranID)) list($tranID, $conf) = [0, $tranID];
         if (!is_array($conf)) throw new EspError('Mysql配置信息错误', 1);
@@ -52,9 +52,11 @@ final class Mysql
             ];
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
-        $this->_debug = $model->_debug;
-        $this->_pool = $model->_controller->_PdoPool;
-        $this->_counter = $model->_controller->_dispatcher->_counter;
+
+        $this->_debug = &$controller->_debug;
+        $this->_pool = &$controller->_PdoPool;
+        $this->_counter = &$controller->_counter;
+
         $this->lowCase = boolval($this->_CONF['lowercase'] ?? 0);
         if ($this->lowCase) {
             $this->_CONF['db'] = strtolower($this->_CONF['db']);

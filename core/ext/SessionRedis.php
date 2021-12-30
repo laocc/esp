@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core\ext;
 
-use esp\core\Debug;
 use esp\error\EspError;
 use Redis;
 
@@ -12,19 +11,16 @@ final class SessionRedis implements \SessionHandlerInterface
     private $_Redis;
     private $_delay;
     private $_prefix;
-    private $_debug;
     private $_realKey;
 
     /**
      * SessionRedis constructor.
-     * @param Debug|null $debug
      * @param Redis|null $redis
      * @param bool $delay
      * @param string $prefix
      */
-    public function __construct(Debug $debug = null, Redis $redis = null, bool $delay = false, string $prefix = '')
+    public function __construct(Redis $redis = null, bool $delay = false, string $prefix = '')
     {
-        $this->_debug = $debug;
         $this->_delay = $delay;
         $this->_prefix = $prefix;
         if (!is_null($redis)) $this->_Redis = $redis;
@@ -80,12 +76,6 @@ final class SessionRedis implements \SessionHandlerInterface
     public function read($session_id)
     {
         $dataString = $this->_Redis->get($session_id);
-        !is_null($this->_debug) && $this->_debug->relay([
-            'read_session' => [
-                'id' => $session_id,
-                'value' => $dataString,
-                'time' => microtime(true)]
-        ]);
         $session = (!$dataString) ? 'a:0:{}' : $dataString;
         $this->_realKey = md5($session);
         return $session;
@@ -179,13 +169,6 @@ final class SessionRedis implements \SessionHandlerInterface
         }
 
         $save = $this->_Redis->set($session_id, $session_data, $ttl);
-        !is_null($this->_debug) && $this->_debug->relay(['write_session' => [
-            'id' => $session_id,
-            'value' => $session_data,
-            'ttl' => $ttl,
-            'time' => microtime(true),
-            'save' => var_export($save, true)
-        ]]);
         return boolval($save);
     }
 

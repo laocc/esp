@@ -307,9 +307,9 @@ abstract class Model extends Library
                 $this->__cache = null;
                 $this->debug(['readByBuffer' => $where]);
 
-                if ($this->_controller->_dispatcher->_counter) {
+                if ($this->_controller->_counter) {
                     $sql = "HitCache({$table}) " . json_encode($where, 320);
-                    $this->_controller->_dispatcher->_counter->recodeMysql('select', $sql, 1);
+                    $this->_controller->_counter->recodeMysql('select', $sql, 1);
                 }
 
                 return $data;
@@ -803,7 +803,7 @@ abstract class Model extends Library
     {
         $key = md5($dbFile);
         if (!isset($this->_controller->_Sqlite[$key])) {
-            $conf = $this->_config->get('database.sqlite');
+            $conf = $this->_controller->_config->get('database.sqlite');
             if (!$conf) $conf = [];
             $conf['db'] = $dbFile;
             $this->_controller->_Sqlite[$key] = new Sqlite($this, $conf);
@@ -829,9 +829,9 @@ abstract class Model extends Library
             return $this->_controller->_Mysql[$branchName][$tranID];
         }
 
-        $conf = $this->_config->get('database.mysql');
+        $conf = $this->_controller->_config->get('database.mysql');
         if (isset($this->_branch) and !empty($this->_branch)) {
-            $_branch = $this->_config->get($this->_branch);
+            $_branch = $this->_controller->_config->get($this->_branch);
             if (empty($_branch) or !is_array($_branch)) {
                 throw new EspError("Model中`_branch`指向内容非Mysql配置信息", $traceLevel + 1);
             }
@@ -845,7 +845,7 @@ abstract class Model extends Library
             throw new EspError("`Database.Mysql`配置信息错误", $traceLevel + 1);
         }
         $conf = $_conf + $conf;
-        $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this, $tranID, $conf);
+        $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this->_controller, $tranID, $conf);
         $this->debug("New Mysql({$branchName}-{$tranID});", $traceLevel + 1);
 
         return $this->_controller->_Mysql[$branchName][$tranID];
@@ -864,7 +864,7 @@ abstract class Model extends Library
             return $this->_controller->_Mongodb[$db];
         }
 
-        $conf = $this->_config->get('database.mongodb');
+        $conf = $this->_controller->_config->get('database.mongodb');
         if (empty($conf)) {
             throw new EspError('无法读取mongodb配置信息', $traceLevel + 1);
         }
@@ -881,14 +881,14 @@ abstract class Model extends Library
      */
     final public function Redis(array $_conf = [], int $traceLevel = 0): Redis
     {
-        $conf = $this->_config->get('database.redis');
+        $conf = $this->_controller->_config->get('database.redis');
         $dbConfig = $conf['db'];
         if (is_array($dbConfig)) $dbConfig = $dbConfig['config'] ?? 1;
 
         $conf = $_conf + $conf + ['db' => 0];
         if (is_array($conf['db'])) $conf['db'] = $conf['db']['model'] ?? 0;
 
-        if ($conf['db'] === 0 or $conf['db'] === $dbConfig) return $this->_config->Redis();
+        if ($conf['db'] === 0 or $conf['db'] === $dbConfig) return $this->_controller->_config->_Redis;
 
         if (!_CLI and isset($this->_controller->_Redis[$conf['db']])) {
             return $this->_controller->_Redis[$conf['db']];

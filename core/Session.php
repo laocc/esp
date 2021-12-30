@@ -49,9 +49,8 @@ final class Session
 {
     private $SessionHandler;
     private $run = true;
-    private $debug;
 
-    public function __construct(array $config, Debug $debug = null)
+    public function __construct(array $config)
     {
         $config += [
             'key' => 'PHPSESSID',
@@ -60,7 +59,6 @@ final class Session
             'path' => '/',
             'domain' => '',
             'limiter' => 'nocache',
-            'debug' => false,
             'object' => null,
             'expire' => 86400,
             'cookie' => 86400,
@@ -72,9 +70,8 @@ final class Session
             ]
         ];
         if ($config['cookie'] < $config['expire']) $config['cookie'] = $config['expire'];
-        if ($config['debug']) $this->debug = $debug;
 
-        $this->SessionHandler = new SessionRedis($this->debug, $config['object'], boolval($config['delay']), $config['prefix']);
+        $this->SessionHandler = new SessionRedis($config['object'], boolval($config['delay']), $config['prefix']);
         $handler = session_set_save_handler($this->SessionHandler, true);
 
         $option = [];
@@ -110,16 +107,6 @@ final class Session
         }
 
         $star = session_start($option);
-
-        if (!is_null($this->debug)) {
-            $debug->relay([
-                'config' => $config,
-                'option' => $option,
-                'id' => session_id(),
-                'star' => var_export($star, true),
-                'handler' => var_export($handler, true),
-            ]);
-        }
     }
 
     /**

@@ -98,12 +98,6 @@ final class Dispatcher
             }
         }
 
-        $response = $this->_config->get('response');
-        if (empty($response)) $response = [];
-        $response = $this->mergeConf($response);
-        $response['_rand'] = $this->_config->get('resourceRand') ?: date('YmdH');
-        $this->_response = new Response($this, $response);
-
         if ($debugConf = $this->_config->get('debug')) {
             $debug = $this->mergeConf($debugConf);
             if ($debug['run'] ?? 0) {
@@ -113,6 +107,12 @@ final class Dispatcher
                 $this->_debug = new Debug([]);
             }
         }
+
+        $response = $this->_config->get('response');
+        if (empty($response)) $response = [];
+        $response = $this->mergeConf($response);
+        $response['_rand'] = $this->_config->get('resourceRand') ?: date('YmdH');
+        $this->_response = new Response($this, $response);
 
         if ($cookies = $this->_config->get('cookies')) {
             $cokConf = $this->mergeConf($cookies, ['run' => false, 'debug' => false, 'domain' => 'host']);
@@ -141,7 +141,7 @@ final class Dispatcher
                             $sseConf['redis'] = $rdsConf;
                         }
 
-                        $this->_session = new Session($sseConf, $this->_debug);
+                        $this->_session = new Session($sseConf);
                         if (($sseConf['debug'] ?? 0) && $this->_debug) $this->relayDebug(['session' => $_SESSION]);
 
                     }

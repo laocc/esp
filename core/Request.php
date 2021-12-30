@@ -9,7 +9,6 @@ use function \esp\helper\str_rand;
 
 final class Request
 {
-    private $_dispatcher;
     private $_var = array();
     public $loop = false;//控制器间跳转循环标识
     public $router_path = null;//路由配置目录
@@ -33,8 +32,9 @@ final class Request
     private $allow = [];//仅允许的控制器
     private $disallow = [];//禁止的控制器
     private $_ajax;
+    private $_cookies;
 
-    public function __construct(Dispatcher $dispatcher, array $config = null)
+    public function __construct(Dispatcher $dispatcher, array $config)
     {
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
         $this->_ajax = !_CLI && (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
@@ -58,7 +58,7 @@ final class Request
             ],
         ];
 
-        $this->_dispatcher = $dispatcher;
+        $this->_cookies = &$dispatcher->_cookies;
         $this->virtual = _VIRTUAL;//虚拟机
         $this->module = '';//虚拟机下模块
         $this->directory = root($config['directory']);
@@ -255,7 +255,7 @@ final class Request
      */
     public function cid(string $key = '_SSI', bool $number = false): string
     {
-        if (is_null($this->_dispatcher->_cookies)) {
+        if (is_null($this->_cookies)) {
             throw new EspError("当前站点未启用Cookies，无法获取CID", 1);
         }
 
@@ -268,7 +268,7 @@ final class Request
                 throw new EspError($err);
             }
             $time = time() + 86400 * 365;
-            $dom = $this->_dispatcher->_cookies->domain;
+            $dom = $this->_cookies->domain;
 
             if (version_compare(PHP_VERSION, '7.3', '>=')) {
                 $option = [];

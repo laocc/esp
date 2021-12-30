@@ -13,20 +13,20 @@ use function esp\helper\root;
 final class Cache
 {
     private $_option;
-    private $request;
-    private $response;
-    private $redis;
+    private $_request;
+    private $_response;
+    private $_redis;
     private $cache_path;
     private $cache_key;
 
     public function __construct(Dispatcher $dispatcher, array &$option)
     {
-        $this->request = &$dispatcher->_request;
-        $this->response = &$dispatcher->_response;
+        $this->_request = &$dispatcher->_request;
+        $this->_response = &$dispatcher->_response;
         $option += ['medium' => 'file', 'path' => ['cache' => _RUNTIME], 'ttl' => -1];
         $this->_option = &$option;
 
-        if ($option['medium'] === 'redis') $this->redis = &$dispatcher->_config->_Redis;
+        if ($option['medium'] === 'redis') $this->_redis = &$dispatcher->_config->_Redis;
     }
 
     /**
@@ -43,7 +43,7 @@ final class Cache
      */
     public function Display(): bool
     {
-        $r = $this->request;
+        $r = $this->_request;
         if (isset($this->_option[$r->controller][$r->action])) {
             $act = $this->_option[$r->controller][$r->action];
             if (is_bool($act) or $act === 0) $this->_option['run'] = boolval($act);
@@ -93,10 +93,10 @@ final class Cache
 
     public function Save()
     {
-        if (!($this->_option['run'] ?? 0) or ($this->_option['ttl'] < 1) or !$this->response->cache) return;
+        if (!($this->_option['run'] ?? 0) or ($this->_option['ttl'] < 1) or !$this->_response->cache) return;
         if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) return;
 
-        $value = $this->response->_display_Result;
+        $value = $this->_response->_display_Result;
         if (!$value or !preg_match('#<html.+</html>#s', $value)) return;
 
         $compress = intval($this->_option['compress'] ?? 0);
@@ -140,7 +140,7 @@ final class Cache
         $value = str_replace(['{CACHE_KEY}', '{CACHE_TIME}'], [$this->cache_key, time()], $value);
 
         //_disable_static是控制器在运行中$this->cache(false);临时设置的值
-        if ($this->response->cache and isset($this->_option['static'])) {
+        if ($this->_response->cache and isset($this->_option['static'])) {
             if ($this->htmlSave($value)) return;
         }
 
@@ -149,7 +149,7 @@ final class Cache
         if (!file_exists($this->cache_path)) mk_dir($this->cache_path . '/');
 
         $array = [];
-        $array['type'] = $this->response->_Content_Type;
+        $array['type'] = $this->_response->_Content_Type;
         $array['expire'] = (time() + $this->_option['ttl']);
         $tag = date('Y-m-d H:i:s');
         $exp = date('Y-m-d H:i:s', $array['expire']);
@@ -176,7 +176,7 @@ return array(
 CODE;
             file_put_contents("{$this->cache_path}/{$key}.php", $php);
         } else {
-            $this->redis->set($key, $array, $this->_option['ttl']);
+            $this->_redis->set($key, $array, $this->_option['ttl']);
         }
     }
 
@@ -189,7 +189,7 @@ CODE;
             if (!$json) return null;
             return $json;
         } else {
-            return $this->redis->get($key);
+            return $this->_redis->get($key);
         }
     }
 
@@ -204,7 +204,7 @@ CODE;
         if ($this->_option['medium'] === 'file') {
             return unlink("{$path}/{$key}.php");
         } else {
-            return $this->redis->del($key);
+            return $this->_redis->del($key);
         }
     }
 

@@ -49,9 +49,9 @@ final class Response
     private $_adapter;
 
 
-    public function __construct(Dispatcher $dispatcher, array $conf = null)
+    public function __construct(Dispatcher $dispatcher, array $conf)
     {
-        $this->_request = $dispatcher->_request;
+        $this->_request = &$dispatcher->_request;
         $this->_resource = new Resources($conf);
         if ($conf['adapter'] ?? null) {
             if (is_array($conf['adapter']) and isset($conf['adapter']['class'])) {

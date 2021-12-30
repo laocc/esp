@@ -15,7 +15,6 @@ use function \esp\helper\root;
 
 abstract class Controller
 {
-    public $_dispatcher;
     /**
      * @var $_config Configure
      */
@@ -33,6 +32,8 @@ abstract class Controller
     public $_cookies;
     public $_debug;
     public $_redis;
+    public $_cache;
+    public $_counter;
 
     /**
      * 以下4个是用于Model中的链接缓存
@@ -49,13 +50,8 @@ abstract class Controller
     public $_Sqlite = array();
 
 
-    /**
-     * Controller constructor.
-     * @param Dispatcher $dispatcher
-     */
     public function __construct(Dispatcher $dispatcher)
     {
-        $this->_dispatcher = &$dispatcher;
         $this->_config = &$dispatcher->_config;
         $this->_plugs = &$dispatcher->_plugs;
         $this->_request = &$dispatcher->_request;
@@ -63,7 +59,9 @@ abstract class Controller
         $this->_session = &$dispatcher->_session;
         $this->_cookies = &$dispatcher->_cookies;
         $this->_debug = &$dispatcher->_debug;
-        $this->_redis = $this->_config->_Redis;
+        $this->_cache = &$dispatcher->_cache;
+        $this->_counter = &$dispatcher->_counter;
+        $this->_redis = &$dispatcher->_config->_Redis;
     }
 
     /**
@@ -305,7 +303,7 @@ abstract class Controller
 
     final protected function getCache(): Cache
     {
-        return $this->_dispatcher->_cache;
+        return $this->_cache;
     }
 
 
