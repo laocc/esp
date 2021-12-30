@@ -676,6 +676,7 @@ abstract class Controller
         $rest = null;
         [$min, $time] = explode(' ', microtime());
         $min = substr($min, 2, 4);
+        $time = intval($time);
         $lockKey = str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
         $path = _RUNTIME . '/flock/' . date('Y-m-d/');
         if (!is_dir($path)) mkdir($path, 0740, true);
@@ -692,27 +693,6 @@ abstract class Controller
         }
         fclose($fn);
         return $rest;
-    }
-
-    /**
-     * 框架范围内(控制器)全局唯一锁
-     *
-     * @param callable $fun
-     * @param mixed ...$params
-     * @return mixed
-     */
-    public function locked2(callable $fun, ...$params)
-    {
-        $fn = fopen(__FILE__, 'r');
-        if ($fn === false) return false;
-        $val = null;
-        if (flock($fn, LOCK_EX)) {
-            $val = $fun(...$params);
-            flock($fn, LOCK_UN);
-        }
-        $close = fclose($fn);
-        if (!is_null($val)) return $val;
-        return $close;
     }
 
     /**

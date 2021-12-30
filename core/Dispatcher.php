@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use ErrorException;
 use esp\debug\Counter;
 use esp\error\Error;
 use esp\error\EspError;
@@ -166,7 +167,7 @@ final class Dispatcher
 
     /**
      * 系统运行调度中心
-     * @throws EspError
+     * @throws EspError|ErrorException
      */
     public function run(): void
     {

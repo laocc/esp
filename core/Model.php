@@ -781,30 +781,6 @@ abstract class Model extends Library
     }
 
     /**
-     * 框架范围内(Model)全局唯一锁
-     * 若需要和控制器用同一个锁，则选获取控制器再执行
-     * 回调函数若不返回值，则返回close结果
-     *
-     * @param callable $fun
-     * @param mixed ...$params
-     * @return mixed
-     */
-    public function locked(callable $fun, ...$params)
-    {
-        $fn = fopen(__FILE__, 'r');
-        if ($fn === false) return false;
-        $val = null;
-        if (flock($fn, LOCK_EX)) {
-            $val = $fun(...$params);
-            flock($fn, LOCK_UN);
-        }
-        $close = fclose($fn);
-        if (!is_null($val)) return $val;
-        return $close;
-    }
-
-
-    /**
      * @param string $tab
      * @param int $traceLevel
      * @return Yac
