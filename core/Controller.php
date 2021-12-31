@@ -53,14 +53,14 @@ abstract class Controller
     public function __construct(Dispatcher $dispatcher)
     {
         $this->_config = &$dispatcher->_config;
-        $this->_plugs = &$dispatcher->_plugs;
         $this->_request = &$dispatcher->_request;
         $this->_response = &$dispatcher->_response;
+        $this->_counter = &$dispatcher->_counter;
         $this->_session = &$dispatcher->_session;
         $this->_cookies = &$dispatcher->_cookies;
         $this->_debug = &$dispatcher->_debug;
+        $this->_plugs = &$dispatcher->_plugs;
         $this->_cache = &$dispatcher->_cache;
-        $this->_counter = &$dispatcher->_counter;
         $this->_redis = &$dispatcher->_config->_Redis;
     }
 

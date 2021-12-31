@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace esp\core\ext;
 
-use esp\error\EspError;
 use Redis;
+use esp\error\EspError;
+use SessionHandlerInterface;
 
-final class SessionRedis implements \SessionHandlerInterface
+final class SessionRedis implements SessionHandlerInterface
 {
     private $_Redis;
     private $_delay;
@@ -15,15 +16,15 @@ final class SessionRedis implements \SessionHandlerInterface
 
     /**
      * SessionRedis constructor.
-     * @param Redis|null $redis
      * @param bool $delay
      * @param string $prefix
+     * @param Redis|null $redis
      */
-    public function __construct(Redis $redis = null, bool $delay = false, string $prefix = '')
+    public function __construct(bool $delay, string $prefix, Redis $redis = null)
     {
         $this->_delay = $delay;
         $this->_prefix = $prefix;
-        if (!is_null($redis)) $this->_Redis = $redis;
+        if (!is_null($redis)) $this->_Redis = &$redis;
     }
 
 

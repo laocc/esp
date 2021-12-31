@@ -3,11 +3,14 @@ declare(strict_types=1);
 
 namespace esp\core\ext;
 
-
+use esp\core\db\Mysql;
 use esp\error\EspError;
 use function esp\helper\root;
 
-trait Mysql
+/**
+ * Model中复用类方法
+ */
+trait MysqlExt
 {
 
     /**
@@ -24,9 +27,6 @@ trait Mysql
             $table = $this->table();
         }
         if (!$table) throw new EspError('Unable to get table name');
-        /**
-         * @var $mysql \esp\core\db\Mysql
-         */
         $mysql = $this->Mysql();
         if ($mysql->lowCase) $table = strtolower($table);
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
@@ -42,15 +42,13 @@ trait Mysql
      * 设置自增ID起始值
      * @param string $table
      * @param int $id
-     * @return bool|\esp\core\db\ext\PdoResult|null
+     * @return bool|int|string|null
+     * @throws EspError
      */
     final public function increment(string $table, int $id = 1)
     {
         //TRUNCATE TABLE dbAdmin;
         //alter table users AUTO_INCREMENT=10000;
-        /**
-         * @var $mysql \esp\core\db\Mysql
-         */
         $mysql = $this->Mysql();
         return $mysql->query("alter table {$table} AUTO_INCREMENT={$id}", [], null, 1);
     }
@@ -58,14 +56,12 @@ trait Mysql
     /**
      * 刷新INFORMATION_SCHEMA里的表信息
      * @param string $table
-     * @return bool
+     * @return bool|mixed
+     * @throws EspError
      */
     final public function analyze(string $table)
     {
         $mysql = $this->Mysql();
-        /**
-         * @var $mysql \esp\core\db\Mysql
-         */
         $this->hash("{$mysql->dbName}.{$table}")->set('_field', []);
         $this->hash("{$mysql->dbName}.{$table}")->set('_title', []);
         $val = $mysql->query("analyze table `{$table}`", [], null, 1)->rows();
@@ -87,9 +83,6 @@ trait Mysql
         if (is_bool($table)) list($table, $html) = [null, $table];
         $table = $table ?: $this->table();
         if (!$table) throw new EspError('Unable to get table name');
-        /**
-         * @var $mysql \esp\core\db\Mysql
-         */
         $mysql = $this->Mysql();
         if ($mysql->lowCase) $table = strtolower($table);
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
@@ -116,11 +109,8 @@ trait Mysql
      * @return array|mixed|string
      * @throws EspError
      */
-    final public function tables($html = false)
+    final public function tables(bool $html = false)
     {
-        /**
-         * @var $mysql \esp\core\db\Mysql
-         */
         $mysql = $this->Mysql();
         $val = $mysql->table('INFORMATION_SCHEMA.TABLES')
             ->select("TABLE_NAME as name,DATA_LENGTH as data,TABLE_ROWS as rows,AUTO_INCREMENT as increment,TABLE_COMMENT as comment,UPDATE_TIME as time")
@@ -150,9 +140,6 @@ trait Mysql
     {
         $table = $table ?: $this->table();
         if (!$table) throw new EspError('Unable to get table name');
-        /**
-         * @var $mysql \esp\core\db\Mysql
-         */
         $mysql = $this->Mysql();
         if ($mysql->lowCase) $table = strtolower($table);
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
@@ -178,7 +165,7 @@ trait Mysql
 
         $mysql = $this->Mysql();
         /**
-         * @var $mysql \esp\core\db\Mysql
+         * @var $mysql Mysql
          */
         $val = $mysql->table('INFORMATION_SCHEMA.TABLES')
             ->select('TABLE_NAME')
@@ -215,12 +202,9 @@ PHP;
      * 列出所有字段的名称
      * @return array
      */
-    final public function title()
+    final public function title(): array
     {
         $mysql = $this->Mysql();
-        /**
-         * @var $mysql \esp\core\db\Mysql
-         */
         $table = $this->table();
         $data = $this->hash("{$mysql->dbName}.{$table}")->get('_title');
         if (!empty($data)) return $data;

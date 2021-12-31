@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\error\EspError;
+use esp\core\ext\SessionFiles;
 use esp\core\ext\SessionRedis;
+use esp\helper\library\Error;
 
 
 /**
@@ -53,6 +55,7 @@ final class Session
     public function __construct(array $config)
     {
         $config += [
+            'drive' => 'redis',
             'key' => 'PHPSESSID',
             'delay' => 0,
             'prefix' => '',
@@ -71,8 +74,14 @@ final class Session
         ];
         if ($config['cookie'] < $config['expire']) $config['cookie'] = $config['expire'];
 
-        $this->SessionHandler = new SessionRedis($config['object'], boolval($config['delay']), $config['prefix']);
+        if ($config['drive'] === 'file') {
+            $this->SessionHandler = new SessionFiles(boolval($config['delay']), $config['prefix']);
+
+        } else {
+            $this->SessionHandler = new SessionRedis(boolval($config['delay']), $config['prefix'], $config['object']);
+        }
         $handler = session_set_save_handler($this->SessionHandler, true);
+        if (!$handler) throw new Error('session_set_save_handler Error');
 
         $option = [];
         $option['save_path'] = serialize($config['redis']);
@@ -82,7 +91,7 @@ final class Session
         $option['cache_limiter'] = $config['limiter'];//客户端缓存方法
         $option['cache_expire'] = intval($config['expire'] / 60);//缓存方法内容生命期，分钟
 
-        $option['use_trans_sid'] = 0;//指定是否启用透明 SID 支持。默认为 0（禁用）。
+        $option['use_trans_sid'] = $config['use_trans_sid'] ?? 0;//指定是否启用透明 SID 支持。默认为 0（禁用）。
         $option['use_only_cookies'] = 1;//指定是否在客户端仅仅使用 cookie 来存放会话 ID。。启用此设定可以防止有关通过 URL 传递会话 ID 的攻击
         $option['use_cookies'] = 1;//指定是否在客户端用 cookie 来存放会话 ID
 

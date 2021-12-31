@@ -9,7 +9,7 @@ use esp\core\db\Redis;
 use esp\core\db\Sqlite;
 use esp\core\db\Yac;
 use esp\core\ext\Buffer;
-use esp\core\ext\Mysql as MysqlExt;
+use esp\core\ext\MysqlExt;
 use esp\core\ext\Paging;
 use esp\error\EspError;
 

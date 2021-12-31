@@ -3,14 +3,20 @@ declare(strict_types=1);
 
 namespace esp\core\ext;
 
-final class SessionFiles implements \SessionHandlerInterface
+use SessionHandlerInterface;
+
+final class SessionFiles implements SessionHandlerInterface
 {
     private $savePath;
     private $_delay;//自动延时，windows下无效
     private $_prefix;
     private $_realKey;
 
-    public function __construct(bool $delay = false, string $prefix = '')
+    /**
+     * @param bool $delay 自动延时，windows下无效
+     * @param string $prefix
+     */
+    public function __construct(bool $delay, string $prefix)
     {
         $this->_delay = $delay;
         $this->_prefix = $prefix;

@@ -24,7 +24,7 @@ final class Cache
         $this->_request = &$dispatcher->_request;
         $this->_response = &$dispatcher->_response;
         $option += ['medium' => 'file', 'path' => ['cache' => _RUNTIME], 'ttl' => -1];
-        $this->_option = &$option;
+        $this->_option = $option;
 
         if ($option['medium'] === 'redis') $this->_redis = &$dispatcher->_config->_Redis;
     }

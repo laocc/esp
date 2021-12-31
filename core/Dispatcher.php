@@ -76,7 +76,7 @@ final class Dispatcher
         if (!_CLI) $error = new Error($option['error'] ?? []);
 
         if (!isset($option['config'])) $option['config'] = [];
-        $option['config'] += ['type' => 'redis'];
+        $option['config'] += ['driver' => 'redis'];
         $this->_config = new Configure($option['config']);
 
         /**
@@ -126,7 +126,7 @@ final class Dispatcher
                     $sseConf = $this->mergeConf($session, ['run' => false, 'domain' => $cokConf['domain']]);
 
                     if ($sseConf['run'] ?? false) {
-                        if (!isset($sseConf['driver'])) $sseConf['driver'] = $option['config']['type'];
+                        if (!isset($sseConf['driver'])) $sseConf['driver'] = $option['config']['driver'];
                         if ($sseConf['driver'] === 'redis') {
                             $rds = $this->_config->get('database.redis');
                             $cID = $rds['db'];
@@ -135,8 +135,8 @@ final class Dispatcher
                             $rdsConf = ($sseConf['redis'] ?? []) + $rds;
                             if (is_array($rdsConf['db'])) $rdsConf['db'] = $rdsConf['db']['session'] ?? 0;
                             if ($rdsConf['db'] === 0) $rdsConf['db'] = $cID;
-                            if ($rdsConf['db'] === $cID and $option['config']['type'] === 'redis') {
-                                $sseConf['object'] = $this->_config->_Redis->redis;
+                            if ($rdsConf['db'] === $cID and $option['config']['drive'] === 'redis') {
+                                $sseConf['object'] = &$this->_config->_Redis->redis;
                             }
                             $sseConf['redis'] = $rdsConf;
                         }

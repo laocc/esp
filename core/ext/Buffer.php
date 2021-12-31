@@ -8,17 +8,21 @@ use esp\core\db\Redis;
 
 final class Buffer
 {
-    private $db;
+    private $hashKey;
     private $table;
     private $redis;
 
     public function __construct(Redis $redis, string $db)
     {
-        $this->redis = $redis;
-        $this->db = "mysql_buffer_{$db}";
+        $this->redis = &$redis;
+        $this->hashKey = "mysql_buffer_{$db}";
     }
 
-    public function table(string $table)
+    /**
+     * @param string $table
+     * @return $this
+     */
+    public function table(string $table): Buffer
     {
         $this->table = $table;
         return $this;
@@ -33,7 +37,7 @@ final class Buffer
         $key = array_keys($where)[0] ?? null;
         if (!$key) return null;
         $mdKey = md5($this->table . $key . var_export($where[$key], true));
-        return $this->redis->hash($this->db)->get($mdKey);
+        return $this->redis->hash($this->hashKey)->get($mdKey);
     }
 
     /**
@@ -46,7 +50,7 @@ final class Buffer
         $key = array_keys($where)[0] ?? null;
         if (!$key) return false;
         $mdKey = md5($this->table . $key . var_export($where[$key], true));
-        return $this->redis->hash($this->db)->set($mdKey, $data);
+        return $this->redis->hash($this->hashKey)->set($mdKey, $data);
     }
 
 
@@ -68,7 +72,7 @@ final class Buffer
                 $mdKey[] = md5($this->table . $key . var_export($val, true));
             }
         }
-        if (!empty($mdKey)) return $this->redis->hash($this->db)->del(...$mdKey);
+        if (!empty($mdKey)) return $this->redis->hash($this->hashKey)->del(...$mdKey);
         return 0;
     }
 
