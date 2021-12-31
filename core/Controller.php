@@ -676,26 +676,43 @@ abstract class Controller
         [$time, $min] = explode('.', strval($lTime));
         $min = substr($min, 0, 4);
         $time = intval($time);
+
+        $operation = LOCK_EX;
+        if ($lockKey[0] === '#') {
+            $lockKey = substr($lockKey, 1);
+            $operation = LOCK_EX | LOCK_NB;
+        }
+
         $lockKey = str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
         $path = _RUNTIME . '/flock/' . date('Y-m-d/');
         if (!is_dir($path)) mkdir($path, 0740, true);
         $this->debug(['lockedKey' => $lockKey, 'lockedStar' => $lTime]);
         $fn = fopen("{$path}{$lockKey}.lock", 'a');
-        if (flock($fn, LOCK_EX)) {//加锁
+        $message = 'Not Run';
+        if (flock($fn, $operation)) {//加锁
             try {
                 $rest = $callable(...$args);//执行
-                fwrite($fn, date("Y-m-d H:i:s", $time) . ".{$min}\tTRUE\n");
+                $message = 'TRUE';
             } catch (\Exception $exception) {
-                $rest = $exception->getMessage();
-                fwrite($fn, date("Y-m-d H:i:s", $time) . ".{$min}\t{$rest}\n");
+                $message = $exception->getMessage();
             }
             flock($fn, LOCK_UN);//解锁
         }
-        fclose($fn);
         $fTime = microtime(true);
-        $this->debug(['lockedKey' => $lockKey,
-            'lockedStar' => $lTime, 'lockedEnd' => $fTime,
-            'runTime' => ($fTime - $lTime) * 1000]);
+        $runTime = ($fTime - $lTime) * 1000;
+        fwrite($fn, date("Y-m-d H:i:s", $time) . ".{$min}\t{$runTime}\t{$message}\n");
+
+        $this->debug(
+            [
+                'lockedKey' => $lockKey,
+                'lockedStar' => $lTime,
+                'lockedStop' => $fTime,
+                'runTime' => ($fTime - $lTime) * 1000,
+                'message' => $message,
+            ]
+        );
+
+        fclose($fn);
         return $rest;
     }
 
