@@ -521,8 +521,10 @@ final class Builder
                         $pos = 'not ';
                         $field = substr($field, 0, -1);
                     }
+                    if (is_array($value)) $value = json_encode($value, 320);
+                    else if (!is_string($value)) $value = strval($value);
 
-                    if (!empty($value)) {
+                    if ($value !== '') {
                         if ($value[0] === '^') $value = substr($value, 1);
                         else if ($value[0] !== '%') $value = "%{$value}";
                         if (!empty($value)) {
