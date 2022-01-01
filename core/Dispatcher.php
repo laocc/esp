@@ -144,7 +144,9 @@ final class Dispatcher
                         $this->_session = new Session($sseConf);
                         if ($sseConf['redis']['db'] === $this->_config->RedisDbIndex
                             and $option['config']['drive'] === 'redis') {
-                            $this->_session->setRedis($this->_config->_Redis->redis);
+                            $this->_session->start($this->_config->_Redis->redis);
+                        } else {
+                            $this->_session->start();
                         }
 
                         if (($sseConf['debug'] ?? 0) && $this->_debug) $this->relayDebug(['session' => $_SESSION]);
