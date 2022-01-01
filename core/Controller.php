@@ -10,6 +10,7 @@ use esp\core\db\Yac;
 use esp\error\EspError;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
+use esp\session\Session;
 use function \esp\helper\host;
 use function \esp\helper\root;
 
@@ -124,7 +125,10 @@ abstract class Controller
         return $this;
     }
 
-    final protected function getViewPath()
+    /**
+     * @return string
+     */
+    final protected function getViewPath(): string
     {
         return $this->_response->getViewPath();
     }
@@ -146,7 +150,7 @@ abstract class Controller
 
     /**
      * 标签解析器
-     * @return bool|View|Adapter
+     * @return Adapter|View
      */
     final protected function getAdapter()
     {
@@ -160,9 +164,9 @@ abstract class Controller
 
     /**
      * 关闭，或获取layout对象，可同时指定框架文件
-     * @return bool|View
+     * @return View
      */
-    final protected function getLayout()
+    final protected function getLayout(): View
     {
         return $this->_response->getLayout();
     }
@@ -198,7 +202,7 @@ abstract class Controller
      * @param array $value
      * @return int
      */
-    final public function publish(string $action, array $value)
+    final public function publish(string $action, array $value): int
     {
         $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
         return $this->_redis->publish($channel, $action, $value);
@@ -215,7 +219,7 @@ abstract class Controller
      * 用下面方法读取
      * while ($data = $this->_redis->lPop($queKey)){...}
      */
-    final public function queue(string $action, array $data)
+    final public function queue(string $action, array $data): int
     {
         $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
         return $this->_redis->push($key, $data + ['_action' => $action]);
@@ -278,7 +282,7 @@ abstract class Controller
     /**
      * @return Response
      */
-    final public function getResponse()
+    final public function getResponse(): Response
     {
         return $this->_response;
     }
@@ -295,7 +299,7 @@ abstract class Controller
      * @param string $name
      * @return null|Plugin
      */
-    final public function getPlugin(string $name)
+    final public function getPlugin(string $name): ?Plugin
     {
         $name = ucfirst($name);
         return $this->_plugs[$name] ?? null;
@@ -310,7 +314,7 @@ abstract class Controller
     /**
      * @param string $data
      * @param null $pre
-     * @return false|Debug
+     * @return false
      */
     final public function debug($data = '_R_DEBUG_', $pre = null)
     {
@@ -324,9 +328,9 @@ abstract class Controller
 
     /**
      * @param null $data
-     * @return bool|Debug
+     * @return bool
      */
-    final public function debug_mysql($data = null)
+    final public function debug_mysql($data = null): ?bool
     {
         if (_CLI) return false;
         if (is_null($this->_debug)) return null;
@@ -393,7 +397,7 @@ abstract class Controller
      * @param string|null $notes
      * @return bool
      */
-    final protected function finish(string $notes = null)
+    final protected function finish(string $notes = null): bool
     {
         if (!is_null($this->_debug)) {
             $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
@@ -402,7 +406,7 @@ abstract class Controller
         return fastcgi_finish_request();
     }
 
-    final protected function jump($route)
+    final protected function jump($route): bool
     {
         return $this->reload($route);
     }
@@ -414,7 +418,7 @@ abstract class Controller
      * @param array ...$param
      * @return bool
      */
-    final protected function reload(...$param)
+    final protected function reload(...$param): bool
     {
         if (empty($param)) return false;
         $directory = $this->_request->directory;
@@ -469,7 +473,7 @@ abstract class Controller
         return $this;
     }
 
-    final protected function markdown(string $mdValue, bool $addNav = false, bool $addBoth = true)
+    final protected function markdown(string $mdValue, bool $addNav = false, bool $addBoth = true): string
     {
         if (stripos($mdValue, _ROOT) === 0) {
             $mdValue = file_get_contents($mdValue);
@@ -498,7 +502,7 @@ abstract class Controller
      * @param string|null $value
      * @return bool
      */
-    final protected function html(string $value = null)
+    final protected function html(string $value = null): bool
     {
         return $this->_response->set_value('html', $value);
     }
@@ -507,7 +511,7 @@ abstract class Controller
      * @param array $value
      * @return bool
      */
-    final protected function json(array $value)
+    final protected function json(array $value): bool
     {
         return $this->_response->set_value('json', $value);
     }
@@ -535,22 +539,22 @@ abstract class Controller
         return $this;
     }
 
-    final protected function php(array $value)
+    final protected function php(array $value): bool
     {
         return $this->_response->set_value('php', $value);
     }
 
-    final protected function text(string $value)
+    final protected function text(string $value): bool
     {
         return $this->_response->set_value('text', $value);
     }
 
-    final protected function image(string $value)
+    final protected function image(string $value): bool
     {
         return $this->_response->set_value('image', $value);
     }
 
-    final protected function xml($root, $value = null)
+    final protected function xml($root, $value = null): bool
     {
         if (is_array($root)) list($root, $value) = [$value ?: 'xml', $root];
         if (is_null($value)) list($root, $value) = ['xml', $root];
@@ -721,7 +725,7 @@ abstract class Controller
      *
      * @return array
      */
-    final protected function frameVersion()
+    final protected function frameVersion(): array
     {
         $json = file_get_contents(_ROOT . '/composer.lock');
         $json = json_decode($json, true);
