@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\core\db\ext;
 
 use PDOStatement;
+use function esp\helper\numbers;
 use function esp\helper\xml_decode;
 
 final class PdoResult
@@ -54,8 +55,15 @@ final class PdoResult
 
     private function decode($data, $decode)
     {
+        if (isset($decode['array'])) $decode['json'] = $decode['array'];
         if (isset($decode['json'])) {
-            foreach ($decode['json'] as $k) $data[$k[0]] = json_decode(($data[$k[1]] ?? ''), true) ?: [];
+            foreach ($decode['json'] as $k) {
+                if (is_int($data[$k[1]])) {
+                    $data[$k[0]] = numbers($data[$k[1]]);
+                } else {
+                    $data[$k[0]] = json_decode(($data[$k[1]] ?? ''), true) ?: [];
+                }
+            }
         }
         if (isset($decode['xml'])) {
             foreach ($decode['xml'] as $k) $data[$k[0]] = xml_decode(($data[$k[1]] ?? ''), true) ?: [];
