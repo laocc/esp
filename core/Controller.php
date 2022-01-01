@@ -50,7 +50,6 @@ abstract class Controller
     public $_PdoPool = array();
     public $_Sqlite = array();
 
-
     public function __construct(Dispatcher $dispatcher)
     {
         $this->_config = &$dispatcher->_config;
@@ -743,5 +742,18 @@ abstract class Controller
         return $value;
     }
 
+
+    /**
+     * 释放资源，好象没鸟用
+     */
+    public function ReleaseContent()
+    {
+        foreach ($this->_Yac as &$obj) $obj = null;
+        foreach ($this->_Mysql as &$obj) $obj = null;
+        foreach ($this->_Mongodb as &$obj) $obj = null;
+        foreach ($this->_Redis as &$obj) $obj = null;
+        foreach ($this->_PdoPool as &$obj) $obj = null;
+        foreach ($this->_Sqlite as &$obj) $obj = null;
+    }
 
 }

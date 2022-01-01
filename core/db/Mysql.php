@@ -152,13 +152,6 @@ final class Mysql
             $host = $cnf['master'];
         }
 
-        //是否启用持久连接
-        if (isset($cnf['persistent'])) {
-            $persistent = $cnf['persistent'];
-        } else {
-            $persistent = _CLI;
-        }
-
         //自动提交事务=false，默认true,如果有事务ID，则为该事务的状态反值
         if (isset($this->_trans_run[$trans_id])) {
             $autoCommit = !$this->_trans_run[$trans_id];
@@ -171,7 +164,7 @@ final class Mysql
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,//错误等级
                 PDO::ATTR_AUTOCOMMIT => $autoCommit,//自动提交事务=false，默认true,如果有事务ID，则为false
                 PDO::ATTR_EMULATE_PREPARES => false,//是否使用PHP本地模拟prepare,禁止
-                PDO::ATTR_PERSISTENT => $persistent,//是否启用持久连接
+                PDO::ATTR_PERSISTENT => boolval($cnf['persistent'] ?? 0),//是否启用持久连接
                 PDO::ATTR_TIMEOUT => intval($cnf['timeout']), //设置超时时间，秒，默认=2
             );
             if ($host[0] === '/') {//unix_socket
