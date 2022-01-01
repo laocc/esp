@@ -15,6 +15,8 @@ use function esp\helper\root;
  */
 final class Configure
 {
+    public $RedisDbIndex = 0;
+
     private $_CONFIG_;
 
     /**
@@ -155,6 +157,7 @@ final class Configure
 
         $rdsConf = $dbConf['database']['redis'] ?? [];
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
+        $this->RedisDbIndex = $rdsConf['db'];
         $this->_Redis = new Redis($rdsConf);
 
         //没有强制从文件加载

@@ -8,6 +8,7 @@ use esp\debug\Counter;
 use esp\error\Error;
 use esp\error\EspError;
 use esp\helper\library\Result;
+use esp\session\Session;
 use function esp\helper\host;
 
 final class Dispatcher
@@ -127,6 +128,7 @@ final class Dispatcher
 
                     if ($sseConf['run'] ?? false) {
                         if (!isset($sseConf['driver'])) $sseConf['driver'] = $option['config']['driver'];
+
                         if ($sseConf['driver'] === 'redis') {
                             $rds = $this->_config->get('database.redis');
                             $cID = $rds['db'];
@@ -135,13 +137,16 @@ final class Dispatcher
                             $rdsConf = ($sseConf['redis'] ?? []) + $rds;
                             if (is_array($rdsConf['db'])) $rdsConf['db'] = $rdsConf['db']['session'] ?? 0;
                             if ($rdsConf['db'] === 0) $rdsConf['db'] = $cID;
-                            if ($rdsConf['db'] === $cID and $option['config']['drive'] === 'redis') {
-                                $sseConf['object'] = &$this->_config->_Redis->redis;
-                            }
+
                             $sseConf['redis'] = $rdsConf;
                         }
 
                         $this->_session = new Session($sseConf);
+                        if ($sseConf['redis']['db'] === $this->_config->RedisDbIndex
+                            and $option['config']['drive'] === 'redis') {
+                            $this->_session->setRedis($this->_config->_Redis->redis);
+                        }
+
                         if (($sseConf['debug'] ?? 0) && $this->_debug) $this->relayDebug(['session' => $_SESSION]);
 
                     }

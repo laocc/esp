@@ -13,6 +13,7 @@
     "laocc/http": "*",
     "laocc/helper": "*",
     "laocc/debug": "*",
+    "laocc/session": "*",
     "ext-json": "*",
     "ext-libxml": "*",
     "ext-xml": "*",
