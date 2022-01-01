@@ -20,14 +20,17 @@ abstract class Library
 
     public function __construct(...$param)
     {
-        if ($param[0] instanceof Controller) {
-            $this->_controller =& $param[0];
-            unset($param[0]);
-        } else if ($param[0] instanceof Library) {
-            $this->_controller = &$param[0]->_controller;
-            unset($param[0]);
-        } else {
+        if (isset($param[0])) {
+            if ($param[0] instanceof Controller) {
+                $this->_controller =& $param[0];
+                unset($param[0]);
+            } else if ($param[0] instanceof Library) {
+                $this->_controller = &$param[0]->_controller;
+                unset($param[0]);
+            }
+        }
 
+        if (is_null($this->_controller)) {
             foreach (debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS) as $trace) {
                 if (!isset($trace['object'])) continue;
                 if ($trace['object'] instanceof Controller) {
@@ -43,7 +46,6 @@ abstract class Library
         if (is_null($this->_controller)) {
             throw new Error("未获取到控制器，若本对象是在某插件的回调中创建(例如swoole的tick或task中)，请将创建对像的第一个参数调为\$this，如：new MainModel(\$this)");
         }
-
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $param);
