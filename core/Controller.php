@@ -677,7 +677,7 @@ abstract class Controller
     {
         $rest = null;
         $lTime = microtime(true);
-        [$time, $min] = explode('.', strval($lTime));
+        [$time, $min] = explode('.', strval($lTime) . '.000');
         $min = substr($min, 0, 4);
         $time = intval($time);
 
