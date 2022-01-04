@@ -3,9 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\EspError;
 use function \esp\helper\root;
-use function \esp\helper\str_rand;
 
 final class Request
 {
@@ -32,9 +30,8 @@ final class Request
     private $allow = [];//仅允许的控制器
     private $disallow = [];//禁止的控制器
     private $_ajax;
-    private $_cookies;
 
-    public function __construct(Cookies $cookies, array $config)
+    public function __construct(array $config)
     {
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
         $this->_ajax = !_CLI && (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
@@ -58,7 +55,6 @@ final class Request
             ],
         ];
 
-        $this->_cookies = &$cookies;
         $this->virtual = _VIRTUAL;//虚拟机
         $this->module = '';//虚拟机下模块
         $this->directory = root($config['directory']);
@@ -243,49 +239,6 @@ final class Request
     public function ua(): string
     {
         return getenv('HTTP_USER_AGENT') ?: '';
-    }
-
-
-    /**
-     * 客户端唯一标识
-     * @param string $key
-     * @param bool $number
-     * @return string
-     * @throws EspError
-     */
-    public function cid(string $key = '_SSI', bool $number = false): string
-    {
-        if (is_null($this->_cookies)) {
-            throw new EspError("当前站点未启用Cookies，无法获取CID", 1);
-        }
-
-        $key = strtolower($key);
-        $unique = $_COOKIE[$key] ?? null;
-        if (!$unique) {
-            $unique = $number ? mt_rand() : str_rand(20);
-            if (headers_sent($file, $line)) {
-                $err = ['message' => "Header be Send:{$file}[{$line}]", 'code' => 500, 'file' => $file, 'line' => $line];
-                throw new EspError($err);
-            }
-            $time = time() + 86400 * 365;
-            $dom = $this->_cookies->domain;
-
-            if (version_compare(PHP_VERSION, '7.3', '>=')) {
-                $option = [];
-                $option['domain'] = $dom;
-                $option['expires'] = $time;
-                $option['path'] = '/';
-                $option['secure'] = true;//仅https
-                $option['httponly'] = true;
-                $option['samesite'] = 'Lax';
-                setcookie($key, $unique, $option);
-                _HTTPS && setcookie($key, $unique, ['secure' => true] + $option);
-            } else {
-                setcookie($key, $unique, $time, '/', $dom, false, true);
-                _HTTPS && setcookie($key, $unique, $time, '/', $dom, true, true);
-            }
-        }
-        return $unique;
     }
 
 

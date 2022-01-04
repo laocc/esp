@@ -43,10 +43,12 @@ final class Dispatcher
         if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!getenv('HTTP_HOST') && !_CLI) exit('unknown host');
         if (!defined('_ROOT')) {
-            if ($rootPath = strpos(__DIR__, '/vendor/laocc/esp/core')) {
-                $rootPath = substr(__DIR__, 0, $rootPath);
-            } else if ($rootPath = strpos(__DIR__, '/laocc/esp/core')) {
-                $rootPath = (substr(__DIR__, 0, $rootPath));
+            if ($dirI = strpos(__DIR__, '/vendor/laocc/esp/core')) {
+                $rootPath = substr(__DIR__, 0, $dirI);
+            } else if ($dirI = strpos(__DIR__, '/laocc/esp/core')) {
+                $rootPath = (substr(__DIR__, 0, $dirI));
+            } else {
+                $rootPath = dirname($_SERVER['DOCUMENT_ROOT'], 2);
             }
             define('_ROOT', $rootPath); //网站根目录
         }
@@ -95,7 +97,7 @@ final class Dispatcher
         $request = $cfg->get('request');
         if (empty($request)) $request = [];
         $request = $this->mergeConf($request);
-        $this->_request = new Request($this->_cookies, $request);
+        $this->_request = new Request($request);
         if (_CLI) return;
 
         if (!empty($counter = $cfg->get('counter'))) {
