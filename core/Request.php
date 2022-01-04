@@ -34,7 +34,7 @@ final class Request
     private $_ajax;
     private $_cookies;
 
-    public function __construct(Dispatcher $dispatcher, array $config)
+    public function __construct(Cookies $cookies, array $config)
     {
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
         $this->_ajax = !_CLI && (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
@@ -58,7 +58,7 @@ final class Request
             ],
         ];
 
-        $this->_cookies = &$dispatcher->_cookies;
+        $this->_cookies = &$cookies;
         $this->virtual = _VIRTUAL;//虚拟机
         $this->module = '';//虚拟机下模块
         $this->directory = root($config['directory']);

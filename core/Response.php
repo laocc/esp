@@ -48,10 +48,9 @@ final class Response
     private $renderHtml;
     private $_adapter;
 
-
-    public function __construct(Dispatcher $dispatcher, array $conf)
+    public function __construct(Request $request, array $conf)
     {
-        $this->_request = &$dispatcher->_request;
+        $this->_request = &$request;
         $this->_resource = new Resources($conf);
         if ($conf['adapter'] ?? null) {
             if (is_array($conf['adapter']) and isset($conf['adapter']['class'])) {

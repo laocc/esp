@@ -36,6 +36,8 @@ final class Configure
         $conf['path'] = root($conf['path']);
         $this->_rpc = defined('_RPC') ? _RPC : ['host' => 'rpc.esp', 'port' => 80, 'ip' => ($rdsConf['master'] ?? null)];
 
+        if (!is_dir($conf['path'])) return;
+
         $fun = "load_{$conf['type']}";
         $this->{$fun}($conf);
     }

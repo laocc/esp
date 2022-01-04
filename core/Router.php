@@ -19,31 +19,39 @@ final class Router
 
     /**
      * 路由中心
-     * @param Configure $configure
      * @param Request $request
-     * @return string
+     * @return string|null
      */
-    public function run(Configure $configure, Request $request): ?string
+    public function run(Request $request): ?string
     {
-        $rdsKey = $configure->_token . '_ROUTES_' . _VIRTUAL;
-        $redis = $configure->_Redis;
+        $rdsKey = '_ROUTES_' . md5(__FILE__) . '#' . _VIRTUAL;
 
-        $cache = boolval((!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load']));
-        $modRoute = (!_CLI and $cache and $redis) ? $redis->get($rdsKey) : [];
+        $cache = true;
+        if (_CLI) {
+            $cache = false;
+        } else {
+            if (defined('_CONFIG_LOAD')) $cache = _CONFIG_LOAD;
+            if (isset($_GET['_config_load'])) $cache = boolval($_GET['_config_load']);
+        }
 
-        if (empty($modRoute) or $modRoute === 'null') {
+        $modRoute = null;
+        $cacheFile = _RUNTIME . "/{$rdsKey}.route";
+        if ($cache and file_exists($cacheFile)) {
+            if (!empty($mc = file_get_contents($cacheFile))) {
+                $modRoute = unserialize($mc);
+            }
+        }
+        if (empty($modRoute)) {
             $modRoute = $this->loadRouteFile($request);
-            if (!is_null($redis)) {
-                if (empty($modRoute)) {
-                    $redis->set($rdsKey, 'null');
-                } else {
-                    $redis->set($rdsKey, json_encode($modRoute, 256 | 64));
-                }
+            if ($cache) {
+                if (empty($modRoute)) $modRoute = ['null'];
+                file_put_contents($cacheFile, serialize($modRoute));
             }
         }
 
-        if (is_string($modRoute) and !empty($modRoute)) $modRoute = json_decode($modRoute, true);
-        if (empty($modRoute) or !is_array($modRoute)) $modRoute = array();
+        if ($modRoute === ['null']) $modRoute = [];
+        else if (is_string($modRoute) and !empty($modRoute)) $modRoute = json_decode($modRoute, true);
+        else if (empty($modRoute) or !is_array($modRoute)) $modRoute = array();
 
         $default = ['__default__' => ['__default__' => 1, 'route' => []]];//默认路由
         foreach (array_merge($modRoute, $default) as $key => $route) {
@@ -56,23 +64,23 @@ final class Router
 
             if (isset($route['return']) and !empty($ret = trim($route['return']))) {
                 $rHd = substr(strtolower($ret), 0, 6);
-                $rHs = $ret[0];
                 if ($rHd === 'http:/' or $rHd === 'https:') {
                     header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1) . ' GMT');
                     header("Cache-Control: no-cache");
                     header("Pragma: no-cache");
                     header("Location: {$ret}", true, 301);
                     fastcgi_finish_request();
-                    return '';
+                    return 'true';
 
                 } else if ($rHd === 'redis:') {
                     header("Content-type: text/plain; charset=UTF-8", true, 200);
-                    return strval($redis->get(substr($ret, 6)));
+                    return strval($ret);
 
-                } else if ($ret[0] === '/') {
+                } else if ($ret[0] === '/' or $rHd === 'files:') {
+                    if ($rHd === 'files:') $ret = substr($ret, 6);
                     if (!is_readable(_ROOT . $ret)) return "route return `{$ret}` not exists.";
                     include_once _ROOT . $ret;
-                    return '';
+                    return 'true';
 
                 } else if ($ret[0] === '{') {
                     header("Content-type: application/json; charset=UTF-8", true, 200);

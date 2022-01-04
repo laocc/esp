@@ -42,7 +42,14 @@ final class Dispatcher
 
         if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
         if (!getenv('HTTP_HOST') && !_CLI) exit('unknown host');
-        if (!defined('_ROOT')) define('_ROOT', substr(__DIR__, 0, strpos(__DIR__, '/vendor/laocc/'))); //网站根目录
+        if (!defined('_ROOT')) {
+            if ($rootPath = strpos(__DIR__, '/vendor/laocc/esp/core')) {
+                $rootPath = substr(__DIR__, 0, $rootPath);
+            } else if ($rootPath = strpos(__DIR__, '/laocc/esp/core')) {
+                $rootPath = (substr(__DIR__, 0, $rootPath));
+            }
+            define('_ROOT', $rootPath); //网站根目录
+        }
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
         if (!defined('_DEBUG')) define('_DEBUG', is_readable($df = _RUNTIME . '/debug.lock') ? (file_get_contents($df) ?: true) : false);
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
@@ -78,28 +85,28 @@ final class Dispatcher
 
         if (!isset($option['config'])) $option['config'] = [];
         $option['config'] += ['driver' => 'redis'];
-        $this->_config = new Configure($option['config']);
+        $this->_config = $cfg = new Configure($option['config']);
 
         /**
          * 切换之前是nginx中指定的root入口目录，
          * 切换后 getcwd() 的结果为_ROOT
          */
         chdir(_ROOT);
-        $request = $this->_config->get('request');
+        $request = $cfg->get('request');
         if (empty($request)) $request = [];
         $request = $this->mergeConf($request);
-        $this->_request = new Request($this, $request);
+        $this->_request = new Request($this->_cookies, $request);
         if (_CLI) return;
 
-        if (!empty($counter = $this->_config->get('counter'))) {
+        if (!empty($counter = $cfg->get('counter'))) {
             $counter = $this->mergeConf($counter);
             if ($counter['run'] ?? 0) {
                 $counter['_key'] = md5(_ROOT);
-                $this->_counter = new Counter($counter, $this->_config->_Redis, $this->_request);
+                $this->_counter = new Counter($counter, $cfg->_Redis, $this->_request);
             }
         }
 
-        if ($debugConf = $this->_config->get('debug')) {
+        if ($debugConf = $cfg->get('debug')) {
             $debug = $this->mergeConf($debugConf);
             if ($debug['run'] ?? 0) {
                 $this->_debug = new \esp\debug\Debug($debug);
@@ -109,13 +116,13 @@ final class Dispatcher
             }
         }
 
-        $response = $this->_config->get('response');
+        $response = $cfg->get('response');
         if (empty($response)) $response = [];
         $response = $this->mergeConf($response);
-        $response['_rand'] = $this->_config->get('resourceRand') ?: date('YmdH');
-        $this->_response = new Response($this, $response);
+        $response['_rand'] = $cfg->get('resourceRand') ?: date('YmdH');
+        $this->_response = new Response($this->_request, $response);
 
-        if ($cookies = $this->_config->get('cookies')) {
+        if ($cookies = $cfg->get('cookies')) {
             $cokConf = $this->mergeConf($cookies, ['run' => false, 'debug' => false, 'domain' => 'host']);
 
             if ($cokConf['run'] ?? false) {
@@ -123,14 +130,14 @@ final class Dispatcher
                 if ($cokConf['debug']) $this->relayDebug(['cookies' => $_COOKIE]);
 
                 //若不启用Cookies，则也不启用Session
-                if ($session = ($this->_config->get('session'))) {
+                if ($session = ($cfg->get('session'))) {
                     $sseConf = $this->mergeConf($session, ['run' => false, 'domain' => $cokConf['domain']]);
 
                     if ($sseConf['run'] ?? false) {
                         if (!isset($sseConf['driver'])) $sseConf['driver'] = $option['config']['driver'];
 
                         if ($sseConf['driver'] === 'redis') {
-                            $rds = $this->_config->get('database.redis');
+                            $rds = $cfg->get('database.redis');
                             $cID = $rds['db'];
                             if (is_array($cID)) $cID = $cID['config'] ?? 1;
 
@@ -142,9 +149,9 @@ final class Dispatcher
                         }
 
                         $this->_session = new Session($sseConf);
-                        if ($sseConf['redis']['db'] === $this->_config->RedisDbIndex
+                        if ($sseConf['redis']['db'] === $cfg->RedisDbIndex
                             and $option['config']['drive'] === 'redis') {
-                            $this->_session->start($this->_config->_Redis->redis);
+                            $this->_session->start($cfg->_Redis->redis);
                         } else {
                             $this->_session->start();
                         }
@@ -156,7 +163,7 @@ final class Dispatcher
             }
         }
 
-        if ($cacheConf = $this->_config->get('cache')) {
+        if ($cacheConf = $cfg->get('cache')) {
             $cache = $this->mergeConf($cacheConf);
             if ($cache['run'] ?? 0) {
                 $this->_cache = new Cache($this, $cache);
@@ -187,8 +194,14 @@ final class Dispatcher
             goto end;
         }
 
-        $route = (new Router())->run($this->_config, $this->_request);
-        if ($route) exit($route);
+        $route = (new Router())->run($this->_request);
+        if ($route) {
+            if ($route === 'true') $route = '';
+            if (substr($route, 0, 6) === 'redis:') {
+                $route = $this->_config->_Redis->get(substr($route, 6));
+            }
+            exit($route);
+        }
 
         $this->_debug->setRouter($this->_request->RouterValue());
 
@@ -252,15 +265,21 @@ final class Dispatcher
     /**
      * 不运行plugs，不执行缓存
      *
-     * @throws EspError
+     * @throws EspError|ErrorException
      */
     public function simple(): void
     {
         $showDebug = boolval($_GET['_debug'] ?? 0);
         if ($this->run === false) goto end;
 
-        $route = (new Router())->run($this->_config, $this->_request);
-        if ($route) exit($route);
+        $route = (new Router())->run($this->_request);
+        if ($route) {
+            if ($route === 'true') $route = '';
+            if (substr($route, 0, 6) === 'redis:') {
+                $route = $this->_config->_Redis->get(substr($route, 6));
+            }
+            exit($route);
+        }
 
         if (!_CLI) {
             $this->_debug->setRouter($this->_request->RouterValue());
@@ -410,10 +429,6 @@ final class Dispatcher
         return null;
     }
 
-
-    /**
-     * @throws EspError
-     */
     public function min(): void
     {
         $this->simple();
@@ -436,7 +451,13 @@ final class Dispatcher
         $action = strtolower($this->_request->action) . $actionExt;
 
         $class = "\\application\\{$virtual}\\controllers\\{$controller}";
-        if (!class_exists($class)) return $this->err404("[{$class}] not exists.");
+        if (!class_exists($class)) {
+            if (_DEBUG) {
+                return $this->err404("[{$class}] 控制器不存在，请确认文件是否存在，或是否在composer.json中引用了控制器目录");
+            } else {
+                return $this->err404("[{$this->_request->controller}] not exists.");
+            }
+        }
 
         $cont = new $class($this);
         if (!($cont instanceof Controller)) {
