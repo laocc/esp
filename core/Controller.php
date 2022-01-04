@@ -772,7 +772,7 @@ abstract class Controller
                 $option['domain'] = $dom;
                 $option['expires'] = $time;
                 $option['path'] = '/';
-                $option['secure'] = true;//仅https
+                $option['secure'] = false;//仅https
                 $option['httponly'] = true;
                 $option['samesite'] = 'Lax';
                 setcookie($key, $unique, $option);
