@@ -10,6 +10,7 @@ use esp\core\db\Yac;
 use esp\error\EspError;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
+use esp\mysql\Pool;
 use esp\session\Session;
 use function \esp\helper\host;
 use function \esp\helper\root;
@@ -38,6 +39,13 @@ abstract class Controller
     public $_counter;
 
     /**
+     * 各种连接池管理器
+     *
+     * @var $_pool Pool
+     */
+    public $_pool;
+
+    /**
      * 以下4个是用于Model中的链接缓存
      * @var $_Yac Yac
      * @var $_Mysql Mysql
@@ -63,6 +71,8 @@ abstract class Controller
         $this->_plugs = &$dispatcher->_plugs;
         $this->_cache = &$dispatcher->_cache;
         $this->_redis = &$dispatcher->_config->_Redis;
+
+        $this->_pool = new Pool($dispatcher->_config);
     }
 
     /**
