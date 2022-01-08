@@ -10,8 +10,8 @@ use esp\core\db\Yac;
 use esp\error\EspError;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
-use esp\mysql\Pool;
 use esp\session\Session;
+use esp\dbs\Pool;
 use function \esp\helper\host;
 use function esp\helper\locked;
 use function \esp\helper\root;
@@ -40,7 +40,7 @@ abstract class Controller
     public $_counter;
 
     /**
-     * 各种连接池管理器
+     * 各种连接池管理器，此对象在Model中自行管理，这里只是起到中转器的作用
      *
      * @var $_pool Pool
      */
@@ -72,8 +72,6 @@ abstract class Controller
         $this->_plugs = &$dispatcher->_plugs;
         $this->_cache = &$dispatcher->_cache;
         $this->_redis = &$dispatcher->_config->_Redis;
-
-        $this->_pool = new Pool($dispatcher->_config);
     }
 
     /**
