@@ -256,7 +256,7 @@ final class Mysql
      * @param array $option
      * @param PDO|null $CONN
      * @param int $traceLevel
-     * @return bool|string|int
+     * @return bool|string|int|PdoResult
      * @throws EspError
      */
     public function query(string $sql, array $option = [], PDO $CONN = null, int $traceLevel = 0)
