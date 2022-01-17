@@ -371,9 +371,9 @@ final class Mysql
                     print_r($debugOption);
                     print_r([
                         'id' => $transID,
-                        'connect_time' => $this->connect_time[$transID],
+                        'connect_time' => $this->connect_time[$transID] ?? 0,
                         'now' => time(),
-                        'after' => time() - $this->connect_time[$transID],
+                        'after' => time() - $this->connect_time[$transID] ?? 0,
                     ]);
                 } else {
                     ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
@@ -409,9 +409,9 @@ final class Mysql
             ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
             print_r([
                 'id' => $transID,
-                'connect_time' => $this->connect_time[$transID],
+                'connect_time' => $this->connect_time[$transID] ?? 0,
                 'now' => $time,
-                'wait' => $time - $this->connect_time[$transID],
+                'wait' => $time - $this->connect_time[$transID] ?? 0,
                 'error' => $error->getMessage(),
                 'code' => $error->getCode(),
             ]);
@@ -425,9 +425,9 @@ final class Mysql
         if (empty($info)) {//获取不到有关属性，说明连接可能已经断开
             print_r([
                 'id' => $transID,
-                'connect_time' => $this->connect_time[$transID],
+                'connect_time' => $this->connect_time[$transID] ?? 0,
                 'now' => $time,
-                'wait' => $time - $this->connect_time[$transID],
+                'wait' => $time - $this->connect_time[$transID] ?? 0,
             ]);
             print_r($this->PdoAttribute($CONN));
             unset($this->_pool[$real][$transID]);
