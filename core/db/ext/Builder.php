@@ -1268,7 +1268,7 @@ final class Builder
      * 获取查询结果
      * @param int $row
      * @param int $tractLevel
-     * @return bool|int|string|null
+     * @return bool|int|string|null|PdoResult
      */
     public function get(int $row = 0, int $tractLevel = 0)
     {

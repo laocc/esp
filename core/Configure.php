@@ -425,6 +425,9 @@ final class Configure
 
     /**
      * 读取config，可以用get('key1.key2')的方式读取多维数组值
+     * 第2个参数可以指定返回数据格式，默认string
+     * 若第2个是整型，返回的也是整型，
+     *
      * @param mixed ...$key
      * @return array|mixed|null
      */
@@ -433,10 +436,15 @@ final class Configure
         if (empty($key)) return null;
 //        if ($key === ['*']) return $this->_CONFIG_;
         $conf = $this->_CONFIG_;
-        foreach (explode('.', strtolower(implode('.', $key))) as $k) {
+        foreach (explode('.', strtolower($key[0])) as $k) {
             if ($k === '' or $k === '*' or !isset($conf[$k])) return null;
             $conf = &$conf[$k];
         }
+        if (!isset($key[1])) return $conf;
+        if (is_int($key[1])) return intval($conf);
+        if (is_float($key[1])) return floatval($conf);
+        if (is_bool($key[1])) return boolval($conf);
+        if (is_array($key[1]) and is_string($conf)) return json_decode($conf, true);
         return $conf;
     }
 
