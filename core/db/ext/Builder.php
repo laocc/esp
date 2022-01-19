@@ -1284,7 +1284,7 @@ final class Builder
             $this->replace_tempTable($option['_count_sql']);
         }
 
-        if ($this->_locked) {
+        if (!$this->_locked) {
             $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
         } else {
 
@@ -1598,7 +1598,7 @@ final class Builder
         $sets = implode(', ', $sets);
         $sql = "UPDATE {$this->_table} SET {$sets} WHERE {$where}";
 
-        if ($this->_locked) {
+        if (!$this->_locked) {
             $exe = $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
 
         } else {
@@ -1659,7 +1659,7 @@ final class Builder
         }
         $sql[] = "WHERE {$where}";
 
-        if ($this->_locked) {
+        if (!$this->_locked) {
             return $this->_MySQL->query(implode(' ', $sql), $this->option('update'), null, $tractLevel + 1);
         }
 
