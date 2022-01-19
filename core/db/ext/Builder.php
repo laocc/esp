@@ -5,6 +5,10 @@ namespace esp\core\db\ext;
 
 use esp\core\db\Mysql;
 use esp\error\EspError;
+use function esp\helper\locked;
+
+if (!defined('_LOCKED_MYSQL')) define('_LOCKED_MYSQL', false);
+
 
 /**
  *
@@ -37,6 +41,7 @@ final class Builder
     private $_MySQL;//Mysql
     private $_Trans_ID = 0;//多重事务ID，正常情况都=0，只有多重事务理才会大于0
 
+    private $_locked = _LOCKED_MYSQL;//是否启用锁
     private $_count = false;//是否启用自动统计
     private $_distinct = null;//消除重复行
     private $_fetch_type = 1;//返回的数据，是用1键值对方式，还是0数字下标，或3都要，默认1
@@ -78,6 +83,7 @@ final class Builder
         $this->_skip = 0;
         $this->_fetch_type = 1;
         $this->_count = false;
+        $this->_locked = _LOCKED_MYSQL;
         $this->_group = null;
         $this->_distinct = null;
         $this->_protect = true;
@@ -116,6 +122,7 @@ final class Builder
      * 事务结束，提交。
      * @param bool $rest
      * @return string|bool
+     * @throws EspError
      */
     public function commit(bool $rest = true)
     {
@@ -144,6 +151,17 @@ final class Builder
         return $this->_MySQL->_error[$this->_Trans_ID];
     }
 
+    /**
+     * 启用锁执行sql
+     *
+     * @param bool $bool
+     * @return $this
+     */
+    public function locked(bool $bool = true): Builder
+    {
+        $this->_locked = $bool;
+        return $this;
+    }
 
     /**
      * 使用预处理方式
@@ -175,6 +193,7 @@ final class Builder
      * @param $key
      * @param null $param
      * @return $this
+     * @throws EspError
      */
     public function bind($key, $param = null): Builder
     {
@@ -252,6 +271,7 @@ final class Builder
      * @param string|array $fields 选择子句字符串，可以是多个子句用逗号分开的格式
      * @param bool $add_identifier 是否自动添加标识符，默认是true，对于复杂查询及带函数的查询请设置为false
      * @return $this
+     * @throws EspError
      */
     public function select($fields, bool $add_identifier = null): Builder
     {
@@ -1178,6 +1198,7 @@ final class Builder
 
     /**
      * @return string
+     * @throws EspError
      */
     public function _build_get(): string
     {
@@ -1263,7 +1284,16 @@ final class Builder
             $this->replace_tempTable($option['_count_sql']);
         }
 
-        $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
+        if ($this->_locked) {
+            $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
+        } else {
+
+            $get = locked($this->_table, function ($sql, $option, $tractLevel) {
+                return $this->_MySQL->query($sql, $option, null, $tractLevel + 1);
+            }, $_build_sql, $option, $tractLevel + 1);
+
+        }
+
 
         if (is_string($get)) throw new EspError($get, $tractLevel + 1);
 
@@ -1328,7 +1358,16 @@ final class Builder
         if (!empty($this->_order_by)) $sql[] = "ORDER BY {$this->_order_by}";
         if (!empty($this->_limit)) $sql[] = "LIMIT {$this->_limit}";
         $sql = implode(' ', $sql);
-        return $this->_MySQL->query($sql, $this->option('delete'), null, $tractLevel + 1);
+
+        if (!$this->_locked) {
+            return $this->_MySQL->query($sql, $this->option('delete'), null, $tractLevel + 1);
+        }
+
+
+        return locked($this->_table, function ($sql, $tractLevel) {
+            return $this->_MySQL->query($sql, $this->option('delete'), null, $tractLevel + 1);
+        }, $sql, $tractLevel + 1);
+
     }
 
 
@@ -1435,7 +1474,13 @@ final class Builder
         $value = $param ?: implode(', ', $values);
 
         $sql = "{$op} INTO {$this->_table} ({$keys}) VALUES {$value}";
-        return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
+        if (!$this->_locked) return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
+
+
+        return locked($this->_table, function ($sql, $tractLevel, $op) {
+            return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
+        }, $sql, $tractLevel + 1, $op);
+
     }
 
     /**
@@ -1460,6 +1505,7 @@ final class Builder
      * @param bool $add_identifier
      * @param int $tractLevel
      * @return bool|int|null
+     * @throws EspError
      */
     public function update(array $data, bool $add_identifier = true, int $tractLevel = 0)
     {
@@ -1552,7 +1598,17 @@ final class Builder
         $sets = implode(', ', $sets);
         $sql = "UPDATE {$this->_table} SET {$sets} WHERE {$where}";
 
-        $exe = $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
+        if ($this->_locked) {
+            $exe = $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
+
+        } else {
+
+            $exe = locked($this->_table, function ($sql, $tractLevel) {
+                return $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
+            }, $sql, $tractLevel + 1);
+
+        }
+
 
         if (is_string($exe)) throw new EspError($exe, $tractLevel + 1);
 
@@ -1603,7 +1659,14 @@ final class Builder
         }
         $sql[] = "WHERE {$where}";
 
-        return $this->_MySQL->query(implode(' ', $sql), $this->option('update'), null, $tractLevel + 1);
+        if ($this->_locked) {
+            return $this->_MySQL->query(implode(' ', $sql), $this->option('update'), null, $tractLevel + 1);
+        }
+
+        return locked($this->_table, function ($sql, $tractLevel) {
+            return $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
+        }, implode(' ', $sql), $tractLevel + 1);
+
     }
 
     /**
