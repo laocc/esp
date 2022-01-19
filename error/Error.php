@@ -219,6 +219,7 @@ final class Error
      * @param array $prev
      * @param string $path
      * @param string $filename
+     * @throws \esp\helper\library\Error
      */
     private function error(array $error, array $prev, string $path, string $filename)
     {
@@ -284,7 +285,7 @@ final class Error
             if ($this->debug->save_debug_file($filename, $jsonTxt)) return;
         }
 
-        if (!is_dir($path)) mkdir($path, 0740, true);
+        mk_dir("{$path}/{$filename}");
         if (is_readable($path)) file_put_contents("{$path}/{$filename}", json_encode($info, 64 | 128 | 256), LOCK_EX);
     }
 

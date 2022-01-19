@@ -30,6 +30,11 @@ final class Mysql
     public $lowCase = false; //是否转换为小写
 
     /**
+     * @var $_controller Controller
+     */
+    public $_controller;
+
+    /**
      * Mysql constructor.
      * @param Controller $controller
      * @param int $tranID
@@ -53,6 +58,7 @@ final class Mysql
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
 
+        $this->_controller = &$controller;
         $this->_debug = &$controller->_debug;
         $this->_pool = &$controller->_PdoPool;
         $this->_counter = &$controller->_counter;

@@ -13,7 +13,6 @@ use esp\helper\library\ext\Markdown;
 use esp\session\Session;
 use esp\dbs\Pool;
 use function \esp\helper\host;
-use function esp\helper\locked;
 use function \esp\helper\root;
 use function esp\helper\str_rand;
 
@@ -59,6 +58,7 @@ abstract class Controller
     public $_Redis = array();
     public $_PdoPool = array();
     public $_Sqlite = array();
+    public $inLocked = false;
 
     public function __construct(Dispatcher $dispatcher)
     {
@@ -672,6 +672,9 @@ abstract class Controller
         return $this;
     }
 
+
+    private $_inLocked = false;//当前是否处于锁内
+
     /**
      * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
      * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
@@ -684,7 +687,41 @@ abstract class Controller
      */
     public function locked(string $lockKey, callable $callable, ...$args)
     {
-        return locked($lockKey, $callable, ...$args);
+        //当前已处于锁内，则直接执行，不再加锁
+        if ($this->_inLocked) {
+            try {
+
+                return $callable(...$args);
+
+            } catch (\Exception $exception) {
+                return 'locked: ' . $exception->getMessage();
+            } catch (\Error $error) {
+                return 'locked: ' . $error->getMessage();
+            }
+        }
+
+        $this->_inLocked = true;
+        $operation = ($lockKey[0] === '#') ? (LOCK_EX | LOCK_NB) : LOCK_EX;
+        $lockKey = date('Y-m-d H-i-s ') . str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
+        $fn = fopen(($lockFile = "/tmp/{$lockKey}.flock"), 'a');
+        if (flock($fn, $operation)) {           //加锁
+            try {
+
+                $rest = $callable(...$args);    //执行
+
+            } catch (\Exception $exception) {
+                $rest = 'locked: ' . $exception->getMessage();
+            } catch (\Error $error) {
+                $rest = 'locked: ' . $error->getMessage();
+            }
+            flock($fn, LOCK_UN);//解锁
+        } else {
+            $rest = "locked: Running";
+        }
+        fclose($fn);
+        if (is_readable($lockFile)) @unlink($lockFile);
+        $this->_inLocked = false;
+        return $rest;
     }
 
     /**
