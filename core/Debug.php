@@ -42,6 +42,11 @@ class Debug
         return $this;
     }
 
+    public function setController(string $cont)
+    {
+        return $this;
+    }
+
     public function setResponse(array $result)
     {
         return $this;
