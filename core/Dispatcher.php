@@ -453,7 +453,7 @@ final class Dispatcher
         $action = strtolower($this->_request->action) . $actionExt;
 
         $class = "\\application\\{$virtual}\\controllers\\{$controller}";
-        $this->_debug->setController($class);
+        if (!is_null($this->_debug)) $this->_debug->setController($class);
 
         if (!class_exists($class)) {
             if (_DEBUG) {
