@@ -862,6 +862,7 @@ abstract class Model extends Library
      * @param array $_conf
      * @param int $traceLevel
      * @return Mongodb
+     * @throws EspError
      */
     final public function Mongodb(string $db = 'temp', array $_conf = [], int $traceLevel = 0): Mongodb
     {
