@@ -818,6 +818,7 @@ abstract class Model extends Library
      * @param int $traceLevel
      * @param array $_conf 如果要创建一个持久连接，则$_conf需要传入参数：persistent=true，
      * @return Mysql
+     * @throws EspError
      */
     final public function Mysql(int $tranID = 0, array $_conf = [], int $traceLevel = 0): Mysql
     {
@@ -835,9 +836,11 @@ abstract class Model extends Library
             if (empty($_branch) or !is_array($_branch)) {
                 throw new EspError("Model中`_branch`指向内容非Mysql配置信息", $traceLevel + 1);
             }
+            $this->debug([$_branch, $conf]);
             $conf = $_branch + $conf;
         }
         if (isset($this->_conf) and is_array($this->_conf) and !empty($this->_conf)) {
+            $this->debug([$this->_conf, $conf]);
             $conf = $this->_conf + $conf;
         }
 
@@ -846,6 +849,7 @@ abstract class Model extends Library
         }
         $conf = $_conf + $conf;
         $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this->_controller, $tranID, $conf);
+        $this->debug([$_conf, $conf]);
         $this->debug("New Mysql({$branchName}-{$tranID});", $traceLevel + 1);
 
         return $this->_controller->_Mysql[$branchName][$tranID];
