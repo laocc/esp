@@ -847,8 +847,9 @@ abstract class Model extends Library
         if (empty($conf) or !is_array($conf)) {
             throw new EspError("`Database.Mysql`配置信息错误", $traceLevel + 1);
         }
-        $conf = $_conf + $conf;
+        $conf = $_conf + $conf + ['branch' => $branchName];
         $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this->_controller, $tranID, $conf);
+        $this->_controller->_PdoPool[$branchName] = [];
         $this->debug([$_conf, $conf]);
         $this->debug("New Mysql({$branchName}-{$tranID});", $traceLevel + 1);
 
