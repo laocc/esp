@@ -453,6 +453,8 @@ final class Dispatcher
         $action = strtolower($this->_request->action) . $actionExt;
 
         $class = "\\application\\{$virtual}\\controllers\\{$controller}";
+        $this->_debug->setController($class);
+
         if (!class_exists($class)) {
             if (_DEBUG) {
                 return $this->err404("[{$class}] 控制器不存在，请确认文件是否存在，或是否在composer.json中引用了控制器目录");
