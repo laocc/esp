@@ -60,7 +60,7 @@ final class Mysql
 
         $this->_controller = &$controller;
         $this->_debug = &$controller->_debug;
-        $this->_pool = &$controller->_PdoPool['branch'];
+        $this->_pool = &$controller->_PdoPool[$conf['branch']];
         $this->_counter = &$controller->_counter;
 
         $this->lowCase = boolval($this->_CONF['lowercase'] ?? 0);
