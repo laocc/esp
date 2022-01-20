@@ -702,7 +702,7 @@ abstract class Controller
 
         $this->_inLocked = true;
         $operation = ($lockKey[0] === '#') ? (LOCK_EX | LOCK_NB) : LOCK_EX;
-        $lockKey = date('Y-m-d H-i-s ') . str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
+        $lockKey = str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
         $fn = fopen(($lockFile = "/tmp/{$lockKey}.flock"), 'a');
         if (flock($fn, $operation)) {           //加锁
             try {
