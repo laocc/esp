@@ -88,7 +88,7 @@ abstract class Library
      */
     public function locked(string $lockKey, callable $callable, ...$args)
     {
-        return $this->_controller->locked($lockKey, $callable, ...$args);
+        return $this->_controller->_dispatcher->locked($lockKey, $callable, ...$args);
     }
 
 
@@ -156,6 +156,19 @@ abstract class Library
     public function redirect(string $url)
     {
         $this->_controller->redirect($url);
+    }
+
+    /**
+     * 注册屏蔽的错误
+     *
+     * @param string $file
+     * @param int $line
+     * @return $this
+     */
+    final function ignoreError(string $file, int $line): Library
+    {
+        $this->_controller->_dispatcher->ignoreError($file, $line);
+        return $this;
     }
 
 

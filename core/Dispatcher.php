@@ -23,6 +23,7 @@ final class Dispatcher
     public $_config;
     public $_debug;
     public $_cache;
+    public $_error;
     public $_counter;
 
     /**
@@ -83,7 +84,7 @@ final class Dispatcher
         if (isset($option['before'])) $option['before']($option);
 
         //以下2项必须在`chdir()`之前，且顺序不可变
-        if (!_CLI) $error = new Error($option['error'] ?? []);
+        if (!_CLI) $this->_error = new Error($this, $option['error'] ?? []);
 
         if (!isset($option['config'])) $option['config'] = [];
         $option['config'] += ['driver' => 'redis'];
@@ -111,10 +112,10 @@ final class Dispatcher
         if ($debugConf = $cfg->get('debug')) {
             $debug = $this->mergeConf($debugConf);
             if ($debug['run'] ?? 0) {
-                $this->_debug = new \esp\debug\Debug($debug);
-                if (isset($error)) $error->setDebug($this->_debug);
+                $this->_debug = new \esp\debug\Debug($this, $debug);
+                $this->_error->setDebug($this->_debug);
             } else {
-                $this->_debug = new Debug([]);
+                $this->_debug = new Debug($this, []);
             }
         }
 
@@ -549,5 +550,76 @@ final class Dispatcher
         return $msg;
     }
 
+    private $_skipError = [];
+
+    /**
+     * @param string $file
+     * @param int $line
+     * @param bool $isCheck
+     * @return bool
+     */
+    public function ignoreError(string $file, int $line, bool $isCheck = false): bool
+    {
+        if (in_array("{$file}.{$line}", $this->_skipError)) return true;
+        if ($isCheck) return false;
+
+        $this->_skipError[] = "{$file}.{$line}";
+        return true;
+    }
+
+
+    private $_inLocked = false;//当前是否处于锁内
+
+    /**
+     * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
+     * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
+     * 出口处判断如果是字符串即表示出错信息
+     *
+     * @param string $lockKey 任意可以用作文件名的字符串，同时也表示同一种任务
+     * @param callable $callable 该回调方法内返回的值即为当前函数返回值
+     * @param mixed ...$args
+     * @return mixed
+     */
+    public function locked(string $lockKey, callable $callable, ...$args)
+    {
+        //当前已处于锁内，则直接执行，不再加锁
+        if ($this->_inLocked) {
+            try {
+
+                return $callable(...$args);
+
+            } catch (\Exception $exception) {
+                return 'locked: ' . $exception->getMessage();
+            } catch (\Error $error) {
+                return 'locked: ' . $error->getMessage();
+            }
+        }
+
+        $this->_inLocked = true;
+        $operation = ($lockKey[0] === '#') ? (LOCK_EX | LOCK_NB) : LOCK_EX;
+        $lockKey = str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
+        $fn = fopen(($lockFile = "/tmp/flock_{$lockKey}.flock"), 'a');
+        if (flock($fn, $operation)) {           //加锁
+            try {
+
+                $rest = $callable(...$args);    //执行
+
+            } catch (\Exception $exception) {
+                $rest = 'locked: ' . $exception->getMessage();
+            } catch (\Error $error) {
+                $rest = 'locked: ' . $error->getMessage();
+            }
+            flock($fn, LOCK_UN);//解锁
+        } else {
+            $rest = "locked: Running";
+        }
+        fclose($fn);
+        if ($lockKey[-1] === '-') {
+            $this->ignoreError(__FILE__, __LINE__ + 1);
+            if (is_readable($lockFile)) @unlink($lockFile);
+        }
+        $this->_inLocked = false;
+        return $rest;
+    }
 
 }

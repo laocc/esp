@@ -7,6 +7,7 @@ use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
 use esp\core\db\Yac;
+use esp\error\Error;
 use esp\error\EspError;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
@@ -30,12 +31,17 @@ abstract class Controller
      * @var $_response Response
      */
     public $_response;
+    public $_dispatcher;
     public $_session;
     public $_plugs;
     public $_cookies;
     public $_debug;
     public $_redis;
     public $_cache;
+    /**
+     * @var $_error Error
+     */
+    public $_error;
     public $_counter;
 
     /**
@@ -62,6 +68,7 @@ abstract class Controller
 
     public function __construct(Dispatcher $dispatcher)
     {
+        $this->_dispatcher = &$dispatcher;
         $this->_config = &$dispatcher->_config;
         $this->_request = &$dispatcher->_request;
         $this->_response = &$dispatcher->_response;
@@ -71,6 +78,7 @@ abstract class Controller
         $this->_debug = &$dispatcher->_debug;
         $this->_plugs = &$dispatcher->_plugs;
         $this->_cache = &$dispatcher->_cache;
+        $this->_error = &$dispatcher->_error;
         $this->_redis = &$dispatcher->_config->_Redis;
     }
 
@@ -673,8 +681,6 @@ abstract class Controller
     }
 
 
-    private $_inLocked = false;//当前是否处于锁内
-
     /**
      * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
      * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
@@ -687,41 +693,23 @@ abstract class Controller
      */
     public function locked(string $lockKey, callable $callable, ...$args)
     {
-        //当前已处于锁内，则直接执行，不再加锁
-        if ($this->_inLocked) {
-            try {
+        return $this->_dispatcher->locked($lockKey, $callable, ...$args);
+    }
 
-                return $callable(...$args);
-
-            } catch (\Exception $exception) {
-                return 'locked: ' . $exception->getMessage();
-            } catch (\Error $error) {
-                return 'locked: ' . $error->getMessage();
-            }
-        }
-
-        $this->_inLocked = true;
-        $operation = ($lockKey[0] === '#') ? (LOCK_EX | LOCK_NB) : LOCK_EX;
-        $lockKey = str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
-        $fn = fopen(($lockFile = "/tmp/{$lockKey}.flock"), 'a');
-        if (flock($fn, $operation)) {           //加锁
-            try {
-
-                $rest = $callable(...$args);    //执行
-
-            } catch (\Exception $exception) {
-                $rest = 'locked: ' . $exception->getMessage();
-            } catch (\Error $error) {
-                $rest = 'locked: ' . $error->getMessage();
-            }
-            flock($fn, LOCK_UN);//解锁
-        } else {
-            $rest = "locked: Running";
-        }
-        fclose($fn);
-        if (is_readable($lockFile)) @unlink($lockFile);
-        $this->_inLocked = false;
-        return $rest;
+    /**
+     * 注册屏蔽的错误
+     *
+     * 例：$this->ignoreError(__FILE__, __LINE__ + 1);
+     * 是指屏蔽下一行的错误
+     *
+     * @param string $file
+     * @param int $line
+     * @return $this
+     */
+    final function ignoreError(string $file, int $line): Controller
+    {
+        $this->_dispatcher->ignoreError($file, $line);
+        return $this;
     }
 
     /**

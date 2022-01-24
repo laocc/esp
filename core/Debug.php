@@ -5,7 +5,7 @@ namespace esp\core;
 
 class Debug
 {
-    public function __construct(array $conf)
+    public function __construct(Dispatcher $dispatcher, array $conf)
     {
     }
 

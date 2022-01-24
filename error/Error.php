@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\error;
 
 use esp\core\Debug;
+use esp\core\Dispatcher;
 use Throwable;
 use function esp\helper\mk_dir;
 use function esp\helper\replace_array;
@@ -12,9 +13,11 @@ use function esp\helper\displayState;
 final class Error
 {
     private $restrain = false;
+    private $dispatcher;
 
-    public function __construct(array $option)
+    public function __construct(Dispatcher $dispatcher, array $option)
     {
+        $this->dispatcher =& $dispatcher;
         $this->register_handler($option);
         $this->restrain = boolval($option['restrain'] ?? 0);
     }
@@ -62,6 +65,8 @@ final class Error
          */
         $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $context = null)
         use ($option) {
+            if ($this->dispatcher->ignoreError($errFile, $errLine, true)) return;
+
             $prev = ['message' => $errStr, 'code' => $errNo, 'file' => $errFile, 'line' => $errLine];
             $error = new EspError($prev);
 
@@ -128,13 +133,18 @@ final class Error
          */
         $handler_exception = function (Throwable $error) use ($option) {
 //            Session::reset();
+
+            $errFile = $error->getFile();
+            $errLine = $error->getLine();
+            if ($this->dispatcher->ignoreError($errFile, $errLine, true)) return;
+
             $err = array();
             $err['err_type'] = 'handler_exception';
             $err['success'] = 0;
             $err['time'] = date('Y-m-d H:i:s');
             $err['error'] = $error->getCode() ?: 500;
             $err['message'] = $error->getMessage();
-            $err['file'] = $this->filter_root($error->getFile()) . '(' . $error->getLine() . ')';
+            $err['file'] = $this->filter_root($errFile) . "({$errLine})";
             $err['trace'] = $error->getTrace();
 
             $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
