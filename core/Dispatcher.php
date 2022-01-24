@@ -597,7 +597,7 @@ final class Dispatcher
 
         $this->_inLocked = true;
         $operation = ($lockKey[0] === '#') ? (LOCK_EX | LOCK_NB) : LOCK_EX;
-        $lockKey = str_replace(['/', '\\', '*', '"', "'", '<', '>', ':', ';', '?'], '', $lockKey);
+        $lockKey = str_replace(['/', '\\', '`', '*', '"', "'", '<', '>', ':', ';', '?', ' '], '', $lockKey);
         $fn = fopen(($lockFile = "/tmp/flock_{$lockKey}.flock"), 'a');
         if (flock($fn, $operation)) {           //加锁
             try {
