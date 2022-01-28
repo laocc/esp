@@ -806,7 +806,7 @@ abstract class Model extends Library
             $conf = $this->_controller->_config->get('database.sqlite');
             if (!$conf) $conf = [];
             $conf['db'] = $dbFile;
-            $this->_controller->_Sqlite[$key] = new Sqlite($this, $conf);
+            $this->_controller->_Sqlite[$key] = new Sqlite($this->_controller, $conf);
             $this->debug("New Sqlite({$dbFile});", $traceLevel + 1);
         }
         return $this->_controller->_Sqlite[$key];
@@ -879,43 +879,5 @@ abstract class Model extends Library
         $this->debug("New Mongodb({$db});", $traceLevel + 1);
         return $this->_controller->_Mongodb[$db];
     }
-
-    /**
-     * @param array $_conf
-     * @param int $traceLevel
-     * @return Redis
-     */
-    final public function Redis(array $_conf = [], int $traceLevel = 0): Redis
-    {
-        $conf = $this->_controller->_config->get('database.redis');
-        $dbConfig = $conf['db'];
-        if (is_array($dbConfig)) $dbConfig = $dbConfig['config'] ?? 1;
-
-        $conf = $_conf + $conf + ['db' => 0];
-        if (is_array($conf['db'])) $conf['db'] = $conf['db']['model'] ?? 0;
-
-        if ($conf['db'] === 0 or $conf['db'] === $dbConfig) return $this->_controller->_config->_Redis;
-
-        if (!_CLI and isset($this->_controller->_Redis[$conf['db']])) {
-            return $this->_controller->_Redis[$conf['db']];
-        }
-
-        $this->_controller->_Redis[$conf['db']] = new Redis($conf);
-        $this->debug("New Redis({$conf['db']});", $traceLevel + 1);
-        return $this->_controller->_Redis[$conf['db']];
-    }
-
-
-    /**
-     * 创建哈希表
-     *
-     * @param string $table
-     * @return db\ext\RedisHash
-     */
-    final public function Hash(string $table): db\ext\RedisHash
-    {
-        return $this->Redis()->hash($table);
-    }
-
 
 }

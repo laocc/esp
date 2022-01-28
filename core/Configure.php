@@ -134,6 +134,19 @@ final class Configure
     }
 
     /**
+     * 重新连接redis，这一般发生在CLI环境中，长时间过行，有可能redis会断线
+     *
+     * @throws EspError
+     */
+    public function reConnectRedis()
+    {
+        $rdsConf = $this->get('database.redis');
+        if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
+        $this->RedisDbIndex = $rdsConf['db'];
+        $this->_Redis = new Redis($rdsConf);
+    }
+
+    /**
      * @param array $conf
      * @throws EspError
      */

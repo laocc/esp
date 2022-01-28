@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\dbs\Model;
+use esp\dbs\Dbs;
 
-abstract class ModelPdo extends Model
+abstract class ModelPdo extends Dbs
 {
 
 }
