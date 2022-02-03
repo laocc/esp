@@ -55,7 +55,7 @@ abstract class Library
 
     public function __destruct()
     {
-        foreach ($this->_controller->_PdoPool as $b => $branch) {
+        foreach ($this->_controller->_Mysql as $b => $branch) {
             foreach ($branch as $r => &$connect) {
                 foreach ($connect as $c => &$pdo) $pdo = null;
                 $connect = [];

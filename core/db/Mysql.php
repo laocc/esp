@@ -720,10 +720,10 @@ final class Mysql
      * @return bool|Builder
      * @throws EspError
      */
-    public function trans(int $trans_id = 1, array $batch_SQLs = [])
+    public function trans(int $trans_id = 0, array $batch_SQLs = [])
     {
         if ($trans_id === 0) {
-            throw new EspError("Trans Error: 事务ID须从1开始，不可以为0。", 1);
+//            throw new EspError("Trans Error: 事务ID须从1开始，不可以为0。", 1);
         }
 
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id]) {

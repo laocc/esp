@@ -809,7 +809,7 @@ abstract class Model extends Library
     {
         $branchName = $this->_branch ?? 'auto';
 
-        if ($tranID === 1) $tranID = $this->__tranIndex++;
+        if ($tranID === 1) $tranID = ++$this->__tranIndex;
 
         if (isset($this->_controller->_Mysql[$branchName][$tranID])) {
             return $this->_controller->_Mysql[$branchName][$tranID];
