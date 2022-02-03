@@ -61,10 +61,8 @@ final class Error
          * @param string $errStr
          * @param string $errFile
          * @param int $errLine
-         * @param array|null $context
          */
-        $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine, array $context = null)
-        use ($option) {
+        $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine) use ($option) {
             if ($this->dispatcher->ignoreError($errFile, $errLine, true)) return;
 
             $prev = ['message' => $errStr, 'code' => $errNo, 'file' => $errFile, 'line' => $errLine];

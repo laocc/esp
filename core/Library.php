@@ -21,13 +21,16 @@ abstract class Library
 
     public function __construct(...$param)
     {
+        $fstController = false;
         if (isset($param[0])) {
             if ($param[0] instanceof Controller) {
                 $this->_controller = &$param[0];
 //                unset($param[0]);
+                $fstController = true;
             } else if ($param[0] instanceof Library) {
                 $this->_controller = &$param[0]->_controller;
 //                unset($param[0]);
+                $fstController = true;
             }
         }
 
@@ -49,7 +52,7 @@ abstract class Library
         }
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
-            call_user_func_array([$this, '_init'], $param);
+            call_user_func_array([$this, '_init'], $fstController ? array_slice($param, 1) : $param);
         }
     }
 
