@@ -27,7 +27,7 @@ final class Mysql
     public $_error = array();//每个连接的错误信息
     public $dbName;
     public $cacheKey;
-    public $lowCase = false; //是否转换为小写
+    private $lowCase = false; //是否转换为小写
 
     /**
      * @var $_controller Controller
@@ -51,6 +51,7 @@ final class Mysql
 //                'persistent' => false,//是否持久连接，不指定时取值_CLI
                 'param' => true,
                 'cache' => false,
+                'lowercase' => false,
                 'timeout' => 2,
                 'time_limit' => 5,//单条sql超时报警
                 'prefix' => '',
@@ -63,7 +64,7 @@ final class Mysql
         $this->_counter = &$controller->_counter;
 
         $this->lowCase = boolval($this->_CONF['lowercase'] ?? 0);
-        if ($this->lowCase) {
+        if ($this->_CONF['lowercase'] ?? 0) {
             $this->_CONF['db'] = strtolower($this->_CONF['db']);
             $this->_CONF['prefix'] = strtolower($this->_CONF['prefix']);
         }
@@ -181,6 +182,7 @@ final class Mysql
 
                 $this->_PDO = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
                 (!_CLI) and $this->debug("{$real}({$trans_id}):{$conStr}");
+                if (_CLI) echo "new PDO::{$real}({$trans_id})\n";
 
                 if (_CLI and $try > 0) {
                     print_r([$opts, $cnf, $conStr]);
