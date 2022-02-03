@@ -53,16 +53,6 @@ abstract class Library
         }
     }
 
-    public function __destruct()
-    {
-        foreach ($this->_controller->_Mysql as $b => $branch) {
-            foreach ($branch as $r => &$connect) {
-                foreach ($connect as $c => &$pdo) $pdo = null;
-                $connect = [];
-            }
-        }
-    }
-
     /**
      * @return Controller
      */

@@ -771,11 +771,16 @@ abstract class Controller
     }
 
 
-    /**
-     * 释放资源，好象没鸟用
-     */
-    public function ReleaseContent()
+    public function __destruct()
     {
+        $this->debug('Controller::__destruct()');
+        foreach ($this->_Mysql as $b => $branch) {
+            foreach ($branch as $r => &$connect) {
+                foreach ($connect as $c => &$pdo) $pdo = null;
+                $connect = [];
+            }
+        }
+
         foreach ($this->_Yac as &$obj) $obj = null;
         foreach ($this->_Mysql as &$obj) $obj = null;
         foreach ($this->_Mongodb as &$obj) $obj = null;

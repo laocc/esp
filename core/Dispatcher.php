@@ -617,10 +617,10 @@ final class Dispatcher
             $rest = "locked: Running";
         }
         fclose($fn);
-        if ($lockKey[-1] === '-') {
+//        if ($lockKey[-1] === '-') {
             $this->ignoreError(__FILE__, __LINE__ + 1);
             if (is_readable($lockFile)) @unlink($lockFile);
-        }
+//        }
         $this->_inLocked = false;
         return $rest;
     }
