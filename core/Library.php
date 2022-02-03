@@ -23,11 +23,11 @@ abstract class Library
     {
         if (isset($param[0])) {
             if ($param[0] instanceof Controller) {
-                $this->_controller =& $param[0];
-                unset($param[0]);
+                $this->_controller = &$param[0];
+//                unset($param[0]);
             } else if ($param[0] instanceof Library) {
                 $this->_controller = &$param[0]->_controller;
-                unset($param[0]);
+//                unset($param[0]);
             }
         }
 
@@ -218,7 +218,6 @@ abstract class Library
     {
         return $this->Redis()->hash($table);
     }
-
 
 
 }
