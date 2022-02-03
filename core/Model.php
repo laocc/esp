@@ -641,21 +641,6 @@ abstract class Model extends Library
         return $this->Mysql(0, [], 1)->quote($string);
     }
 
-    /**
-     * 断开所有链接，
-     *
-     */
-    final public function close(): void
-    {
-        $branchName = $this->_branch ?? 'auto';
-        $mysql = $this->_controller->_Mysql[$branchName][0];
-//        $model->_controller->_PdoPool;
-        /**
-         * @var $mysql Mysql
-         */
-        $mysql->close();
-    }
-
 
     final public function join(...$data): Model
     {
@@ -826,7 +811,7 @@ abstract class Model extends Library
 
         if ($tranID === 1) $tranID = $this->__tranIndex++;
 
-        if (!_CLI and isset($this->_controller->_Mysql[$branchName][$tranID])) {
+        if (isset($this->_controller->_Mysql[$branchName][$tranID])) {
             return $this->_controller->_Mysql[$branchName][$tranID];
         }
 
@@ -849,9 +834,7 @@ abstract class Model extends Library
         }
         $conf = $_conf + $conf + ['branch' => $branchName];
         $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this->_controller, $tranID, $conf);
-        $this->_controller->_PdoPool[$branchName] = [];
-        $this->debug([$_conf, $conf]);
-        $this->debug("New Mysql({$branchName}-{$tranID});", $traceLevel + 1);
+        $this->debug(["new Mysql({$branchName}-{$tranID});", $conf], $traceLevel + 1);
 
         return $this->_controller->_Mysql[$branchName][$tranID];
     }

@@ -280,7 +280,7 @@ final class Response
      * 设置是否启用视图
      * 设置视图文件名
      * 获取视图对象
-     * @return bool|View
+     * @return View
      */
     public function getView(): View
     {
@@ -482,7 +482,7 @@ final class Response
      * @return null|string
      * @throws EspError
      */
-    private function display_response()
+    private function display_response(): ?string
     {
         if ($this->_view_set['view_use'] === false) return null;
 

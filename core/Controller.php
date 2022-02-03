@@ -12,7 +12,6 @@ use esp\error\EspError;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
 use esp\session\Session;
-use esp\dbs\Pool;
 use function \esp\helper\host;
 use function \esp\helper\root;
 use function esp\helper\str_rand;
@@ -38,18 +37,14 @@ abstract class Controller
     public $_debug;
     public $_redis;
     public $_cache;
+
+    public $_pool;//用于esp/dbs里的Pool池管理
+
     /**
      * @var $_error Error
      */
     public $_error;
     public $_counter;
-
-    /**
-     * 各种连接池管理器，此对象在Model中自行管理，这里只是起到中转器的作用
-     *
-     * @var $_pool Pool
-     */
-    public $_pool;
 
     /**
      * 以下4个是用于Model中的链接缓存
@@ -62,7 +57,6 @@ abstract class Controller
     public $_Mysql = array();
     public $_Mongodb = array();
     public $_Redis = array();
-    public $_PdoPool = array();
     public $_Sqlite = array();
     public $inLocked = false;
 
@@ -111,9 +105,9 @@ abstract class Controller
 
     /**
      * 设置视图文件，或获取对象
-     * @return View|bool
+     * @return View
      */
-    final protected function getView()
+    final protected function getView(): View
     {
         return $this->_response->getView();
     }
@@ -174,7 +168,7 @@ abstract class Controller
         return $this->_response->getView()->getAdapter();
     }
 
-    final protected function setAdapter(bool $bool)
+    final protected function setAdapter(bool $bool): View
     {
         return $this->_response->setAdapter($bool)->getView()->setAdapter($bool);
     }
@@ -252,7 +246,6 @@ abstract class Controller
         $this->_Mysql = [];
         $this->_Mongodb = [];
         $this->_Redis = [];
-        $this->_PdoPool = [];
         $this->_Sqlite = [];
         return $this;
     }
@@ -787,7 +780,6 @@ abstract class Controller
         foreach ($this->_Mysql as &$obj) $obj = null;
         foreach ($this->_Mongodb as &$obj) $obj = null;
         foreach ($this->_Redis as &$obj) $obj = null;
-        foreach ($this->_PdoPool as &$obj) $obj = null;
         foreach ($this->_Sqlite as &$obj) $obj = null;
     }
 
