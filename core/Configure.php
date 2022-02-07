@@ -34,7 +34,7 @@ final class Configure
         $this->_token = md5(__FILE__);
         $conf += ['path' => '/common/config', 'type' => 'redis'];
         $conf['path'] = root($conf['path']);
-        $this->_rpc = defined('_RPC') ? _RPC : ['host' => 'rpc.esp', 'port' => 80, 'ip' => ($rdsConf['master'] ?? null)];
+        $this->_rpc = defined('_RPC') ? _RPC : ['host' => 'rpc.esp', 'port' => 800, 'ip' => ($rdsConf['master'] ?? null)];
 
         if (!is_dir($conf['path'])) return;
 
@@ -183,7 +183,7 @@ final class Configure
             if (!empty($this->_CONFIG_)) goto end;
         }
 
-        if ($this->_rpc['ip']) $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
+//        if ($this->_rpc['ip']) $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
 
 
         if (!_DEBUG and !_CLI and !$isMaster and $this->_rpc['ip']) {
