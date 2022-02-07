@@ -46,16 +46,16 @@ final class Configure
     {
         $cnfFile = _RUNTIME . "/{$this->_token}_CONFIG_.json";
         $isMaster = is_file(_RUNTIME . '/master.lock');
+        $awakenURI = '/_esp_config_awaken_';
 
         //没有强制从文件加载
         if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])
             and is_readable($cnfFile)) {
             $json = file_get_contents($cnfFile);
             $this->_CONFIG_ = json_decode($json, true) ?: null;
-            if (!empty($this->_CONFIG_)) return;
+            if (!empty($this->_CONFIG_)) goto end;
         }
 
-        $awakenURI = '/_esp_config_awaken_';
         if (!_DEBUG and !_CLI and !$isMaster and $this->_rpc['ip']) {
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
@@ -73,6 +73,7 @@ final class Configure
 
         if (!_CLI) file_put_contents($cnfFile, json_encode($this->_CONFIG_, 448));
 
+        end:
         //负载从服务器唤醒，直接退出
         if (_VIRTUAL === 'rpc' && _URI === $awakenURI) {
             echo json_encode($this->_CONFIG_, 320);
