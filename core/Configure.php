@@ -170,6 +170,7 @@ final class Configure
             }
         }
 
+        $awakenURI = '/_esp_config_awaken_';
         $rdsConf = $dbConf['database']['redis'] ?? [];
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
         $this->RedisDbIndex = $rdsConf['db'];
@@ -178,11 +179,10 @@ final class Configure
         //没有强制从文件加载
         if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
             $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
-            if (!empty($this->_CONFIG_)) return;
+            if (!empty($this->_CONFIG_)) goto end;
         }
 
 
-        $awakenURI = '/_esp_config_awaken_';
         if (!_DEBUG and !_CLI and !$isMaster and $this->_rpc['ip']) {
 
             $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
@@ -212,6 +212,7 @@ final class Configure
         $this->mergeConfig($conf);
         if (!_CLI) $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
 
+        end:
         //负载从服务器唤醒，直接退出
         if (_VIRTUAL === 'rpc' && _URI === $awakenURI) exit($this->_token);
     }
