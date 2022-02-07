@@ -182,10 +182,10 @@ final class Configure
             if (!empty($this->_CONFIG_)) goto end;
         }
 
+        if ($this->_rpc['ip']) $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
+
 
         if (!_DEBUG and !_CLI and !$isMaster and $this->_rpc['ip']) {
-
-            $this->_token = md5("{$this->_rpc['host']}{$this->_rpc['port']}{$this->_rpc['ip']}");
 
             $tryCount = 0;
             tryReadRedis:
