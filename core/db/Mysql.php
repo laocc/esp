@@ -182,7 +182,7 @@ final class Mysql
 
                 $this->_PDO = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
                 (!_CLI) and $this->debug("{$real}({$trans_id}):{$conStr}");
-                if (_CLI) echo "new PDO::{$real}({$trans_id})\n";
+                if (_CLI and defined('_EchoNewPdo') and _EchoNewPdo) echo "new PDO::{$real}({$trans_id})\n";
 
                 if (_CLI and $try > 0) {
                     print_r([$opts, $cnf, $conStr]);
