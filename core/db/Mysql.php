@@ -27,7 +27,7 @@ final class Mysql
     public $_error = array();//每个连接的错误信息
     public $dbName;
     public $cacheKey;
-    private $lowCase = false; //是否转换为小写
+    public $lowCase = false; //是否转换为小写
 
     /**
      * @var $_controller Controller
