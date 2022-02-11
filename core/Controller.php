@@ -30,6 +30,9 @@ abstract class Controller
      * @var $_response Response
      */
     public $_response;
+    /**
+     * @var $_dispatcher Dispatcher
+     */
     public $_dispatcher;
     public $_session;
     public $_plugs;

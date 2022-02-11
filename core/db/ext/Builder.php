@@ -1289,7 +1289,7 @@ final class Builder
             $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
         } else {
 
-            $get = $this->_MySQL->_controller->locked($this->_table, function ($sql, $option, $tractLevel) {
+            $get = $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $option, $tractLevel) {
 
                 return $this->_MySQL->query($sql, $option, null, $tractLevel + 1);
 
@@ -1367,7 +1367,7 @@ final class Builder
         }
 
 
-        return $this->_MySQL->_controller->locked($this->_table, function ($sql, $tractLevel) {
+        return $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $tractLevel) {
             return $this->_MySQL->query($sql, $this->option('delete'), null, $tractLevel + 1);
         }, $sql, $tractLevel + 1);
 
@@ -1480,7 +1480,7 @@ final class Builder
         if (!$this->_locked) return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
 
 
-        return $this->_MySQL->_controller->locked($this->_table, function ($sql, $tractLevel, $op) {
+        return $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $tractLevel, $op) {
             return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
         }, $sql, $tractLevel + 1, $op);
 
@@ -1606,7 +1606,7 @@ final class Builder
 
         } else {
 
-            $exe = $this->_MySQL->_controller->locked($this->_table, function ($sql, $tractLevel) {
+            $exe = $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $tractLevel) {
                 return $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
             }, $sql, $tractLevel + 1);
 
@@ -1666,7 +1666,7 @@ final class Builder
             return $this->_MySQL->query(implode(' ', $sql), $this->option('update'), null, $tractLevel + 1);
         }
 
-        return $this->_MySQL->_controller->locked($this->_table, function ($sql, $tractLevel) {
+        return $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $tractLevel) {
 
             return $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
 

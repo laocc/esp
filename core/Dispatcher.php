@@ -595,12 +595,19 @@ final class Dispatcher
             }
         }
 
+        $option = intval($lockKey[0]);
         $this->_inLocked = true;
-        $operation = ($lockKey[0] === '#') ? (LOCK_EX | LOCK_NB) : LOCK_EX;
+        $operation = ($option & 1) ? (LOCK_EX | LOCK_NB) : LOCK_EX;
         $lockKey = str_replace(['/', '\\', '`', '*', '"', "'", '<', '>', ':', ';', '?', ' '], '', $lockKey);
+        if (_CLI) $lockKey = $lockKey . '_CLI';
         $fn = fopen(($lockFile = "/tmp/flock_{$lockKey}.flock"), 'a');
         if (!$fn) {
-            var_dump("/tmp/flock_{$lockKey}.flock fopen error");
+            $msg = "/tmp/flock_{$lockKey}.flock fopen error";
+            if (_CLI) {
+                var_dump($msg);
+            } else if (!is_null($this->_debug)) {
+                $this->_debug->relay($msg);
+            }
         }
         if (flock($fn, $operation)) {           //加锁
             try {
@@ -617,10 +624,8 @@ final class Dispatcher
             $rest = "locked: Running";
         }
         fclose($fn);
-//        if ($lockKey[-1] === '-') {
-            $this->ignoreError(__FILE__, __LINE__ + 1);
-            if (is_readable($lockFile)) @unlink($lockFile);
-//        }
+        $this->ignoreError(__FILE__, __LINE__ + 1);
+        if (!($option & 2) && is_readable($lockFile)) @unlink($lockFile);
         $this->_inLocked = false;
         return $rest;
     }
