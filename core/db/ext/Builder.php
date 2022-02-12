@@ -5,9 +5,6 @@ namespace esp\core\db\ext;
 
 use esp\core\db\Mysql;
 use esp\error\EspError;
-use function esp\helper\locked;
-
-if (!defined('_LOCKED_MYSQL')) define('_LOCKED_MYSQL', false);
 
 
 /**
@@ -41,7 +38,6 @@ final class Builder
     private $_MySQL;//Mysql
     private $_Trans_ID = 0;//多重事务ID，正常情况都=0，只有多重事务理才会大于0
 
-    private $_locked = _LOCKED_MYSQL;//是否启用锁
     private $_count = false;//是否启用自动统计
     private $_distinct = null;//消除重复行
     private $_fetch_type = 1;//返回的数据，是用1键值对方式，还是0数字下标，或3都要，默认1
@@ -83,7 +79,6 @@ final class Builder
         $this->_skip = 0;
         $this->_fetch_type = 1;
         $this->_count = false;
-        $this->_locked = _LOCKED_MYSQL;
         $this->_group = null;
         $this->_distinct = null;
         $this->_protect = true;
@@ -1285,19 +1280,7 @@ final class Builder
             $this->replace_tempTable($option['_count_sql']);
         }
 
-        if (!$this->_locked) {
-            $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
-        } else {
-
-            $get = $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $option, $tractLevel) {
-
-                return $this->_MySQL->query($sql, $option, null, $tractLevel + 1);
-
-            }, $_build_sql, $option, $tractLevel + 1);
-
-        }
-
-
+        $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
         if (is_string($get)) throw new EspError($get, $tractLevel + 1);
 
         return $get;
@@ -1361,16 +1344,7 @@ final class Builder
         if (!empty($this->_order_by)) $sql[] = "ORDER BY {$this->_order_by}";
         if (!empty($this->_limit)) $sql[] = "LIMIT {$this->_limit}";
         $sql = implode(' ', $sql);
-
-        if (!$this->_locked) {
-            return $this->_MySQL->query($sql, $this->option('delete'), null, $tractLevel + 1);
-        }
-
-
-        return $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $tractLevel) {
-            return $this->_MySQL->query($sql, $this->option('delete'), null, $tractLevel + 1);
-        }, $sql, $tractLevel + 1);
-
+        return $this->_MySQL->query($sql, $this->option('delete'), null, $tractLevel + 1);
     }
 
 
@@ -1477,13 +1451,7 @@ final class Builder
         $value = $param ?: implode(', ', $values);
 
         $sql = "{$op} INTO {$this->_table} ({$keys}) VALUES {$value}";
-        if (!$this->_locked) return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
-
-
-        return $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $tractLevel, $op) {
-            return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
-        }, $sql, $tractLevel + 1, $op);
-
+        return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
     }
 
     /**
@@ -1601,20 +1569,8 @@ final class Builder
         $sets = implode(', ', $sets);
         $sql = "UPDATE {$this->_table} SET {$sets} WHERE {$where}";
 
-        if (!$this->_locked) {
-            $exe = $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
-
-        } else {
-
-            $exe = $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $tractLevel) {
-                return $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
-            }, $sql, $tractLevel + 1);
-
-        }
-
-
+        $exe = $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
         if (is_string($exe)) throw new EspError($exe, $tractLevel + 1);
-
         return $exe;
     }
 
@@ -1662,16 +1618,7 @@ final class Builder
         }
         $sql[] = "WHERE {$where}";
 
-        if (!$this->_locked) {
-            return $this->_MySQL->query(implode(' ', $sql), $this->option('update'), null, $tractLevel + 1);
-        }
-
-        return $this->_MySQL->_controller->locked("2.{$this->_table}", function ($sql, $tractLevel) {
-
-            return $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
-
-        }, implode(' ', $sql), $tractLevel + 1);
-
+        return $this->_MySQL->query(implode(' ', $sql), $this->option('update'), null, $tractLevel + 1);
     }
 
     /**

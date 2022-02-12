@@ -568,8 +568,6 @@ final class Dispatcher
     }
 
 
-    private $_inLocked = false;//当前是否处于锁内
-
     /**
      * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
      * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
@@ -582,21 +580,7 @@ final class Dispatcher
      */
     public function locked(string $lockKey, callable $callable, ...$args)
     {
-        //当前已处于锁内，则直接执行，不再加锁
-        if ($this->_inLocked) {
-            try {
-
-                return $callable(...$args);
-
-            } catch (\Exception $exception) {
-                return 'locked: ' . $exception->getMessage();
-            } catch (\Error $error) {
-                return 'locked: ' . $error->getMessage();
-            }
-        }
-
         $option = intval($lockKey[0]);
-        $this->_inLocked = true;
         $operation = ($option & 1) ? (LOCK_EX | LOCK_NB) : LOCK_EX;
         $lockKey = str_replace(['/', '\\', '`', '*', '"', "'", '<', '>', ':', ';', '?', ' '], '', $lockKey);
         if (_CLI) $lockKey = $lockKey . '_CLI';
@@ -626,7 +610,6 @@ final class Dispatcher
         fclose($fn);
         $this->ignoreError(__FILE__, __LINE__ + 1);
         if (!($option & 2) && is_readable($lockFile)) @unlink($lockFile);
-        $this->_inLocked = false;
         return $rest;
     }
 
