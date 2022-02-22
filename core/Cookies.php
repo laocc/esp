@@ -19,26 +19,33 @@ final class Cookies
         return $_COOKIE[strtolower($key)] ?? $autoValue;
     }
 
-    public function set($key, $value, $ttl = null)
+    /**
+     * @param string $key
+     * @param $value
+     * @param null $ttl
+     * @return bool|null
+     */
+    public function set(string $key, $value, $ttl = null)
     {
         if (_CLI) return null;
-        if (!is_int($ttl) and preg_match('/^(\d+)\s?([ymDhw])$/i', trim($ttl), $mat)) {
-            $s = ['y' => 86400 * 365, 'm' => 86400 * 30, 'w' => 86400 * 7, 'd' => 86400, 'h' => 3600][strtolower($mat[2])];
-            $ttl = (intval($mat[1]) * $s) + time();
+        if (is_null($ttl)) $ttl = time() - 1;
+        else if (is_string($ttl) and preg_match('/^(\d+)\s?([ymDhw])$/i', trim($ttl), $mat)) {
+            $s = ['y' => 'year', 'm' => 'month', 'w' => 'week', 'd' => 'day', 'h' => 'hour'][strtolower($mat[2])] ?? 'day';
+            $ttl = strtotime("+{$mat[1]} {$s}");
         }
         if (is_array($value)) $value = json_encode($value, 256);
 
         if (version_compare(PHP_VERSION, '7.3', '>')) {
             $option = [];
             $option['domain'] = $this->domain;
-            $option['expires'] = $ttl;
+            $option['expires'] = intval($ttl);
             $option['path'] = '/';
             $option['secure'] = _HTTPS;//仅https
             $option['httponly'] = true;
             $option['samesite'] = 'Lax';
-            return setcookie(strtolower($key), $value, $option);
+            return setcookie(strtolower($key), strval($value), $option);
         }
-        return setcookie(strtolower($key), $value, $ttl, '/', $this->domain, _HTTPS, true);
+        return setcookie(strtolower($key), strval($value), intval($ttl), '/', $this->domain, _HTTPS, true);
     }
 
     public function del($key)
