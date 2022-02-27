@@ -155,10 +155,15 @@ final class Configure
     {
         $isMaster = is_file(_RUNTIME . '/master.lock');
 
-        $bFile = "{$conf['path']}/database.ini";
-        if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.json";
-        if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.php";
-        if (!is_readable($bFile)) throw new EspError("database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
+        if (isset($conf['database'])) {
+            if (!is_readable($conf['database'])) throw new EspError("指定的database配置文件不存在或不可读");
+            $bFile = $conf['database'];
+        } else {
+            $bFile = "{$conf['path']}/database.ini";
+            if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.json";
+            if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.php";
+            if (!is_readable($bFile)) throw new EspError("database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
+        }
 
         $dbConf = $this->loadFile($bFile, 'database');
         if (empty($dbConf)) throw new EspError('读取database失败，配置文件可能是空文件');
