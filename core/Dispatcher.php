@@ -122,7 +122,7 @@ final class Dispatcher
         $response = $cfg->get('response');
         if (empty($response)) $response = [];
         $response = $this->mergeConf($response);
-        $response['_rand'] = $cfg->get('resourceRand') ?: date('YmdH');
+        $response['_rand'] = $cfg->_Redis->get('resourceRand') ?: date('YmdH');
         $this->_response = new Response($this->_request, $response);
 
         if ($cookies = $cfg->get('cookies')) {

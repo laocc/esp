@@ -23,12 +23,10 @@ final class Resources
         } else {
             $this->conf['host'] = '';
         }
-        if (($this->conf['rand'] ?? '') === 'RAND') $this->conf['rand'] = $_config['_rand'] ?? date('YmdH');
 
         $this->conf += [
             'host' => '',
             'path' => '',
-            'rand' => '',
             'title' => '',
             'keywords' => '',
             'description' => '',
@@ -61,7 +59,7 @@ final class Resources
 
     public function rand(): string
     {
-        return strval($this->conf['rand']);
+        return strval($this->conf['_rand']);
     }
 
     public function title(string $title = null): string
@@ -104,7 +102,7 @@ final class Resources
         $root = substr(getenv('DOCUMENT_ROOT'), strlen(_ROOT));//站点入口位置
         return str_replace(
             [$path, '__RAND__', $root],
-            [$host, strval($this->conf['rand']), ''],
+            [$host, strval($this->conf['_rand']), ''],
             $html);
     }
 
