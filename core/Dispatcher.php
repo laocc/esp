@@ -361,7 +361,12 @@ final class Dispatcher
         if (_CLI) return false;
         if (is_null($this->_debug)) return null;
         if ($data === '_R_DEBUG_') return $this->_debug;
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $trLev = 1;
+        if (is_int($pre)) {
+            $trLev = $pre + 1;
+            $pre = null;
+        }
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $trLev)[0];
         $this->_debug->relay($data, $pre);
         return $this->_debug;
     }
@@ -370,7 +375,12 @@ final class Dispatcher
     {
         if (_CLI) return;
         if (is_null($this->_debug)) return;
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $trLev = 1;
+        if (is_int($pre)) {
+            $trLev = $pre + 1;
+            $pre = null;
+        }
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $trLev)[0];
         $this->_debug->error($data, $pre);
     }
 
@@ -378,7 +388,12 @@ final class Dispatcher
     {
         if (_CLI) return;
         if (is_null($this->_debug)) return;
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $trLev = 1;
+        if (is_int($pre)) {
+            $trLev = $pre + 1;
+            $pre = null;
+        }
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $trLev)[0];
         $this->_debug->mysql_log($data, $pre);
     }
 

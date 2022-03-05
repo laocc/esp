@@ -349,7 +349,7 @@ abstract class Controller
      * @param $args
      * @return Debug|false|null
      */
-    final public function debug($args)
+    final public function debug(...$args)
     {
         return $this->_dispatcher->debug(...$args);
     }
@@ -357,7 +357,7 @@ abstract class Controller
     /**
      * @param $args
      */
-    final public function error($args): void
+    final public function error(...$args): void
     {
         $this->_dispatcher->error(...$args);
     }
@@ -365,7 +365,7 @@ abstract class Controller
     /**
      * @param $args
      */
-    final public function debug_mysql($args): void
+    final public function debug_mysql(...$args): void
     {
         $this->_dispatcher->debug_mysql(...$args);
     }

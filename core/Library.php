@@ -5,6 +5,7 @@ namespace esp\core;
 
 use esp\core\db\Redis;
 use esp\debug\Debug;
+use esp\error\EspError;
 use esp\helper\library\Error;
 
 /**
@@ -169,13 +170,19 @@ abstract class Library
      * @param int $traceLevel
      * @return Redis
      */
-    final public function Redis(array $_conf = [], int $traceLevel = 0): Redis
+    /**
+     * @param int $dbIndex
+     * @param int $traceLevel
+     * @return Redis
+     * @throws EspError
+     */
+    public function Redis(int $dbIndex = 0, int $traceLevel = 0): Redis
     {
         $conf = $this->_controller->_config->get('database.redis');
         $dbConfig = $conf['db'];
         if (is_array($dbConfig)) $dbConfig = $dbConfig['config'] ?? 1;
 
-        $conf = $_conf + $conf + ['db' => 0];
+        $conf = $conf + ['db' => $dbIndex];
         if (is_array($conf['db'])) $conf['db'] = $conf['db']['model'] ?? 0;
 
         if ($conf['db'] === 0 or $conf['db'] === $dbConfig) return $this->_controller->_config->_Redis;
@@ -196,7 +203,7 @@ abstract class Library
      * @param string $table
      * @return db\ext\RedisHash
      */
-    final public function Hash(string $table): db\ext\RedisHash
+    public function Hash(string $table): db\ext\RedisHash
     {
         return $this->Redis()->hash($table);
     }
