@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use esp\core\db\Redis;
+use esp\debug\Debug;
 use esp\helper\library\Error;
 
 /**
@@ -65,23 +66,23 @@ abstract class Library
     }
 
     /**
-     * @param $value
-     * @param $prevTrace
-     * @return bool|Debug
+     * @param $args
+     * @return Debug|false|null
      */
-    final public function debug($value = '_Debug_Object', $prevTrace = 0)
+    final public function debug($args)
     {
-        if (_CLI or is_null($this->_controller->_debug)) return null;
-        if ($value === '_Debug_Object') return $this->_controller->_debug;
+        return $this->_controller->_dispatcher->debug(...$args);
+    }
 
-        if (!(is_int($prevTrace) or is_array($prevTrace))) $prevTrace = 0;
-        if (is_int($prevTrace)) {
-            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($prevTrace + 1));
-            $trace = $trace[$prevTrace] ?? [];
-        } else {
-            $trace = $prevTrace;
-        }
-        return $this->_controller->_debug->relay($value, $trace);
+    /**
+     * 设置并返回debug文件名
+     * @param string|null $filename
+     * @return string
+     */
+    final public function debug_file(string $filename = null): string
+    {
+        if (is_null($this->_controller->_dispatcher->_debug)) return 'null';
+        return $this->_controller->_dispatcher->_debug->filename($filename);
     }
 
     /**
@@ -93,18 +94,6 @@ abstract class Library
     public function locked(string $lockKey, callable $callable, ...$args)
     {
         return $this->_controller->_dispatcher->locked($lockKey, $callable, ...$args);
-    }
-
-
-    /**
-     * 设置并返回debug文件名
-     * @param string|null $filename
-     * @return string
-     */
-    final public function debug_file(string $filename = null): string
-    {
-        if (is_null($this->_controller->_debug)) return 'null';
-        return $this->_controller->_debug->filename($filename);
     }
 
 
@@ -196,7 +185,7 @@ abstract class Library
         }
 
         $this->_controller->_Redis[$conf['db']] = new Redis($conf);
-        $this->debug("New Redis({$conf['db']});", $traceLevel + 1);
+        $this->_controller->_dispatcher->debug("New Redis({$conf['db']});", $traceLevel + 1);
         return $this->_controller->_Redis[$conf['db']];
     }
 

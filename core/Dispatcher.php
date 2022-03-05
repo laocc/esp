@@ -5,6 +5,7 @@ namespace esp\core;
 
 use ErrorException;
 use esp\debug\Counter;
+use esp\debug\Debug;
 use esp\error\Error;
 use esp\error\EspError;
 use esp\helper\library\Result;
@@ -114,8 +115,6 @@ final class Dispatcher
             if ($debug['run'] ?? 0) {
                 $this->_debug = new \esp\debug\Debug($this, $debug);
                 $this->_error->setDebug($this->_debug);
-            } else {
-                $this->_debug = new Debug($this, []);
             }
         }
 
@@ -158,8 +157,6 @@ final class Dispatcher
                         } else {
                             $this->_session->start();
                         }
-
-                        if (($sseConf['debug'] ?? 0) && $this->_debug) $this->relayDebug(['session' => $_SESSION]);
 
                     }
                 }
@@ -206,7 +203,7 @@ final class Dispatcher
             exit($route);
         }
 
-        $this->_debug->setRouter($this->_request->RouterValue());
+        if (!is_null($this->_debug)) $this->_debug->setRouter($this->_request->RouterValue());
 
         if (!is_null($this->_cache)) {
             if ($this->_response->cache && $this->_cache->Display()) {
@@ -284,7 +281,7 @@ final class Dispatcher
             exit($route);
         }
 
-        if (!_CLI) {
+        if (!_CLI && !is_null($this->_debug)) {
             $this->_debug->setRouter($this->_request->RouterValue());
         }
 
@@ -352,6 +349,37 @@ final class Dispatcher
     {
         if (is_null($this->_debug)) return;
         $this->_debug->relay($info, []);
+    }
+
+    /**
+     * @param string $data
+     * @param null $pre
+     * @return Debug|false|null
+     */
+    final public function debug($data = '_R_DEBUG_', $pre = null)
+    {
+        if (_CLI) return false;
+        if (is_null($this->_debug)) return null;
+        if ($data === '_R_DEBUG_') return $this->_debug;
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $this->_debug->relay($data, $pre);
+        return $this->_debug;
+    }
+
+    final public function error($data, $pre = null): void
+    {
+        if (_CLI) return;
+        if (is_null($this->_debug)) return;
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $this->_debug->error($data, $pre);
+    }
+
+    final public function debug_mysql($data, $pre = null): void
+    {
+        if (_CLI) return;
+        if (is_null($this->_debug)) return;
+        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $this->_debug->mysql_log($data, $pre);
     }
 
     /**

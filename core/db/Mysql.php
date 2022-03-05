@@ -8,7 +8,6 @@ use PDOException;
 use esp\core\Controller;
 use esp\core\db\ext\Builder;
 use esp\core\db\ext\PdoResult;
-use esp\core\Debug;
 use esp\error\EspError;
 
 
@@ -21,7 +20,6 @@ final class Mysql
     private $transID;
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
-    private $_debug;
     private $_counter;
     private $_PDO;
     public $_error = array();//每个连接的错误信息
@@ -60,7 +58,6 @@ final class Mysql
         $this->_checkGoneAway = _CLI;
 
         $this->_controller = &$controller;
-        $this->_debug = &$controller->_debug;
         $this->_counter = &$controller->_counter;
 
         $this->lowCase = boolval($this->_CONF['lowercase'] ?? 0);
@@ -111,21 +108,6 @@ final class Mysql
     {
         $this->_cli_print_sql = $boolPrint;
         return $this;
-    }
-
-    /**
-     * @param $value
-     * @param int $traceLevel
-     * @return false|null|Debug
-     */
-    public function debug($value = '_RETURN_DEBUG_', int $traceLevel = 1)
-    {
-        if (is_null($this->_debug)) return null;
-        if ($value === '_RETURN_DEBUG_') return $this->_debug;
-        if ($traceLevel > 10) $traceLevel = 2;
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($traceLevel + 1));
-        $trace = $trace[$traceLevel] ?? [];
-        return $this->_debug->mysql_log($value, $trace);
     }
 
     /**
@@ -181,7 +163,7 @@ final class Mysql
             try {
 
                 $this->_PDO = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
-                (!_CLI) and $this->debug("{$real}({$trans_id}):{$conStr}");
+                (!_CLI) and $this->_controller->debug_mysql("{$real}({$trans_id}):{$conStr}");
                 if (_CLI and defined('_EchoNewPdo') and _EchoNewPdo) echo "new PDO::{$real}({$trans_id})\n";
 
                 if (_CLI and $try > 0) {
@@ -350,9 +332,8 @@ final class Mysql
                 return is_string($v) ? "'{$v}'" : $v;
             }, array_values($option['param'])), $sql);
 
-            $this->debug($debugOption, $traceLevel + 1)->error([
-                "SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL
-            ], $traceLevel + 1);
+            $this->_controller->debug_mysql($debugOption, $traceLevel + 1);
+            $this->_controller->debug_error(["SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL], $traceLevel + 1);
         }
 
         if (!empty($error)) {
@@ -363,7 +344,7 @@ final class Mysql
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
             if ($debug and !_CLI) {
-                $this->debug($debugOption, $traceLevel + 1)->error($error, $traceLevel + 1);
+                $this->_controller->debug($debugOption, $traceLevel + 1)->error($error, $traceLevel + 1);
             }
 
             if ($try++ < 2 and in_array($errState, [2002, 2006, 2013])) {
@@ -376,7 +357,7 @@ final class Mysql
                         'after' => time() - $this->connect_time[$transID] ?? 0,
                     ]);
                 } else {
-                    ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
+                    ($debug and !_CLI) and $this->_controller->debug($debugOption, $traceLevel + 1);
                 }
                 $CONN = null;
                 goto tryExe; //重新执行
@@ -386,10 +367,10 @@ final class Mysql
             }
             if ($debug) $error['sql'] = $sql;
             if (_CLI) print_r($debugOption);
-            ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
+            ($debug and !_CLI) and $this->_controller->debug($debugOption, $traceLevel + 1);
             return json_encode($error, 256 | 64);
         }
-        ($debug and $debug_sql and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
+        ($debug and $debug_sql and !_CLI) and $this->_controller->debug($debugOption, $traceLevel + 1);
         return $result;
     }
 
@@ -652,9 +633,8 @@ final class Mysql
                     $stmtC->execute($option['param']);
                     $this->counter('select', $sql, -1);
                     if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
-                        $this->debug()
-                            ->relay($option['_count_sql'])
-                            ->error("SQL count 超时{$this->_CONF['time_limit']}s");
+                        $this->_controller->debug($option['_count_sql']);
+                        $this->_controller->debug_error("SQL count 超时{$this->_CONF['time_limit']}s");
                     }
                     $count = $stmtC->fetch(PDO::FETCH_ASSOC);
                 }
@@ -679,8 +659,8 @@ final class Mysql
                     $count = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetch();
                     $this->counter('select', $sql, -1);
                     if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
-                        $this->debug()->relay($option['_count_sql'])
-                            ->error("SQL count 超时{$this->_CONF['time_limit']}s");
+                        $this->_controller->debug($option['_count_sql']);
+                        $this->_controller->debug_error("SQL count 超时{$this->_CONF['time_limit']}s");
                     }
                 }
 
@@ -822,7 +802,7 @@ final class Mysql
             'result' => true,
             'error' => $error[2] ?? json_encode($error, 256 | 64),
         ];
-        !_CLI and $this->debug($this->_trans_error);
+        !_CLI and $this->_controller->debug($this->_trans_error);
 
         return $this->_PDO->rollBack();
     }

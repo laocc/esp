@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\error;
 
-use esp\core\Debug;
+use esp\debug\Debug;
 use esp\core\Dispatcher;
 use Throwable;
 use function esp\helper\mk_dir;

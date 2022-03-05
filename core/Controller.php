@@ -7,6 +7,8 @@ use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
 use esp\core\db\Yac;
+use esp\debug\Counter;
+use esp\debug\Debug;
 use esp\error\Error;
 use esp\error\EspError;
 use esp\face\Adapter;
@@ -34,20 +36,39 @@ abstract class Controller
      * @var $_dispatcher Dispatcher
      */
     public $_dispatcher;
+    /**
+     * @var $_session Session
+     */
     public $_session;
-    public $_plugs;
+    /**
+     * @var $_cookies Cookies
+     */
     public $_cookies;
-    public $_debug;
+    public $_plugs;
+    /**
+     * @var $_redis Redis
+     */
     public $_redis;
+    /**
+     * @var $_cache Cache
+     */
     public $_cache;
-
-    public $_pool;//用于esp/dbs里的Pool池管理
-
     /**
      * @var $_error Error
      */
     public $_error;
+    /**
+     * @var $_counter Counter
+     */
     public $_counter;
+
+    /**
+     * @var $_debug Debug
+     */
+    public $_debug;
+
+
+    public $_pool;//用于esp/dbs里的Pool池管理
 
     /**
      * 以下4个是用于Model中的链接缓存
@@ -67,16 +88,16 @@ abstract class Controller
     {
         $this->_dispatcher = &$dispatcher;
         $this->_config = &$dispatcher->_config;
+        $this->_redis = &$dispatcher->_config->_Redis;
         $this->_request = &$dispatcher->_request;
         $this->_response = &$dispatcher->_response;
         $this->_counter = &$dispatcher->_counter;
         $this->_session = &$dispatcher->_session;
         $this->_cookies = &$dispatcher->_cookies;
         $this->_debug = &$dispatcher->_debug;
-        $this->_plugs = &$dispatcher->_plugs;
         $this->_cache = &$dispatcher->_cache;
         $this->_error = &$dispatcher->_error;
-        $this->_redis = &$dispatcher->_config->_Redis;
+        $this->_plugs = &$dispatcher->_plugs;
     }
 
     /**
@@ -325,33 +346,34 @@ abstract class Controller
 
 
     /**
-     * @param string $data
-     * @param null $pre
-     * @return false
+     * @param $args
+     * @return Debug|false|null
      */
-    final public function debug($data = '_R_DEBUG_', $pre = null)
+    final public function debug($args)
     {
-        if (_CLI) return false;
-        if (is_null($this->_debug)) return null;
-        if ($data === '_R_DEBUG_') return $this->_debug;
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $this->_debug->relay($data, $pre);
-        return $this->_debug;
+        return $this->_dispatcher->debug(...$args);
     }
 
     /**
-     * @param null $data
-     * @return bool
+     * @param $args
      */
-    final public function debug_mysql($data = null): ?bool
+    final public function error($args): void
     {
-        if (_CLI) return false;
-        if (is_null($this->_debug)) return null;
-        if (is_null($data)) return $this->_debug;
-        $this->_debug->mysql_log($data);
-        return $this->_debug;
+        $this->_dispatcher->error(...$args);
     }
 
+    /**
+     * @param $args
+     */
+    final public function debug_mysql($args): void
+    {
+        $this->_dispatcher->debug_mysql(...$args);
+    }
+
+    /**
+     * @param ...$kv
+     * @return $this
+     */
     final protected function header(...$kv): Controller
     {
         $this->_response->header(...$kv);

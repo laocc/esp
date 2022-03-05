@@ -246,7 +246,7 @@ abstract class Model extends Library
             if (is_array($this->__cache)) $where += $this->__cache;
             if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->cacheKey);
             $sc = $this->Buffer->table($table)->delete($where);
-            $this->debug(['buffer' => $where, 'delete' => $sc]);
+            $this->_controller->_dispatcher->debug(['buffer' => $where, 'delete' => $sc]);
             $this->__cache = null;
         }
 
@@ -276,7 +276,7 @@ abstract class Model extends Library
             if (is_array($this->__cache)) $where += $this->__cache;
             if (is_null($this->Buffer)) $this->Buffer = new Buffer($this->Redis(), $mysql->cacheKey);
             $sc = $this->Buffer->table($table)->delete($where);
-            $this->debug(['buffer' => $where, 'delete' => $sc]);
+            $this->_controller->_dispatcher->debug(['buffer' => $where, 'delete' => $sc]);
             $this->__cache = null;
         }
 
@@ -305,7 +305,7 @@ abstract class Model extends Library
             if (!empty($data = $this->Buffer->table($table)->read($where))) {
                 $this->clear_initial();
                 $this->__cache = null;
-                $this->debug(['readByBuffer' => $where]);
+                $this->_controller->_dispatcher->debug(['readByBuffer' => $where]);
 
                 if ($this->_controller->_counter) {
                     $sql = "HitCache({$table}) " . json_encode($where, 320);
@@ -350,7 +350,7 @@ abstract class Model extends Library
 
         if ($this->__cache and $mysql->cacheKey) {
             $sc = $this->Buffer->table($table)->save($where, $val);
-            $this->debug(['buffer' => $where, 'save' => $sc]);
+            $this->_controller->_dispatcher->debug(['buffer' => $where, 'save' => $sc]);
             $this->__cache = null;
         }
 
@@ -774,7 +774,7 @@ abstract class Model extends Library
     {
         if (!isset($this->_controller->_Yac[$tab])) {
             $this->_controller->_Yac[$tab] = new Yac($tab);
-            $this->debug("New Yac({$tab});", $traceLevel + 1);
+            $this->_controller->_dispatcher->debug("New Yac({$tab});", $traceLevel + 1);
         }
         return $this->_controller->_Yac[$tab];
     }
@@ -792,7 +792,7 @@ abstract class Model extends Library
             if (!$conf) $conf = [];
             $conf['db'] = $dbFile;
             $this->_controller->_Sqlite[$key] = new Sqlite($this->_controller, $conf);
-            $this->debug("New Sqlite({$dbFile});", $traceLevel + 1);
+            $this->_controller->_dispatcher->debug("New Sqlite({$dbFile});", $traceLevel + 1);
         }
         return $this->_controller->_Sqlite[$key];
     }
@@ -821,11 +821,11 @@ abstract class Model extends Library
             if (empty($_branch) or !is_array($_branch)) {
                 throw new EspError("Model中`_branch`指向内容非Mysql配置信息", $traceLevel + 1);
             }
-            $this->debug([$_branch, $conf]);
+            $this->_controller->_dispatcher->debug([$_branch, $conf]);
             $conf = $_branch + $conf;
         }
         if (isset($this->_conf) and is_array($this->_conf) and !empty($this->_conf)) {
-            $this->debug([$this->_conf, $conf]);
+            $this->_controller->_dispatcher->debug([$this->_conf, $conf]);
             $conf = $this->_conf + $conf;
         }
 
@@ -834,7 +834,7 @@ abstract class Model extends Library
         }
         $conf = $_conf + $conf + ['branch' => $branchName];
         $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this->_controller, $tranID, $conf);
-        $this->debug(["new Mysql({$branchName}-{$tranID});", $conf], $traceLevel + 1);
+        $this->_controller->_dispatcher->debug(["new Mysql({$branchName}-{$tranID});", $conf], $traceLevel + 1);
 
         return $this->_controller->_Mysql[$branchName][$tranID];
     }
@@ -859,7 +859,7 @@ abstract class Model extends Library
         }
 
         $this->_controller->_Mongodb[$db] = new Mongodb($_conf + $conf, $db);
-        $this->debug("New Mongodb({$db});", $traceLevel + 1);
+        $this->_controller->_dispatcher->debug("New Mongodb({$db});", $traceLevel + 1);
         return $this->_controller->_Mongodb[$db];
     }
 
