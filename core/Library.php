@@ -176,7 +176,7 @@ abstract class Library
      * @return Redis
      * @throws EspError
      */
-    public function Redis(int $dbIndex = 0, int $traceLevel = 0): Redis
+    public function Redis(int $dbIndex = 0, int $traceLevel = 0)
     {
         $conf = $this->_controller->_config->get('database.redis');
         $dbConfig = $conf['db'];
@@ -203,7 +203,7 @@ abstract class Library
      * @param string $table
      * @return db\ext\RedisHash
      */
-    public function Hash(string $table): db\ext\RedisHash
+    public function Hash(string $table)
     {
         return $this->Redis()->hash($table);
     }

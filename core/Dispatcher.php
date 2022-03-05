@@ -353,47 +353,29 @@ final class Dispatcher
 
     /**
      * @param string $data
-     * @param null $pre
+     * @param int $pre
      * @return Debug|false|null
      */
-    final public function debug($data = '_R_DEBUG_', $pre = null)
+    final public function debug($data = '_R_DEBUG_', $pre = 1)
     {
         if (_CLI) return false;
         if (is_null($this->_debug)) return null;
         if ($data === '_R_DEBUG_') return $this->_debug;
-        $trLev = 1;
-        if (is_int($pre)) {
-            $trLev = $pre + 1;
-            $pre = null;
-        }
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $trLev)[0];
         $this->_debug->relay($data, $pre);
         return $this->_debug;
     }
 
-    final public function error($data, $pre = null): void
+    final public function error($data, $pre = 1): void
     {
         if (_CLI) return;
         if (is_null($this->_debug)) return;
-        $trLev = 1;
-        if (is_int($pre)) {
-            $trLev = $pre + 1;
-            $pre = null;
-        }
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $trLev)[0];
         $this->_debug->error($data, $pre);
     }
 
-    final public function debug_mysql($data, $pre = null): void
+    final public function debug_mysql($data, $pre = 1): void
     {
         if (_CLI) return;
         if (is_null($this->_debug)) return;
-        $trLev = 1;
-        if (is_int($pre)) {
-            $trLev = $pre + 1;
-            $pre = null;
-        }
-        if (is_null($pre)) $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $trLev)[0];
         $this->_debug->mysql_log($data, $pre);
     }
 
