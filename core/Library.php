@@ -70,7 +70,7 @@ abstract class Library
      * @param $args
      * @return Debug|false|null
      */
-    final public function debug($args)
+    final public function debug(...$args)
     {
         return $this->_controller->_dispatcher->debug(...$args);
     }
