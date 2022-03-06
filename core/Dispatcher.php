@@ -348,7 +348,7 @@ final class Dispatcher
     private function relayDebug($info): void
     {
         if (is_null($this->_debug)) return;
-        $this->_debug->relay($info, []);
+        $this->_debug->relay($info, 2);
     }
 
     /**
@@ -356,12 +356,12 @@ final class Dispatcher
      * @param int $pre
      * @return Debug|false|null
      */
-    final public function debug($data = '_R_DEBUG_', $pre = 1)
+    final public function debug($data = '_R_DEBUG_', int $pre = 1)
     {
         if (_CLI) return false;
         if (is_null($this->_debug)) return null;
         if ($data === '_R_DEBUG_') return $this->_debug;
-        $this->_debug->relay($data, $pre);
+        $this->_debug->relay($data, $pre + 1);
         return $this->_debug;
     }
 
@@ -615,7 +615,7 @@ final class Dispatcher
             if (_CLI) {
                 var_dump($msg);
             } else if (!is_null($this->_debug)) {
-                $this->_debug->relay($msg);
+                $this->_debug->relay($msg, 2);
             }
         }
         if (flock($fn, $operation)) {           //加锁

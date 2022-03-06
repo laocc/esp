@@ -402,8 +402,7 @@ abstract class Controller
         header("Location: {$url}", true, $code);
         fastcgi_finish_request();
         if (!is_null($this->_debug)) {
-            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-            $this->_debug->relay(['控制器主动调用 redirect()结束客户端', $url], $pre);
+            $this->_debug->relay(['控制器主动调用 redirect()结束客户端', $url], 1);
             $this->_debug->save_logs('Controller Redirect');
         }
         exit;
@@ -414,8 +413,7 @@ abstract class Controller
         echo $text;
         fastcgi_finish_request();
         if (!is_null($this->_debug)) {
-            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-            $this->_debug->relay(['控制器主动调用exit()结束客户端', $text], $pre);
+            $this->_debug->relay(['控制器主动调用exit()结束客户端', $text], 1);
             $this->_debug->save_logs('Controller Exit');
         }
         exit;
@@ -435,8 +433,7 @@ abstract class Controller
     final protected function finish(string $notes = null): bool
     {
         if (!is_null($this->_debug)) {
-            $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-            $this->_debug->relay(['控制器主动调用finish()结束客户端', $notes], $pre);
+            $this->_debug->relay(['控制器主动调用finish()结束客户端', $notes], 1);
         }
         return fastcgi_finish_request();
     }
