@@ -626,6 +626,12 @@ abstract class Model extends Library
         return $this;
     }
 
+    final public function paging(int $size, int $index = 0, int $recode = null): Model
+    {
+        $this->paging = new Paging($size, $index, $recode);
+        return $this;
+    }
+
     final public function pagingIndex(int $index): Model
     {
         $this->paging->index($index);
