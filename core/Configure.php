@@ -173,7 +173,7 @@ final class Configure
     /**
      * 重新连接redis，这一般发生在CLI环境中，长时间过行，有可能redis会断线
      *
-     * @throws EspError
+     * @throws \Error
      */
     public function reConnectRedis()
     {
@@ -192,17 +192,17 @@ final class Configure
         $isMaster = is_file(_RUNTIME . '/master.lock');
 
         if (isset($conf['database'])) {
-            if (!is_readable($conf['database'])) throw new EspError("指定的database配置文件不存在或不可读");
+            if (!is_readable($conf['database'])) throw new \Error("指定的database配置文件不存在或不可读");
             $bFile = $conf['database'];
         } else {
             $bFile = "{$conf['path']}/database.ini";
             if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.json";
             if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.php";
-            if (!is_readable($bFile)) throw new EspError("database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
+            if (!is_readable($bFile)) throw new \Error("database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
         }
 
         $dbConf = $this->loadFile($bFile, 'database');
-        if (empty($dbConf)) throw new EspError('读取database失败，配置文件可能是空文件');
+        if (empty($dbConf)) throw new \Error('读取database失败，配置文件可能是空文件');
 
         if (isset($conf['folder'])) {
             $bFile = str_replace('/database.', "/{$conf['folder']}/database.", $bFile);
@@ -242,7 +242,7 @@ final class Configure
              */
             $get = $this->asyncRPC(false);
             if ($get !== $this->_token) {
-                if ($tryCount++ > 1) throw new EspError("多次请求RPC获取到数据不合法，期望值({$this->_token})，实际获取:{$get}");
+                if ($tryCount++ > 1) throw new \Error("多次请求RPC获取到数据不合法，期望值({$this->_token})，实际获取:{$get}");
             }
 
             goto tryReadRedis;

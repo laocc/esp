@@ -5,7 +5,6 @@ namespace esp\core;
 
 use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
-use esp\core\db\Redis;
 use esp\core\db\Sqlite;
 use esp\core\db\Yac;
 use esp\core\ext\Buffer;
