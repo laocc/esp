@@ -30,8 +30,8 @@ final class Router
         if (_CLI) {
             $cache = false;
         } else {
-            if (defined('_CONFIG_LOAD')) $cache = _CONFIG_LOAD;
-            if (isset($_GET['_config_load'])) $cache = boolval($_GET['_config_load']);
+            if (isset($_GET['_config_load'])) $cache = false;
+            elseif (defined('_CONFIG_LOAD')) $cache = _CONFIG_LOAD;
         }
 
         $modRoute = null;
