@@ -24,7 +24,12 @@
     "psr-4": {
       "esp\\core\\": "core/",
       "esp\\face\\": "face/",
+      "esp\\scripts\\": "scripts/",
       "esp\\error\\": "error/"
     }
+  },
+  "scripts": {
+    "pre-install-cmd": "esp\\scripts\\Install::check",
+    "pre-update-cmd": "esp\\scripts\\Install::check"
   }
 }
