@@ -29,7 +29,7 @@
     }
   },
   "scripts": {
-    "pre-install-cmd": "esp\\scripts\\Install::check",
-    "pre-update-cmd": "esp\\scripts\\Install::check"
+    "post-package-install": "esp\\scripts\\Install::check",
+    "post-package-update": "esp\\scripts\\Install::check"
   }
 }
