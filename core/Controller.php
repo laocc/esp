@@ -330,12 +330,13 @@ abstract class Controller
 
 
     /**
-     * @param $args
+     * @param $data
+     * @param int $lev
      * @return Debug|false|null
      */
-    final public function debug(...$args)
+    final public function debug($data, int $lev = 0)
     {
-        return $this->_dispatcher->debug(...$args);
+        return $this->_dispatcher->debug($data, $lev + 1);
     }
 
     /**
