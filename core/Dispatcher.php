@@ -106,7 +106,7 @@ final class Dispatcher
             $counter = $this->mergeConf($counter);
             if ($counter['run'] ?? 0) {
                 $counter['_key'] = md5(_ROOT);
-                $this->_counter = new Counter($counter, $cfg->_Redis, $this->_request);
+                $this->_counter = new Counter($counter, $cfg->_Redis->redis, $this->_request);
             }
         }
 
