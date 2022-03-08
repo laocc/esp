@@ -3,17 +3,16 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\debug\Counter;
+use esp\debug\Debug;
 use esp\core\db\Mongodb;
 use esp\core\db\Mysql;
 use esp\core\db\Redis;
 use esp\core\db\Yac;
-use esp\debug\Counter;
-use esp\debug\Debug;
 use esp\error\Error;
 use esp\error\EspError;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
-use esp\session\Session;
 use function \esp\helper\host;
 use function \esp\helper\root;
 use function esp\helper\str_rand;
@@ -36,10 +35,6 @@ abstract class Controller
      * @var $_dispatcher Dispatcher
      */
     public $_dispatcher;
-    /**
-     * @var $_session Session
-     */
-    public $_session;
     /**
      * @var $_cookies Cookies
      */
@@ -92,7 +87,6 @@ abstract class Controller
         $this->_request = &$dispatcher->_request;
         $this->_response = &$dispatcher->_response;
         $this->_counter = &$dispatcher->_counter;
-        $this->_session = &$dispatcher->_session;
         $this->_cookies = &$dispatcher->_cookies;
         $this->_debug = &$dispatcher->_debug;
         $this->_cache = &$dispatcher->_cache;
@@ -285,16 +279,6 @@ abstract class Controller
     final public function _redis_flush()
     {
         return $this->_redis->flush();
-    }
-
-    /**
-     * @return Session
-     * @throws EspError
-     */
-    final public function getSession(): Session
-    {
-        if (is_null($this->_session)) throw new EspError('当前站点未开启session');
-        return $this->_session;
     }
 
     /**

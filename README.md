@@ -46,3 +46,9 @@ composer dump-autoload --optimize
 - [插件`Plugs`和`bootstrap`](./readme/11.plugs.md)
 - [调试器`Debug`](./readme/20.debug.md)
 
+```
+"laocc/http": "*",
+"laocc/debug": "*",
+"laocc/dbs": "*",
+"laocc/session": "*",
+```

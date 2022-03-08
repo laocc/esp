@@ -11,7 +11,6 @@ use function esp\helper\mk_dir;
 /**
  * 简单文件存储缓存
  * Class File
- * @package esp\core\db
  */
 final class File implements KeyValue
 {

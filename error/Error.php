@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace esp\error;
 
+use Throwable;
 use esp\debug\Debug;
 use esp\core\Dispatcher;
-use Throwable;
 use function esp\helper\mk_dir;
 use function esp\helper\replace_array;
 use function esp\helper\displayState;

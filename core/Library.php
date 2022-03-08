@@ -166,11 +166,6 @@ abstract class Library
     }
 
     /**
-     * @param array $_conf
-     * @param int $traceLevel
-     * @return Redis
-     */
-    /**
      * @param int $dbIndex
      * @param int $traceLevel
      * @return Redis

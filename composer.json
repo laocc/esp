@@ -10,11 +10,8 @@
   ],
   "require": {
     "php": ">7.1",
-    "laocc/http": "*",
     "laocc/helper": "*",
-    "laocc/debug": "*",
     "laocc/dbs": "*",
-    "laocc/session": "*",
     "ext-json": "*",
     "ext-libxml": "*",
     "ext-xml": "*",
