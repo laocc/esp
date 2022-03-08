@@ -356,7 +356,7 @@ final class Dispatcher
      * @param int $pre
      * @return Debug|false|null
      */
-    final public function debug($data = '_R_DEBUG_', int $pre = 1)
+    final public function debug($data = '_R_DEBUG_', int $pre = 0)
     {
         if (_CLI) return false;
         if (is_null($this->_debug)) return null;

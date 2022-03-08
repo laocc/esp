@@ -334,7 +334,7 @@ abstract class Controller
      * @param int $lev
      * @return Debug|false|null
      */
-    final public function debug($data, int $lev = 0)
+    final public function debug($data = '_R_DEBUG_', int $lev = 0)
     {
         return $this->_dispatcher->debug($data, $lev + 1);
     }
