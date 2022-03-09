@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use function \esp\helper\root;
+use function esp\helper\root;
 
 final class Request
 {

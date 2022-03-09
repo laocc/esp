@@ -3,18 +3,16 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\dbs\Pool;
 use esp\debug\Counter;
 use esp\debug\Debug;
-use esp\core\db\Mongodb;
-use esp\core\db\Mysql;
-use esp\core\db\Redis;
-use esp\core\db\Yac;
+use esp\dbs\redis\Redis;
 use esp\error\Error;
 use esp\error\EspError;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
-use function \esp\helper\host;
-use function \esp\helper\root;
+use function esp\helper\host;
+use function esp\helper\root;
 use function esp\helper\str_rand;
 
 abstract class Controller
@@ -62,22 +60,10 @@ abstract class Controller
      */
     public $_debug;
 
-
-    public $_pool;//用于esp/dbs里的Pool池管理
-
     /**
-     * 以下4个是用于Model中的链接缓存
-     * @var $_Yac Yac
-     * @var $_Mysql Mysql
-     * @var $_Redis Redis
-     * @var $_Mongodb Mongodb
+     * @var Pool
      */
-    public $_Yac = array();
-    public $_Mysql = array();
-    public $_Mongodb = array();
-    public $_Redis = array();
-    public $_Sqlite = array();
-    public $inLocked = false;
+    public $_pool;//用于esp/dbs里的Pool池管理
 
     public function __construct(Dispatcher $dispatcher)
     {
@@ -252,33 +238,6 @@ abstract class Controller
     {
         $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
         return $this->_redis->push($key, $data + ['_action' => $action]);
-    }
-
-    /**
-     * 清空当前控制器中db连接池，一般只用在CLI环境下
-     * @return $this
-     */
-    final protected function flush_db_pool(): Controller
-    {
-        $this->_Yac = [];
-        $this->_Mysql = [];
-        $this->_Mongodb = [];
-        $this->_Redis = [];
-        $this->_Sqlite = [];
-        return $this;
-    }
-
-    /**
-     * @return Redis
-     */
-    final public function getRedis(): Redis
-    {
-        return $this->_redis;
-    }
-
-    final public function _redis_flush()
-    {
-        return $this->_redis->flush();
     }
 
     /**
@@ -777,22 +736,5 @@ abstract class Controller
         return $unique;
     }
 
-
-    public function __destruct()
-    {
-        $this->debug('Controller::__destruct()');
-        foreach ($this->_Mysql as $b => $branch) {
-            foreach ($branch as $r => &$connect) {
-                foreach ($connect as $c => &$pdo) $pdo = null;
-                $connect = [];
-            }
-        }
-
-        foreach ($this->_Yac as &$obj) $obj = null;
-        foreach ($this->_Mysql as &$obj) $obj = null;
-        foreach ($this->_Mongodb as &$obj) $obj = null;
-        foreach ($this->_Redis as &$obj) $obj = null;
-        foreach ($this->_Sqlite as &$obj) $obj = null;
-    }
 
 }

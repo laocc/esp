@@ -183,19 +183,19 @@ final class Dispatcher
      * 系统运行调度中心
      * @throws EspError|ErrorException
      */
-    public function run(): void
+    public function run(bool $simple = false): void
     {
         $showDebug = boolval($_GET['_debug'] ?? 0);
         if ($this->run === false) goto end;
-        if (_CLI) throw new EspError("cli环境中请直接调用\$this->simple()方法");
+        if (_CLI and !$simple) throw new EspError("cli环境中请调用\$this->run(true)方法");
 
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('router'))) {
+        if (!$simple and $this->_plugs_count and !is_null($hook = $this->plugsHook('router'))) {
             $this->_response->display($hook);
             goto end;
         }
 
         $route = (new Router())->run($this->_request);
-        if ($route) {
+        if (is_string($route)) {
             if ($route === 'true') $route = '';
             if (substr($route, 0, 6) === 'redis:') {
                 $route = $this->_config->_Redis->get(substr($route, 6));
@@ -205,7 +205,7 @@ final class Dispatcher
 
         if (!is_null($this->_debug)) $this->_debug->setRouter($this->_request->RouterValue());
 
-        if (!is_null($this->_cache)) {
+        if (!$simple and !is_null($this->_cache)) {
             if ($this->_response->cache && $this->_cache->Display()) {
                 fastcgi_finish_request();//运行结束，客户端断开
                 $this->relayDebug("[blue;客户端已断开 =============================]");
@@ -213,7 +213,7 @@ final class Dispatcher
             }
         }
 
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('dispatch'))) {
+        if (!$simple and $this->_plugs_count and !is_null($hook = $this->plugsHook('dispatch'))) {
             $this->_response->display($hook);
             goto end;
         }
@@ -227,14 +227,14 @@ final class Dispatcher
         //若启用了session，立即保存并结束session
         if ($this->_session) session_write_close();
 
-        if ($this->_plugs_count and !is_null($hook = $this->plugsHook('display', $value))) {
+        if (!$simple and $this->_plugs_count and !is_null($hook = $this->plugsHook('display', $value))) {
             $this->_response->display($hook);
             goto end;
         }
 
         $this->_response->display($value);
 
-        $this->_plugs_count and $hook = $this->plugsHook('finish', $value);
+        !$simple and $this->_plugs_count and $hook = $this->plugsHook('finish', $value);
 
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
@@ -242,7 +242,7 @@ final class Dispatcher
         if (!is_null($this->_cache) && $this->_response->cache and !_CLI) $this->_cache->Save();
 
         end:
-        $this->_plugs_count and $hook = $this->plugsHook('shutdown');
+        !$simple and $this->_plugs_count and $hook = $this->plugsHook('shutdown');
 
         if (is_null($this->_debug)) return;
 
@@ -320,6 +320,11 @@ final class Dispatcher
         }
     }
 
+    public function min(): void
+    {
+        $this->simple();
+    }
+
     /**
      * 合并设置
      *
@@ -356,7 +361,7 @@ final class Dispatcher
      * @param int $pre
      * @return Debug|false|null
      */
-    final public function debug($data = '_R_DEBUG_', int $pre = 0)
+    public function debug($data = '_R_DEBUG_', int $pre = 0)
     {
         if (_CLI) return false;
         if (is_null($this->_debug)) return null;
@@ -365,18 +370,29 @@ final class Dispatcher
         return $this->_debug;
     }
 
-    final public function error($data, $pre = 1): void
+    public function error($data, $pre = 1): void
     {
         if (_CLI) return;
         if (is_null($this->_debug)) return;
         $this->_debug->error($data, $pre);
     }
 
-    final public function debug_mysql($data, $pre = 1): void
+    public function debug_mysql($data, $pre = 1): void
     {
         if (_CLI) return;
         if (is_null($this->_debug)) return;
         $this->_debug->mysql_log($data, $pre);
+    }
+
+    /**
+     * 设置并返回debug文件名
+     * @param string|null $filename
+     * @return string
+     */
+    final public function debug_file(string $filename = null): string
+    {
+        if (is_null($this->_debug)) return 'null';
+        return $this->_debug->filename($filename);
     }
 
     /**
@@ -455,11 +471,6 @@ final class Dispatcher
         }
 
         return null;
-    }
-
-    public function min(): void
-    {
-        $this->simple();
     }
 
     /**
@@ -563,7 +574,6 @@ final class Dispatcher
 
         return $contReturn;
     }
-
 
     private function err404(string $msg)
     {

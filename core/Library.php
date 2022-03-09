@@ -3,13 +3,15 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\core\db\Redis;
+use esp\dbs\Pool;
 use esp\debug\Debug;
-use esp\error\EspError;
 use esp\helper\library\Error;
 
 /**
  * Model是此类的子类，实际业务中所创建的类可以直接引用此类
+ *
+ * Library主要提供工作类与主控制器之间的通信桥梁作用
+ * 在工作类中可以直接调用$this->_controller
  *
  * Class Library
  * @package esp\core
@@ -21,17 +23,19 @@ abstract class Library
      */
     public $_controller;
 
-    public function __construct(...$param)
+    final public function __construct(...$param)
     {
         $fstController = false;
+        /**
+         * 在有些情况下，需要主动用参数形式传入主控制的或任意一个Library的子实类
+         * 主要是CLI环境下需要这么做
+         */
         if (isset($param[0])) {
             if ($param[0] instanceof Controller) {
                 $this->_controller = &$param[0];
-//                unset($param[0]);
                 $fstController = true;
             } else if ($param[0] instanceof Library) {
                 $this->_controller = &$param[0]->_controller;
-//                unset($param[0]);
                 $fstController = true;
             }
         }
@@ -42,7 +46,7 @@ abstract class Library
                 if ($trace['object'] instanceof Controller) {
                     $this->_controller = &$trace['object'];
                     break;
-                } else if (($trace['object'] instanceof Library) and $trace['object']->_controller) {
+                } else if (($trace['object'] instanceof Library) and isset($trace['object']->_controller)) {
                     $this->_controller = &$trace['object']->_controller;
                     break;
                 }
@@ -56,6 +60,13 @@ abstract class Library
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
             call_user_func_array([$this, '_init'], $fstController ? array_slice($param, 1) : $param);
         }
+
+        if (is_null($this->_controller->_pool) and isset($this->_dbs_label_)) {
+            $conf = $this->database_config ?? $this->_controller->_config->get('database');
+            $this->_controller->_pool = new Pool($conf, $this->_controller);
+        }
+
+
     }
 
     /**
@@ -77,29 +88,17 @@ abstract class Library
     }
 
     /**
-     * 设置并返回debug文件名
-     * @param string|null $filename
-     * @return string
-     */
-    final public function debug_file(string $filename = null): string
-    {
-        if (is_null($this->_controller->_dispatcher->_debug)) return 'null';
-        return $this->_controller->_dispatcher->_debug->filename($filename);
-    }
-
-    /**
      * @param string $lockKey
      * @param callable $callable
      * @param mixed ...$args
      * @return null
      */
-    public function locked(string $lockKey, callable $callable, ...$args)
+    final public function locked(string $lockKey, callable $callable, ...$args)
     {
         return $this->_controller->_dispatcher->locked($lockKey, $callable, ...$args);
     }
 
-
-    final protected function config(...$key)
+    final public function config(...$key)
     {
         return $this->_controller->_config->get(...$key);
     }
@@ -115,13 +114,12 @@ abstract class Library
      */
     final public function publish(string $action, array $value): int
     {
-        $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
-        return $this->_controller->_redis->publish($channel, $action, $value);
+        return $this->_controller->publish($action, $value);
     }
 
     /**
      *
-     * 发送到队列，一般不建议在web环境中用队列，根据生产环境测试，经常发生堵塞
+     * 发送到队列，不建议在web环境中用队列，根据生产环境测试，经常发生堵塞
      *
      * @param string $action
      * @param array $data
@@ -132,8 +130,7 @@ abstract class Library
      */
     final public function queue(string $action, array $data): int
     {
-        $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
-        return $this->_controller->_redis->push($key, $data + ['_action' => $action]);
+        return $this->_controller->queue($action, $data);
     }
 
     /**
@@ -148,7 +145,7 @@ abstract class Library
         return $this;
     }
 
-    public function redirect(string $url)
+    final public function redirect(string $url)
     {
         $this->_controller->redirect($url);
     }
@@ -165,44 +162,5 @@ abstract class Library
         $this->_controller->_dispatcher->ignoreError($file, $line);
         return $this;
     }
-
-    /**
-     * @param int $dbIndex
-     * @param int $traceLevel
-     * @return Redis
-     * @throws EspError
-     */
-    public function Redis(int $dbIndex = 0, int $traceLevel = 0)
-    {
-        $conf = $this->_controller->_config->get('database.redis');
-        $dbConfig = $conf['db'];
-        if (is_array($dbConfig)) $dbConfig = $dbConfig['config'] ?? 1;
-
-        $conf = $conf + ['db' => $dbIndex];
-        if (is_array($conf['db'])) $conf['db'] = $conf['db']['model'] ?? 0;
-
-        if ($conf['db'] === 0 or $conf['db'] === $dbConfig) return $this->_controller->_config->_Redis;
-
-        if (!_CLI and isset($this->_controller->_Redis[$conf['db']])) {
-            return $this->_controller->_Redis[$conf['db']];
-        }
-
-        $this->_controller->_Redis[$conf['db']] = new Redis($conf);
-        $this->_controller->_dispatcher->debug("New Redis({$conf['db']});", $traceLevel + 1);
-        return $this->_controller->_Redis[$conf['db']];
-    }
-
-
-    /**
-     * 创建哈希表
-     *
-     * @param string $table
-     * @return db\ext\RedisHash
-     */
-    public function Hash(string $table)
-    {
-        return $this->Redis()->hash($table);
-    }
-
 
 }
