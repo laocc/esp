@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use Redis;
 use esp\dbs\Pool;
 use esp\debug\Counter;
 use esp\debug\Debug;
-use esp\dbs\redis\Redis;
 use esp\error\Error;
 use esp\error\EspError;
 use esp\face\Adapter;
@@ -37,6 +37,9 @@ abstract class Controller
      * @var $_cookies Cookies
      */
     public $_cookies;
+    /**
+     * @var $_plugs array
+     */
     public $_plugs;
     /**
      * @var $_redis Redis
@@ -214,13 +217,16 @@ abstract class Controller
      * 多服务器环境下建议用公共redis管道中转(比如阿里云的redis)
      *
      * @param string $action
-     * @param array $value
+     * @param array $message
      * @return int
      */
-    final public function publish(string $action, array $value): int
+    final public function publish(string $action, array $message): int
     {
         $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
-        return $this->_redis->publish($channel, $action, $value);
+        $value = [];
+        $value['action'] = $action;
+        $value['message'] = $message;
+        return $this->_redis->publish($channel, serialize($value));
     }
 
     /**
@@ -237,7 +243,7 @@ abstract class Controller
     final public function queue(string $action, array $data): int
     {
         $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
-        return $this->_redis->push($key, $data + ['_action' => $action]);
+        return $this->_redis->rPush($key, $data + ['_action' => $action]);
     }
 
     /**

@@ -106,7 +106,7 @@ final class Dispatcher
             $counter = $this->mergeConf($counter);
             if ($counter['run'] ?? 0) {
                 $counter['_key'] = md5(_ROOT);
-                $this->_counter = new Counter($counter, $cfg->_Redis->redis, $this->_request);
+                $this->_counter = new Counter($counter, $cfg->_Redis, $this->_request);
             }
         }
 
@@ -153,7 +153,7 @@ final class Dispatcher
                         $this->_session = new Session($sseConf);
                         if ($sseConf['redis']['db'] === $cfg->RedisDbIndex
                             and $option['config']['drive'] === 'redis') {
-                            $this->_session->start($cfg->_Redis->redis);
+                            $this->_session->start($cfg->_Redis);
                         } else {
                             $this->_session->start();
                         }

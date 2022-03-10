@@ -9,7 +9,7 @@ use esp\core\db\Sqlite;
 use esp\core\db\Yac;
 use esp\core\ext\Buffer;
 use esp\core\ext\MysqlExt;
-use esp\dbs\library\Paging;
+use esp\helper\library\Paging;
 use esp\error\EspError;
 
 /**

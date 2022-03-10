@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace esp\core;
 
 use DirectoryIterator;
-use esp\dbs\redis\Redis;
 use esp\error\EspError;
+use Redis;
 use function esp\helper\root;
 
 /**
@@ -79,6 +79,23 @@ final class Configure
         return json_decode($html, true);
     }
 
+    private function connectRedis(array $conf)
+    {
+        $this->_Redis = new Redis();
+        if ($conf['host'][0] === '/') {
+            if (!$this->_Redis->connect($conf['host'])) {
+                throw new \Error("Redis服务器【{$conf['host']}】无法连接。", 1, 1);
+            }
+        } else if (!$this->_Redis->connect($conf['host'], intval($conf['port']))) {
+            throw new \Error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1, 1);
+        }
+
+        if (!$this->_Redis->select($conf['db'])) {
+            throw new \Error("Redis选择库【{$conf['db']}】失败。", 1, 1);
+        }
+
+    }
+
     /**
      * @param array $conf
      * @throws EspError
@@ -110,7 +127,7 @@ final class Configure
         $rdsConf = $dbConf['database']['redis'] ?? [];
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
         $this->RedisDbIndex = $rdsConf['db'];
-        $this->_Redis = new Redis($rdsConf);
+        $this->connectRedis($rdsConf);
 
         //没有强制从文件加载
         if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
@@ -252,54 +269,48 @@ final class Configure
         $rdsConf = $this->get('database.redis');
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
         $this->RedisDbIndex = $rdsConf['db'];
-        $this->_Redis = new Redis($rdsConf);
+        $this->connectRedis($rdsConf);
     }
 
     public function flush(int $lev = 0): void
     {
-        $rds = $this->Redis();
-
         if ($lev === 0) {            //清空config本身
-            $rds->set($this->_token . '_CONFIG_', null);
+            $this->_Redis->set($this->_token . '_CONFIG_', null);
 
         } else {
             //清空整个redis表
-            $rand = $rds->get('resourceRand');
-            $rds->flush();
-            $rds->set('resourceRand', $rand);
+            $rand = $this->_Redis->get('resourceRand');
+            $this->_Redis->flushDB();
+            $this->_Redis->set('resourceRand', $rand);
         }
     }
 
     public function all(bool $showAll = false): array
     {
-        $rds = $this->Redis();
-        /**
-         * @var $rds \Redis
-         */
-        $config = $rds->keys('*');
+        $config = $this->_Redis->keys('*');
         $db1Value = [];
         $v = ['NULL', 'STRING', 'SET', 'LIST', 'ZSET', 'HASH'];
         foreach ($config as $key) {
             if ($key === ($this->_token . '_CONFIG_')) {
                 continue;
             }
-            $type = $rds->type($key);
+            $type = $this->_Redis->type($key);
             if ($showAll) {
                 switch ($type) {
                     case 1://STRING
-                        $val = $rds->get($key);
+                        $val = $this->_Redis->get($key);
                         break;
                     case 2://SET
-                        $val = $rds->SINTER($key);
+                        $val = $this->_Redis->SINTER($key);
                         break;
                     case 3://LIST
-                        $val = $rds->LLEN($key);
+                        $val = $this->_Redis->LLEN($key);
                         break;
                     case 4://ZSET
-                        $val = $rds->ZINTERSTORE($key);
+                        $val = $this->_Redis->ZINTERSTORE($key);
                         break;
                     case 5://HASH
-                        $val = $rds->hGetAll($key);
+                        $val = $this->_Redis->hGetAll($key);
                         break;
                     default:
                         $val = null;
@@ -313,13 +324,6 @@ final class Configure
         return $db1Value;
     }
 
-    /**
-     * @return Redis
-     */
-    public function Redis(): Redis
-    {
-        return $this->_Redis;
-    }
 
     /**
      * 将一级键名中带.号的，转换为数组，如将：abc.xyz=123转换为abc[xyz]=123
