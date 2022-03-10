@@ -217,10 +217,10 @@ abstract class Controller
      * 多服务器环境下建议用公共redis管道中转(比如阿里云的redis)
      *
      * @param string $action
-     * @param array $message
+     * @param  $message
      * @return int
      */
-    final public function publish(string $action, array $message): int
+    final public function publish(string $action, $message): int
     {
         if (is_null($this->_redis)) throw new \Error('站点未启用redis');
         $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
