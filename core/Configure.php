@@ -80,21 +80,28 @@ final class Configure
         return json_decode($html, true);
     }
 
-    private function connectRedis(array $conf)
+    private function connectRedis2(array $conf): Redis
     {
-        $this->_Redis = new Redis();
+        $Redis = new Redis();
         if ($conf['host'][0] === '/') {
-            if (!$this->_Redis->connect($conf['host'])) {
+            if (!$Redis->connect($conf['host'])) {
                 throw new Error("Redis服务器【{$conf['host']}】无法连接。", 1, 1);
             }
-        } else if (!$this->_Redis->connect($conf['host'], intval($conf['port']))) {
+        } else if (!$Redis->connect($conf['host'], intval($conf['port']))) {
             throw new Error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1, 1);
         }
 
-        if (!$this->_Redis->select(intval($conf['db']))) {
+        if (!$Redis->select(intval($conf['db']))) {
             throw new Error("Redis选择库【{$conf['db']}】失败。", 1, 1);
         }
 
+        return $Redis;
+    }
+
+    private function connectRedis(array $conf): Redis
+    {
+        $rds = new \esp\dbs\redis\Redis($conf);
+        return $rds->redis;
     }
 
     /**
@@ -128,7 +135,7 @@ final class Configure
         $rdsConf = $dbConf['database']['redis'] ?? [];
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
         $this->RedisDbIndex = $rdsConf['db'];
-        $this->connectRedis($rdsConf);
+        $this->_Redis = $this->connectRedis($rdsConf);
 
         //没有强制从文件加载
         if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
@@ -270,7 +277,7 @@ final class Configure
         $rdsConf = $this->get('database.redis');
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
         $this->RedisDbIndex = $rdsConf['db'];
-        $this->connectRedis($rdsConf);
+        $this->_Redis = $this->connectRedis($rdsConf);
     }
 
     public function flush(int $lev = 0): void
