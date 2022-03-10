@@ -158,7 +158,7 @@ final class Redis implements KeyValue
         return $this->redis->hIncrBy($table, $hashKey, $value);
     }
 
-    public function hGetAlls($table)
+    public function hGetAll($table)
     {
         return $this->redis->hGetAll($table);
     }

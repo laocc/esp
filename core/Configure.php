@@ -91,7 +91,7 @@ final class Configure
             throw new Error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1, 1);
         }
 
-        if (!$this->_Redis->select($conf['db'])) {
+        if (!$this->_Redis->select(intval($conf['db']))) {
             throw new Error("Redis选择库【{$conf['db']}】失败。", 1, 1);
         }
 
