@@ -291,4 +291,28 @@ final class Router
 
         return (in_array($method, $modes));
     }
+
+
+
+    /**
+     * echo
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return print_r($this, true);
+    }
+
+    /**
+     * var_dump
+     * @return array
+     */
+    public function __debugInfo()
+    {
+        return [__CLASS__];
+    }
+
+
+
 }

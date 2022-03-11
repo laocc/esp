@@ -515,4 +515,36 @@ final class Configure
     {
         return $this->_CONFIG_;
     }
+
+
+    /**
+     * var_export
+     *
+     * @return string
+     */
+    public static function __set_state()
+    {
+        return __CLASS__;
+    }
+
+    /**
+     * echo
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return print_r($this, true);
+    }
+
+    /**
+     * var_dump
+     * @return array
+     */
+    public function __debugInfo()
+    {
+        return [__CLASS__, $this->_CONFIG_['_lastLoad'] ?? '', array_keys($this->_CONFIG_)];
+    }
+
+
 }
