@@ -143,7 +143,7 @@ final class Configure
             if (!empty($this->_CONFIG_)) goto end;
         }
 
-        if (!_DEBUG and !_CLI and !$isMaster and defined(_RPC)) {
+        if (!_DEBUG and !_CLI and !$isMaster and defined('_RPC')) {
 
             $tryCount = 0;
             tryReadRedis:
