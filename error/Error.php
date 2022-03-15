@@ -282,13 +282,16 @@ final class Error
 
         if (!is_null($this->debug)) {
             //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
-            $this->debug->relay($info['Error']);
+            $this->debug->relay($info['Error']['message']);
             $sl = $this->debug->save_logs('by Error Saved');
             $info['debugLogSaveRest'] = $sl;
             $jsonTxt = json_encode($info, 256 | 64 | 128);
             if ($jsonTxt === false) {
-                unset($info['Error']['trace']);
+                unset($info['Error']['trace'], $info['prev'], $info['Post']);
                 $jsonTxt = json_encode($info, 256 | 64 | 128);
+            }
+            if (!is_string($jsonTxt)) {
+                $jsonTxt = $info['Error']['message'] ?? '无法序列化的异常';
             }
             if ($this->debug->save_debug_file($filename, $jsonTxt)) return;
         }
