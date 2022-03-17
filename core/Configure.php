@@ -80,8 +80,13 @@ final class Configure
         return json_decode($html, true);
     }
 
-    private function connectRedis2(array $conf): Redis
+    private function connectRedis(array $conf): Redis
     {
+        if ($conf['use_dbs'] ?? 1) {
+            $rds = new \esp\dbs\redis\Redis($conf);
+            return $rds->redis;
+        }
+
         $Redis = new Redis();
         if ($conf['host'][0] === '/') {
             if (!$Redis->connect($conf['host'])) {
@@ -90,18 +95,14 @@ final class Configure
         } else if (!$Redis->connect($conf['host'], intval($conf['port']))) {
             throw new Error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1, 1);
         }
-
+        if (isset($conf['timeout'])) {
+            $Redis->setOption(\Redis::OPT_READ_TIMEOUT, strval($conf['timeout']));
+        }
         if (!$Redis->select(intval($conf['db']))) {
             throw new Error("Redis选择库【{$conf['db']}】失败。", 1, 1);
         }
 
         return $Redis;
-    }
-
-    private function connectRedis(array $conf): Redis
-    {
-        $rds = new \esp\dbs\redis\Redis($conf);
-        return $rds->redis;
     }
 
     /**
