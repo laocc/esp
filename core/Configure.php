@@ -82,27 +82,36 @@ final class Configure
 
     private function connectRedis(array $conf): Redis
     {
-        if ($conf['use_dbs'] ?? 1) {
-            $rds = new \esp\dbs\redis\Redis($conf);
-            return $rds->redis;
-        }
-
-        $Redis = new Redis();
-        if ($conf['host'][0] === '/') {
-            if (!$Redis->connect($conf['host'])) {
-                throw new Error("Redis服务器【{$conf['host']}】无法连接。", 1, 1);
+        $conf += ['host' => '/tmp/redis.sock', 'port' => 0, 'db' => 1];
+        $redis = new \Redis();
+        $tryCont = 0;
+        try {
+            tryCont:
+            if ($conf['host'][0] === '/') {
+                if (!$redis->connect($conf['host'])) {
+                    throw new Error("Redis服务器【{$conf['host']}】无法连接。", 1, 1);
+                }
+            } else if (!$redis->connect($conf['host'], intval($conf['port']))) {
+                throw new Error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1, 1);
             }
-        } else if (!$Redis->connect($conf['host'], intval($conf['port']))) {
-            throw new Error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1, 1);
+        } catch (Error $e) {
+            if ($tryCont++ > 2) {
+                $err = base64_encode(print_r($conf, true));
+                throw new Error($e->getMessage() . '/' . $err, $e->getCode(), 1, 1);
+            }
+            usleep(1000);
+            goto tryCont;
         }
         if (isset($conf['timeout'])) {
-            $Redis->setOption(\Redis::OPT_READ_TIMEOUT, strval($conf['timeout']));
+            $redis->setOption(\Redis::OPT_READ_TIMEOUT, strval($conf['timeout']));
         }
-        if (!$Redis->select(intval($conf['db']))) {
-            throw new Error("Redis选择库【{$conf['db']}】失败。", 1, 1);
+        if (!isset($conf['nophp'])) {
+            $redis->setOption(\Redis::OPT_SERIALIZER, strval(\Redis::SERIALIZER_PHP));//序列化方式
         }
-
-        return $Redis;
+        if (!$redis->select($this->RedisDbIndex)) {
+            throw new Error("Redis选择库【{$this->RedisDbIndex}】失败。", 1, 1);
+        }
+        return $redis;
     }
 
     /**
@@ -135,7 +144,7 @@ final class Configure
         }
         $rdsConf = $dbConf['database']['redis'] ?? [];
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
-        $this->RedisDbIndex = $rdsConf['db'];
+        $this->RedisDbIndex = intval($rdsConf['db']);
         $this->_Redis = $this->connectRedis($rdsConf);
 
         //没有强制从文件加载
@@ -277,7 +286,7 @@ final class Configure
     {
         $rdsConf = $this->get('database.redis');
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
-        $this->RedisDbIndex = $rdsConf['db'];
+        $this->RedisDbIndex = intval($rdsConf['db']);
         $this->_Redis = $this->connectRedis($rdsConf);
     }
 
