@@ -6,7 +6,6 @@ namespace esp\core;
 use Error;
 use Redis;
 use DirectoryIterator;
-use esp\error\EspError;
 use function esp\helper\root;
 
 /**
@@ -116,7 +115,6 @@ final class Configure
 
     /**
      * @param array $conf
-     * @throws EspError
      */
     private function load_redis(array $conf)
     {
