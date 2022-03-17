@@ -15,6 +15,7 @@ use function esp\helper\root;
 final class Configure
 {
     public $RedisDbIndex = 0;
+    public $driver;
 
     private $_CONFIG_;
 
@@ -35,7 +36,7 @@ final class Configure
         $this->_token = md5(__FILE__);
         $conf += ['path' => '/common/config', 'type' => 'redis'];
         $conf['path'] = root($conf['path']);
-
+        $this->driver = $conf['type'];
         if (!is_dir($conf['path'])) return;
 
         $fun = "load_{$conf['type']}";

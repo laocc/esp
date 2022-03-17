@@ -136,7 +136,7 @@ final class Dispatcher
                     $sseConf = $this->mergeConf($session, ['run' => false, 'domain' => $cokConf['domain']]);
 
                     if ($sseConf['run'] ?? false) {
-                        if (!isset($sseConf['driver'])) $sseConf['driver'] = $option['config']['driver'];
+                        if (!isset($sseConf['driver'])) $sseConf['driver'] = $cfg->driver;
 
                         if ($sseConf['driver'] === 'redis') {
                             $rds = $cfg->get('database.redis');
@@ -151,8 +151,7 @@ final class Dispatcher
                         }
 
                         $this->_session = new Session($sseConf);
-                        if ($sseConf['redis']['db'] === $cfg->RedisDbIndex
-                            and $option['config']['drive'] === 'redis') {
+                        if (($sseConf['redis']['db'] ?? -1) === $cfg->RedisDbIndex and $cfg->driver === 'redis') {
                             $this->_session->start($cfg->_Redis);
                         } else {
                             $this->_session->start();
@@ -677,7 +676,6 @@ final class Dispatcher
     {
         return [__CLASS__];
     }
-
 
 
 }
