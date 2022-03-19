@@ -223,10 +223,10 @@ abstract class Controller
     final public function publish(string $action, $message): int
     {
         if (is_null($this->_redis)) throw new \Error('站点未启用redis');
-        $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
         $value = [];
         $value['action'] = $action;
         $value['message'] = $message;
+        $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
         return $this->_redis->publish($channel, serialize($value));
     }
 
@@ -234,14 +234,16 @@ abstract class Controller
     /**
      * 侦听redis管道，此方法一般只用在CLI环境下
      *
-     * @param array $channel
      * @param callable $callable
      * @return mixed|null
+     *
+     * 回调参数 $callable($redis, $channel, $msg)
      */
-    final public function subscribe(array $channel, callable $callable)
+    final public function subscribe(callable $callable)
     {
         if (is_null($this->_redis)) throw new \Error('站点未启用redis');
-        return $this->_redis->subscribe($channel, $callable);
+        $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
+        return $this->_redis->subscribe([$channel], $callable);
     }
 
     /**
