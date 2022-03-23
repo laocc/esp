@@ -360,7 +360,7 @@ final class Dispatcher
      * @param int $pre
      * @return Debug|false|null
      */
-    public function debug($data = '_R_DEBUG_', int $pre = 0)
+    public function debug($data = '_R_DEBUG_', int $pre = 1)
     {
         if (_CLI) return false;
         if (is_null($this->_debug)) return null;
@@ -373,7 +373,7 @@ final class Dispatcher
     {
         if (_CLI) return;
         if (is_null($this->_debug)) return;
-        $this->_debug->error($data, $pre);
+        $this->_debug->error($data, $pre + 1);
     }
 
     public function debug_mysql($data, $pre = 1): void

@@ -317,25 +317,27 @@ abstract class Controller
      * @param int $lev
      * @return Debug|false|null
      */
-    final public function debug($data = '_R_DEBUG_', int $lev = 0)
+    final public function debug($data = '_R_DEBUG_', int $lev = 1)
     {
         return $this->_dispatcher->debug($data, $lev + 1);
     }
 
     /**
-     * @param $args
+     * @param $data
+     * @param int $lev
      */
-    final public function error(...$args): void
+    final public function error($data, int $lev = 1): void
     {
-        $this->_dispatcher->error(...$args);
+        $this->_dispatcher->error($data, $lev + 1);
     }
 
     /**
-     * @param $args
+     * @param $data
+     * @param int $lev
      */
-    final public function debug_mysql(...$args): void
+    final public function debug_mysql($data, int $lev = 1): void
     {
-        $this->_dispatcher->debug_mysql(...$args);
+        $this->_dispatcher->debug_mysql($data, $lev + 1);
     }
 
     /**
