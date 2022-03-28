@@ -170,7 +170,7 @@ final class Dispatcher
             }
         }
 
-        if (isset($option['after'])) $option['after']($option);
+        if (isset($option['after']) and is_callable($option['after'])) $option['after']($option);
 
         unset($GLOBALS['option']);
         if (headers_sent($file, $line)) {
@@ -388,7 +388,7 @@ final class Dispatcher
      * @param string|null $filename
      * @return string
      */
-    final public function debug_file(string $filename = null): string
+    public function debug_file(string $filename = null): string
     {
         if (is_null($this->_debug)) return 'null';
         return $this->_debug->filename($filename);
@@ -599,6 +599,13 @@ final class Dispatcher
 
         $this->_skipError[] = "{$file}.{$line}";
         return true;
+    }
+
+    public function shutdown(callable $fun, ...$params): ?bool
+    {
+        return register_shutdown_function(function (callable $fun, ...$params) {
+            $fun(...$params);
+        }, $fun, ...$params);
     }
 
 

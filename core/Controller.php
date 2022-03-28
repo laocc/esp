@@ -64,9 +64,16 @@ abstract class Controller
     public $_debug;
 
     /**
+     * 用于esp/dbs里的Pool池管理，此对象有library中会被创建为Pool对象
      * @var Pool
      */
-    public $_pool;//用于esp/dbs里的Pool池管理
+    public $_pool;
+
+    /**
+     * 空数组，用于程序运行过程中保存全局统一、唯一的变量
+     * @var array
+     */
+    public $tempData = [];
 
     public function __construct(Dispatcher $dispatcher)
     {
@@ -662,6 +669,7 @@ abstract class Controller
     final protected function shutdown(callable $fun, ...$params): Controller
     {
         register_shutdown_function($fun, ...$params);
+//        $this->_dispatcher->shutdown($fun, ...$params);
         return $this;
     }
 
