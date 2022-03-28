@@ -71,6 +71,8 @@ abstract class Controller
 
     /**
      * 空数组，用于程序运行过程中保存全局统一、唯一的变量
+     * 如果最后要对这个中转变量进行处理，建议在控制器的_close中进行，因为这是相对每个进程唯一的收关动作
+     * Library的析构函数并不具有唯一性。
      * @var array
      */
     public $tempData = [];
