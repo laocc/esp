@@ -664,15 +664,13 @@ abstract class Controller
     /**
      * 注册关门后操作
      * 先注册的先执行，后注册的后执和，框架最后还有debug保存
-     * @param callable $fun
-     * @param mixed ...$params
-     * @return Controller
+     * @param callable $callable
+     * @param ...$params
+     * @return bool|null
      */
-    final protected function shutdown(callable $fun, ...$params): Controller
+    final protected function shutdown(callable $callable, ...$params): ?bool
     {
-        register_shutdown_function($fun, ...$params);
-//        $this->_dispatcher->shutdown($fun, ...$params);
-        return $this;
+        return $this->_dispatcher->shutdown($callable, ...$params);
     }
 
 

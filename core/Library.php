@@ -134,16 +134,13 @@ abstract class Library
     }
 
     /**
-     * 注册关门后操作
-     * @param callable $fun
-     * @param mixed ...$params
-     * @return $this
+     * @param callable $callable
+     * @param ...$params
+     * @return bool|null
      */
-    final public function shutdown(callable $fun, ...$params): Library
+    final public function shutdown(callable $callable, ...$params): ?bool
     {
-//        $this->_controller->_dispatcher->shutdown($fun, ...$params);
-        register_shutdown_function($fun, ...$params);
-        return $this;
+        return $this->_controller->_dispatcher->shutdown($callable, ...$params);
     }
 
     final public function redirect(string $url)

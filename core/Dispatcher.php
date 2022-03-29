@@ -601,11 +601,28 @@ final class Dispatcher
         return true;
     }
 
-    public function shutdown(callable $fun, ...$params): ?bool
+    public function shutdown(callable $callable, ...$params): ?bool
     {
-        return register_shutdown_function(function (callable $fun, ...$params) {
-            $fun(...$params);
-        }, $fun, ...$params);
+        return register_shutdown_function(function (callable $callable, ...$params) {
+            try {
+
+                $callable(...$params);
+
+            } catch (\Exception $exception) {
+                $err = [];
+                $err['file'] = $exception->getFile();
+                $err['line'] = $exception->getLine();
+                $err['message'] = $exception->getMessage();
+                $this->error($err);
+
+            } catch (\Error $error) {
+                $err = [];
+                $err['file'] = $error->getFile();
+                $err['line'] = $error->getLine();
+                $err['message'] = $error->getMessage();
+                $this->error($err);
+            }
+        }, $callable, ...$params);
     }
 
 
@@ -641,8 +658,20 @@ final class Dispatcher
 
             } catch (\Exception $exception) {
                 $rest = 'locked: ' . $exception->getMessage();
+                $err = [];
+                $err['file'] = $exception->getFile();
+                $err['line'] = $exception->getLine();
+                $err['message'] = $exception->getMessage();
+                $this->error($err);
+
             } catch (\Error $error) {
                 $rest = 'locked: ' . $error->getMessage();
+                $err = [];
+                $err['file'] = $error->getFile();
+                $err['line'] = $error->getLine();
+                $err['message'] = $error->getMessage();
+                $this->error($err);
+
             }
             flock($fn, LOCK_UN);//解锁
         } else {
