@@ -369,14 +369,14 @@ final class Dispatcher
         return $this->_debug;
     }
 
-    public function error($data, $pre = 1): void
+    public function error($data, int $pre = 1): void
     {
         if (_CLI) return;
         if (is_null($this->_debug)) return;
         $this->_debug->error($data, $pre + 1);
     }
 
-    public function debug_mysql($data, $pre = 1): void
+    public function debug_mysql($data, int $pre = 1): void
     {
         if (_CLI) return;
         if (is_null($this->_debug)) return;
@@ -574,6 +574,10 @@ final class Dispatcher
         return $contReturn;
     }
 
+    /**
+     * @param string $msg
+     * @return array|mixed|string
+     */
     private function err404(string $msg)
     {
         if (!is_null($this->_debug)) $this->_debug->folder('error');
@@ -587,6 +591,8 @@ final class Dispatcher
     private $_skipError = [];
 
     /**
+     * 注册调用位置的下一行屏蔽错误
+     *
      * @param string $file
      * @param int $line
      * @param bool $isCheck
@@ -601,9 +607,14 @@ final class Dispatcher
         return true;
     }
 
-    public function shutdown(callable $callable, ...$params): ?bool
+    /**
+     * @param callable $callable
+     * @param ...$params
+     * @return bool
+     */
+    public function shutdown(callable $callable, ...$params): bool
     {
-        return register_shutdown_function(function (callable $callable, ...$params) {
+        return (boolean)register_shutdown_function(function (callable $callable, ...$params) {
             try {
 
                 $callable(...$params);

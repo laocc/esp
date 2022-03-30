@@ -227,32 +227,32 @@ abstract class Controller
      *
      * @param string $action
      * @param  $message
-     * @return int
+     * @return bool
      */
-    final public function publish(string $action, $message): int
+    final public function publish(string $action, $message): bool
     {
         if (is_null($this->_redis)) throw new \Error('站点未启用redis');
         $value = [];
         $value['action'] = $action;
         $value['message'] = $message;
         $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
-        return $this->_redis->publish($channel, serialize($value));
+        return (boolean)$this->_redis->publish($channel, serialize($value));
     }
 
 
     /**
      * 侦听redis管道，此方法一般只用在CLI环境下
      *
-     * @param callable $callable
-     * @return mixed|null
+     * @param callable $callable 回调有三个参数：$redis, $channel, $msg
+     * @return void
      *
      * 回调参数 $callable($redis, $channel, $msg)
      */
-    final public function subscribe(callable $callable)
+    final public function subscribe(callable $callable): void
     {
         if (is_null($this->_redis)) throw new \Error('站点未启用redis');
         $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
-        return $this->_redis->subscribe([$channel], $callable);
+        $this->_redis->subscribe([$channel], $callable);
     }
 
     /**
@@ -261,16 +261,16 @@ abstract class Controller
      *
      * @param string $action
      * @param array $data
-     * @return int
+     * @return bool
      *
      * 用下面方法读取
      * while ($data = $this->_redis->lPop($queKey)){...}
      */
-    final public function queue(string $action, array $data): int
+    final public function queue(string $action, array $data): bool
     {
         if (is_null($this->_redis)) throw new \Error('站点未启用redis');
         $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
-        return $this->_redis->rPush($key, $data + ['_action' => $action]);
+        return (boolean)$this->_redis->rPush($key, $data + ['_action' => $action]);
     }
 
     /**
@@ -484,6 +484,12 @@ abstract class Controller
         return $this;
     }
 
+    /**
+     * @param string $mdValue
+     * @param bool $addNav
+     * @param bool $addBoth
+     * @return string
+     */
     final protected function markdown(string $mdValue, bool $addNav = false, bool $addBoth = true): string
     {
         if (stripos($mdValue, _ROOT) === 0) {
@@ -497,7 +503,7 @@ abstract class Controller
      * @param string $mdCss
      * @return $this
      */
-    final protected function md($mdFile = null, string $mdCss = '/css/markdown.css?1')
+    final protected function md($mdFile = null, string $mdCss = '/css/markdown.css?1'): Controller
     {
         if (is_array($mdFile)) {
             $this->_response->setMarkDown($mdFile);
@@ -643,7 +649,6 @@ abstract class Controller
         return $this;
     }
 
-
     /**
      * 设置网页description
      * @param string $value
@@ -666,9 +671,9 @@ abstract class Controller
      * 先注册的先执行，后注册的后执和，框架最后还有debug保存
      * @param callable $callable
      * @param ...$params
-     * @return bool|null
+     * @return bool
      */
-    final protected function shutdown(callable $callable, ...$params): ?bool
+    final protected function shutdown(callable $callable, ...$params): bool
     {
         return $this->_dispatcher->shutdown($callable, ...$params);
     }
@@ -733,41 +738,13 @@ abstract class Controller
      * @param string $key
      * @param bool $number
      * @return string
-     * @throws EspError
      */
     public function cid(string $key = '_SSI', bool $number = false): string
     {
         if (is_null($this->_cookies)) {
-            throw new EspError("当前站点未启用Cookies，无法获取CID", 1);
+            throw new \Error("当前站点未启用Cookies，无法获取CID", 1);
         }
-
-        $key = strtolower($key);
-        $unique = $_COOKIE[$key] ?? null;
-        if (!$unique) {
-            $unique = $number ? mt_rand() : str_rand(20);
-            if (headers_sent($file, $line)) {
-                $err = ['message' => "Header be Send:{$file}[{$line}]", 'code' => 500, 'file' => $file, 'line' => $line];
-                throw new EspError($err);
-            }
-            $time = time() + 86400 * 365;
-            $dom = $this->_cookies->domain;
-
-            if (version_compare(PHP_VERSION, '7.3', '>=')) {
-                $option = [];
-                $option['domain'] = $dom;
-                $option['expires'] = $time;
-                $option['path'] = '/';
-                $option['secure'] = false;//仅https
-                $option['httponly'] = true;
-                $option['samesite'] = 'Lax';
-                setcookie($key, $unique, $option);
-                _HTTPS && setcookie($key, $unique, ['secure' => true] + $option);
-            } else {
-                setcookie($key, $unique, $time, '/', $dom, false, true);
-                _HTTPS && setcookie($key, $unique, $time, '/', $dom, true, true);
-            }
-        }
-        return $unique;
+        return $this->_cookies->cid($key, $number);
     }
 
     /**

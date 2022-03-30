@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use function esp\helper\str_rand;
+
 final class Cookies
 {
     public $domain;
@@ -23,11 +25,14 @@ final class Cookies
      * @param string $key
      * @param $value
      * @param null $ttl
-     * @return bool|null
+     * @return bool
      */
-    public function set(string $key, $value, $ttl = null)
+    public function set(string $key, $value, $ttl = null): bool
     {
-        if (_CLI) return null;
+        if (_CLI) return false;
+
+        $this->checkHeader();
+
         if (is_null($ttl)) $ttl = time() - 1;
         else if (is_string($ttl) and preg_match('/^(\d+)\s?([ymDhw])$/i', trim($ttl), $mat)) {
             $s = ['y' => 'year', 'm' => 'month', 'w' => 'week', 'd' => 'day', 'h' => 'hour'][strtolower($mat[2])] ?? 'day';
@@ -43,14 +48,21 @@ final class Cookies
             $option['secure'] = _HTTPS;//仅https
             $option['httponly'] = true;
             $option['samesite'] = 'Lax';
-            return setcookie(strtolower($key), strval($value), $option);
+            return (boolean)setcookie(strtolower($key), strval($value), $option);
         }
-        return setcookie(strtolower($key), strval($value), intval($ttl), '/', $this->domain, _HTTPS, true);
+        return (boolean)setcookie(strtolower($key), strval($value), intval($ttl), '/', $this->domain, _HTTPS, true);
     }
 
-    public function del($key)
+    /**
+     * 删除某一项
+     * @param $key
+     * @return bool
+     */
+    public function del($key): bool
     {
-        if (_CLI) return null;
+        if (_CLI) return false;
+        $this->checkHeader();
+
         if (version_compare(PHP_VERSION, '7.3', '>')) {
             $option = [];
             $option['domain'] = $this->domain;
@@ -59,14 +71,21 @@ final class Cookies
             $option['secure'] = _HTTPS;//仅https
             $option['httponly'] = true;
             $option['samesite'] = 'Lax';
-            return setcookie(strtolower($key), null, $option);
+            return (boolean)setcookie(strtolower($key), null, $option);
         }
-        return setcookie(strtolower($key), null, -1, '/', $this->domain, _HTTPS, true);
+        return (boolean)setcookie(strtolower($key), null, -1, '/', $this->domain, _HTTPS, true);
     }
 
-    public function disable()
+    /**
+     * 删除当前所有cookies
+     *
+     * @return bool
+     */
+    public function disable(): bool
     {
         if (empty($_COOKIE)) return false;
+        $this->checkHeader();
+
         if (version_compare(PHP_VERSION, '7.3', '>')) {
             $option = [];
             $option['domain'] = $this->domain;
@@ -82,6 +101,31 @@ final class Cookies
         return empty($_COOKIE);
     }
 
+    /**
+     * 创建客户端唯一ID
+     *
+     * @param string $key
+     * @param bool $number
+     * @return string
+     */
+    public function cid(string $key = '_SSI', bool $number = false): string
+    {
+        $key = strtolower($key);
+        $unique = $_COOKIE[$key] ?? null;
+        if (!$unique) {
+            $unique = $number ? mt_rand() : str_rand(20);
+            $this->set($key, $unique, '100y');
+        }
+        return (string)$unique;
+    }
+
+    private function checkHeader()
+    {
+        if (headers_sent($file, $line)) {
+            $err = ['message' => "Header be Send:{$file}[{$line}]", 'code' => 500, 'file' => $file, 'line' => $line];
+            throw new \Error($err);
+        }
+    }
 
     /**
      * echo
