@@ -110,9 +110,9 @@ abstract class Library
      *
      * @param string $action
      * @param array $value
-     * @return int
+     * @return bool
      */
-    final public function publish(string $action, array $value): int
+    final public function publish(string $action, array $value): bool
     {
         return $this->_controller->publish($action, $value);
     }
@@ -123,12 +123,12 @@ abstract class Library
      *
      * @param string $action
      * @param array $data
-     * @return int
+     * @return bool
      *
      * 用下面方法读取
      * while ($data = $this->_redis->lPop($queKey)){...}
      */
-    final public function queue(string $action, array $data): int
+    final public function queue(string $action, array $data): bool
     {
         return $this->_controller->queue($action, $data);
     }
