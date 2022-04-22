@@ -387,9 +387,10 @@ abstract class Controller
         exit;
     }
 
-    final protected function exit(string $text = '')
+    final protected function exit($text = null)
     {
-        echo $text;
+        if (is_array($text)) $text = json_encode($text, 256);
+        echo strval($text);
         fastcgi_finish_request();
         if (!is_null($this->_debug)) {
             $this->_debug->relay(['控制器主动调用exit()结束客户端', $text], 1);
