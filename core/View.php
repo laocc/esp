@@ -227,6 +227,7 @@ final class View implements Adapter
         if (!empty($this->_path['file'])) {
 
             if ($this->_path['file'][0] === '/') {
+                if (is_readable($this->_path['file'])) return $this->_path['file'];
                 if (is_readable(_ROOT . $this->_path['file'])) return _ROOT . $this->_path['file'];
                 if (is_readable($lyFile = (_ROOT . '/application/' . _VIRTUAL . '/views' . $this->_path['file']))) {
                     $this->_path['file'] = '/application/' . _VIRTUAL . '/views' . $this->_path['file'];
