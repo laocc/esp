@@ -30,16 +30,17 @@ final class Request
     private $allow = [];//仅允许的控制器
     private $disallow = [];//禁止的控制器
     private $_ajax;
+    private $_ua;
 
     public function __construct(array $config)
     {
         $this->method = strtoupper(getenv('REQUEST_METHOD') ?: '');
         $this->_ajax = !_CLI && (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
+        $this->_ua = getenv('HTTP_USER_AGENT') ?: '';
 
         if ($this->method === 'GET' and $this->_ajax) $this->method = 'AJAX';
         else if (_CLI) $this->method = 'CLI';
 
-        if (!is_array($config) or empty($config)) $config = [];
         $config += [
             'directory' => '/application',
             'router' => '/common/routes',
@@ -117,7 +118,16 @@ final class Request
      */
     public function getControllerKey(): string
     {
-        return $this->virtual . $this->directory . $this->module . $this->controller . $this->action . json_encode($this->params);
+        return sha1($this->virtual . $this->directory . $this->module . $this->controller . $this->action . json_encode($this->params));
+    }
+
+    /**
+     * md5(IP+UA+DOMAIN)
+     * @return string
+     */
+    public function key(): string
+    {
+        return md5($this->ip() . $this->_ua . _DOMAIN);
     }
 
     /**
@@ -238,7 +248,7 @@ final class Request
 
     public function ua(): string
     {
-        return getenv('HTTP_USER_AGENT') ?: '';
+        return $this->_ua;
     }
 
 
@@ -251,7 +261,7 @@ final class Request
      */
     public function agent(string $agent = null): array
     {
-        $u_agent = $agent ?: ($_SERVER['HTTP_USER_AGENT'] ?? '');
+        $u_agent = $agent ?: $this->_ua;
         if (!$u_agent) return ['agent' => '', 'browser' => '', 'version' => '', 'os' => ''];
 
         //操作系统
@@ -266,6 +276,7 @@ final class Request
         } else {
             $os = 'unknown';
         }
+
 
         //浏览器
         switch (true) {
@@ -320,15 +331,6 @@ final class Request
     }
 
     /**
-     * md5(IP+UA+DOMAIN)
-     * @return string
-     */
-    public function key(): string
-    {
-        return md5($this->ip() . getenv('HTTP_USER_AGENT') . _DOMAIN);
-    }
-
-    /**
      * 客户端IP
      * @return string
      */
@@ -352,7 +354,7 @@ final class Request
      */
     public function is_wap(string $browser = null): bool
     {
-        $browser = $browser ?: ($_SERVER['HTTP_USER_AGENT'] ?? '');
+        $browser = $browser ?: $this->_ua;
         if (empty($browser)) return true;
 
         $uaKey = ['MicroMessenger', 'android', 'AlipayClient', 'mobile', 'iphone', 'ipad', 'ipod', 'opera mini', 'windows ce', 'windows mobile', 'symbianos', 'ucweb', 'netfront'];
@@ -371,7 +373,7 @@ final class Request
 
     public function is_ios(string $browser = null): bool
     {
-        $browser = $browser ?: ($_SERVER['HTTP_USER_AGENT'] ?? '');
+        $browser = $browser ?: $this->_ua;
         if (empty($browser)) return true;
 
         $uaKey = ['iphone', 'ipad', 'ipod', 'ios', 'macintosh'];
@@ -380,9 +382,14 @@ final class Request
         return false;
     }
 
+    public function is_ie(): bool
+    {
+        return (bool)preg_match('/MSIE|Trident/i', $this->_ua);
+    }
+
     public function is_android(): bool
     {
-        return stripos(($_SERVER['HTTP_USER_AGENT'] ?? ''), 'android') > 0;
+        return stripos($this->_ua, 'android') > 0;
     }
 
     /**
@@ -391,7 +398,7 @@ final class Request
      */
     public function is_alipay(): bool
     {
-        return stripos(($_SERVER['HTTP_USER_AGENT'] ?? ''), 'AlipayClient') > 0;
+        return stripos($this->_ua, 'AlipayClient') > 0;
     }
 
     /**
@@ -400,7 +407,7 @@ final class Request
      */
     public function is_weChatTools(): bool
     {
-        return stripos(($_SERVER['HTTP_USER_AGENT'] ?? ''), 'wechatdevtools') > 0;
+        return stripos($this->_ua, 'wechatdevtools') > 0;
     }
 
     /**
@@ -409,7 +416,7 @@ final class Request
      */
     public function is_wechat(): bool
     {
-        return stripos(($_SERVER['HTTP_USER_AGENT'] ?? ''), 'MicroMessenger') > 0;
+        return stripos($this->_ua, 'MicroMessenger') > 0;
     }
 
 
@@ -419,7 +426,7 @@ final class Request
      */
     public function is_robot(): bool
     {
-        $v = preg_match_all('/([A-Z][a-zA-Z]{4,15}\/\d+\.+\d+)+/', $_SERVER['HTTP_USER_AGENT'] ?? '', $mac);
+        $v = preg_match_all('/([A-Z][a-zA-Z]{4,15}\/\d+\.+\d+)+/', $this->_ua, $mac);
         if (!$v or !isset($mac[1]) or count($mac[1]) < 3) return true;
         if ($this->is_spider()) return true;
 
@@ -436,13 +443,13 @@ final class Request
      */
     public function is_spider(): bool
     {
-        if (isset($_SERVER['HTTP_USER_AGENT'])) {
-            $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
-            $keys = ['bot', 'slurp', 'spider', 'crawl', 'curl', 'mediapartners-google', 'fast-webcrawler', 'altavista', 'ia_archiver'];
-            foreach ($keys as $key) {
-                if (!!strripos($agent, $key)) return true;
-            }
+        if (empty($this->_ua)) return true;
+
+        $keys = ['bot', 'slurp', 'spider', 'crawl', 'curl', 'mediapartners-google', 'fast-webcrawler', 'altavista', 'ia_archiver'];
+        foreach ($keys as $key) {
+            if (strripos($this->_ua, $key)) return true;
         }
+
         return false;
     }
 
