@@ -250,12 +250,15 @@ final class Router
             }
         } else {
             if (!isset($route['module'])) $route['module'] = '';
+            $maxSlice = 0;
             foreach (['module', 'controller', 'action'] as $key) {
-                ${$key} = $route[$key] ?? null;
+                ${$key} = $route[$key] ?? 'index';
                 if (is_numeric(${$key})) {
+                    $maxSlice = max(intval(${$key}), $maxSlice);
                     ${$key} = $matcher[${$key}] ?? 'index';
                 }
             }
+            $param = array_slice($matcher, $maxSlice + 1);
         }
 
         auto:
