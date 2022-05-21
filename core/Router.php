@@ -31,7 +31,7 @@ final class Router
             $cache = false;
         } else {
             if (isset($_GET['_config_load'])) $cache = false;
-            elseif (defined('_CONFIG_LOAD')) $cache = _CONFIG_LOAD;
+            elseif (defined('_CONFIG_LOAD')) $cache = !_CONFIG_LOAD;
         }
 
         $modRoute = null;
