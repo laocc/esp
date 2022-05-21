@@ -88,6 +88,9 @@ final class Configure
         try {
             tryCont:
             if ($conf['host'][0] === '/') {
+                if (!file_exists($conf['host'])) {
+                    throw new Error("Redis服务器【{$conf['host']}】通道文件不存在，请检查redis.conf中设置。", 1, 1);
+                }
                 if (!$redis->connect($conf['host'])) {
                     throw new Error("Redis服务器【{$conf['host']}】无法连接。", 1, 1);
                 }

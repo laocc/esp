@@ -94,13 +94,15 @@ final class Router
 
             if (isset($route['route']['virtual'])) $request->virtual = $route['route']['virtual'];
             else if (isset($route['virtual'])) $request->virtual = $route['virtual'];
+            if (is_numeric($request->virtual) and isset($matcher[$request->virtual])) {
+                $request->virtual = $matcher[$request->virtual];
+            }
 
             if (isset($route['route']['directory'])) $request->directory = root($route['route']['directory']);
             else if (isset($route['directory'])) $request->directory = root($route['directory']);
 
             //分别获取模块、控制器、动作的实际值
             $routeValue = $this->fill_route($request->virtual, $request->directory, $matcher, $route['route'] ?? []);
-            if (is_string($routeValue)) return $routeValue;
             list($module, $controller, $action, $param) = $routeValue;
 
             //分别获取各个指定参数
@@ -261,7 +263,6 @@ final class Router
             $param = array_slice($matcher, $maxSlice + 1);
         }
 
-        auto:
         return [$module, strtolower($controller), strtolower($action), $param];
     }
 
