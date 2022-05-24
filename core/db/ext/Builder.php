@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core\db\ext;
 
 use esp\core\db\Mysql;
-use esp\error\EspError;
+use esp\error\Error;
 
 
 /**
@@ -117,7 +117,7 @@ final class Builder
      * 事务结束，提交。
      * @param bool $rest
      * @return string|bool
-     * @throws EspError
+     * @throws Error
      */
     public function commit(bool $rest = true)
     {
@@ -188,12 +188,12 @@ final class Builder
      * @param $key
      * @param null $param
      * @return $this
-     * @throws EspError
+     * @throws Error
      */
     public function bind($key, $param = null): Builder
     {
         if ($key === 0) {
-            throw new EspError('PDO数据列绑定下标应该从1开始', 1);
+            throw new Error('PDO数据列绑定下标应该从1开始', 1);
         }
         if (is_array($key)) {
             $this->_bindKV += $key;
@@ -266,7 +266,7 @@ final class Builder
      * @param string|array $fields 选择子句字符串，可以是多个子句用逗号分开的格式
      * @param bool $add_identifier 是否自动添加标识符，默认是true，对于复杂查询及带函数的查询请设置为false
      * @return $this
-     * @throws EspError
+     * @throws Error
      */
     public function select($fields, bool $add_identifier = null): Builder
     {
@@ -277,7 +277,7 @@ final class Builder
             return $this;
         }
         if (!is_string($fields) or empty($fields)) {
-            throw new EspError('选择的字段不能为空，且只能是字符串类型。', 1);
+            throw new Error('选择的字段不能为空，且只能是字符串类型。', 1);
         }
 
         /**
@@ -418,7 +418,7 @@ final class Builder
      * @param null $value
      * @param null $is_OR 若=0则返回组合后的where而不加入现有sql中
      * @return $this|string
-     * @throws EspError
+     * @throws Error
      */
     public function where($field, $value = null, $is_OR = null)
     {
@@ -429,9 +429,9 @@ final class Builder
             list($is_OR, $value) = [$value, null];
         }
         if (is_bool($value)) {
-            throw new EspError("DB_ERROR: where 不支持Bool类型的值", 1);
+            throw new Error("DB_ERROR: where 不支持Bool类型的值", 1);
         } else if (is_object($value)) {
-            throw new EspError("DB_ERROR: where 不支持Object类型的值", 1);
+            throw new Error("DB_ERROR: where 不支持Object类型的值", 1);
         }
         if (is_string($is_OR)) {
             $is_OR = ('or' === strtolower($is_OR));
@@ -452,7 +452,7 @@ final class Builder
                         foreach ($val as $k => $v) {
                             if (is_int($k) and is_array($v)) {
                                 if (empty($v)) {
-                                    throw new EspError("DB_ERROR: where 多条件联合时，不得有空条件", 1);
+                                    throw new Error("DB_ERROR: where 多条件联合时，不得有空条件", 1);
                                 }
                                 /**
                                  * $where[] = [['labID' => 1], ['labKey' => 2]]; //* 不同字段
@@ -490,12 +490,12 @@ final class Builder
                 $value = null;
             } else {
 //                print_r($this->_where);
-                throw new EspError("DB_ERROR: where 条件异常，第4级条件只能是字符串形式的原生SQL语句", 1);
+                throw new Error("DB_ERROR: where 条件异常，第4级条件只能是字符串形式的原生SQL语句", 1);
             }
         }
 
         if (!is_string($field)) {
-            throw new EspError("DB_ERROR: where 条件异常:" . var_export($field, true), 1);
+            throw new Error("DB_ERROR: where 条件异常:" . var_export($field, true), 1);
         }
 
 
@@ -515,7 +515,7 @@ final class Builder
             if ($findType === '\\') {
                 //where字段后加\号，如：$where['value<=\\'] = "(select num from table where expID={$expID})";
                 if (!(is_numeric($value) or (is_string($value) and $value[0] === '(' and $value[-1] === ')'))) {
-                    throw new EspError("DB_ERROR: where 直接引用SQL时，被引用的SQL要用括号圈定完整语句", 1);
+                    throw new Error("DB_ERROR: where 直接引用SQL时，被引用的SQL要用括号圈定完整语句", 1);
                 }
                 $field = substr($field, 0, -1);
                 $findType = strtolower($field[-1]);
@@ -582,7 +582,7 @@ final class Builder
                     }
                     $fieldPro = $this->protect_identifier($field, $identifier);
                     if (!is_array($value)) $value = [$value, 0];
-                    if (!is_float($value[1])) throw new EspError("MATCH第2个值只能是浮点型值，表示匹配度", 1);
+                    if (!is_float($value[1])) throw new Error("MATCH第2个值只能是浮点型值，表示匹配度", 1);
 
                     if ($this->_param) {//采用占位符后置内容方式
                         $key = $this->paramKey($field);
@@ -696,7 +696,7 @@ final class Builder
                         $_where = "{$fieldPro} {$in} {$value}";
                         break;
                     } else if (!is_array($value)) {
-                        throw new EspError("where in 的值必须为数组形式", 1);
+                        throw new Error("where in 的值必须为数组形式", 1);
                     }
                     if (empty($value)) $value = [0, 0];
 
@@ -722,7 +722,7 @@ final class Builder
                     }
 
                     if (!is_array($value)) {
-                        throw new EspError("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]", 1);
+                        throw new Error("mod 的值必须为数组形式，如mod(Key,2)=1，则value=[2,1]", 1);
                     }
                     if (empty($value)) $value = [2, 1];
                     $fieldPro = $this->protect_identifier($field, $identifier);
@@ -801,7 +801,7 @@ final class Builder
             }
         }
         if (empty($_where)) {
-            throw new EspError("where条件为空", 1);
+            throw new Error("where条件为空", 1);
         }
 
         if ($is_OR === 0) return $_where;
@@ -849,7 +849,7 @@ final class Builder
     public function where_in(string $field, array $data, bool $is_OR = false, bool $isNot = false): Builder
     {
         if (empty($field)) {
-            throw new EspError('DB_ERROR: where in 条件不可为空', 1);
+            throw new Error('DB_ERROR: where in 条件不可为空', 1);
         }
         $protectField = $this->protect_identifier($field);
 
@@ -904,7 +904,7 @@ final class Builder
     public function where_like($field, $value, $is_OR = false): Builder
     {
         if (empty($field) || empty($value)) {
-            throw new EspError('DB_ERROR: where like 条件不能为空', 1);
+            throw new Error('DB_ERROR: where like 条件不能为空', 1);
         }
         $protectField = $this->protect_identifier($field);
 
@@ -945,7 +945,7 @@ final class Builder
     public function where_group_start(bool $is_OR = false): Builder
     {
         if ($this->_where_group_in) {
-            throw new EspError('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end', 1);
+            throw new Error('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end', 1);
         }
         if (empty($this->_where)) {
             $this->_where = '(';
@@ -963,10 +963,10 @@ final class Builder
     public function where_group_end(): Builder
     {
         if (!$this->_where_group_in) {
-            throw new EspError('DB_ERROR: 当前未处于Where Group之中', 1);
+            throw new Error('DB_ERROR: 当前未处于Where Group之中', 1);
         }
         if (empty($this->_where)) {
-            throw new EspError('DB_ERROR: 当前where条件为空，无法创建where语句', 1);
+            throw new Error('DB_ERROR: 当前where条件为空，无法创建where语句', 1);
         } else {
             $this->_where .= ')';
             $this->_where_group_in = 0;
@@ -992,7 +992,7 @@ final class Builder
     {
         if (empty($this->_where)) return '';
         if ($this->_where_group_in) {
-            throw new EspError('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end', 1);
+            throw new Error('DB_ERROR: 当前还处于Where Group之中，请先执行where_group_end', 1);
         }
         /**
          * 这只是个权宜之计，暂时先用正则替换掉括号后面的AND和OR
@@ -1067,13 +1067,13 @@ final class Builder
      * @param string $method 联查的类型，默认是NULL，可选值为'left','right','inner','outer','full','using'
      * @param bool $identifier 是否加保护符
      * @return $this
-     * @throws EspError
+     * @throws Error
      */
     public function join(string $table, $_filter, string $select = null, string $method = 'left', bool $identifier = true): Builder
     {
         $method = strtoupper($method);
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
-            throw new EspError('DB_ERROR: JOIN模式不存在：' . $method, 1);
+            throw new Error('DB_ERROR: JOIN模式不存在：' . $method, 1);
         }
         if ($this->_lowCase) $table = strtolower($table);
         $this->_joinTable[] = $table;
@@ -1091,13 +1091,13 @@ final class Builder
                 $_filter = [$_filter];
             }
         } else if (!is_array($_filter)) {
-            throw new EspError('DB_ERROR: JOIN 条件未指定，需为string或array形式', 1);
+            throw new Error('DB_ERROR: JOIN 条件未指定，需为string或array形式', 1);
         }
 
         $_filter_arr = array_map(function ($re) use ($identifier) {
             return preg_replace_callback('/^(.*)(>|<|<>|=|<=>)(.*)/', function ($mch) use ($identifier) {
                 if ($mch[1] === $mch[3]) {
-                    throw new EspError('DB_ERROR: JOIN条件两边不能完全相同，如果是不同表相同字段名，请用[tabName.filed]的方式', 1);
+                    throw new Error('DB_ERROR: JOIN条件两边不能完全相同，如果是不同表相同字段名，请用[tabName.filed]的方式', 1);
                 }
                 if ($identifier)
                     return $this->protect_identifier($mch[1]) . " {$mch[2]} " . $this->protect_identifier($mch[3]);
@@ -1130,7 +1130,7 @@ final class Builder
      * @param string $method 排序的方法，可选值有 'ASC','DESC','RAND' 其中，RAND随机排序和字段名无关（任意即可）
      * @param bool $addProtect
      * @return $this
-     * @throws EspError
+     * @throws Error
      */
     public function order(string $field, string $method = 'ASC', bool $addProtect = null): Builder
     {
@@ -1139,7 +1139,7 @@ final class Builder
          */
         $method = strtoupper(trim($method));
         if (!in_array($method, ['ASC', 'DESC', 'RAND'])) {
-            throw new EspError('DB_ERROR: ORDER模式不存在：' . $method, 1);
+            throw new Error('DB_ERROR: ORDER模式不存在：' . $method, 1);
         }
 
         if ($method === 'RAND' or $field === 'RAND') {
@@ -1193,7 +1193,7 @@ final class Builder
 
     /**
      * @return string
-     * @throws EspError
+     * @throws Error
      */
     public function _build_get(): string
     {
@@ -1264,7 +1264,7 @@ final class Builder
      * @param int $row
      * @param int $tractLevel
      * @return bool|int|string|null|PdoResult
-     * @throws EspError
+     * @throws Error
      */
     public function get(int $row = 0, int $tractLevel = 0)
     {
@@ -1281,7 +1281,7 @@ final class Builder
         }
 
         $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
-        if (is_string($get)) throw new EspError($get, $tractLevel + 1);
+        if (is_string($get)) throw new Error($get, $tractLevel + 1);
 
         return $get;
     }
@@ -1329,13 +1329,13 @@ final class Builder
      * 没有where的情况下是删除表内所有数据
      * @param int $tractLevel
      * @return bool|int|string
-     * @throws EspError
+     * @throws Error
      */
     public function delete(int $tractLevel = 0)
     {
         $where = $this->_build_where();
         if (empty($where)) {//禁止无where时删除数据
-            throw new EspError('DB_ERROR: 禁止无where时删除数据，如果要清空表，请采用：id>0的方式', $tractLevel + 1);
+            throw new Error('DB_ERROR: 禁止无where时删除数据，如果要清空表，请采用：id>0的方式', $tractLevel + 1);
         }
 
         $sql = array();
@@ -1359,13 +1359,13 @@ final class Builder
      */
     public function insert(array $data, bool $is_REPLACE = false, int $tractLevel = 0)
     {
-        if (empty($data)) throw new EspError('DB_ERROR: 无法 insert/replace 空数据', $tractLevel + 1);
+        if (empty($data)) throw new Error('DB_ERROR: 无法 insert/replace 空数据', $tractLevel + 1);
 
         $this->_param_data = array();
 
         //非多维数组，转换成多维
         if (!(isset($data[0]) and is_array($data[0]))) $data = [$data];
-        if (isset($data[0][0])) throw new EspError('DB_ERROR: insert/replace 只能插入二维或三维数组', $tractLevel + 1);
+        if (isset($data[0][0])) throw new Error('DB_ERROR: insert/replace 只能插入二维或三维数组', $tractLevel + 1);
 
         $values = array();
         $keys = null;
@@ -1380,7 +1380,7 @@ final class Builder
                 $itemKey = [];
                 foreach ($item as $k => &$v) {
                     if (is_array($v)) $v = json_encode($v, 256 | 64);
-                    if (is_null($v)) throw new EspError("DB_ERROR: INSERT({$k})值不可为NULL", $tractLevel + 1);
+                    if (is_null($v)) throw new Error("DB_ERROR: INSERT({$k})值不可为NULL", $tractLevel + 1);
                     switch (substr($k, -1)) {
                         case '#':  //压缩数据
                             $k = substr($k, 0, -1);
@@ -1476,12 +1476,12 @@ final class Builder
      * @param bool $add_identifier
      * @param int $tractLevel
      * @return bool|int|null
-     * @throws EspError
+     * @throws Error
      */
     public function update(array $data, bool $add_identifier = true, int $tractLevel = 0)
     {
         if (empty($data)) {
-            throw new EspError('DB_ERROR: 不能 update 空数据', $tractLevel + 1);
+            throw new Error('DB_ERROR: 不能 update 空数据', $tractLevel + 1);
         }
         $sets = array();
         foreach ($data as $key => &$value) {
@@ -1490,7 +1490,7 @@ final class Builder
                 continue;
             }
             if (is_array($value)) $value = json_encode($value, 256 | 64);
-            if (is_null($value)) throw new EspError("DB_ERROR: Update({$key})值不可为NULL", $tractLevel + 1);
+            if (is_null($value)) throw new Error("DB_ERROR: Update({$key})值不可为NULL", $tractLevel + 1);
 
             $kFH = substr($key, -1);
 
@@ -1516,7 +1516,7 @@ final class Builder
             } elseif (in_array($kFH, ['+', '-', '|', '&', '$'])) { //键以+-结束，或以|&结束的位运算
                 $key = substr($key, 0, -1);
                 if (!is_numeric($value)) {
-                    throw new EspError("DB_ERROR: [{$key}]加减操作时，其值必须为数字", $tractLevel + 1);
+                    throw new Error("DB_ERROR: [{$key}]加减操作时，其值必须为数字", $tractLevel + 1);
                 }
                 if ($kFH === '$') {
                     //位运算：减法，值为自己先异或value
@@ -1563,14 +1563,14 @@ final class Builder
 
         $where = $this->_build_where();
         if (empty($where)) {//禁止无where时更新数据
-            throw new EspError('DB_ERROR: 禁止无where时更新数据', $tractLevel + 1);
+            throw new Error('DB_ERROR: 禁止无where时更新数据', $tractLevel + 1);
         }
 
         $sets = implode(', ', $sets);
         $sql = "UPDATE {$this->_table} SET {$sets} WHERE {$where}";
 
         $exe = $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
-        if (is_string($exe)) throw new EspError($exe, $tractLevel + 1);
+        if (is_string($exe)) throw new Error($exe, $tractLevel + 1);
         return $exe;
     }
 
@@ -1589,7 +1589,7 @@ final class Builder
     public function update_batch(array $upData, int $tractLevel = 0)
     {
         if (empty($upData)) {
-            throw new EspError('DB_ERROR: 不能 update 空数据', $tractLevel + 1);
+            throw new Error('DB_ERROR: 不能 update 空数据', $tractLevel + 1);
         }
         $sql = $when = [];
         $sql[] = "UPDATE {$this->_table} SET";
@@ -1614,7 +1614,7 @@ final class Builder
         $sql[] = implode(',', $when);
         $where = $this->_build_where();
         if (empty($where)) {//禁止无where时更新数据
-            throw new EspError('DB_ERROR: 禁止无where时更新数据', $tractLevel + 1);
+            throw new Error('DB_ERROR: 禁止无where时更新数据', $tractLevel + 1);
         }
         $sql[] = "WHERE {$where}";
 
@@ -1742,11 +1742,11 @@ final class Builder
      * 组合空间-闭合的区域
      * @param array $location
      * @return string
-     * @throws EspError
+     * @throws Error
      */
     public function polygon(array $location): string
     {
-        if (count($location) < 3) throw new EspError("空间的一个区域至少需要3个点");
+        if (count($location) < 3) throw new Error("空间的一个区域至少需要3个点");
         $val = [];
         $fst = null;
         $lst = null;

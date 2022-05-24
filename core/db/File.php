@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core\db;
 
-use esp\error\EspError;
+use esp\error\Error;
 use esp\core\db\ext\KeyValue;
-use esp\helper\library\Error;
 use function esp\helper\mk_dir;
 
 /**
@@ -83,12 +82,12 @@ final class File implements KeyValue
 
     public function host()
     {
-        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 1);
+        throw new Error("当前系统只是简单文件存储服务，请改用Redis服务", 1);
     }
 
     public function publish(string $channel, string $action, $message)
     {
-        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 1);
+        throw new Error("当前系统只是简单文件存储服务，请改用Redis服务", 1);
     }
 
 

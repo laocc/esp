@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core\db;
 
 use esp\core\db\ext\KeyValue;
-use esp\error\EspError;
+use esp\error\Error;
 
 class Memcache implements KeyValue
 {
@@ -13,12 +13,18 @@ class Memcache implements KeyValue
     private $host;
     const _TRY = 5;//出错时，尝试次数
 
+    /**
+     * Memcache constructor.
+     * @param array|null $conf
+     * @param null $table
+     * @throws Error
+     */
     public function __construct(array $conf = null, $table = null)
     {
         $conf += ['host' => '127.0.0.1', 'port' => 11211, 'table' => $this->table];
         $this->conn = new \Memcache();
         if (!@$this->conn->connect($conf['host'], $conf['port'])) {
-            throw new EspError('Memcache 连接失败', 1);
+            throw new Error('Memcache 连接失败', 1);
         }
         $this->table = ($table ?: $conf['table']) ?: $this->table;
         $this->host = "{$conf['host']}:{$conf['port']}";
@@ -28,10 +34,11 @@ class Memcache implements KeyValue
      * 指定表
      * @param $table
      * @return $this
+     * @throws Error
      */
     public function table(string $table)
     {
-        if (empty($table) or !is_string($table)) throw new EspError('DB_MemCache ERROR: Table 不可为空，只可为字符串', 1);
+        if (empty($table) or !is_string($table)) throw new Error('DB_MemCache ERROR: Table 不可为空，只可为字符串', 1);
         $this->table = $table;
         return $this;
     }
@@ -200,10 +207,11 @@ class Memcache implements KeyValue
      * @param string $TabKey 表名.键名，但这儿的键名要是预先定好义的
      * @param int $incrby 可以是正数、负数，或0，=0时为读取值
      * @return bool
+     * @throws Error
      */
     public function counter(string $TabKey = 'count', int $incrby = 1)
     {
-        if (!is_int($incrby)) throw new EspError('DB_MemCache ERROR: incrby只能是整型', 1);
+        if (!is_int($incrby)) throw new Error('DB_MemCache ERROR: incrby只能是整型', 1);
 
         if ($incrby >= 0) {
             return $this->conn->increment($this->table . '.' . $TabKey, $incrby);

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\EspError;
+use esp\error\Error;
 use esp\face\Adapter;
 use esp\helper\library\ext\MarkdownObject;
 use function \esp\helper\root;
@@ -111,7 +111,7 @@ final class View implements Adapter
     /**
      * @param bool $use
      * @return View
-     * @throws EspError
+     * @throws Error
      */
     public function setAdapter(bool $use): View
     {
@@ -119,7 +119,7 @@ final class View implements Adapter
             $this->_adapter_use = false;
         } elseif ($use === true) {
             if (is_null($this->_adapter)) {
-                throw new EspError('标签解析器没有注册', 1);
+                throw new Error('标签解析器没有注册', 1);
             }
             $this->_adapter_use = true;
         }
@@ -156,7 +156,7 @@ final class View implements Adapter
      * @param string $file
      * @param array $value
      * @return string
-     * @throws EspError
+     * @throws Error
      */
     public function render(string $file, array $value): string
     {
@@ -172,12 +172,12 @@ final class View implements Adapter
         if (!is_readable($fileV)) {
             if ($this->_path['ext'] === '.php') {
                 if (!is_readable($fileT = str_replace($this->_path['ext'], '.php', $fileV))) {
-                    throw new EspError("视图文件({$fileV})或({$fileT})不存在", 1);
+                    throw new Error("视图文件({$fileV})或({$fileT})不存在", 1);
                 } else {
                     $fileV = $fileT;
                 }
             } else {
-                throw new EspError("视图文件({$fileV})不存在", 1);
+                throw new Error("视图文件({$fileV})不存在", 1);
             }
         }
 
@@ -220,7 +220,7 @@ final class View implements Adapter
      *
      * @param string $viewPath
      * @return string
-     * @throws EspError
+     * @throws Error
      */
     public function builderViewFile(string $viewPath): string
     {
@@ -238,7 +238,7 @@ final class View implements Adapter
             $dir0 = rtrim($this->_path['dir'], '/');
             $file = $dir0 . '/' . ltrim($this->_path['file'], '/');
             if (!is_readable($file)) {
-                throw new EspError("指定的框架视图文件({$file})不存在.", 1);
+                throw new Error("指定的框架视图文件({$file})不存在.", 1);
             }
             return $file;
         }
@@ -256,7 +256,7 @@ final class View implements Adapter
         if (is_readable($layout_file = "{$dir0}/layout.php")) return $layout_file;
         if (is_readable($layout_file = "{$dir1}/layout.php")) return $layout_file;
 
-        throw new EspError("自动框架视图文件({$layout_file})不存在", 1);
+        throw new Error("自动框架视图文件({$layout_file})不存在", 1);
     }
 
 

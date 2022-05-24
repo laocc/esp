@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core\db;
 
-use esp\error\EspError;
+use esp\error\Error;
 use \MongoDB\Driver\Manager;
 use \MongoDB\Driver\BulkWrite;
 use \MongoDB\Driver\WriteConcern;
@@ -98,10 +98,11 @@ class Mongodb
      * @param array $value
      * @param bool $batch 批量插入
      * @return array|mixed
+     * @throws Error
      */
     public function insert(array $value, $batch = false)
     {
-        if (!$this->_table) throw new EspError('未指定表名', 1);
+        if (!$this->_table) throw new Error('未指定表名', 1);
         $bulk = new BulkWrite;
         $writeConcern = new WriteConcern(WriteConcern::MAJORITY, self::_TIME_OUT);
 
@@ -361,6 +362,7 @@ class Mongodb
      * @param int $skip
      * @param null $limit
      * @return array|mixed
+     * @throws Error
      */
     public function get($skip = 0, $limit = null)
     {
@@ -372,7 +374,7 @@ class Mongodb
             'skip' => $skip ?: $this->_skip,
             'limit' => $limit ?: $this->_limit,
         ];
-        if (empty($this->_table)) throw new EspError('未指定表名', 1);
+        if (empty($this->_table)) throw new Error('未指定表名', 1);
 
         //过滤字段=0，仅过滤过该段，但若有任一个=1，则不显示其他没定义的字段
         if (!!$this->_select) {

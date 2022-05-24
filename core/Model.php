@@ -10,7 +10,7 @@ use esp\core\db\Yac;
 use esp\core\ext\Buffer;
 use esp\core\ext\MysqlExt;
 use esp\helper\library\Paging;
-use esp\error\EspError;
+use esp\error\Error;
 
 /**
  * Class Model
@@ -170,7 +170,7 @@ abstract class Model extends Library
      * @param string $action
      * @param $data
      * @return null
-     * @throws EspError
+     * @throws Error
      */
     final  private function checkRunData(string $action, $data)
     {
@@ -178,9 +178,9 @@ abstract class Model extends Library
         if (!is_string($data)) return null;
         $json = json_decode($data, true);
         if (isset($json[2]) or isset($json['2'])) {
-            throw new EspError($action . ':' . ($json[2] ?? $json['2']), $this->_traceLevel + 1);
+            throw new Error($action . ':' . ($json[2] ?? $json['2']), $this->_traceLevel + 1);
         }
-        throw new EspError($data, $this->_traceLevel + 1);
+        throw new Error($data, $this->_traceLevel + 1);
     }
 
     /**
@@ -190,12 +190,12 @@ abstract class Model extends Library
      * @param bool $replace
      *  bool $returnID 返回新ID,false时返回刚刚添加的数据
      * @return int|null
-     * @throws EspError
+     * @throws Error
      */
     final public function insert(array $data, bool $full = false, bool $replace = false)
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        if (!$table) throw new Error('Unable to get table name', $this->_traceLevel);
         $mysql = $this->Mysql(0, [], 1);
         $data = $full ? $data : $this->_FillField($mysql->dbName, $table, $data);
         $val = $mysql->table($table, $this->_protect)->insert($data, $replace, $this->_traceLevel);
@@ -210,7 +210,7 @@ abstract class Model extends Library
      * @param string $table
      * @param array $where
      * @return $this
-     * @throws EspError
+     * @throws Error
      */
     final public function trans_cache(string $table, array $where): Model
     {
@@ -229,12 +229,12 @@ abstract class Model extends Library
      * 删
      * @param $where
      * @return bool|int|string
-     * @throws EspError
+     * @throws Error
      */
     final public function delete($where)
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        if (!$table) throw new Error('Unable to get table name', $this->_traceLevel);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
@@ -258,16 +258,16 @@ abstract class Model extends Library
      * @param $where
      * @param array $data
      * @return bool|null
-     * @throws EspError
+     * @throws Error
      */
     final public function update($where, array $data)
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        if (!$table) throw new Error('Unable to get table name', $this->_traceLevel);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        if (empty($where)) throw new EspError('Update Where 禁止为空', $this->_traceLevel);
+        if (empty($where)) throw new Error('Update Where 禁止为空', $this->_traceLevel);
         $mysql = $this->Mysql(0, [], 1);
 
         $val = $mysql->table($table, $this->_protect)->where($where)->update($data, true, $this->_traceLevel);
@@ -293,7 +293,7 @@ abstract class Model extends Library
     {
         $mysql = $this->Mysql(0, [], 1);
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        if (!$table) throw new Error('Unable to get table name', $this->_traceLevel);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
@@ -369,7 +369,7 @@ abstract class Model extends Library
     final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        if (!$table) throw new Error('Unable to get table name', $this->_traceLevel);
         $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect)->prepare();
         if ($orderBy === 'PRI') {
             $orderBy = $this->PRI($table);
@@ -415,12 +415,12 @@ abstract class Model extends Library
      * @param null $orderBy
      * @param string $sort
      * @return array|mixed|null
-     * @throws EspError
+     * @throws Error
      */
     final public function list($where = null, $orderBy = null, string $sort = 'desc')
     {
         $table = $this->table();
-        if (!$table) throw new EspError('Unable to get table name', $this->_traceLevel);
+        if (!$table) throw new Error('Unable to get table name', $this->_traceLevel);
         $obj = $this->Mysql(0, [], 1)->table($table, $this->_protect);
         if (!empty($this->selectKey)) {
             foreach ($this->selectKey as $select) $obj->select(...$select);
@@ -499,7 +499,7 @@ abstract class Model extends Library
     {
         try {
             return gzcompress($string, 5);
-        } catch (EspError $e) {
+        } catch (Error $e) {
             return $e->getMessage();
         }
     }
@@ -513,7 +513,7 @@ abstract class Model extends Library
     {
         try {
             return gzuncompress($string);
-        } catch (EspError $e) {
+        } catch (Error $e) {
             return $e->getMessage();
         }
     }
@@ -547,11 +547,11 @@ abstract class Model extends Library
      * 组合空间-闭合的区域
      * @param array $location
      * @return string
-     * @throws EspError
+     * @throws Error
      */
     final public function polygon(array $location): string
     {
-        if (count($location) < 3) throw new EspError("空间区域至少需要3个点");
+        if (count($location) < 3) throw new Error("空间区域至少需要3个点");
         $val = [];
         $fst = null;
         $lst = null;
@@ -745,7 +745,7 @@ abstract class Model extends Library
      * @param $select
      * @param $add_identifier
      * @return $this
-     * @throws EspError
+     * @throws Error
      */
     final public function select($select, $add_identifier = null): Model
     {
@@ -808,7 +808,7 @@ abstract class Model extends Library
      * @param int $traceLevel
      * @param array $_conf 如果要创建一个持久连接，则$_conf需要传入参数：persistent=true，
      * @return Mysql
-     * @throws EspError
+     * @throws Error
      */
     final public function Mysql(int $tranID = 0, array $_conf = [], int $traceLevel = 0): Mysql
     {
@@ -824,7 +824,7 @@ abstract class Model extends Library
         if (isset($this->_branch) and !empty($this->_branch)) {
             $_branch = $this->_controller->_config->get($this->_branch);
             if (empty($_branch) or !is_array($_branch)) {
-                throw new EspError("Model中`_branch`指向内容非Mysql配置信息", $traceLevel + 1);
+                throw new Error("Model中`_branch`指向内容非Mysql配置信息", $traceLevel + 1);
             }
             $this->_controller->_dispatcher->debug([$_branch, $conf]);
             $conf = $_branch + $conf;
@@ -835,7 +835,7 @@ abstract class Model extends Library
         }
 
         if (empty($conf) or !is_array($conf)) {
-            throw new EspError("`Database.Mysql`配置信息错误", $traceLevel + 1);
+            throw new Error("`Database.Mysql`配置信息错误", $traceLevel + 1);
         }
         $conf = $_conf + $conf + ['branch' => $branchName];
         $this->_controller->_Mysql[$branchName][$tranID] = new Mysql($this->_controller, $tranID, $conf);
@@ -850,7 +850,7 @@ abstract class Model extends Library
      * @param array $_conf
      * @param int $traceLevel
      * @return Mongodb
-     * @throws EspError
+     * @throws Error
      */
     final public function Mongodb(string $db = 'temp', array $_conf = [], int $traceLevel = 0): Mongodb
     {
@@ -860,7 +860,7 @@ abstract class Model extends Library
 
         $conf = $this->_controller->_config->get('database.mongodb');
         if (empty($conf)) {
-            throw new EspError('无法读取mongodb配置信息', $traceLevel + 1);
+            throw new Error('无法读取mongodb配置信息', $traceLevel + 1);
         }
 
         $this->_controller->_Mongodb[$db] = new Mongodb($_conf + $conf, $db);

@@ -8,7 +8,6 @@ use esp\dbs\Pool;
 use esp\debug\Counter;
 use esp\debug\Debug;
 use esp\error\Error;
-use esp\error\EspError;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
 use function esp\helper\host;
@@ -98,13 +97,13 @@ abstract class Controller
      * 若允许本站或空来路，则用：$this->check_host('');
      *
      * @param mixed ...$host
-     * @throws EspError
+     * @throws Error
      */
     final protected function check_host(...$host)
     {
         if (isset($host[0]) and is_array($host[0])) $host = $host[0];
         if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
-            throw new EspError('禁止接入');
+            throw new Error('禁止接入');
         }
     }
 
@@ -163,11 +162,11 @@ abstract class Controller
     /**
      * 强制以某账号运行
      * @param string $user
-     * @throws EspError
+     * @throws Error
      */
     final protected function run_user(string $user = 'www')
     {
-        if (!_CLI) throw new EspError("run_user 只能运行于cli环境");
+        if (!_CLI) throw new Error("run_user 只能运行于cli环境");
 
         if (getenv('USER') !== $user) {
             $cmd = implode(' ', $GLOBALS["argv"]);

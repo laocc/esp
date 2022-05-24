@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\EspError;
+use esp\error\Error;
 use esp\face\Adapter;
 use esp\helper\library\ext\Xml;
 use function esp\helper\displayState;
@@ -81,7 +81,7 @@ final class Response
      * @param string $name
      * @param $value
      * @return bool
-     * @throws EspError
+     * @throws Error
      */
     public function set_value(string $name, $value): bool
     {
@@ -127,7 +127,7 @@ final class Response
                 break;
 
             default:
-                throw new EspError("不接受{$name}类型的值", 1);
+                throw new Error("不接受{$name}类型的值", 1);
 
         }
         return true;
@@ -143,7 +143,6 @@ final class Response
     /**
      * 渲染视图并返回
      * @param void $value 控制器返回的值
-     * @throws EspError
      */
     public function display($value): void
     {
@@ -221,14 +220,14 @@ final class Response
      * 视图注册标签解析器
      * @param Adapter $adapter
      * @return View|null
-     * @throws EspError
+     * @throws Error
      */
     public function registerAdapter($adapter): ?View
     {
         if (!$this->_view_set['view_use']) return null;
 
         if (!$this->_request->virtual) {
-            throw new EspError("registerAdapter要在routeAfter之后执行", 1);
+            throw new Error("registerAdapter要在routeAfter之后执行", 1);
         }
         return $this->getView()->registerAdapter($adapter);
     }
@@ -362,7 +361,7 @@ final class Response
     /**
      * 渲染视图并返回
      * @return string
-     * @throws EspError
+     * @throws Error
      */
     public function render()
     {
@@ -480,7 +479,7 @@ final class Response
     /**
      * 最后显示内容
      * @return null|string
-     * @throws EspError
+     * @throws Error
      */
     private function display_response(): ?string
     {

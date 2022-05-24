@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core\ext;
 
 use esp\core\db\Mysql;
-use esp\error\EspError;
+use esp\error\Error;
 use function esp\helper\root;
 
 /**
@@ -26,7 +26,7 @@ trait MysqlExt
         if (is_null($table)) {
             $table = $this->table();
         }
-        if (!$table) throw new EspError('Unable to get table name');
+        if (!$table) throw new Error('Unable to get table name');
         $mysql = $this->Mysql();
         if ($mysql->lowCase) $table = strtolower($table);
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
@@ -43,7 +43,7 @@ trait MysqlExt
      * @param string $table
      * @param int $id
      * @return bool|int|string|null
-     * @throws EspError
+     * @throws Error
      */
     final public function increment(string $table, int $id = 1)
     {
@@ -57,7 +57,7 @@ trait MysqlExt
      * 刷新INFORMATION_SCHEMA里的表信息
      * @param string $table
      * @return bool|mixed
-     * @throws EspError
+     * @throws Error
      */
     final public function analyze(string $table)
     {
@@ -82,7 +82,7 @@ trait MysqlExt
     {
         if (is_bool($table)) list($table, $html) = [null, $table];
         $table = $table ?: $this->table();
-        if (!$table) throw new EspError('Unable to get table name');
+        if (!$table) throw new Error('Unable to get table name');
         $mysql = $this->Mysql();
         if ($mysql->lowCase) $table = strtolower($table);
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
@@ -90,7 +90,7 @@ trait MysqlExt
             ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
             ->order('ORDINAL_POSITION', 'asc')
             ->get()->rows();
-        if (empty($val)) throw new EspError("Table '{$table}' doesn't exist");
+        if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         if ($html) {
             $table = [];
             $table[] = '<table class="layui-table">';
@@ -107,7 +107,7 @@ trait MysqlExt
     /**
      * @param false $html
      * @return array|mixed|string
-     * @throws EspError
+     * @throws Error
      */
     final public function tables(bool $html = false)
     {
@@ -134,18 +134,18 @@ trait MysqlExt
      * 列出表字段
      * @param string|null $table
      * @return mixed
-     * @throws EspError
+     * @throws Error
      */
     final public function fields(string $table = null)
     {
         $table = $table ?: $this->table();
-        if (!$table) throw new EspError('Unable to get table name');
+        if (!$table) throw new Error('Unable to get table name');
         $mysql = $this->Mysql();
         if ($mysql->lowCase) $table = strtolower($table);
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
             ->get()->rows();
-        if (empty($val)) throw new EspError("Table '{$table}' doesn't exist");
+        if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         return $val;
     }
 
@@ -209,11 +209,11 @@ PHP;
         $data = $this->hash("{$mysql->dbName}.{$table}")->get('_title');
         if (!empty($data)) return $data;
         if ($mysql->lowCase) $table = strtolower($table);
-        if (!$table) throw new EspError('Unable to get table name');
+        if (!$table) throw new Error('Unable to get table name');
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME as field,COLUMN_COMMENT as title')
             ->where(['table_name' => $table])->get()->rows();
-        if (empty($val)) throw new EspError("Table '{$table}' doesn't exist");
+        if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         $this->hash("{$mysql->dbName}.{$table}")->set('_title', $val);
         return $val;
     }
