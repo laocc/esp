@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use Error;
 use esp\dbs\Pool;
 use esp\debug\Debug;
-use esp\helper\library\Error;
 
 /**
  * Model是此类的子类，实际业务中所创建的类可以直接引用此类
