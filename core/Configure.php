@@ -303,6 +303,11 @@ final class Configure
             $this->_Redis->flushDB();
             $this->_Redis->set('resourceRand', $rand);
         }
+
+        $rdi = new \RecursiveDirectoryIterator(_RUNTIME);
+        $dirs = new \RecursiveIteratorIterator($rdi, 1);
+        $regIts = new \RegexIterator($dirs, '/^.+\.route/i');
+        foreach ($regIts as $fileName => $exp) unlink($fileName);
     }
 
     public function all(bool $showAll = false): array

@@ -43,10 +43,8 @@ final class Router
         }
         if (empty($modRoute)) {
             $modRoute = $this->loadRouteFile($request);
-            if ($cache) {
-                if (empty($modRoute)) $modRoute = ['null'];
-                file_put_contents($cacheFile, serialize($modRoute));
-            }
+            if (empty($modRoute)) $modRoute = ['null'];
+            file_put_contents($cacheFile, serialize($modRoute));
         }
 
         if ($modRoute === ['null']) $modRoute = [];
@@ -297,7 +295,6 @@ final class Router
     }
 
 
-
     /**
      * echo
      *
@@ -316,7 +313,6 @@ final class Router
     {
         return [__CLASS__];
     }
-
 
 
 }
