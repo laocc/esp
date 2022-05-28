@@ -3,34 +3,29 @@ declare(strict_types=1);
 
 namespace esp\error;
 
-use Throwable;
-
-class Error implements Throwable
+class Error extends \Exception
 {
-    private $filename;
-    private $line;
-    private $message;
-    private $code;
-    private $context = null;
+    protected $context = null;
 
     public function __construct($message, int $trace = 1, int $code = 500)
     {
         $this->code = $code;
         if (is_array($message)) {
-            $this->filename = $message['file'] ?? '';
+            $this->file = $message['file'] ?? '';
             $this->line = $message['line'] ?? 0;
             $this->message = $message['message'] ?? (json_encode($message, 256 | 64 | 128));
         } else {
             if ($trace > 10) $trace = 1;
             $pre = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $trace + 1)[$trace] ?? [];
-            $this->filename = $pre['file'] ?? '';
+            $this->file = $pre['file'] ?? '';
             $this->line = $pre['line'] ?? 0;
-        }
-        if (empty($message)) return;
-        if ($message[0] === '{') {
-            $err = json_decode($message, true);
-            if (is_array($err) and !empty($err) and isset($err[2])) {
-                $this->message = $err[2];
+            if ($message[0] === '{') {
+                $err = json_decode($message, true);
+                if (is_array($err) and !empty($err) and isset($err[2])) {
+                    $this->message = $err[2];
+                }
+            } else {
+                $this->message = $message;
             }
         }
     }
@@ -87,47 +82,7 @@ class Error implements Throwable
 
     public function file(): string
     {
-        return $this->filename . '(' . $this->line . ')';
-    }
-
-    public function getMessage()
-    {
-        return $this->message;
-    }
-
-    public function getCode()
-    {
-        return $this->code;
-    }
-
-    public function getFile()
-    {
-        return $this->filename;
-    }
-
-    public function getLine()
-    {
-        return $this->line;
-    }
-
-    public function getTrace()
-    {
-        // TODO: Implement getTrace() method.
-    }
-
-    public function getTraceAsString()
-    {
-        // TODO: Implement getTraceAsString() method.
-    }
-
-    public function getPrevious()
-    {
-        // TODO: Implement getPrevious() method.
-    }
-
-    public function __toString()
-    {
-        return $this->debug(true);
+        return $this->file . '(' . $this->line . ')';
     }
 
 
