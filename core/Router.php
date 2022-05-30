@@ -10,11 +10,17 @@ use function esp\helper\root;
 
 final class Router
 {
-    private $uri;
 
     public function __construct()
     {
-        $this->uri = _URI;
+    }
+
+    public function flush()
+    {
+        $rdi = new \RecursiveDirectoryIterator(_RUNTIME);
+        $dirs = new \RecursiveIteratorIterator($rdi, 1);
+        $regIts = new \RegexIterator($dirs, '/^.+\.route/i');
+        foreach ($regIts as $fileName => $exp) unlink($fileName);
     }
 
     /**
