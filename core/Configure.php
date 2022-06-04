@@ -51,6 +51,7 @@ final class Configure
          * 并且主服务器返回的是`$this->_token`，如果返回的不是这个，就是出错了。
          * 然后，再次goto trySelf;从redis中读取config
          * 这里请求$awakenURI，在主服务器中实际上会被当前文件也就是当前构造函数中最后一行拦截并返回success
+         * 需要在nginx中建立一个绑定了$host['host']和port的虚拟机，指向任意虚拟机即可
          */
         if (!defined('_RPC')) return null;
         if (is_array(_RPC)) {
@@ -58,11 +59,12 @@ final class Configure
         } else {
             $host = ['host' => 'rpc.esp', 'port' => 800, 'ip' => _RPC];
         }
-        $url = sprintf('%s://%s:%s/%s', 'http', $host['host'], $host['port'], ltrim(self::awakenURI, '/'));
+        $url = sprintf('%s://%s/%s', 'http', $host['host'], ltrim(self::awakenURI, '/'));
+        $_resolve = ["{$host['host']}:{$host['port']}:{$host['ip']}"];
 
         $cOption = [];
         $cOption[CURLOPT_URL] = $url;                               //接收页
-        $cOption[CURLOPT_RESOLVE] = $host;                          //host必须是array("example.com:80:127.0.0.1")格式
+        $cOption[CURLOPT_RESOLVE] = $_resolve;                      //host必须是array("example.com:80:127.0.0.1")格式
         $cOption[CURLOPT_HTTPGET] = true;                           //Get方式
         $cOption[CURLOPT_USERAGENT] = self::userAgent;              //UA信息
         $cOption[CURLOPT_HTTP_VERSION] = CURL_HTTP_VERSION_NONE;    //自动选择http版本
