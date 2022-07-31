@@ -10,7 +10,7 @@ use esp\debug\Debug;
 /**
  * Model是此类的子类，实际业务中所创建的类可以直接引用此类
  *
- * Library主要提供工作类与主控制器之间的通信桥梁作用
+ * Library主要提供工作类与主控制器之间的通信中继作用
  * 在工作类中可以直接调用$this->_controller
  *
  * Class Library
@@ -65,8 +65,13 @@ abstract class Library
             $conf = $this->database_config ?? $this->_controller->_config->get('database');
             $this->_controller->_pool = new Pool($conf, $this->_controller);
         }
+    }
 
-
+    public function __destruct()
+    {
+        if (method_exists($this, '_close') and is_callable([$this, '_close'])) {
+            call_user_func_array([$this, '_close'], []);
+        }
     }
 
     /**
@@ -135,7 +140,7 @@ abstract class Library
 
     /**
      * @param callable $callable
-     * @param ...$params
+     * @param mixed ...$params
      * @return bool|null
      */
     final public function shutdown(callable $callable, ...$params): ?bool
@@ -143,6 +148,9 @@ abstract class Library
         return $this->_controller->_dispatcher->shutdown($callable, ...$params);
     }
 
+    /**
+     * @param string $url
+     */
     final public function redirect(string $url)
     {
         $this->_controller->redirect($url);

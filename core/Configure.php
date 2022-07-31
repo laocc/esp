@@ -82,7 +82,7 @@ final class Configure
         return json_decode($html, true);
     }
 
-    private function connectRedis(array $conf): Redis
+    private function connectRedis(array $conf, int $db): Redis
     {
         $conf += ['host' => '/tmp/redis.sock', 'port' => 0, 'db' => 1];
         $redis = new \Redis();
@@ -102,7 +102,7 @@ final class Configure
         } catch (Error $e) {
             if ($tryCont++ > 2) {
                 $err = base64_encode(print_r($conf, true));
-                throw new Error($e->getMessage() . '/' . $err, $e->getCode(), 1, 1);
+                throw new Error($e->getMessage() . '/' . $err, $e->getCode());
             }
             usleep(1000);
             goto tryCont;
@@ -113,8 +113,8 @@ final class Configure
         if (!isset($conf['nophp'])) {
             $redis->setOption(\Redis::OPT_SERIALIZER, strval(\Redis::SERIALIZER_PHP));//序列化方式
         }
-        if (!$redis->select($this->RedisDbIndex)) {
-            throw new Error("Redis选择库【{$this->RedisDbIndex}】失败。", 1, 1);
+        if (!$redis->select($db)) {
+            throw new Error("Redis选择库【{$db}】失败。", 1, 1);
         }
         return $redis;
     }
@@ -149,7 +149,7 @@ final class Configure
         $rdsConf = $dbConf['database']['redis'] ?? [];
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
         $this->RedisDbIndex = intval($rdsConf['db']);
-        $this->_Redis = $this->connectRedis($rdsConf);
+        $this->_Redis = $this->connectRedis($rdsConf, $this->RedisDbIndex);
 
         //没有强制从文件加载
         if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
@@ -283,15 +283,24 @@ final class Configure
 
     /**
      * 重新连接redis，这一般发生在CLI环境中，长时间过行，有可能redis会断线
-     *
-     * @throws Error
      */
     public function reConnectRedis()
     {
         $rdsConf = $this->get('database.redis');
         if (is_array($rdsConf['db'])) $rdsConf['db'] = ($rdsConf['db']['config'] ?? 1);
         $this->RedisDbIndex = intval($rdsConf['db']);
-        $this->_Redis = $this->connectRedis($rdsConf);
+        $this->_Redis = $this->connectRedis($rdsConf, $this->RedisDbIndex);
+    }
+
+    /**
+     * 切换库，不传dbID时为切换回config所在的库
+     * @param int $dbID
+     * @return bool
+     */
+    public function select(int $dbID = -1)
+    {
+        if ($dbID < 0) return $this->_Redis->select($this->RedisDbIndex);
+        return $this->_Redis->select($dbID);
     }
 
     public function flush(int $lev = 0): void
