@@ -57,6 +57,7 @@ final class Request
         ];
 
         $this->virtual = _VIRTUAL;//虚拟机
+        if (isset($config['virtual'])) $this->virtual = $config['virtual'];//虚拟机
         $this->module = '';//虚拟机下模块
         $this->directory = root($config['directory']);
         $this->router_path = root($config['router']);
