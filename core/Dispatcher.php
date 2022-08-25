@@ -244,6 +244,8 @@ final class Dispatcher
 
         if (is_null($this->_debug)) return;
 
+        if ($this->_debug->mode === 'none') return;
+
         $this->_debug->setResponse([
             'type' => $this->_response->_Content_Type,
             'display' => $this->_response->_display_Result
@@ -262,6 +264,7 @@ final class Dispatcher
 
     /**
      * 不运行plugs，不执行缓存
+     * @throws Error
      */
     public function simple(): void
     {
@@ -300,6 +303,7 @@ final class Dispatcher
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();
 
         if (is_null($this->_debug)) return;
+        if ($this->_debug->mode === 'none') return;
 
         $this->_debug->setResponse([
             'type' => $this->_response->_Content_Type,
