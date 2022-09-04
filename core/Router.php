@@ -50,7 +50,7 @@ final class Router
         if (empty($modRoute)) {
             $modRoute = $this->loadRouteFile($request);
             if (empty($modRoute)) $modRoute = ['null'];
-            if (!_CONFIG_LOAD) file_put_contents($cacheFile, serialize($modRoute));
+            if (!_CLI) file_put_contents($cacheFile, serialize($modRoute));
         }
 
         if ($modRoute === ['null']) $modRoute = [];
@@ -62,8 +62,10 @@ final class Router
             $matcher = $this->getMatcher($key, $route);
             if (!$matcher) continue;
 
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', "{$matcher[1]}{$matcher[2]}")) return 'Illegal Uri';
+
             if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
-                return '非法Method请求';
+                return 'Illegal Method';
             }
 
             if (isset($route['return']) and !empty($ret = trim($route['return']))) {
@@ -181,6 +183,8 @@ final class Router
         if (isset($route['__default__']) and preg_match('#^/[a-z]\w*/?.*#i', _URI)) {
             $matcher = explode('/', _URI);
             $matcher[0] = _URI;
+            if (!isset($matcher[1])) $matcher[1] = '';
+            if (!isset($matcher[2])) $matcher[2] = '';
             return $matcher;
         }
 
