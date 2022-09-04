@@ -61,6 +61,8 @@ final class Router
         foreach (array_merge($modRoute, $default) as $key => $route) {
             $matcher = $this->getMatcher($key, $route);
             if (!$matcher) continue;
+            if (!isset($matcher[1])) $matcher[1] = '';
+            if (!isset($matcher[2])) $matcher[2] = '';
 
             if (!preg_match('/^[a-zA-Z0-9_]+$/', "{$matcher[1]}{$matcher[2]}")) return 'Illegal Uri';
 
@@ -183,8 +185,6 @@ final class Router
         if (isset($route['__default__']) and preg_match('#^/[a-z]\w*/?.*#i', _URI)) {
             $matcher = explode('/', _URI);
             $matcher[0] = _URI;
-            if (!isset($matcher[1])) $matcher[1] = '';
-            if (!isset($matcher[2])) $matcher[2] = '';
             return $matcher;
         }
 
