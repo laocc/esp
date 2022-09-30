@@ -17,13 +17,13 @@ final class Dispatcher
     public array $_plugs = array();
     public Request $_request;
     public Response $_response;
-    public Session $_session;
-    public Cookies $_cookies;
     public Configure $_config;
-    public Debug $_debug;
-    public Cache $_cache;
-    public Handler $_error;
-    public Counter $_counter;
+    public ?Debug $_debug;
+    public ?Session $_session;
+    public ?Cookies $_cookies;
+    public ?Cache $_cache;
+    public ?Handler $_error;
+    public ?Counter $_counter;
 
     /**
      * Dispatcher constructor.
