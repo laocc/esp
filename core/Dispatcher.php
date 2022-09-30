@@ -204,9 +204,9 @@ final class Dispatcher
             exit($route);
         }
 
-        if (!is_null($this->_debug)) $this->_debug->setRouter($this->_request->RouterValue());
+        if (isset($this->_debug)) $this->_debug->setRouter($this->_request->RouterValue());
 
-        if (!$simple and !is_null($this->_cache)) {
+        if (!$simple and isset($this->_cache)) {
             if ($this->_response->cache && $this->_cache->Display()) {
                 fastcgi_finish_request();//运行结束，客户端断开
                 $this->relayDebug("[blue;客户端已断开 =============================]");
@@ -223,10 +223,10 @@ final class Dispatcher
         $value = $this->dispatch();
 
         //控制器、并发计数
-        if ($this->_counter) $this->_counter->recodeCounter();
+        if (isset($this->_counter)) $this->_counter->recodeCounter();
 
         //若启用了session，立即保存并结束session
-        if ($this->_session) session_write_close();
+        if (isset($this->_session)) session_write_close();
 
         if (!$simple and $this->_plugs_count and !is_null($hook = $this->plugsHook('display', $value))) {
             $this->_response->display($hook);
@@ -240,12 +240,12 @@ final class Dispatcher
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
         $this->relayDebug("[blue;客户端已断开 =============================]");
-        if (!is_null($this->_cache) && $this->_response->cache and !_CLI) $this->_cache->Save();
+        if (isset($this->_cache) && $this->_response->cache and !_CLI) $this->_cache->Save();
 
         end:
         !$simple and $this->_plugs_count and $hook = $this->plugsHook('shutdown');
 
-        if (is_null($this->_debug)) return;
+        if (!isset($this->_debug)) return;
 
         if ($this->_debug->mode === 'none') return;
 
@@ -287,7 +287,7 @@ final class Dispatcher
             exit($route);
         }
 
-        if (!_CLI && !is_null($this->_debug)) {
+        if (!_CLI && isset($this->_debug)) {
             $this->_debug->setRouter($this->_request->RouterValue());
         }
 
@@ -299,17 +299,17 @@ final class Dispatcher
         }
 
         //控制器、并发计数
-        if ($this->_counter) $this->_counter->recodeCounter();
+        if (isset($this->_counter)) $this->_counter->recodeCounter();
 
         //若启用了session，立即保存并结束session
-        if ($this->_session) session_write_close();
+        if (isset($this->_session)) session_write_close();
 
         $this->_response->display($value);
 
         end:
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();
 
-        if (is_null($this->_debug)) return;
+        if (!isset($this->_debug)) return;
         if ($this->_debug->mode === 'none') return;
 
         $this->_debug->setResponse([
@@ -362,7 +362,7 @@ final class Dispatcher
 
     private function relayDebug($info): void
     {
-        if (is_null($this->_debug)) return;
+        if (!isset($this->_debug)) return;
         $this->_debug->relay($info, 2);
     }
 
@@ -374,7 +374,7 @@ final class Dispatcher
     public function debug($data = '_R_DEBUG_', int $pre = 1)
     {
         if (_CLI) return false;
-        if (is_null($this->_debug)) return null;
+        if (!isset($this->_debug)) return null;
         if ($data === '_R_DEBUG_') return $this->_debug;
         $this->_debug->relay($data, $pre + 1);
         return $this->_debug;
@@ -383,14 +383,14 @@ final class Dispatcher
     public function error($data, int $pre = 1): void
     {
         if (_CLI) return;
-        if (is_null($this->_debug)) return;
+        if (!isset($this->_debug)) return;
         $this->_debug->error($data, $pre + 1);
     }
 
     public function debug_mysql($data, int $pre = 1): void
     {
         if (_CLI) return;
-        if (is_null($this->_debug)) return;
+        if (!isset($this->_debug)) return;
         $this->_debug->mysql_log($data, $pre);
     }
 
@@ -401,7 +401,7 @@ final class Dispatcher
      */
     public function debug_file(string $filename = null): string
     {
-        if (is_null($this->_debug)) return 'null';
+        if (!isset($this->_debug)) return 'null';
         return $this->_debug->filename($filename);
     }
 
@@ -500,7 +500,7 @@ final class Dispatcher
         $action = strtolower($this->_request->action) . $actionExt;
 
         $class = "\\application\\{$virtual}\\controllers\\{$controller}";
-        if (!is_null($this->_debug)) $this->_debug->setController($class);
+        if (isset($this->_debug)) $this->_debug->setController($class);
 
         if (!class_exists($class)) {
             if (_DEBUG) {
@@ -591,7 +591,7 @@ final class Dispatcher
      */
     private function err404(string $msg)
     {
-        if (!is_null($this->_debug)) $this->_debug->folder('error');
+        if (isset($this->_debug)) $this->_debug->folder('error');
         $empty = $this->_config->get('request.empty');
         if (is_array($empty)) $empty = $empty[$this->_request->virtual] ?? $msg;
         $this->_request->exists = false;
@@ -669,7 +669,7 @@ final class Dispatcher
             $msg = "/tmp/flock_{$lockKey}.flock fopen error";
             if (_CLI) {
                 var_dump($msg);
-            } else if (!is_null($this->_debug)) {
+            } else if (isset($this->_debug)) {
                 $this->_debug->relay($msg, 2);
             }
         }
