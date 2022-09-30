@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use ErrorException;
 use esp\debug\Counter;
 use esp\debug\Debug;
 use esp\error\Error;
@@ -13,18 +12,18 @@ use function esp\helper\host;
 
 final class Dispatcher
 {
-    private $_plugs_count = 0;//引入的plugs数量
-    private $run = true;//任一个bootstrap若返回false，则不再执行run()方法中的后续内容
-    public $_plugs = array();
-    public $_request;
-    public $_response;
-    public $_session;
-    public $_cookies;
-    public $_config;
-    public $_debug;
-    public $_cache;
-    public $_error;
-    public $_counter;
+    private int $_plugs_count = 0;//引入的plugs数量
+    private bool $run = true;//任一个bootstrap若返回false，则不再执行run()方法中的后续内容
+    public array $_plugs = array();
+    public Request $_request;
+    public Response $_response;
+    public Session $_session;
+    public Cookies $_cookies;
+    public Configure $_config;
+    public Debug $_debug;
+    public Cache $_cache;
+    public Handler $_error;
+    public Counter $_counter;
 
     /**
      * Dispatcher constructor.

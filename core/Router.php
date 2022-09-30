@@ -128,8 +128,12 @@ final class Router
                 $params = $param;
             }
 
-            if (isset($alias[$controller])) {
-                $split = explode('.', $alias[$controller]);
+//            var_dump($alias);
+//            var_dump($controller);
+
+            if (isset($alias[$controller][$action])) {
+                $split = explode('.', $alias[$controller][$action]);
+
                 switch (count($split)) {
                     case 1:
                         $action = $split[0];
