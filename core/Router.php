@@ -26,16 +26,15 @@ final class Router
     /**
      * 路由中心
      * @param Request $request
+     * @param array $alias
      * @return string|null
      */
-    public function run(Request $request): ?string
+    public function run(Request $request, array $alias): ?string
     {
         $rdsKey = '_ROUTES_' . md5(__FILE__) . '#' . _VIRTUAL;
 
-        $cache = true;
-        if (_CLI) {
-            $cache = false;
-        } else {
+        $cache = !_CLI;
+        if ($cache) {
             if (isset($_GET['_config_load'])) $cache = false;
             elseif (defined('_CONFIG_LOAD')) $cache = !_CONFIG_LOAD;
         }
@@ -64,7 +63,7 @@ final class Router
             if (!isset($matcher[1])) $matcher[1] = '';
             if (!isset($matcher[2])) $matcher[2] = '';
 
-            if ($matcher[1] and !preg_match('/^[a-zA-Z0-9_]+$/', "{$matcher[1]}{$matcher[2]}")) return 'Illegal Uri';
+            if ($matcher[1] and !preg_match('/^\w+$/', "{$matcher[1]}{$matcher[2]}")) return 'Illegal Uri';
 
             if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
                 return 'Illegal Method';
@@ -127,6 +126,30 @@ final class Router
                 }
             } else {
                 $params = $param;
+            }
+
+            if (isset($alias[$controller])) {
+                $split = explode('.', $alias[$controller]);
+                switch (count($split)) {
+                    case 1:
+                        $action = $split[0];
+                        break;
+                    case 2:
+                        $controller = $split[0];
+                        $action = $split[1];
+                        break;
+                    case 3:
+                        $module = $split[0];
+                        $controller = $split[1];
+                        $action = $split[2];
+                        break;
+                    case 4:
+                        $request->virtual = $split[0];
+                        $module = $split[1];
+                        $controller = $split[2];
+                        $action = $split[3];
+                        break;
+                }
             }
 
             $request->router = $key;

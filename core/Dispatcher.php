@@ -112,7 +112,7 @@ final class Dispatcher
         if ($debugConf = $cfg->get('debug')) {
             $debug = $this->mergeConf($debugConf);
             if ($debug['run'] ?? 0) {
-                $this->_debug = new \esp\debug\Debug($this, $debug);
+                $this->_debug = new Debug($this, $debug);
                 $this->_error->setDebug($this->_debug);
             }
         }
@@ -192,7 +192,11 @@ final class Dispatcher
             goto end;
         }
 
-        $route = (new Router())->run($this->_request);
+        $alias = $this->_config->get('alias');
+        if (empty($alias)) $alias = [];
+        $alias = $this->mergeConf($alias);
+
+        $route = (new Router())->run($this->_request, $alias);
         if (is_string($route)) {
             if ($route === 'true') $route = '';
             if (substr($route, 0, 6) === 'redis:') {
@@ -271,7 +275,11 @@ final class Dispatcher
         $showDebug = boolval($_GET['_debug'] ?? 0);
         if ($this->run === false) goto end;
 
-        $route = (new Router())->run($this->_request);
+        $alias = $this->_config->get('alias');
+        if (empty($alias)) $alias = [];
+        $alias = $this->mergeConf($alias);
+
+        $route = (new Router())->run($this->_request, $alias);
         if ($route) {
             if ($route === 'true') $route = '';
             if (substr($route, 0, 6) === 'redis:') {
@@ -320,6 +328,9 @@ final class Dispatcher
         }
     }
 
+    /**
+     * @throws Error
+     */
     public function min(): void
     {
         $this->simple();
