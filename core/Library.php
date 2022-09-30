@@ -18,10 +18,7 @@ use esp\debug\Debug;
  */
 abstract class Library
 {
-    /**
-     * @var $_controller Controller
-     */
-    public $_controller;
+    public Controller $_controller;
 
     final public function __construct(...$param)
     {
@@ -40,7 +37,7 @@ abstract class Library
             }
         }
 
-        if (is_null($this->_controller)) {
+        if (!isset($this->_controller)) {
             foreach (debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS) as $trace) {
                 if (!isset($trace['object'])) continue;
                 if ($trace['object'] instanceof Controller) {
@@ -53,7 +50,7 @@ abstract class Library
             }
         }
 
-        if (is_null($this->_controller)) {
+        if (!isset($this->_controller)) {
             throw new Error("未获取到控制器，若本对象是在某插件的回调中创建(例如swoole的tick或task中)，请将创建对像的第一个参数调为\$this，如：new MainModel(\$this)");
         }
 

@@ -14,16 +14,13 @@ use function esp\helper\root;
  */
 final class Configure
 {
-    public $RedisDbIndex = 0;
+    public int $RedisDbIndex = 0;
     public $driver;
 
     private $_CONFIG_;
 
-    /**
-     * @var $_Redis Redis
-     */
-    public $_Redis;
-    public $_token;
+    public Redis $_Redis;
+    public string $_token;
 
     const awakenURI = '/_esp_config_awaken_';
     const userAgent = 'espConfigAwaken';
