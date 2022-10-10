@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\Error;
+use Error;
 use esp\face\Adapter;
 use esp\helper\library\ext\Xml;
 use function esp\helper\displayState;
@@ -13,7 +13,7 @@ final class Response
     private $_display_value;
     private $_request;
     private $_resource;
-    private $_display_type = '';
+    private string $_display_type = '';
     private $_header = [];
 
     public $_display_Result;//最终的打印结果
@@ -71,7 +71,7 @@ final class Response
     /**
      * @return Resources
      */
-    public function getResource()
+    public function getResource(): Resources
     {
         return $this->_resource;
     }
@@ -81,7 +81,6 @@ final class Response
      * @param string $name
      * @param $value
      * @return bool
-     * @throws Error
      */
     public function set_value(string $name, $value): bool
     {
@@ -211,7 +210,7 @@ final class Response
      * 返回标签解析器
      * @return Adapter
      */
-    public function getAdapter()
+    public function getAdapter(): Adapter
     {
         return $this->getView()->getAdapter();
     }
@@ -220,9 +219,8 @@ final class Response
      * 视图注册标签解析器
      * @param Adapter $adapter
      * @return View|null
-     * @throws Error
      */
-    public function registerAdapter($adapter): ?View
+    public function registerAdapter(Adapter $adapter): ?View
     {
         if (!$this->_view_set['view_use']) return null;
 
@@ -351,9 +349,8 @@ final class Response
 
     /**
      * 返回当前请求须响应的格式，json,xml,html,text等
-     * @return mixed
      */
-    public function getType()
+    public function getType(): string
     {
         return $this->_display_type;
     }
@@ -361,9 +358,8 @@ final class Response
     /**
      * 渲染视图并返回
      * @return string
-     * @throws Error
      */
-    public function render()
+    public function render(): string
     {
         if (!is_null($this->renderHtml)) return $this->renderHtml;
         $this->_Content_Type = 'text/html';
@@ -392,7 +388,7 @@ final class Response
                 break;
 
             case 'png':
-                $this->_display_value = preg_replace('/data:image\/[a-z0-9]+?;base64,/i', '', $this->_display_value);
+                $this->_display_value = preg_replace('/data:image\/\w+?;base64,/i', '', $this->_display_value);
                 $html = base64_decode($this->_display_value);
                 $this->_Content_Type = 'image/png';
                 break;
@@ -455,7 +451,7 @@ final class Response
             if (empty($css[0])) {
                 $cssTag = '';
             } else {
-                $cssTag = "<link media=\"all\" charset=\"utf-8\" rel=\"stylesheet\" href=\"{$res_domain}/??{$cssTag}?{$res_rand}\">";
+                $cssTag = "<link media=\"all\" rel=\"stylesheet\" href=\"{$res_domain}/??{$cssTag}?{$res_rand}\">";
             }
             $jssTag = implode(',', $jss[1]);
             if (empty($jss[0])) {
@@ -479,7 +475,6 @@ final class Response
     /**
      * 最后显示内容
      * @return null|string
-     * @throws Error
      */
     private function display_response(): ?string
     {
@@ -558,14 +553,14 @@ final class Response
                 $http = array();
                 foreach ($this->_layout_val['_css'] as $css) {
                     if (substr($css, 0, 4) === 'http') {
-                        $http[] = "<link rel=\"stylesheet\" href=\"{$css}\" charset=\"utf-8\" />";
+                        $http[] = "<link rel=\"stylesheet\" href=\"{$css}\" />";
                     } else {
                         $conCSS[] = $css;
                     }
                 }
                 $conCSS = empty($conCSS) ? null : ($dom . '??' . implode(',', $this->_layout_val['_css']));
                 $this->_layout_val['_css'] = '';
-                if ($conCSS) $this->_layout_val['_css'] .= "<link rel=\"stylesheet\" href=\"{$conCSS}\" charset=\"utf-8\" />\n";
+                if ($conCSS) $this->_layout_val['_css'] .= "<link rel=\"stylesheet\" href=\"{$conCSS}\" />\n";
                 if (!empty($http)) $this->_layout_val['_css'] .= implode("\n", $http) . "\n";
 
             } else {
@@ -583,7 +578,7 @@ final class Response
                 $this->_layout_val["_js_{$pos}"] = implode("\n", $this->_layout_val["_js_{$pos}"]) . "\n";
             }
             foreach ($this->_layout_val['_css'] as $i => &$css) {
-                $css = "<link rel=\"stylesheet\" href=\"{$domain($css)}\" charset=\"utf-8\" />";
+                $css = "<link rel=\"stylesheet\" href=\"{$domain($css)}\" />";
             }
             $this->_layout_val['_css'] = implode("\n", $this->_layout_val['_css']) . "\n";
         }

@@ -128,9 +128,6 @@ final class Router
                 $params = $param;
             }
 
-//            var_dump($alias);
-//            var_dump($controller);
-
             if (isset($alias[$controller][$action])) {
                 $split = explode('.', $alias[$controller][$action]);
 
@@ -309,7 +306,7 @@ final class Router
      * ALL  =   仅指get,post,cli这三种模式
      * HTTP/AJAX两项后可以跟具体的method类型，如：HTTP,GET,POST
      *
-     * @param string $mode 路由中指定的类型
+     * @param string|array $mode 路由中指定的类型
      * @param string $method 当前请求的实际类型，get,post,put,head,delete之一
      * @param bool $ajax
      * @return bool

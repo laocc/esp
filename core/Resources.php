@@ -10,7 +10,7 @@ namespace esp\core;
  */
 final class Resources
 {
-    private $conf;
+    private array $conf;
 
     public function __construct(array $_config = null)
     {

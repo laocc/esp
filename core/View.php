@@ -3,26 +3,26 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\Error;
+use Error;
 use esp\face\Adapter;
 use esp\helper\library\ext\MarkdownObject;
+use function esp\helper\in_root;
 use function \esp\helper\root;
 
 final class View implements Adapter
 {
-    private $_path = [
+    private array $_path = [
         'dir' => null,
         'file' => null,
         'ext' => '.php',
     ];
-    private $_view_val = array();
-    private $_layout;//框架对象
-    /**
-     * @var $_adapter Adapter
-     */
-    private $_adapter;//标签解析器对象
-    private $_adapter_use;
-    private $_display_type;
+    private View $_layout;//框架对象
+    private Adapter $_adapter;//标签解析器对象
+
+    private array $_view_val = array();
+    private bool $_adapter_use;
+    private string $_display_type;
+    private array $md_conf = [];
 
     public function __construct(string $dir, $file, $ext)
     {
@@ -103,22 +103,25 @@ final class View implements Adapter
     /**
      * @return Adapter
      */
-    public function getAdapter()
+    public function getAdapter(): Adapter
     {
+        if (!isset($this->_adapter)) {
+            throw new Error('标签解析器没有注册', 1);
+        }
+
         return $this->_adapter;
     }
 
     /**
      * @param bool $use
      * @return View
-     * @throws Error
      */
     public function setAdapter(bool $use): View
     {
         if ($use === false) {
             $this->_adapter_use = false;
-        } elseif ($use === true) {
-            if (is_null($this->_adapter)) {
+        } else {
+            if (!isset($this->_adapter)) {
                 throw new Error('标签解析器没有注册', 1);
             }
             $this->_adapter_use = true;
@@ -127,10 +130,10 @@ final class View implements Adapter
     }
 
     /**
-     * @param $object
+     * @param Adapter $object
      * @return $this
      */
-    public function registerAdapter($object): View
+    public function registerAdapter(Adapter $object): View
     {
         $this->_adapter = $object;
         $this->_adapter_use = true;
@@ -143,7 +146,6 @@ final class View implements Adapter
         return $this;
     }
 
-    private $md_conf = [];
 
     public function mdConf(array $conf): View
     {
@@ -156,7 +158,6 @@ final class View implements Adapter
      * @param string $file
      * @param array $value
      * @return string
-     * @throws Error
      */
     public function render(string $file, array $value): string
     {
@@ -220,14 +221,13 @@ final class View implements Adapter
      *
      * @param string $viewPath
      * @return string
-     * @throws Error
      */
     public function builderViewFile(string $viewPath): string
     {
         if (!empty($this->_path['file'])) {
 
             if ($this->_path['file'][0] === '/') {
-                if (is_readable($this->_path['file'])) return $this->_path['file'];
+                if (in_root($this->_path['file']) and is_readable($this->_path['file'])) return $this->_path['file'];
                 if (is_readable(_ROOT . $this->_path['file'])) return _ROOT . $this->_path['file'];
                 if (is_readable($lyFile = (_ROOT . '/application/' . _VIRTUAL . '/views' . $this->_path['file']))) {
                     $this->_path['file'] = '/application/' . _VIRTUAL . '/views' . $this->_path['file'];
@@ -268,7 +268,7 @@ final class View implements Adapter
      */
     public function display(string $__file__, array $__value__): void
     {
-        if ($this->_adapter_use and !is_null($this->_adapter)) {
+        if ($this->_adapter_use and isset($this->_adapter)) {
             $this->_adapter->assign($this->_view_val);
             $this->_adapter->display($__file__, $__value__);
             return;
@@ -287,7 +287,7 @@ final class View implements Adapter
      */
     public function fetch(string $__file__, array $__value__): string
     {
-        if ($this->_adapter_use and !is_null($this->_adapter)) {
+        if ($this->_adapter_use and isset($this->_adapter)) {
             $this->_adapter->assign($this->_view_val);
             return $this->_adapter->fetch($__file__, $__value__);
         }
@@ -296,8 +296,6 @@ final class View implements Adapter
         include $__file__;
         return ob_get_clean();
     }
-
-
 
 
     /**

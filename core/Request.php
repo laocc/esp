@@ -7,30 +7,30 @@ use function esp\helper\root;
 
 final class Request
 {
-    private $_var = array();
-    public $loop = false;//控制器间跳转循环标识
-    public $router_path = null;//路由配置目录
-    public $router = null;//实际生效的路由器名称
-    public $params = array();
+    private array $_var = array();
+    public bool $loop = false;//控制器间跳转循环标识
+    public string $router_path;//路由配置目录
+    public string $router;//实际生效的路由器名称
+    public array $params = array();
 
-    public $virtual;
-    public $module;
-    public $controller;//控制器名，不含后缀
-    public $action;
-    public $method;
-    public $directory;
-    public $referer;
-    public $uri;
-    public $suffix;
-    public $contFix;
-    public $route_view;
-    public $exists = true;//是否为正常的请求，请求了不存在的控制器
+    public string $virtual;
+    public string $module;
+    public string $controller;//控制器名，不含后缀
+    public string $action;
+    public string $method;//实际请求方式，get/post等
+    public string $directory;
+    public string $referer;//等于HTTP_REFERER
+    public string $uri;//等于_URI
+    public array $suffix;//定义了各种请求方式对应的控制方法名后缀，如：get=Get,post=Post等
+    public string $contFix;//控制器后缀，固定的，默认为 Controller
+    public ?array $route_view = null;//在route中可以直接定义视图的相关设置，layout,path和file
+    public bool $exists = true;//是否为正常的请求，请求了不存在的控制器
 
-    private $alias = [];//控制器映射
-    private $allow = [];//仅允许的控制器
-    private $disallow = [];//禁止的控制器
-    private $_ajax;
-    private $_ua;
+    private array $alias = [];//控制器映射
+    private array $allow = [];//仅允许的控制器
+    private array $disallow = [];//禁止的控制器
+    private bool $_ajax;
+    private string $_ua;
 
     public function __construct(array $config)
     {
@@ -64,7 +64,7 @@ final class Request
         $this->contFix = ucfirst($config['suffix']['controller'] ?? 'Controller');//控制器后缀，固定的
         unset($config['suffix']['controller'], $config['suffix']['model']);
         $this->suffix = $config['suffix'];//数组，方法名后缀，在总控中根据不同请求再取值
-        $this->referer = _CLI ? null : (getenv("HTTP_REFERER") ?: '');
+        $this->referer = _CLI ? '' : (getenv("HTTP_REFERER") ?: '');
 
         if (isset($config['alias']) and is_array($config['alias'])) $this->alias = $config['alias'];
         if (isset($config['allow']) and is_array($config['allow'])) $this->allow = $config['allow'];
@@ -171,7 +171,7 @@ final class Request
 
     /**
      * @param string $name
-     * @return string|null
+     * @return string|null|array
      */
     public function get(string $name)
     {
