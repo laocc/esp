@@ -42,13 +42,15 @@ abstract class Controller
         $this->_config = &$dispatcher->_config;
         $this->_redis = &$dispatcher->_config->_Redis;
         $this->_request = &$dispatcher->_request;
+        $this->_plugs = &$dispatcher->_plugs;
+
+        if (_CLI) return;
+        $this->_debug = &$dispatcher->_debug;
         $this->_response = &$dispatcher->_response;
         $this->_counter = &$dispatcher->_counter;
         $this->_cookies = &$dispatcher->_cookies;
-        $this->_debug = &$dispatcher->_debug;
         $this->_cache = &$dispatcher->_cache;
         $this->_error = &$dispatcher->_error;
-        $this->_plugs = &$dispatcher->_plugs;
     }
 
     /**
