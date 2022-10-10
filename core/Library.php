@@ -58,7 +58,7 @@ abstract class Library
             call_user_func_array([$this, '_init'], $fstController ? array_slice($param, 1) : $param);
         }
 
-        if (is_null($this->_controller->_pool) and isset($this->_dbs_label_)) {
+        if (!isset($this->_controller->_pool) and isset($this->_dbs_label_)) {
             $conf = $this->database_config ?? $this->_controller->_config->get('database');
             $this->_controller->_pool = new Pool($conf, $this->_controller);
         }

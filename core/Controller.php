@@ -20,7 +20,7 @@ abstract class Controller
     public Response $_response;
     public Dispatcher $_dispatcher;
     public Redis $_redis;
-    public Pool $_pool;//用于esp/dbs里的Pool池管理，此对象有library中会被创建为Pool对象
+    public Pool $_pool;//用于esp/dbs里的Pool池管理，此对象在library中会被创建为Pool对象
 
     public ?Cookies $_cookies;
     public ?Cache $_cache;
