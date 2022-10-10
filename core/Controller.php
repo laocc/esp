@@ -4,77 +4,37 @@ declare(strict_types=1);
 namespace esp\core;
 
 use Redis;
+use Error;
 use esp\dbs\Pool;
 use esp\debug\Counter;
 use esp\debug\Debug;
-use esp\error\Error;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
 use function esp\helper\host;
 use function esp\helper\root;
-use function esp\helper\str_rand;
 
 abstract class Controller
 {
-    /**
-     * @var $_config Configure
-     */
-    public $_config;
-    /**
-     * @var $_request Request
-     */
-    public $_request;
-    /**
-     * @var $_response Response
-     */
-    public $_response;
-    /**
-     * @var $_dispatcher Dispatcher
-     */
-    public $_dispatcher;
-    /**
-     * @var $_cookies Cookies
-     */
-    public $_cookies;
-    /**
-     * @var $_plugs array
-     */
-    public $_plugs;
-    /**
-     * @var $_redis Redis
-     */
-    public $_redis;
-    /**
-     * @var $_cache Cache
-     */
-    public $_cache;
-    /**
-     * @var $_error Error
-     */
-    public $_error;
-    /**
-     * @var $_counter Counter
-     */
-    public $_counter;
+    public Configure $_config;
+    public Request $_request;
+    public Response $_response;
+    public Dispatcher $_dispatcher;
+    public Redis $_redis;
+    public Pool $_pool;//用于esp/dbs里的Pool池管理，此对象有library中会被创建为Pool对象
 
-    /**
-     * @var $_debug Debug
-     */
-    public $_debug;
-
-    /**
-     * 用于esp/dbs里的Pool池管理，此对象有library中会被创建为Pool对象
-     * @var Pool
-     */
-    public $_pool;
+    public ?Cookies $_cookies;
+    public ?Cache $_cache;
+    public ?Handler $_error;
+    public ?Counter $_counter;
+    public ?Debug $_debug;
+    public array $_plugs;
 
     /**
      * 空数组，用于程序运行过程中保存全局统一、唯一的变量
      * 如果最后要对这个中转变量进行处理，建议在控制器的_close中进行，因为这是相对每个进程唯一的收关动作
      * Library的析构函数并不具有唯一性。
-     * @var array
      */
-    public $tempData = [];
+    public array $tempData = [];
 
     public function __construct(Dispatcher $dispatcher)
     {
@@ -97,7 +57,6 @@ abstract class Controller
      * 若允许本站或空来路，则用：$this->check_host('');
      *
      * @param mixed ...$host
-     * @throws Error
      */
     final protected function check_host(...$host)
     {
@@ -162,7 +121,6 @@ abstract class Controller
     /**
      * 强制以某账号运行
      * @param string $user
-     * @throws Error
      */
     final protected function run_user(string $user = 'www')
     {
@@ -230,7 +188,7 @@ abstract class Controller
      */
     final public function publish(string $action, $message): bool
     {
-        if (is_null($this->_redis)) throw new \Error('站点未启用redis');
+        if (!isset($this->_redis)) throw new Error('站点未启用redis');
         $value = [];
         $value['action'] = $action;
         $value['message'] = $message;
@@ -249,7 +207,7 @@ abstract class Controller
      */
     final public function subscribe(callable $callable): void
     {
-        if (is_null($this->_redis)) throw new \Error('站点未启用redis');
+        if (!isset($this->_redis)) throw new Error('站点未启用redis');
         $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
         $this->_redis->subscribe([$channel], $callable);
     }
@@ -267,7 +225,7 @@ abstract class Controller
      */
     final public function queue(string $action, array $data): bool
     {
-        if (is_null($this->_redis)) throw new \Error('站点未启用redis');
+        if (!isset($this->_redis)) throw new Error('站点未启用redis');
         $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
         return (boolean)$this->_redis->rPush($key, $data + ['_action' => $action]);
     }
@@ -379,7 +337,7 @@ abstract class Controller
         header("Pragma: no-cache");
         header("Location: {$url}", true, $code);
         fastcgi_finish_request();
-        if (!is_null($this->_debug)) {
+        if (isset($this->_debug)) {
             $this->_debug->relay(['控制器主动调用 redirect()结束客户端', $url], 1);
             $this->_debug->save_logs('Controller Redirect');
         }
@@ -391,7 +349,7 @@ abstract class Controller
         if (is_array($text)) $text = json_encode($text, 256);
         echo strval($text);
         fastcgi_finish_request();
-        if (!is_null($this->_debug)) {
+        if (isset($this->_debug)) {
             $this->_debug->relay(['控制器主动调用exit()结束客户端', $text], 1);
             $this->_debug->save_logs('Controller Exit');
         }
@@ -411,7 +369,7 @@ abstract class Controller
      */
     final protected function finish(string $notes = null): bool
     {
-        if (!is_null($this->_debug)) {
+        if (isset($this->_debug)) {
             $this->_debug->relay(['控制器主动调用finish()结束客户端', $notes], 1);
         }
         return fastcgi_finish_request();
@@ -741,8 +699,8 @@ abstract class Controller
      */
     public function cid(string $key = '_SSI', bool $number = false): string
     {
-        if (is_null($this->_cookies)) {
-            throw new \Error("当前站点未启用Cookies，无法获取CID", 1);
+        if (!isset($this->_cookies)) {
+            throw new Error("当前站点未启用Cookies，无法获取CID", 1);
         }
         return $this->_cookies->cid($key, $number);
     }

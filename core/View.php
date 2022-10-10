@@ -20,7 +20,7 @@ final class View implements Adapter
     private Adapter $_adapter;//标签解析器对象
 
     private array $_view_val = array();
-    private bool $_adapter_use;
+    private bool $_adapter_use = false;
     private string $_display_type;
     private array $md_conf = [];
 
@@ -182,7 +182,7 @@ final class View implements Adapter
             }
         }
 
-        if ($this->_layout instanceof View) {//先解析子视图
+        if (isset($this->_layout)) {//先解析子视图
             if ($this->_display_type === 'md' && substr($fileV, -3) === '.md') {
                 $md = new MarkdownObject($this->md_conf);
                 $html = $md->render(file_get_contents($fileV));
