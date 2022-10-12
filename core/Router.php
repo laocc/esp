@@ -23,18 +23,6 @@ final class Router
         foreach ($regIts as $fileName => $exp) unlink($fileName);
     }
 
-    private function realAlias(array $alias)
-    {
-        foreach ($alias as $req => &$res) {
-            if (strpos($res, '.') > 0) $res = explode('.', $res);
-            $p = strpos($req, '/');
-            if ($p === false) continue;
-            $act = explode('/', $req);
-            if ($p > 0) array_unshift($act, '');
-        }
-        return $alias;
-    }
-
     /**
      * 路由中心
      * @param Request $request
@@ -67,8 +55,6 @@ final class Router
         if ($modRoute === ['null']) $modRoute = [];
         else if (is_string($modRoute) and !empty($modRoute)) $modRoute = json_decode($modRoute, true);
         else if (empty($modRoute) or !is_array($modRoute)) $modRoute = array();
-
-        if (!empty($alias)) $alias = $this->realAlias($alias);
 
         $default = ['__default__' => ['__default__' => 1, 'route' => []]];//默认路由
         foreach (array_merge($modRoute, $default) as $key => $route) {
