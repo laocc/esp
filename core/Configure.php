@@ -17,7 +17,7 @@ final class Configure
     public int $RedisDbIndex = 0;
     public string $driver;//驱动方式，供dispatcher中读取用于session的驱动方式
 
-    private array $_CONFIG_;
+    private array $_CONFIG_ = [];
 
     public Redis $_Redis;
     public string $_token;
@@ -150,8 +150,12 @@ final class Configure
 
         //没有强制从文件加载
         if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
-            $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_');
-            if (!empty($this->_CONFIG_)) goto end;
+            $get = $this->_Redis->get($this->_token . '_CONFIG_');
+            if (!empty($get)) {
+                if (is_string($get)) $get = json_decode($get, true) ?: [];
+                $this->_CONFIG_ = $get;
+                goto end;
+            }
         }
 
         if (!_DEBUG and !_CLI and !$isMaster and defined('_RPC')) {
