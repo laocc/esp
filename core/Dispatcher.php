@@ -193,7 +193,7 @@ final class Dispatcher
 
         $alias = $this->_config->get('alias');
         if (empty($alias)) $alias = [];
-        $alias = $this->mergeConf($alias);
+        else $alias = $this->mergeConf($alias);
 
         $route = (new Router())->run($this->_request, $alias);
         if (is_string($route)) {
@@ -276,7 +276,7 @@ final class Dispatcher
 
         $alias = $this->_config->get('alias');
         if (empty($alias)) $alias = [];
-        $alias = $this->mergeConf($alias);
+        else $alias = $this->mergeConf($alias);
 
         $route = (new Router())->run($this->_request, $alias);
         if ($route) {

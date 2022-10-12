@@ -15,9 +15,9 @@ use function esp\helper\root;
 final class Configure
 {
     public int $RedisDbIndex = 0;
-    public $driver;
+    public string $driver;//驱动方式，供dispatcher中读取用于session的驱动方式
 
-    private $_CONFIG_;
+    private array $_CONFIG_;
 
     public Redis $_Redis;
     public string $_token;
@@ -197,7 +197,7 @@ final class Configure
         if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])
             and is_readable($cnfFile)) {
             $json = file_get_contents($cnfFile);
-            $this->_CONFIG_ = json_decode($json, true) ?: null;
+            $this->_CONFIG_ = json_decode($json, true) ?: [];
             if (!empty($this->_CONFIG_)) goto end;
         }
 
@@ -374,13 +374,25 @@ final class Configure
 
             if (!is_string($key) or strpos($key, '.') === false) continue;
             $tmp = explode('.', $key, 6);
-            if (isset($tmp[5])) $array[$tmp[0]][$tmp[1]][$tmp[2]][$tmp[3]][$tmp[4]][$tmp[5]] = $value;
-            elseif (isset($tmp[4])) $array[$tmp[0]][$tmp[1]][$tmp[2]][$tmp[3]][$tmp[4]] = $value;
-            elseif (isset($tmp[3])) $array[$tmp[0]][$tmp[1]][$tmp[2]][$tmp[3]] = $value;
-            elseif (isset($tmp[2])) $array[$tmp[0]][$tmp[1]][$tmp[2]] = $value;
-            else $array[$tmp[0]][$tmp[1]] = $value;
+            switch (count($tmp)) {
+                case 6:
+                    $array[$tmp[0]][$tmp[1]][$tmp[2]][$tmp[3]][$tmp[4]][$tmp[5]] = $value;
+                    break;
+                case 5:
+                    $array[$tmp[0]][$tmp[1]][$tmp[2]][$tmp[3]][$tmp[4]] = $value;
+                    break;
+                case 4:
+                    $array[$tmp[0]][$tmp[1]][$tmp[2]][$tmp[3]] = $value;
+                    break;
+                case 3:
+                    $array[$tmp[0]][$tmp[1]][$tmp[2]] = $value;
+                    break;
+                default:
+                    $array[$tmp[0]][$tmp[1]] = $value;
+            }
             unset($array[$key]);
         }
+
         return $array;
     }
 
