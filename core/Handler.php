@@ -44,7 +44,7 @@ class Handler
             header("Status: 500 Internal Server Error", true);
             echo("[{$err[0]}]{$err[1]}");
         });
-        set_exception_handler(function (\Error $error) {
+        set_exception_handler(function (Throwable $error) {
             header("Status: 500 Internal Server Error", true);
             echo("[{$error->getCode()}]{$error->getMessage()}");
         });

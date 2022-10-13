@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\error\Error;
 use function esp\helper\str_rand;
 
 final class Cookies
@@ -123,7 +124,7 @@ final class Cookies
     {
         if (headers_sent($file, $line)) {
             $err = ['message' => "Header be Send:{$file}[{$line}]", 'code' => 500, 'file' => $file, 'line' => $line];
-            throw new \Error($err);
+            throw new Error($err);
         }
     }
 

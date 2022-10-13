@@ -3,6 +3,7 @@
 namespace esp\core\db;
 
 use PDO;
+use esp\error\Error;
 use esp\core\Controller;
 use function esp\helper\mk_dir;
 
@@ -13,16 +14,19 @@ final class Sqlite
     private $table;
     private $controller;
 
+    /**
+     * @throws Error
+     */
     public function __construct(Controller $controller, array $conf)
     {
         $this->conf = $conf;
-        if (!isset($this->conf['db'])) throw new \Error('Sqlite库文件未指定');
+        if (!isset($this->conf['db'])) throw new Error('Sqlite库文件未指定');
         $this->controller = &$controller;
 
         if (!file_exists($this->conf['db'])) {
             mk_dir($this->conf['db']);
             $fp = fopen($this->conf['db'], 'w');
-            if (!$fp) throw new \Error('Sqlite创建失败');
+            if (!$fp) throw new Error('Sqlite创建失败');
             fclose($fp);
         }
         $this->db = new PDO("sqlite:{$this->conf['db']}");
