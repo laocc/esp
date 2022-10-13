@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use Error;
+use esp\error\Error;
 use esp\face\Adapter;
 use esp\helper\library\ext\Xml;
 use function esp\helper\displayState;

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use Error;
+use esp\error\Error;
 use esp\dbs\Pool;
 use esp\debug\Debug;
 

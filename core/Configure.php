@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use Error;
 use Redis;
 use DirectoryIterator;
+use esp\error\Error;
 use function esp\helper\root;
 
 /**

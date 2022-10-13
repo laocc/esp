@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\core;
 
 use Redis;
-use Error;
+use esp\error\Error;
 use esp\dbs\Pool;
 use esp\debug\Counter;
 use esp\debug\Debug;
