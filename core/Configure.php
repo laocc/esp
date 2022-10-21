@@ -16,11 +16,10 @@ final class Configure
 {
     public int $RedisDbIndex = 0;
     public string $driver;//驱动方式，供dispatcher中读取用于session的驱动方式
-
     private array $_CONFIG_ = [];
+    public string $_token;
 
     public Redis $_Redis;
-    public string $_token;
 
     const awakenURI = '/_esp_config_awaken_';
     const userAgent = 'espConfigAwaken';
@@ -79,6 +78,12 @@ final class Configure
         return json_decode($html, true);
     }
 
+    /**
+     * @param array $conf
+     * @param int $db
+     * @return Redis
+     * @throws Error
+     */
     private function connectRedis(array $conf, int $db): Redis
     {
         $conf += ['host' => '/tmp/redis.sock', 'port' => 0, 'db' => 1];
@@ -118,6 +123,7 @@ final class Configure
 
     /**
      * @param array $conf
+     * @throws Error
      */
     private function load_redis(array $conf)
     {
@@ -264,7 +270,9 @@ final class Configure
                 } else {
                     $tmp = "{$conf['path']}/{$conf['folder']}/{$cf['name']}";
                 }
-                if (is_readable($tmp)) $_config = array_replace_recursive($_config, $this->loadFile($tmp, $fn));
+                if (is_readable($tmp)) {
+                    $_config = array_replace_recursive($_config, $this->loadFile($tmp, $fn));
+                }
             }
             if (!empty($_config)) {
                 $this->_CONFIG_ = array_merge($this->_CONFIG_, $_config);
@@ -339,9 +347,6 @@ final class Configure
                     case 3://LIST
                         $val = $this->_Redis->LLEN($key);
                         break;
-                    case 4://ZSET
-                        $val = $this->_Redis->ZINTERSTORE($key);
-                        break;
                     case 5://HASH
                         $val = $this->_Redis->hGetAll($key);
                         break;
@@ -402,7 +407,10 @@ final class Configure
 
     /**
      * @param string $file
-     * @param string $byKey
+     * @param string|int|null $byKey
+     * string:以此为主键返回数组
+     * int或数字，则取文件名作为主键
+     * null：返回内容本身
      * @return array
      */
     public function loadFile(string $file, $byKey = null): array
@@ -428,7 +436,7 @@ final class Configure
             default:
                 return [];
         }
-        if (!is_array($_config) or empty($_config)) return [];
+        if (!is_array($_config) or empty($_config)) $_config = [];
 
         if (isset($_config['include'])) {
             $include = $_config['include'];
@@ -446,11 +454,14 @@ final class Configure
                 }
             }
         }
-        if (is_null($byKey) or is_int($byKey) or is_numeric($byKey)) {
+
+        if (is_null($byKey)) return $_config;
+        if (is_int($byKey) or is_numeric($byKey)) {
             $byKey = $info['filename'];
         }
 
-        return empty($_config) ? [] : [$byKey => $_config];
+        //empty($_config) ? [] :
+        return [$byKey => $_config];
     }
 
     /**
