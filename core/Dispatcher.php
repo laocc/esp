@@ -711,7 +711,7 @@ final class Dispatcher
      *
      * @return string
      */
-    public static function __set_state()
+    public static function __set_state(array $data)
     {
         return __CLASS__;
     }

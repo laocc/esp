@@ -505,7 +505,7 @@ final class Configure
                 return $re;
             }
             return defined($matches[1]) ? constant($matches[1]) : $matches[1];
-        }, $value);
+        }, strval($value));
 
         if (substr($value, 0, 1) === '[' and substr($value, -1, 1) === ']') {
             $arr = json_decode($value, true);
@@ -570,7 +570,7 @@ final class Configure
      *
      * @return string
      */
-    public static function __set_state()
+    public static function __set_state(array $data)
     {
         return __CLASS__;
     }

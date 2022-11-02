@@ -27,6 +27,7 @@ final class Cookies
      * @param $value
      * @param null $ttl
      * @return bool
+     * @throws Error
      */
     public function set(string $key, $value, $ttl = null): bool
     {
@@ -41,64 +42,56 @@ final class Cookies
         }
         if (is_array($value)) $value = json_encode($value, 256);
 
-        if (version_compare(PHP_VERSION, '7.3', '>')) {
-            $option = [];
-            $option['domain'] = $this->domain;
-            $option['expires'] = intval($ttl);
-            $option['path'] = '/';
-            $option['secure'] = _HTTPS;//仅https
-            $option['httponly'] = true;
-            $option['samesite'] = 'Lax';
-            return (boolean)setcookie(strtolower($key), strval($value), $option);
-        }
-        return (boolean)setcookie(strtolower($key), strval($value), intval($ttl), '/', $this->domain, _HTTPS, true);
+        $option = [];
+        $option['domain'] = $this->domain;
+        $option['expires'] = intval($ttl);
+        $option['path'] = '/';
+        $option['secure'] = _HTTPS;//仅https
+        $option['httponly'] = true;
+        $option['samesite'] = 'Lax';
+        return setcookie(strtolower($key), strval($value), $option);
     }
 
     /**
      * 删除某一项
      * @param $key
      * @return bool
+     * @throws Error
      */
     public function del($key): bool
     {
         if (_CLI) return false;
         $this->checkHeader();
 
-        if (version_compare(PHP_VERSION, '7.3', '>')) {
-            $option = [];
-            $option['domain'] = $this->domain;
-            $option['expires'] = -1;
-            $option['path'] = '/';
-            $option['secure'] = _HTTPS;//仅https
-            $option['httponly'] = true;
-            $option['samesite'] = 'Lax';
-            return (boolean)setcookie(strtolower($key), null, $option);
-        }
-        return (boolean)setcookie(strtolower($key), null, -1, '/', $this->domain, _HTTPS, true);
+        $option = [];
+        $option['domain'] = $this->domain;
+        $option['expires'] = -1;
+        $option['path'] = '/';
+        $option['secure'] = _HTTPS;//仅https
+        $option['httponly'] = true;
+        $option['samesite'] = 'Lax';
+        return setcookie(strtolower($key), null, $option);
     }
 
     /**
      * 删除当前所有cookies
      *
      * @return bool
+     * @throws Error
      */
     public function disable(): bool
     {
         if (empty($_COOKIE)) return false;
         $this->checkHeader();
 
-        if (version_compare(PHP_VERSION, '7.3', '>')) {
-            $option = [];
-            $option['domain'] = $this->domain;
-            $option['expires'] = -1;
-            $option['path'] = '/';
-            $option['secure'] = _HTTPS;//仅https
-            $option['httponly'] = true;
-            $option['samesite'] = 'Lax';
-            setcookie('_c', null, $option);
-        } else {
-            setcookie('_c', null, -1, '/', $this->domain, _HTTPS, true);
-        }
+        $option = [];
+        $option['domain'] = $this->domain;
+        $option['expires'] = -1;
+        $option['path'] = '/';
+        $option['secure'] = _HTTPS;//仅https
+        $option['httponly'] = true;
+        $option['samesite'] = 'Lax';
+        setcookie('_c', null, $option);
         return empty($_COOKIE);
     }
 
@@ -108,6 +101,7 @@ final class Cookies
      * @param string $key
      * @param bool $number
      * @return string
+     * @throws Error
      */
     public function cid(string $key = '_SSI', bool $number = false): string
     {
@@ -120,6 +114,9 @@ final class Cookies
         return (string)$unique;
     }
 
+    /**
+     * @throws Error
+     */
     private function checkHeader()
     {
         if (headers_sent($file, $line)) {
