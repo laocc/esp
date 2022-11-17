@@ -12,15 +12,9 @@ use function esp\helper\replace_array;
 
 class Handler
 {
-    private $restrain;//同一错误只记录一次，防止突发很多相同错误，而把磁盘撑爆
-    private $dispatcher;
-
-    /**
-     * @var Debug $debug
-     */
-    private $debug;
-
-
+    private bool $restrain;//同一错误只记录一次，防止突发很多相同错误，而把磁盘撑爆
+    private Dispatcher $dispatcher;
+    private Debug $debug;
 
     public function __construct(Dispatcher $dispatcher, array $option)
     {
@@ -230,6 +224,7 @@ class Handler
      * @param array $prev
      * @param string $path
      * @param string $filename
+     * @throws Error
      */
     private function error(array $error, array $prev, string $path, string $filename)
     {

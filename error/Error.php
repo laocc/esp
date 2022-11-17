@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace esp\error;
 
-class Error extends \Exception
+use Exception;
+
+class Error extends Exception
 {
     protected $context = null;
 
@@ -28,6 +30,8 @@ class Error extends \Exception
                 $this->message = $message;
             }
         }
+
+        parent::__construct($this->message, 0, $trace);
     }
 
     public function display(): array
@@ -64,7 +68,7 @@ class Error extends \Exception
     }
 
 
-    public function setContext($cont)
+    public function setContext($cont): Error
     {
         $this->context = $cont;
         return $this;
