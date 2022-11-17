@@ -235,7 +235,7 @@ class Handler
             $errLogFile = dirname($path) . "/error/{$md5Key}.md";
 
             if (is_readable($errLogFile)) {
-                if (!is_null($this->debug)) $this->debug->disable();
+                if (isset($this->debug)) $this->debug->disable();
                 file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
                 return;
             }
@@ -266,7 +266,7 @@ class Handler
             'time' => date('Y-m-d H:i:s'),
             'HOST' => getenv('HTTP_HOST'),
             'Url' => _HTTP_ . _DOMAIN . _URI,
-            'Debug' => !is_null($this->debug) ? $this->debug->filename() : '',
+            'Debug' => isset($this->debug) ? $this->debug->filename() : '',
             'errKey' => $md5Key,
             'Error' => $error,
             'Server' => $_SERVER,
@@ -277,7 +277,7 @@ class Handler
         $filename = date($filename) . mt_rand() . '.json';
         $filename = $path . '/' . trim($filename, '/');
 
-        if (!is_null($this->debug)) {
+        if (isset($this->debug)) {
             //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
             $this->debug->relay($info['Error']['message']);
             $sl = $this->debug->save_logs('by Error Saved');
