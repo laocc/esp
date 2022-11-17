@@ -31,7 +31,7 @@ class Error extends Exception
             }
         }
 
-        parent::__construct($this->message, 0, $trace);
+//        parent::__construct($this->message, 0, $trace);
     }
 
     public function display(): array
