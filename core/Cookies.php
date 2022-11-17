@@ -70,7 +70,7 @@ final class Cookies
         $option['secure'] = _HTTPS;//仅https
         $option['httponly'] = true;
         $option['samesite'] = 'Lax';
-        return setcookie(strtolower($key), null, $option);
+        return setcookie(strtolower($key), '', $option);
     }
 
     /**
@@ -91,7 +91,7 @@ final class Cookies
         $option['secure'] = _HTTPS;//仅https
         $option['httponly'] = true;
         $option['samesite'] = 'Lax';
-        setcookie('_c', null, $option);
+        setcookie('_c', '', $option);
         return empty($_COOKIE);
     }
 
