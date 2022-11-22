@@ -482,7 +482,8 @@ final class Response
         $view = $this->getView();
         $this->cleared_layout_val();
 
-        if (($adp = $this->_adapter) and $adp['use']) {
+        if (isset($this->_adapter) and $this->_adapter['use']) {
+            $adp = $this->_adapter;
             $adc = new $adp['class']($adp['cache']);
             if ($adp['class'] === '\Smarty') $adc->setCompileDir($adp['cache']);
             $view->registerAdapter($adc);
@@ -490,7 +491,7 @@ final class Response
 
         if ($this->_view_set['layout_use']) {
             $layout = $this->getLayout();
-            if (isset($adc) and $adp['layout']) $layout->registerAdapter($adc);//layout也启用解析器
+            if (isset($adc) and $this->_adapter['layout']) $layout->registerAdapter($adc);//layout也启用解析器
             $layout->assign($this->_layout_val);//送入layout变量
             $view->layout($layout);//为视图注册layout
         } else {
