@@ -204,7 +204,7 @@ final class Dispatcher
     {
         $showDebug = boolval($_GET['_debug'] ?? 0);
         if ($this->run === false) goto end;
-        if (_CLI and !$simple) esp_error("cli环境中请调用\$this->run(true)方法");
+        if (_CLI and !$simple) esp_error("cli环境中请调用\$this->simple()或->run(true)方法");
 
         if (!$simple and $this->_plugs_count and !is_null($hook = $this->plugsHook('router'))) {
             $this->_response->display($hook);
@@ -241,6 +241,11 @@ final class Dispatcher
 
         //TODO 运行控制器->方法
         $value = $this->dispatch();
+        if (_CLI) {
+            print_r($value);
+            echo "\r\n";
+            return;
+        }
 
         //控制器、并发计数
         if (isset($this->_counter)) $this->_counter->recodeCounter();
@@ -314,6 +319,7 @@ final class Dispatcher
 
         if (_CLI) {
             print_r($value);
+            echo "\r\n";
             return;
         }
 
@@ -519,7 +525,7 @@ final class Dispatcher
             if (_DEBUG) {
                 return $this->err404("[{$class}] 控制器不存在，请确认文件是否存在，或是否在composer.json中引用了控制器目录");
             } else {
-                return $this->err404("[{$this->_request->controller}] not exists.");
+                return $this->err404("[{$this->_request->controller}] not exists.]");
             }
         }
 
