@@ -59,7 +59,7 @@ final class Resources
 
     public function rand(): string
     {
-        return strval($this->conf['_rand']);
+        return strval($this->conf['_rand'] ?? '');
     }
 
     public function title(string $title = null): string
@@ -83,6 +83,10 @@ final class Resources
         return $description;
     }
 
+    /**
+     * @param string $html
+     * @return string
+     */
     public function replace(string $html): string
     {
         /**
@@ -90,20 +94,27 @@ final class Resources
          * interchange[/public/resource] = //resource.domain.com
          * interchange[/public/res] = //res.domain.com
          */
-        $path = $this->conf['path'];  //resource文件路径
-        $host = $this->host() ?: $path;
-
         if (!empty($this->conf['interchange'])) {
             $html = str_replace(
                 array_keys($this->conf['interchange']),
                 array_values($this->conf['interchange']),
                 $html);
         }
-        $root = substr(getenv('DOCUMENT_ROOT'), strlen(_ROOT));//站点入口位置
-        return str_replace(
-            [$path, '__RAND__', $root],
-            [$host, strval($this->conf['_rand']), ''],
-            $html);
+
+        $f = $t = [];
+        if (isset($this->conf['_rand'])) {
+            $f[] = '__RAND__';
+            $t[] = strval($this->conf['_rand']);
+        }
+
+        $path = $this->conf['path'];  //resource文件路径
+        $host = $this->host() ?: $path;
+        if ($path) {
+            $f[] = $path;
+            $t[] = $host;
+        }
+        if (empty($f)) return $html;
+        return str_replace($f, $t, $html);
     }
 
     /**

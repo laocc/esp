@@ -63,7 +63,7 @@ final class Dispatcher
             } else {
                 $rootPath = dirname($_SERVER['DOCUMENT_ROOT'], 2);
             }
-            if (strpos(getenv('DOCUMENT_ROOT'), $rootPath) !== 0) {
+            if (strpos(getenv('DOCUMENT_ROOT') ?: getenv('PWD'), $rootPath) !== 0) {
                 esp_error('路径错误',
                     'ESP_ROOT与DOCUMENT_ROOT路径不匹配',
                     '请在web服务器(如nginx或apache)的站点入口定义路径时以实际路径作为入口',
@@ -139,7 +139,7 @@ final class Dispatcher
         $response = $cfg->get('response');
         if (empty($response)) $response = [];
         $response = $this->mergeConf($response);
-        $response['_rand'] = $cfg->_Redis->get('resourceRand') ?: date('YmdH');
+        if (isset($response['rand'])) $response['_rand'] = $cfg->_Redis->get('resourceRand') ?: date('YmdH');
         $this->_response = new Response($this->_request, $response);
 
         if ($cookies = $cfg->get('cookies')) {
