@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\Error;
 use esp\face\Adapter;
 use esp\helper\library\ext\Xml;
 use function esp\helper\displayState;
@@ -11,17 +10,17 @@ use function esp\helper\displayState;
 final class Response
 {
     private $_display_value;
-    private $_request;
-    private $_resource;
+    private Request $_request;
+    private Resources $_resource;
     private string $_display_type = '';
-    private $_header = [];
+    private array $_header = [];
 
-    public $_display_Result;//最终的打印结果
-    public $_Content_Type;
-    public $cache;
+    public string $_display_Result;//最终的打印结果
+    public string $_Content_Type;
+    public bool $cache;
 
-    private $_view_val = array();
-    private $_layout_val = [
+    private array $_view_val = array();
+    private array $_layout_val = [
         '_js_foot' => [],
         '_js_head' => [],
         '_js_body' => [],
@@ -32,7 +31,7 @@ final class Response
         '_title_default' => true,
     ];
 
-    private $_view_set = [
+    private array $_view_set = [
         'view_use' => true,
         'view_file' => null,
         'file_ext' => '.php',
@@ -41,12 +40,12 @@ final class Response
         'layout_file' => null,
     ];
 
-    private $_autoRun = true;
+    private bool $_autoRun = true;
 
-    private $viewObj;
-    private $layoutObj;
-    private $renderHtml;
-    private $_adapter;
+    private View $viewObj;
+    private View $layoutObj;
+    private string $renderHtml;
+    private array $_adapter;
 
     public function __construct(Request $request, array $conf)
     {
@@ -126,7 +125,7 @@ final class Response
                 break;
 
             default:
-                throw new Error("不接受{$name}类型的值", 1);
+                esp_error('Response', "不接受{$name}类型的值");
 
         }
         return true;
@@ -188,7 +187,7 @@ final class Response
         echo $this->_display_Result = $this->render();
     }
 
-    public function redirect($val): void
+    public function redirect(string $val): void
     {
         $this->_display_Result = $val;
         $this->_autoRun = false;
@@ -225,7 +224,7 @@ final class Response
         if (!$this->_view_set['view_use']) return null;
 
         if (!$this->_request->virtual) {
-            throw new Error("registerAdapter要在routeAfter之后执行", 1);
+            esp_error('Response', "registerAdapter要在routeAfter之后执行");
         }
         return $this->getView()->registerAdapter($adapter);
     }
@@ -281,7 +280,7 @@ final class Response
      */
     public function getView(): View
     {
-        if (!is_null($this->viewObj)) return $this->viewObj;
+        if (isset($this->viewObj)) return $this->viewObj;
         $this->_view_set['view_use'] = true;
         return $this->viewObj = new View($this->getViewPath(), $this->_view_set['view_file'], $this->_view_set['file_ext']);
     }
@@ -325,7 +324,7 @@ final class Response
      */
     public function getLayout(): View
     {
-        if (!is_null($this->layoutObj)) return $this->layoutObj;
+        if (isset($this->layoutObj)) return $this->layoutObj;
         $this->_view_set['layout_use'] = true;
         $layout = $this->_view_set['layout_file'];
         if ($route = $this->_request->route_view) {
@@ -361,7 +360,7 @@ final class Response
      */
     public function render(): string
     {
-        if (!is_null($this->renderHtml)) return $this->renderHtml;
+        if (isset($this->renderHtml)) return $this->renderHtml;
         $this->_Content_Type = 'text/html';
         switch (strtolower($this->_display_type)) {
             case 'json':
@@ -468,7 +467,7 @@ final class Response
 
     public function setAdapter(bool $use): Response
     {
-        if (is_array($this->_adapter)) $this->_adapter['use'] = $use;
+        $this->_adapter['use'] = $use;
         return $this;
     }
 
@@ -497,7 +496,7 @@ final class Response
         } else {
             $view->assign($this->_layout_val);//无layout，将这些变量送入子视图
         }
-        $this->_layout_val = null;
+        $this->_layout_val = [];
 
         $viewFileExt = $this->_view_set['file_ext'];
         if (strtolower($this->_display_type) === 'md') $viewFileExt = '.md';

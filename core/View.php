@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\Error;
 use esp\face\Adapter;
 use esp\helper\library\ext\MarkdownObject;
 use function esp\helper\in_root;
@@ -106,7 +105,7 @@ final class View implements Adapter
     public function getAdapter(): Adapter
     {
         if (!isset($this->_adapter)) {
-            throw new Error('标签解析器没有注册', 1);
+            esp_error('View', '标签解析器没有注册');
         }
 
         return $this->_adapter;
@@ -122,7 +121,7 @@ final class View implements Adapter
             $this->_adapter_use = false;
         } else {
             if (!isset($this->_adapter)) {
-                throw new Error('标签解析器没有注册', 1);
+                esp_error('View', '标签解析器没有注册');
             }
             $this->_adapter_use = true;
         }
@@ -173,12 +172,12 @@ final class View implements Adapter
         if (!is_readable($fileV)) {
             if ($this->_path['ext'] === '.php') {
                 if (!is_readable($fileT = str_replace($this->_path['ext'], '.php', $fileV))) {
-                    throw new Error("视图文件({$fileV})或({$fileT})不存在", 1);
+                    esp_error('View', "视图文件({$fileV})或({$fileT})不存在");
                 } else {
                     $fileV = $fileT;
                 }
             } else {
-                throw new Error("视图文件({$fileV})不存在", 1);
+                esp_error('View', "视图文件({$fileV})不存在");
             }
         }
 
@@ -238,7 +237,7 @@ final class View implements Adapter
             $dir0 = rtrim($this->_path['dir'], '/');
             $file = $dir0 . '/' . ltrim($this->_path['file'], '/');
             if (!is_readable($file)) {
-                throw new Error("指定的框架视图文件({$file})不存在.", 1);
+                esp_error('View', "指定的框架视图文件({$file})不存在.");
             }
             return $file;
         }
@@ -256,7 +255,8 @@ final class View implements Adapter
         if (is_readable($layout_file = "{$dir0}/layout.php")) return $layout_file;
         if (is_readable($layout_file = "{$dir1}/layout.php")) return $layout_file;
 
-        throw new Error("自动框架视图文件({$layout_file})不存在", 1);
+        esp_error('View', "自动框架视图文件({$layout_file})不存在");
+        return '';
     }
 
 

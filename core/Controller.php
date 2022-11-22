@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace esp\core;
 
 use Redis;
-use esp\error\Error;
 use esp\dbs\Pool;
 use esp\debug\Counter;
 use esp\debug\Debug;
@@ -64,7 +63,7 @@ abstract class Controller
     {
         if (isset($host[0]) and is_array($host[0])) $host = $host[0];
         if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
-            throw new Error('禁止接入');
+            exit('禁止接入');
         }
     }
 
@@ -126,7 +125,7 @@ abstract class Controller
      */
     final protected function run_user(string $user = 'www')
     {
-        if (!_CLI) throw new Error("run_user 只能运行于cli环境");
+        if (!_CLI) esp_error('Controller', "run_user 只能运行于cli环境");
 
         if (getenv('USER') !== $user) {
             $cmd = implode(' ', $GLOBALS["argv"]);
@@ -190,7 +189,7 @@ abstract class Controller
      */
     final public function publish(string $action, $message): bool
     {
-        if (!isset($this->_redis)) throw new Error('站点未启用redis');
+        if (!isset($this->_redis)) esp_error('Controller Publish', '站点未启用redis，无法发送订阅消息');
         $value = [];
         $value['action'] = $action;
         $value['message'] = $message;
@@ -209,7 +208,7 @@ abstract class Controller
      */
     final public function subscribe(callable $callable): void
     {
-        if (!isset($this->_redis)) throw new Error('站点未启用redis');
+        if (!isset($this->_redis)) esp_error('Controller Subscribe', '站点未启用redis，无法接收订阅消息');
         $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
         $this->_redis->subscribe([$channel], $callable);
     }
@@ -227,7 +226,7 @@ abstract class Controller
      */
     final public function queue(string $action, array $data): bool
     {
-        if (!isset($this->_redis)) throw new Error('站点未启用redis');
+        if (!isset($this->_redis)) esp_error('Controller Queue', '站点未启用redis，无法发送队列消息');
         $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
         return (boolean)$this->_redis->rPush($key, $data + ['_action' => $action]);
     }
@@ -702,7 +701,7 @@ abstract class Controller
     public function cid(string $key = '_SSI', bool $number = false): string
     {
         if (!isset($this->_cookies)) {
-            throw new Error("当前站点未启用Cookies，无法获取CID", 1);
+            esp_error('Controller CID', "当前站点未启用Cookies，无法获取CID");
         }
         return $this->_cookies->cid($key, $number);
     }

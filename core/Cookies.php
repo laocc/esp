@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\Error;
 use function esp\helper\str_rand;
 
 final class Cookies
@@ -27,7 +26,6 @@ final class Cookies
      * @param $value
      * @param null $ttl
      * @return bool
-     * @throws Error
      */
     public function set(string $key, $value, $ttl = null): bool
     {
@@ -56,7 +54,6 @@ final class Cookies
      * 删除某一项
      * @param $key
      * @return bool
-     * @throws Error
      */
     public function del($key): bool
     {
@@ -77,7 +74,6 @@ final class Cookies
      * 删除当前所有cookies
      *
      * @return bool
-     * @throws Error
      */
     public function disable(): bool
     {
@@ -101,7 +97,6 @@ final class Cookies
      * @param string $key
      * @param bool $number
      * @return string
-     * @throws Error
      */
     public function cid(string $key = '_SSI', bool $number = false): string
     {
@@ -114,14 +109,10 @@ final class Cookies
         return (string)$unique;
     }
 
-    /**
-     * @throws Error
-     */
     private function checkHeader(): void
     {
         if (headers_sent($file, $line)) {
-            $err = ['message' => "Header be Send:{$file}[{$line}]", 'code' => 500, 'file' => $file, 'line' => $line];
-            throw new Error($err);
+            esp_error('Cookies', "Header be Send:{$file}[{$line}]");
         }
     }
 

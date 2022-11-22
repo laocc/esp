@@ -5,7 +5,6 @@ namespace esp\core;
 
 use Redis;
 use DirectoryIterator;
-use esp\error\Error;
 use function esp\helper\root;
 
 /**
@@ -82,7 +81,6 @@ final class Configure
      * @param array $conf
      * @param int $db
      * @return Redis
-     * @throws Error
      */
     private function connectRedis(array $conf, int $db): Redis
     {
@@ -93,18 +91,18 @@ final class Configure
             tryCont:
             if ($conf['host'][0] === '/') {
                 if (!file_exists($conf['host'])) {
-                    throw new Error("Redis服务器【{$conf['host']}】通道文件不存在，请检查redis.conf中设置。", 1, 1);
+                    esp_error('Configure', "Redis服务器【{$conf['host']}】通道文件不存在，请检查redis.conf中设置。");
                 }
                 if (!$redis->connect($conf['host'])) {
-                    throw new Error("Redis服务器【{$conf['host']}】无法连接。", 1, 1);
+                    esp_error('Configure', "Redis服务器【{$conf['host']}】无法连接。");
                 }
             } else if (!$redis->connect($conf['host'], intval($conf['port']))) {
-                throw new Error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1, 1);
+                esp_error('Configure', "Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
             }
-        } catch (Error $e) {
+        } catch (\Error $e) {
             if ($tryCont++ > 2) {
                 $err = base64_encode(print_r($conf, true));
-                throw new Error($e->getMessage() . '/' . $err, $e->getCode());
+                esp_error('Configure', $e->getMessage(), $err);
             }
             usleep(1000);
             goto tryCont;
@@ -116,31 +114,30 @@ final class Configure
             $redis->setOption(\Redis::OPT_SERIALIZER, strval(\Redis::SERIALIZER_PHP));//序列化方式
         }
         if (!$redis->select($db)) {
-            throw new Error("Redis选择库【{$db}】失败。", 1, 1);
+            esp_error('Configure', "Redis选择库【{$db}】失败。");
         }
         return $redis;
     }
 
     /**
      * @param array $conf
-     * @throws Error
      */
     private function load_redis(array $conf)
     {
         $isMaster = is_file(_RUNTIME . '/master.lock');
 
         if (isset($conf['database'])) {
-            if (!is_readable($conf['database'])) throw new Error("指定的database配置文件不存在或不可读");
+            if (!is_readable($conf['database'])) esp_error('Configure', "指定的database配置文件不存在或不可读");
             $bFile = $conf['database'];
         } else {
             $bFile = "{$conf['path']}/database.ini";
             if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.json";
             if (!is_readable($bFile)) $bFile = "{$conf['path']}/database.php";
-            if (!is_readable($bFile)) throw new Error("database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
+            if (!is_readable($bFile)) esp_error('Configure', "database配置文件只能是[.ini/.json/.php]格式，且只能置于{$conf['path']}目录");
         }
 
         $dbConf = $this->loadFile($bFile, 'database');
-        if (empty($dbConf)) throw new Error('读取database失败，配置文件可能是空文件');
+        if (empty($dbConf)) esp_error('Configure', '读取database失败，配置文件可能是空文件');
 
         if (isset($conf['folder'])) {
             $bFile = str_replace('/database.', "/{$conf['folder']}/database.", $bFile);
@@ -184,7 +181,7 @@ final class Configure
              */
             $get = $this->asyncRPC(false);
             if ($get !== $this->_token) {
-                if ($tryCount++ > 1) throw new Error("多次请求RPC获取到数据不合法，期望值({$this->_token})，实际获取:{$get}");
+                if ($tryCount++ > 1) esp_error('Configure', "多次请求RPC获取到数据不合法", "期望值({$this->_token})，实际获取:{$get}");
             }
 
             goto tryReadRedis;

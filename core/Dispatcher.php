@@ -5,10 +5,22 @@ namespace esp\core;
 
 use esp\debug\Counter;
 use esp\debug\Debug;
-use esp\error\Error;
 use esp\session\Session;
 use esp\helper\library\Result;
 use function esp\helper\host;
+
+function esp_error(string $title, string ...$msg)
+{
+    if (_CLI) {
+        echo "{$title}\n";
+        foreach ($msg as $s) echo "\t{$s}\n";
+    } else {
+        echo "<meta charset='utf-8' />\r\n<h2>{$title}</h2>\r\n<ul>\r\n";
+        foreach ($msg as $s) echo "\t<li>{$s}</li>\r\n";
+        echo "</ul>";
+    }
+    exit;
+}
 
 final class Dispatcher
 {
@@ -25,11 +37,12 @@ final class Dispatcher
     public ?Handler $_error;
     public ?Counter $_counter;
 
+    private array $_skipError = [];
+
     /**
      * Dispatcher constructor.
      * @param array $option
      * @param string $virtual
-     * @throws Error
      */
     public function __construct(array $option, string $virtual = 'www')
     {
@@ -49,6 +62,13 @@ final class Dispatcher
                 $rootPath = (substr(__DIR__, 0, $dirI));
             } else {
                 $rootPath = dirname($_SERVER['DOCUMENT_ROOT'], 2);
+            }
+            if (strpos(getenv('DOCUMENT_ROOT'), $rootPath) !== 0) {
+                esp_error('路径错误',
+                    'ESP_ROOT与DOCUMENT_ROOT路径不匹配',
+                    '请在web服务器(如nginx或apache)的站点入口定义路径时以实际路径作为入口',
+                    '不要以软链接地址作为root入口'
+                );
             }
             define('_ROOT', $rootPath); //网站根目录
         }
@@ -172,19 +192,18 @@ final class Dispatcher
 
         unset($GLOBALS['option']);
         if (headers_sent($file, $line)) {
-            throw new Error("在{$file}[{$line}]行已有数据输出，系统无法启动");
+            esp_error('header输出错误', "在{$file}[{$line}]行已有数据输出，系统无法启动");
         }
     }
 
     /**
      * 系统运行调度中心
-     * @throws Error
      */
     public function run(bool $simple = false): void
     {
         $showDebug = boolval($_GET['_debug'] ?? 0);
         if ($this->run === false) goto end;
-        if (_CLI and !$simple) throw new Error("cli环境中请调用\$this->run(true)方法");
+        if (_CLI and !$simple) esp_error("cli环境中请调用\$this->run(true)方法");
 
         if (!$simple and $this->_plugs_count and !is_null($hook = $this->plugsHook('router'))) {
             $this->_response->display($hook);
@@ -267,7 +286,6 @@ final class Dispatcher
 
     /**
      * 不运行plugs，不执行缓存
-     * @throws Error
      */
     public function simple(): void
     {
@@ -327,9 +345,6 @@ final class Dispatcher
         }
     }
 
-    /**
-     * @throws Error
-     */
     public function min(): void
     {
         $this->simple();
@@ -424,13 +439,12 @@ final class Dispatcher
     /**
      * @param $class
      * @return Dispatcher
-     * @throws Error
      */
     public function bootstrap($class): Dispatcher
     {
         if (is_string($class)) {
             if (!class_exists($class)) {
-                throw new Error("Bootstrap类不存在，请检查{$class}.php文件");
+                esp_error('Bootstrap Error', "Bootstrap类不存在，请检查{$class}.php文件");
             }
             $class = new $class();
         }
@@ -450,14 +464,13 @@ final class Dispatcher
      * 接受注册插件
      * @param Plugin $class
      * @return $this
-     * @throws Error
      */
     public function setPlugin(Plugin $class): Dispatcher
     {
         $name = get_class($class);
         $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
         if (isset($this->_plugs[$name])) {
-            throw new Error("插件名{$name}已被注册过");
+            esp_error('Plugin Error', "插件名{$name}已被注册过");
         }
         $this->_plugs[$name] = $class;
         $this->_plugs_count++;
@@ -486,7 +499,6 @@ final class Dispatcher
     /**
      * 路由结果分发至控制器动作
      * @return mixed
-     * @throws Error
      */
     private function dispatch()
     {
@@ -512,7 +524,7 @@ final class Dispatcher
 
         $cont = new $class($this);
         if (!($cont instanceof Controller)) {
-            throw new Error("{$class} 须继承自 \\esp\\core\\Controller");
+            esp_error('Controller Error', "{$class} 须继承自 \\esp\\core\\Controller");
         }
 
         if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {
@@ -598,8 +610,6 @@ final class Dispatcher
         if (!empty($empty)) return $empty;
         return $msg;
     }
-
-    private $_skipError = [];
 
     /**
      * 注册调用位置的下一行屏蔽错误

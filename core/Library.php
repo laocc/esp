@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\error\Error;
 use esp\dbs\Pool;
 use esp\debug\Debug;
 
@@ -51,7 +50,7 @@ abstract class Library
         }
 
         if (!isset($this->_controller)) {
-            throw new Error("未获取到控制器，若本对象是在某插件的回调中创建(例如swoole的tick或task中)，请将创建对像的第一个参数调为\$this，如：new MainModel(\$this)");
+            esp_error('Library中无法获取Controller', "未获取到控制器", "若本对象是在某插件的回调中创建(例如swoole的tick或task中)，请将创建对像的第一个参数调为\$this，如：new MainModel(\$this)");
         }
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use Redis;
 use function esp\helper\mk_dir;
 use function esp\helper\root;
 
@@ -12,12 +13,12 @@ use function esp\helper\root;
  */
 final class Cache
 {
-    private $_option;
-    private $_request;
-    private $_response;
-    private $_redis;
-    private $cache_path;
-    private $cache_key;
+    private array $_option;
+    private Request $_request;
+    private Response $_response;
+    private Redis $_redis;
+    private string $cache_path;
+    private string $cache_key;
 
     public function __construct(Dispatcher $dispatcher, array &$option)
     {
