@@ -61,15 +61,7 @@ final class Dispatcher
             } else if ($dirI = strpos(__DIR__, '/laocc/esp/core')) {
                 $rootPath = (substr(__DIR__, 0, $dirI));
             } else {
-                $rootPath = dirname($_SERVER['DOCUMENT_ROOT'], 2);
-            }
-            if (strpos(getenv('DOCUMENT_ROOT') ?: (getenv('OLDPWD') ?: getenv('PWD')), $rootPath) !== 0) {
-                esp_error(
-                    '路径错误',
-                    'ESP_ROOT与DOCUMENT_ROOT路径不匹配',
-                    '请在web服务器(如nginx或apache)的站点入口定义路径时以实际路径作为入口',
-                    '不要以软链接地址作为root入口'
-                );
+                $rootPath = dirname($_SERVER['DOCUMENT_ROOT'] ?: $_SERVER['PWD'], 2);
             }
             define('_ROOT', $rootPath); //网站根目录
         }
