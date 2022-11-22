@@ -131,7 +131,7 @@ final class Dispatcher
 
                 //若不启用Cookies，则也不启用Session
                 if ($session = ($cfg->get('session'))) {
-                    $sseConf = $this->mergeConf($session, ['run' => false, 'domain' => $cokConf['domain']]);
+                    $sseConf = $this->mergeConf($session, ['run' => false]);
 
                     if ($sseConf['run'] ?? false) {
                         if (!isset($sseConf['driver'])) $sseConf['driver'] = $cfg->driver;

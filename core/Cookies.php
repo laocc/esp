@@ -8,11 +8,11 @@ use function esp\helper\str_rand;
 
 final class Cookies
 {
-    public $domain;
+    public string $domain;
 
     public function __construct(array $cookies)
     {
-        $this->domain = ($cookies['domain'] === 'host') ? _HOST : _DOMAIN;
+        $this->domain = (strtolower($cookies['domain'] ?? '') === 'host') ? _HOST : _DOMAIN;
     }
 
     public function get($key = null, $autoValue = null)
@@ -117,7 +117,7 @@ final class Cookies
     /**
      * @throws Error
      */
-    private function checkHeader()
+    private function checkHeader(): void
     {
         if (headers_sent($file, $line)) {
             $err = ['message' => "Header be Send:{$file}[{$line}]", 'code' => 500, 'file' => $file, 'line' => $line];
