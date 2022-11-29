@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\dbs\DbModel;
 use esp\dbs\Pool;
 use esp\debug\Debug;
 
@@ -18,6 +19,7 @@ use esp\debug\Debug;
 abstract class Library
 {
     public Controller $_controller;
+    public DbModel $_dbModel;
 
     final public function __construct(...$param)
     {
@@ -30,6 +32,10 @@ abstract class Library
             if ($param[0] instanceof Controller) {
                 $this->_controller = &$param[0];
                 $fstController = true;
+            } else if ($param[0] instanceof DbModel) {
+                $this->_dbModel = &$param[0];
+                $this->_controller = &$param[0]->_controller;
+                $fstController = true;
             } else if ($param[0] instanceof Library) {
                 $this->_controller = &$param[0]->_controller;
                 $fstController = true;
@@ -39,8 +45,13 @@ abstract class Library
         if (!isset($this->_controller)) {
             foreach (debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS) as $trace) {
                 if (!isset($trace['object'])) continue;
+
                 if ($trace['object'] instanceof Controller) {
                     $this->_controller = &$trace['object'];
+                    break;
+                } else if (($trace['object'] instanceof DbModel) and isset($trace['object']->_controller)) {
+                    $this->_controller = &$trace['object']->_controller;
+                    $this->_dbModel = &$trace['object'];
                     break;
                 } else if (($trace['object'] instanceof Library) and isset($trace['object']->_controller)) {
                     $this->_controller = &$trace['object']->_controller;
@@ -50,7 +61,11 @@ abstract class Library
         }
 
         if (!isset($this->_controller)) {
-            esp_error('Library中无法获取Controller', "未获取到控制器", "若本对象是在某插件的回调中创建(例如swoole的tick或task中)，请将创建对像的第一个参数调为\$this，如：new MainModel(\$this)");
+            esp_error('Library中无法获取Controller',
+                "未获取到控制器",
+                "若本对象是在某插件的回调中创建(例如swoole的tick或task中)，请将创建对像的第一个参数调为\$this",
+                "如：\$modMain = new MainModel(\$this, ...\$args)"
+            );
         }
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
