@@ -15,8 +15,8 @@ final class Response
     private string $_display_type = '';
     private array $_header = [];
 
-    public string $_display_Result;//最终的打印结果
-    public string $_Content_Type;
+    public string $_display_Result = '';//最终的打印结果
+    public string $_Content_Type = 'text/html';
     public bool $cache;
 
     private array $_view_val = array();
