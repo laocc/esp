@@ -192,6 +192,12 @@ final class Configure
         end:
         //负载从服务器唤醒，直接退出
         if (_VIRTUAL === 'rpc' && _URI === self::awakenURI) exit($this->_token);
+
+        if (_CLI and _URI === '/_redis/flush') {
+            $this->_Redis->set($this->_token . '_CONFIG_', null);
+            echo "redis 缓存清理成功";
+            exit();
+        }
     }
 
 
