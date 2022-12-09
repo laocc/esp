@@ -707,6 +707,28 @@ abstract class Controller
     }
 
     /**
+     * 生成一个唯一键（无法保证绝对唯一）
+     * 建议直接用uniqid()
+     *
+     * @param string $type
+     * @param string $salt
+     * @return string
+     */
+    public function uniqid(string $type = 'md5', string $salt = ''): string
+    {
+        switch ($type) {
+            case 'sha256':
+            case 'sha1':
+            case 'md5':
+                return hash($type, getenv('REQUEST_ID') . uniqid($salt, true) . $salt);
+
+            default:
+                return uniqid($salt, true);
+        }
+    }
+
+
+    /**
      * var_export
      *
      * @return string
