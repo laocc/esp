@@ -9,7 +9,6 @@ use esp\debug\Debug;
 
 /**
  * Model是此类的子类，实际业务中所创建的类可以直接引用此类
- *
  * Library主要提供工作类与主控制器之间的通信中继作用
  * 在工作类中可以直接调用$this->_controller
  *
