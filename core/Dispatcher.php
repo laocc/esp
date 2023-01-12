@@ -209,8 +209,9 @@ final class Dispatcher
 
         $route = (new Router($this->_config->_Redis))->run($this->_request, $alias);
         if (is_string($route)) {
+            echo $route;
             fastcgi_finish_request();
-            exit($route);
+            exit;
         }
 
         if (isset($this->_debug)) $this->_debug->setRouter($this->_request->RouterValue());
@@ -293,8 +294,9 @@ final class Dispatcher
 
         $route = (new Router($this->_config->_Redis))->run($this->_request, $alias);
         if (is_string($route)) {
+            echo $route;
             fastcgi_finish_request();
-            exit($route);
+            exit;
         }
 
         if (!_CLI && isset($this->_debug)) {
