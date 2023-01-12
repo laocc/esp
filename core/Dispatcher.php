@@ -207,12 +207,9 @@ final class Dispatcher
         if (empty($alias)) $alias = [];
         else $alias = $this->mergeConf($alias);
 
-        $route = (new Router())->run($this->_request, $alias);
+        $route = (new Router($this->_config->_Redis))->run($this->_request, $alias);
         if (is_string($route)) {
-            if ($route === 'true') $route = '';
-            if (substr($route, 0, 6) === 'redis:') {
-                $route = $this->_config->_Redis->get(substr($route, 6));
-            }
+            fastcgi_finish_request();
             exit($route);
         }
 
@@ -294,12 +291,9 @@ final class Dispatcher
         if (empty($alias)) $alias = [];
         else $alias = $this->mergeConf($alias);
 
-        $route = (new Router())->run($this->_request, $alias);
-        if ($route) {
-            if ($route === 'true') $route = '';
-            if (substr($route, 0, 6) === 'redis:') {
-                $route = $this->_config->_Redis->get(substr($route, 6));
-            }
+        $route = (new Router($this->_config->_Redis))->run($this->_request, $alias);
+        if (is_string($route)) {
+            fastcgi_finish_request();
             exit($route);
         }
 

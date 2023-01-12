@@ -7,17 +7,17 @@ use function esp\helper\root;
 
 final class Request
 {
-    private array $_var = array();
     public bool $loop = false;//控制器间跳转循环标识
     public string $router_path;//路由配置目录
-    public string $router;//实际生效的路由器名称
+    private array $_var = array();
     public array $params = array();
 
-    public string $virtual;
-    public string $module;
-    public string $controller;//控制器名，不含后缀
-    public string $action;
-    public string $method;//实际请求方式，get/post等
+    public string $virtual = '';
+    public string $router = '';//实际生效的路由器名称
+    public string $module = '';
+    public string $controller = '';//控制器名，不含后缀
+    public string $action = '';
+    public string $method = '';//实际请求方式，get/post等
     public string $directory;
     public string $referer;//等于HTTP_REFERER
     public string $uri;//等于_URI

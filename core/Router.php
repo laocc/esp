@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use \Redis;
 use function esp\helper\is_match;
 use function esp\helper\is_uri;
 use function esp\helper\load;
@@ -11,8 +12,11 @@ use function esp\helper\root;
 final class Router
 {
 
-    public function __construct()
+    private Redis $redis;
+
+    public function __construct(Redis $redis)
     {
+        $this->redis = &$redis;
     }
 
     public function flush()
@@ -58,6 +62,7 @@ final class Router
 
         $default = ['__default__' => ['__default__' => 1, 'route' => []]];//默认路由
         foreach (array_merge($modRoute, $default) as $key => $route) {
+            if ($key[0] === '#') continue;
             $matcher = $this->getMatcher($key, $route);
             if (!$matcher) continue;
             if (!isset($matcher[1])) $matcher[1] = '';
@@ -76,18 +81,18 @@ final class Router
                     header("Cache-Control: no-cache");
                     header("Pragma: no-cache");
                     header("Location: {$ret}", true, 301);
-                    fastcgi_finish_request();
-                    return 'true';
+                    return '';
 
                 } else if ($rHd === 'redis:') {
                     header("Content-type: text/plain; charset=UTF-8", true, 200);
-                    return strval($ret);
+                    $value = $this->redis->get(trim(substr($ret, 6), ':')) ?: '';
+                    return strval($value);
 
                 } else if ($ret[0] === '/' or $rHd === 'files:') {
                     if ($rHd === 'files:') $ret = substr($ret, 6);
                     if (!is_readable(_ROOT . $ret)) return "route return `{$ret}` not exists.";
                     include_once _ROOT . $ret;
-                    return 'true';
+                    return '';
 
                 } else if ($ret[0] === '{') {
                     header("Content-type: application/json; charset=UTF-8", true, 200);
@@ -215,17 +220,9 @@ final class Router
         return null;
     }
 
-    /**
-     * 加载路由文件
-     *
-     * @param Request $request
-     * @return mixed|array|bool|string
-     */
-    private function loadRouteFile(Request $request)
+    private function readFile(Request $request, string $path)
     {
-        if (is_readable($file = ($request->router_path . '/' . _VIRTUAL . '.php'))) {
-            $modRoute = load($file);
-        } else if (is_readable($file = ($request->router_path . '/' . _VIRTUAL . '.ini'))) {
+        if (is_readable($file = ($request->router_path . '/' . $path . '.ini'))) {
             $modRoute = parse_ini_file($file, true);
             if (!is_array($modRoute) or empty($modRoute)) return [];
             //只将一级键名中带.号的，转换为数组，如将：abc.xyz=123转换为abc[xyz]=123
@@ -237,9 +234,29 @@ final class Router
                     unset($modRoute[$k]);
                 }
             }
-        }
-        if (empty($modRoute)) return [];
+        } else if (is_readable($file = ($request->router_path . '/' . $path . '.php'))) {
+            $modRoute = load($file);
 
+        } else if (is_readable($file = ($request->router_path . '/' . $path . '.json'))) {
+            $modRoute = file_get_contents($file);
+            $modRoute = json_decode($modRoute, true);
+        }
+
+        if (empty($modRoute)) return [];
+        return $modRoute;
+    }
+
+    /**
+     * 加载路由文件
+     *
+     * @param Request $request
+     * @return array|string
+     */
+    private function loadRouteFile(Request $request)
+    {
+        $modRoute = $this->readFile($request, 'default');
+        $modRoute = $modRoute + $this->readFile($request, _VIRTUAL);
+        if (empty($modRoute)) return [];
         if (!_DEBUG) return $modRoute;
 
         foreach ($modRoute as $r => $route) {
