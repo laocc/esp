@@ -19,6 +19,7 @@ final class Configure
     public string $_token;
 
     public Redis $_Redis;
+    public array $_redis_conf;
 
     const awakenURI = '/_esp_config_awaken_';
     const userAgent = 'espConfigAwaken';
@@ -38,6 +39,12 @@ final class Configure
         $this->{$fun}($conf);
     }
 
+    /**
+     * 子节点服务器请求config唤醒
+     *
+     * @param bool $json
+     * @return bool|mixed|string|null
+     */
     private function asyncRPC(bool $json)
     {
         /**
@@ -117,6 +124,8 @@ final class Configure
         if (!$redis->select($db)) {
             esp_error('Configure', "Redis选择库【{$db}】失败。");
         }
+
+        $this->_redis_conf = $conf;
         return $redis;
     }
 

@@ -18,7 +18,7 @@ abstract class Controller
     public Request $_request;
     public Response $_response;
     public Dispatcher $_dispatcher;
-    public Redis $_redis;
+    public Redis $_redis;//config中创建的redis实例
     public Pool $_pool;//用于esp/dbs里的Pool池管理，此对象在library中会被创建为Pool对象
 
     public ?Cookies $_cookies;
