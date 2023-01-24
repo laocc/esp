@@ -69,10 +69,9 @@ final class Dispatcher
         if (!defined('_DEBUG')) define('_DEBUG', is_readable($df = _RUNTIME . '/debug.lock') ? (file_get_contents($df) ?: true) : false);
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
         if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
-        if (!defined('_HOST')) define('_HOST', host(_DOMAIN));//域名的根域
+        if (!defined('_HOST')) define('_HOST', host(_DOMAIN, $option['ThirdHost'] ?? null));//根域，可以在入口自行定义_HOST，或在option里指明这是个三级子域名
         if (!defined('_HTTPS')) define('_HTTPS', (getenv('HTTP_HTTPS') === 'on' or getenv('HTTPS') === 'on'));
-        if (!defined('_HTTP_')) define('_HTTP_', (_HTTPS ? 'https://' : 'http://'));
-        if (!defined('_URL')) define('_URL', _HTTP_ . _DOMAIN . getenv('REQUEST_URI'));
+        if (!defined('_URL')) define('_URL', (_HTTPS ? 'https:' : 'http:') . '//' . _DOMAIN . getenv('REQUEST_URI'));
 
         $ip = '127.0.0.1';
         if (_CLI) {
