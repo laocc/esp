@@ -18,7 +18,7 @@ final class Resources
 
         if (isset($this->conf['host'])) {
             if (!($this->conf['host'][0] === '/' or substr($this->conf['host'], 0, 4) === 'http')) {
-                $this->conf['host'] = _HTTP_ . $this->conf['host'];
+                $this->conf['host'] = (_HTTPS ? 'https:' : 'http:') . '//' . $this->conf['host'];
             }
         } else {
             $this->conf['host'] = '';
