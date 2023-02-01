@@ -284,8 +284,8 @@ CODE;
         header('Cache-Control: no-cache, must-revalidate, no-store', true);
         header('Pragma: no-cache', true);
         header('Cache-Info: no cache', true);
-        header(':esp Cache: no cache', true);
-        if ($label) header('CacheLabel: ' . $label);
+        header('Cache-Esp: no cache', true);
+        if ($label) header('Cache-Label: ' . $label);
     }
 
 
