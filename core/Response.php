@@ -235,7 +235,7 @@ final class Response
         if (is_null($this->_view_set['view_path'])) {
             $vmp = $this->_request->virtual;
             if ($this->_request->module) $vmp = "{$vmp}/{$this->_request->module}";
-            return "{$this->_request->directory}/{$vmp}/views/";
+            return "{$this->_request->directory}/{$vmp}/views";
         } else {
             return $this->_view_set['view_path'];
         }

@@ -25,7 +25,7 @@ final class View implements Adapter
 
     public function __construct(string $dir, $file, $ext)
     {
-        $this->_path['dir'] = $dir;
+        $this->_path['dir'] = rtrim($dir, '/');
         $this->_path['file'] = $file;
         $this->_path['ext'] = $ext;
     }
@@ -41,9 +41,9 @@ final class View implements Adapter
             return $this->_path['dir'];
         } else {
             if ($dir[0] !== '/') {
-                $dir = dirname($this->_path['dir']) . "/{$dir}/";
+                $dir = dirname($this->_path['dir']) . "/{$dir}";
             }
-            return $this->_path['dir'] = $dir;
+            return $this->_path['dir'] = rtrim($dir, '/');
         }
     }
 
@@ -234,26 +234,14 @@ final class View implements Adapter
                 }
             }
 
-            $dir0 = rtrim($this->_path['dir'], '/');
-            $file = $dir0 . '/' . ltrim($this->_path['file'], '/');
-            if (!is_readable($file)) {
-                esp_error('View', "指定的框架视图文件({$file})不存在.");
-            }
+            $file = "{$this->_path['dir']}/" . ltrim($this->_path['file'], '/');
+            if (!is_readable($file)) esp_error('View', "指定的框架视图文件({$file})不存在.");
             return $file;
         }
 
-        $viewPath = dirname($viewPath);
-        $dir1 = dirname($this->_path['dir']);
-        $dir0 = rtrim($this->_path['dir'], '/');
-
-        if ($this->_path['ext'] !== '.php') {
-            if (is_readable($layout_file = "{$viewPath}/layout{$this->_path['ext']}")) return $layout_file;
-            if (is_readable($layout_file = "{$dir0}/layout{$this->_path['ext']}")) return $layout_file;
-            if (is_readable($layout_file = "{$dir1}/layout{$this->_path['ext']}")) return $layout_file;
-        }
-        if (is_readable($layout_file = "{$viewPath}/layout.php")) return $layout_file;
-        if (is_readable($layout_file = "{$dir0}/layout.php")) return $layout_file;
-        if (is_readable($layout_file = "{$dir1}/layout.php")) return $layout_file;
+        if (is_readable($layout_file = "{$this->_path['dir']}/layout{$this->_path['ext']}")) return $layout_file;
+        if (is_readable($layout_file = dirname($viewPath) . "/layout{$this->_path['ext']}")) return $layout_file;
+        if (is_readable($layout_file = dirname($this->_path['dir']) . "/layout{$this->_path['ext']}")) return $layout_file;
 
         esp_error('View', "自动框架视图文件({$layout_file})不存在");
         return '';
