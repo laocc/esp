@@ -270,7 +270,7 @@ CODE;
             header("Cache-Control: max-age={$ttl}, public");
             header('Expires: ' . gmdate('D, d M Y H:i:s', $time + $ttl) . ' GMT');
             header('Pragma: public');
-            if ($label) header("CacheLabel: {$label}");
+            if ($label) header("Cache-Label: {$label}");
         }
     }
 
