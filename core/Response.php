@@ -209,7 +209,7 @@ final class Response
      * 返回标签解析器
      * @return Adapter
      */
-    public function getAdapter(): Adapter
+    public function getAdapter()
     {
         return $this->getView()->getAdapter();
     }
@@ -219,7 +219,7 @@ final class Response
      * @param Adapter $adapter
      * @return View|null
      */
-    public function registerAdapter(Adapter $adapter): ?View
+    public function registerAdapter($adapter): ?View
     {
         if (!$this->_view_set['view_use']) return null;
 

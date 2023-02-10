@@ -16,7 +16,7 @@ final class View implements Adapter
         'ext' => '.php',
     ];
     private View $_layout;//框架对象
-    private Adapter $_adapter;//标签解析器对象
+    private $_adapter;//标签解析器对象
 
     private array $_view_val = array();
     private bool $_adapter_use = false;
@@ -102,7 +102,7 @@ final class View implements Adapter
     /**
      * @return Adapter
      */
-    public function getAdapter(): Adapter
+    public function getAdapter()
     {
         if (!isset($this->_adapter)) {
             esp_error('View', '标签解析器没有注册');
@@ -132,7 +132,7 @@ final class View implements Adapter
      * @param Adapter $object
      * @return $this
      */
-    public function registerAdapter(Adapter $object): View
+    public function registerAdapter($object): View
     {
         $this->_adapter = $object;
         $this->_adapter_use = true;
