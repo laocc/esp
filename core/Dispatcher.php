@@ -509,31 +509,18 @@ final class Dispatcher
         if (isset($this->_debug)) $this->_debug->setController($class);
 
         if (!class_exists($class)) {
+            if (isset($this->_debug)) $this->_debug->folder('controller_error');
+
             if (_DEBUG) {
-                return $this->err404("[{$class}] 控制器不存在，请确认文件是否存在，或是否在composer.json中引用了控制器目录");
+                return $this->_request->returnEmpty('controller', "[{$class}] 控制器不存在，请确认文件是否存在，或是否在composer.json中引用了控制器目录");
             } else {
-                return $this->err404("[{$this->_request->controller}] not exists.]");
+                return $this->_request->returnEmpty('controller', "[{$this->_request->controller}] not exists.]");
             }
         }
 
         $cont = new $class($this);
         if (!($cont instanceof Controller)) {
             esp_error('Controller Error', "{$class} 须继承自 \\esp\\core\\Controller");
-        }
-
-        if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {
-            $auto = strtolower($this->_request->action) . 'Action';
-            if (method_exists($cont, $auto) and is_callable([$cont, $auto])) {
-                $action = $auto;
-            } else {
-                if (method_exists($cont, "default{$actionExt}") and is_callable([$cont, "default{$actionExt}"])) {
-                    $action = "default{$actionExt}";
-                } else if (method_exists($cont, 'defaultAction') and is_callable([$cont, 'defaultAction'])) {
-                    $action = 'defaultAction';
-                } else {
-                    return $this->err404("[{$class}::{$action}()] not exists.");
-                }
-            }
         }
 
         /**
@@ -546,6 +533,22 @@ final class Dispatcher
                 $this->relayDebug(['_init' => 'return', 'return' => $contReturn]);
                 if ($contReturn === false) $contReturn = null;
                 goto close;
+            }
+        }
+
+        if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {
+            $auto = strtolower($this->_request->action) . 'Action';
+            if (method_exists($cont, $auto) and is_callable([$cont, $auto])) {
+                $action = $auto;
+            } else {
+                if (method_exists($cont, "default{$actionExt}") and is_callable([$cont, "default{$actionExt}"])) {
+                    $action = "default{$actionExt}";
+                } else if (method_exists($cont, 'defaultAction') and is_callable([$cont, 'defaultAction'])) {
+                    $action = 'defaultAction';
+                } else {
+                    if (isset($this->_debug)) $this->_debug->folder('action_error');
+                    return $this->_request->returnEmpty('action', "[{$class}::{$action}()] not exists.");
+                }
             }
         }
 
@@ -589,20 +592,6 @@ final class Dispatcher
         else if (is_object($contReturn)) return (string)$contReturn;
 
         return $contReturn;
-    }
-
-    /**
-     * @param string $msg
-     * @return array|mixed|string
-     */
-    private function err404(string $msg)
-    {
-        if (isset($this->_debug)) $this->_debug->folder('error');
-        $empty = $this->_config->get('request.empty');
-        if (is_array($empty)) $empty = $empty[$this->_request->virtual] ?? $msg;
-        $this->_request->exists = false;
-        if (!empty($empty)) return $empty;
-        return $msg;
     }
 
     /**
