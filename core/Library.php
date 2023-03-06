@@ -122,6 +122,11 @@ abstract class Library
         return $this->_controller->_config->get(...$key);
     }
 
+    final public function enum(string $type, $value, $hide = null)
+    {
+        return $this->_controller->enum($type, $value, $hide);
+    }
+
     /**
      * 发送通知信息到redis管道，一般要在swoole中接收
      *
