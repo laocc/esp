@@ -10,6 +10,7 @@ use esp\debug\Debug;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
 use function esp\helper\host;
+use function esp\helper\numbers;
 use function esp\helper\root;
 
 abstract class Controller
@@ -27,6 +28,7 @@ abstract class Controller
     public ?Counter $_counter;
     public ?Debug $_debug;
     public array $_plugs;
+    public string $enumKey = 'enum';
 
     /**
      * 空数组，用于程序运行过程中保存全局统一、唯一的变量
@@ -51,6 +53,86 @@ abstract class Controller
         $this->_cache = &$dispatcher->_cache;
         $this->_error = &$dispatcher->_error;
     }
+
+    /**
+     * 向视图发送读取enum方法
+     *
+     * @param string $funName
+     * @return void
+     */
+    public function setEnum(string $funName = 'enum')
+    {
+        $this->assign($funName, function (string $key, $hide = null) {
+            $val = $this->config("{$this->enumKey}.{$key}");
+            if (!$val) return json_encode([0 => "{$key}.未定义1"]);
+            if (is_string($val)) $val = $this->config("{$this->enumKey}.{$val}");
+            if (!$val) return json_encode([0 => "{$key}.未定义2"]);
+
+            if ($hide) {
+                if (is_int($hide)) $hide = numbers($hide);
+                else if (!is_array($hide)) return [0 => 'hide只能是int或array'];
+                foreach ($hide as $k) unset($val[$k]);
+            }
+            return json_encode($val, 320);
+        });
+    }
+
+    /**
+     * 查询enum值
+     *
+     * @param string $type
+     * @param $value
+     * @param array $hide
+     * @return array|string|null
+     * value 若是不可拆分的数字，要用字串型传入
+     */
+    public function enum(string $type, $value, $hide = [])
+    {
+        $enum = $this->config("{$this->enumKey}.{$type}");
+        if (!$enum) exit("{$this->enumKey}没有此项:{$type}");
+        if (is_string($enum)) {
+            if (strpos($enum, '+')) {
+                $eKey = explode('+', $enum);
+                $enum = [];
+                foreach ($eKey as $key) {
+                    $tVal = $this->config("{$this->enumKey}.{$key}");
+                    if (!$tVal) exit("{$this->enumKey}没有{$key}的映射设置");
+                    $enum = $enum + $tVal;
+                }
+
+            } else {
+                $enum = $this->config("{$this->enumKey}.{$enum}");
+                if (!$enum) exit("{$this->enumKey}没有{$type}的映射设置");
+            }
+        }
+
+        if (is_int($value)) {
+            if ($value < 0) {
+                $value = max(numbers(abs($value)));
+            } else {
+                $value = numbers($value);
+            }
+        }
+
+        if ($hide) {
+            if (is_int($hide)) $hide = numbers($hide);
+            else if (!is_array($hide)) $hide = [$hide];
+        }
+
+        if (is_array($value)) {
+            $value = array_map(function ($v) use ($enum) {
+                return $enum[$v] ?? null;
+            }, $value);
+            foreach ($hide as $k) unset($value[$k]);
+            return implode(',', $value);
+        }
+
+        foreach ($hide as $k) unset($enum[$k]);
+        if (is_null($value)) return $enum;
+
+        return $enum[$value] ?? null;
+    }
+
 
     /**
      * 检查来路是否本站相同域名
