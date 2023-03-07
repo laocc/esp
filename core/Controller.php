@@ -84,7 +84,9 @@ abstract class Controller
      * @param $value
      * @param array $hide
      * @return array|string|null
-     * value 若是不可拆分的数字，要用字串型传入
+     *
+     * $value 若是不可拆分的数字，要用字串型传入
+     * $value = null 时，返回$type完整值
      */
     public function enum(string $type, $value, $hide = [])
     {
@@ -123,11 +125,11 @@ abstract class Controller
             $value = array_map(function ($v) use ($enum) {
                 return $enum[$v] ?? null;
             }, $value);
-            foreach ($hide as $k) unset($value[$k]);
+            if ($hide) foreach ($hide as $k) unset($value[$k]);
             return implode(',', $value);
         }
 
-        foreach ($hide as $k) unset($enum[$k]);
+        if ($hide) foreach ($hide as $k) unset($enum[$k]);
         if (is_null($value)) return $enum;
 
         return $enum[$value] ?? null;
