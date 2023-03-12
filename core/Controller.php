@@ -80,7 +80,7 @@ abstract class Controller
                 if ($unset) {
                     foreach ($hide as $k) unset($val[$k]);
                 } else {
-                    return json_encode((array_diff_key($val, array_flip($hide))), 320);
+                    return json_encode((array_intersect_key($val, array_flip($hide))), 320);
                 }
             }
             return json_encode($val, 320);
@@ -145,7 +145,7 @@ abstract class Controller
             }, $value);
             if ($hide) {
                 if ($unset) foreach ($hide as $k) unset($value[$k]);
-                else $value = json_encode((array_diff_key($value, array_flip($hide))), 320);
+                else $value = json_encode((array_intersect_key($value, array_flip($hide))), 320);
             }
             return implode(',', $value);
         }
@@ -154,7 +154,7 @@ abstract class Controller
             if ($unset) {
                 foreach ($hide as $k) unset($enum[$k]);
             } else {
-                $enum = json_encode((array_diff_key($enum, array_flip($hide))), 320);
+                $enum = json_encode((array_intersect_key($enum, array_flip($hide))), 320);
             }
         }
         if (is_null($value)) return $enum;
