@@ -56,7 +56,7 @@ abstract class Controller
 
     /**
      * 向视图发送读取enum方法
-     *
+     * $hide，只允许整型，或数组。整型时：>0表示只显示这些值，<0表示剔除这些值
      * @param string $funName
      * @return void
      */
@@ -69,9 +69,19 @@ abstract class Controller
             if (!$val) return json_encode([0 => "{$key}.未定义2"]);
 
             if ($hide) {
-                if (is_int($hide)) $hide = numbers($hide);
-                else if (!is_array($hide)) return [0 => 'hide只能是int或array'];
-                foreach ($hide as $k) unset($val[$k]);
+                $unset = false;
+                if (is_int($hide)) {
+                    if ($hide < 0) {
+                        $unset = true;
+                        $hide = abs($hide);
+                    }
+                    $hide = numbers($hide);
+                } else if (!is_array($hide)) return [0 => 'hide只能是int或array'];
+                if ($unset) {
+                    foreach ($hide as $k) unset($val[$k]);
+                } else {
+                    return json_encode((array_diff_key($val, array_flip($hide))), 320);
+                }
             }
             return json_encode($val, 320);
         });
@@ -82,13 +92,13 @@ abstract class Controller
      *
      * @param string $type
      * @param $value
-     * @param array $hide
+     * @param null $hide 只允许整型，或数组。整型时：>0表示只显示这些值，<0表示剔除这些值
      * @return array|string|null
      *
      * $value 若是不可拆分的数字，要用字串型传入
      * $value = null 时，返回$type完整值
      */
-    public function enum(string $type, $value, $hide = [])
+    public function enum(string $type, $value, $hide = null)
     {
         $enum = $this->config("{$this->enumKey}.{$type}");
         if (!$enum) exit("{$this->enumKey}没有此项:{$type}");
@@ -116,20 +126,37 @@ abstract class Controller
             }
         }
 
+        $unset = false;
         if ($hide) {
-            if (is_int($hide)) $hide = numbers($hide);
-            else if (!is_array($hide)) $hide = [$hide];
+            if (is_int($hide)) {
+                if ($hide < 0) {
+                    $unset = true;
+                    $hide = abs($hide);
+                }
+                $hide = numbers($hide);
+            } else if (!is_array($hide)) {
+                $hide = [$hide];
+            }
         }
 
         if (is_array($value)) {
             $value = array_map(function ($v) use ($enum) {
                 return $enum[$v] ?? null;
             }, $value);
-            if ($hide) foreach ($hide as $k) unset($value[$k]);
+            if ($hide) {
+                if ($unset) foreach ($hide as $k) unset($value[$k]);
+                else $value = json_encode((array_diff_key($value, array_flip($hide))), 320);
+            }
             return implode(',', $value);
         }
 
-        if ($hide) foreach ($hide as $k) unset($enum[$k]);
+        if ($hide) {
+            if ($unset) {
+                foreach ($hide as $k) unset($enum[$k]);
+            } else {
+                $enum = json_encode((array_diff_key($enum, array_flip($hide))), 320);
+            }
+        }
         if (is_null($value)) return $enum;
 
         return $enum[$value] ?? null;
