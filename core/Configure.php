@@ -16,7 +16,6 @@ final class Configure
     public int $RedisDbIndex = 0;
     public string $driver;//驱动方式，供dispatcher中读取用于session的驱动方式
     private array $_CONFIG_ = [];
-    public string $_token;
 
     public Redis $_Redis;
     public array $_redis_conf;
@@ -29,7 +28,6 @@ final class Configure
      */
     public function __construct(array $conf)
     {
-        $this->_token = md5(__FILE__);
         $conf += ['path' => '/common/config', 'type' => 'redis'];
         $conf['path'] = root($conf['path']);
         $this->driver = $conf['type'];
@@ -50,7 +48,7 @@ final class Configure
         /**
          * 若在子服务器里能进入到这里，说明redis中没有数据，
          * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
-         * 并且主服务器返回的是`$this->_token`，如果返回的不是这个，就是出错了。
+         * 并且主服务器返回的是`_UNIQUE_KEY`，如果返回的不是这个，就是出错了。
          * 然后，再次goto trySelf;从redis中读取config
          * 这里请求$awakenURI，在主服务器中实际上会被当前文件也就是当前构造函数中最后一行拦截并返回success
          * 需要在nginx中建立一个绑定了$host['host']和port的虚拟机，指向任意虚拟机即可
@@ -163,7 +161,7 @@ final class Configure
 
         //没有强制从文件加载
         if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
-            $get = $this->_Redis->get($this->_token . '_CONFIG_');
+            $get = $this->_Redis->get(_UNIQUE_KEY . '_CONFIG_');
             if (!empty($get)) {
                 if (is_string($get)) $get = json_decode($get, true) ?: [];
                 $this->_CONFIG_ = $get;
@@ -179,32 +177,32 @@ final class Configure
              * 先读redis，若读不到，再进行后面的，这个虽然在前面也有读取，但是，若在从服务器，且也符合强制从文件加载时，上面的是不会执行的
              * 所在在这里要先读redis，也就是说，从服务器无论什么情况，都是先读redis，读不到时请求rpc往redis里写
              */
-            $this->_CONFIG_ = $this->_Redis->get($this->_token . '_CONFIG_') ?: [];
+            $this->_CONFIG_ = $this->_Redis->get(_UNIQUE_KEY . '_CONFIG_') ?: [];
             if (!empty($this->_CONFIG_)) return;
 
             /**
              * 若在子服务器里能进入到这里，说明redis中没有数据，
              * 则向主服务器发起一个请求，此请求仅仅是唤起主服务器重新初始化config
-             * 并且主服务器返回的是`$this->_token`，如果返回的不是这个，就是出错了。
+             * 并且主服务器返回的是`_UNIQUE_KEY`，如果返回的不是这个，就是出错了。
              * 然后，再次goto trySelf;从redis中读取config
              * 这里请求$awakenURI，在主服务器中实际上会被当前文件也就是当前构造函数中最后一行拦截并返回success
              */
             $get = $this->asyncRPC(false);
-            if ($get !== $this->_token) {
-                if ($tryCount++ > 1) esp_error('Configure', "多次请求RPC获取到数据不合法", "期望值({$this->_token})，实际获取:{$get}");
+            if ($get !== _UNIQUE_KEY) {
+                if ($tryCount++ > 1) esp_error('Configure', "多次请求RPC获取到数据不合法", "期望值(" . _UNIQUE_KEY . ")，实际获取:{$get}");
             }
 
             goto tryReadRedis;
         }
         $this->mergeConfig($conf);
-        if (!_CLI) $this->_Redis->set($this->_token . '_CONFIG_', $this->_CONFIG_);
+        if (!_CLI) $this->_Redis->set(_UNIQUE_KEY . '_CONFIG_', $this->_CONFIG_);
 
         end:
         //负载从服务器唤醒，直接退出
-        if (_VIRTUAL === 'rpc' && _URI === self::awakenURI) exit($this->_token);
+        if (_VIRTUAL === 'rpc' && _URI === self::awakenURI) exit(_UNIQUE_KEY);
 
         if (_CLI and _URI === '/_redis/flush') {
-            $this->_Redis->set($this->_token . '_CONFIG_', null);
+            $this->_Redis->set(_UNIQUE_KEY . '_CONFIG_', null);
             echo "redis 缓存清理成功";
             exit();
         }
@@ -213,7 +211,7 @@ final class Configure
 
     private function load_file(array $conf)
     {
-        $cnfFile = _RUNTIME . "/{$this->_token}_CONFIG_.json";
+        $cnfFile = _RUNTIME . "/" . _UNIQUE_KEY . "_CONFIG_.json";
         $isMaster = is_file(_RUNTIME . '/master.lock');
 
         //没有强制从文件加载
@@ -328,13 +326,14 @@ final class Configure
     public function flush(int $lev = 0): void
     {
         if ($lev === 0) {            //清空config本身
-            $this->_Redis->set($this->_token . '_CONFIG_', null);
+            $this->_Redis->set(_UNIQUE_KEY . '_CONFIG_', null);
+            $this->_Redis->set(_UNIQUE_KEY . '_MYSQL_CACHE_', null);
 
         } else {
             //清空整个redis表
-            $rand = $this->_Redis->get('resourceRand');
+            $rand = $this->_Redis->get(_UNIQUE_KEY . '_RESOURCE_RAND_');
             $this->_Redis->flushDB();
-            $this->_Redis->set('resourceRand', $rand);
+            $this->_Redis->set(_UNIQUE_KEY . '_RESOURCE_RAND_', $rand);
         }
     }
 
@@ -345,7 +344,7 @@ final class Configure
         $db1Value = [];
         $v = ['NULL', 'STRING', 'SET', 'LIST', 'ZSET', 'HASH'];
         foreach ($config as $key) {
-            if ($key === ($this->_token . '_CONFIG_')) {
+            if ($key === (_UNIQUE_KEY . '_CONFIG_')) {
                 continue;
             }
             $type = $this->_Redis->type($key);

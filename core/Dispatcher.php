@@ -65,7 +65,8 @@ final class Dispatcher
             }
             define('_ROOT', $rootPath); //网站根目录
         }
-        if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');
+        if (!defined('_UNIQUE_KEY')) define('_UNIQUE_KEY', md5(__FILE__));//本项目在当前服务器的唯一键
+        if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');//临时文件目录
         if (!defined('_DEBUG')) define('_DEBUG', is_readable($df = _RUNTIME . '/debug.lock') ? (file_get_contents($df) ?: true) : false);
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
         if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
@@ -131,7 +132,7 @@ final class Dispatcher
         $response = $cfg->get('response');
         if (empty($response)) $response = [];
         $response = $this->mergeConf($response);
-        if (isset($response['rand'])) $response['_rand'] = $cfg->_Redis->get('resourceRand') ?: date('YmdH');
+        if (isset($response['rand'])) $response['_rand'] = $cfg->_Redis->get(_UNIQUE_KEY . '_RESOURCE_RAND_') ?: date('YmdH');
         $this->_response = new Response($this->_request, $response);
 
         if ($cookies = $cfg->get('cookies')) {
