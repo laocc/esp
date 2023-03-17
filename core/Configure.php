@@ -201,11 +201,14 @@ final class Configure
         //负载从服务器唤醒，直接退出
         if (_VIRTUAL === 'rpc' && _URI === self::awakenURI) exit(_UNIQUE_KEY);
 
-        if (_CLI and _URI === '/_redis/flush') {
-            $this->_Redis->set(_UNIQUE_KEY . '_CONFIG_', null);
-            echo "redis 缓存清理成功";
+        if (_CLI and substr(_URI, 0, 13) === '/_redis/flush') {
+            $flush = $this->flush(intval(substr(_URI, 14)), '');
+            echo "redis 缓存清理成功\n";
+            print_r($flush);
             exit();
         }
+
+
     }
 
 
@@ -323,7 +326,7 @@ final class Configure
         return $this->_Redis->select($dbID);
     }
 
-    public function flush(int $lev): array
+    public function flush(int $lev, string $safe): array
     {
         $value = [];
         if (!$lev) $lev = 1;
@@ -338,7 +341,11 @@ final class Configure
         }
 
         if ($lev & 1024) {            //清空整个redis
-            $value[1024] = $this->_Redis->flushAll();
+            if ($safe === 'flushAll') {
+                $value[1024] = $this->_Redis->flushAll();
+            } else {
+                echo "请在第2个参数输入flushAll以确认执行的是此命令\n";
+            }
         }
         return $value;
     }
