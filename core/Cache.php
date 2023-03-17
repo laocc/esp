@@ -13,10 +13,10 @@ use function esp\helper\root;
  */
 final class Cache
 {
-    private array $_option;
     private Request $_request;
     private Response $_response;
     private Redis $_redis;
+    private array $_option;
     private string $cache_path;
     private string $cache_key;
 
