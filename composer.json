@@ -25,6 +25,7 @@
     "psr-4": {
       "esp\\core\\": "core/",
       "esp\\face\\": "face/",
+      "esp\\help\\": "help/",
       "esp\\scripts\\": "scripts/",
       "esp\\error\\": "error/"
     }
