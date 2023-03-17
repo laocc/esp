@@ -5,6 +5,7 @@ namespace esp\core;
 
 use esp\debug\Counter;
 use esp\debug\Debug;
+use esp\help\Helps;
 use esp\session\Session;
 use esp\helper\library\Result;
 use function esp\helper\host;
@@ -502,6 +503,11 @@ final class Dispatcher
         LOOP:
         $virtual = $this->_request->virtual;
         if ($this->_request->module) $virtual .= '\\' . $this->_request->module;
+
+        if (_CLI && $this->_request->controller === '_esp') {
+            $cont = new Helps($this);
+            return call_user_func_array([$cont, $this->_request->action], $this->_request->params);
+        }
 
         $controller = ucfirst($this->_request->controller) . $this->_request->contFix;
         $action = strtolower($this->_request->action) . $actionExt;

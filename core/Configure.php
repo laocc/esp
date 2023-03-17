@@ -323,22 +323,24 @@ final class Configure
         return $this->_Redis->select($dbID);
     }
 
-    public function flush(int $lev): void
+    public function flush(int $lev): array
     {
+        $value = [];
         if (!$lev) $lev = 1;
-        if ($lev & 1) $this->_Redis->del(_UNIQUE_KEY . '_CONFIG_');
-        if ($lev & 2) $this->_Redis->del(_UNIQUE_KEY . '_MYSQL_CACHE_');
-        if ($lev & 4) $this->_Redis->del(_UNIQUE_KEY . '_RESOURCE_RAND_');
+        if ($lev & 1) $value[1] = $this->_Redis->del(_UNIQUE_KEY . '_CONFIG_');
+        if ($lev & 2) $value[2] = $this->_Redis->del(_UNIQUE_KEY . '_MYSQL_CACHE_');
+        if ($lev & 4) $value[4] = $this->_Redis->del(_UNIQUE_KEY . '_RESOURCE_RAND_');
 
         if ($lev & 256) {            //清空整个redis表，保留_RESOURCE_RAND_
             $rand = $this->_Redis->get(_UNIQUE_KEY . '_RESOURCE_RAND_');
-            $this->_Redis->flushDB();
+            $value[256] = $this->_Redis->flushDB();
             $this->_Redis->set(_UNIQUE_KEY . '_RESOURCE_RAND_', $rand);
         }
 
         if ($lev & 1024) {            //清空整个redis
-            $this->_Redis->flushAll();
+            $value[1024] = $this->_Redis->flushAll();
         }
+        return $value;
     }
 
 
