@@ -80,6 +80,7 @@ abstract class Controller
                 if ($unset) {
                     foreach ($hide as $k) unset($val[$k]);
                 } else {
+                    //使用键名比较计算数组的交集 交换数组中的键和值
                     return json_encode((array_intersect_key($val, array_flip($hide))), 320);
                 }
             }
