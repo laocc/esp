@@ -145,8 +145,10 @@ class Handler
             $err['message'] = $error->getMessage();
             $err['file'] = $this->filter_root($errFile) . "({$errLine})";
             $err['trace'] = $error->getTrace();
+            $prev = ['file' => $errFile, 'line' => $errLine];
 
-            $this->error($err, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0], $option['path'], $option['filename']);
+            //debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]
+            $this->error($err, $prev, $option['path'], $option['filename']);
 
             $ajax = (strtolower(getenv('HTTP_X_REQUESTED_WITH') ?: '') === 'xmlhttprequest');
             $post = (strtolower(getenv('REQUEST_METHOD') ?: '') === 'post');
@@ -279,7 +281,7 @@ class Handler
 
         if (isset($this->debug)) {
             //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
-            $this->debug->relay($info['Error']['message']);
+            $this->debug->relay($info['Error']['message'], -1, $prev);
             $sl = $this->debug->save_logs('by Error Saved');
             $info['debugLogSaveRest'] = $sl;
             $jsonTxt = json_encode($info, 256 | 64 | 128);

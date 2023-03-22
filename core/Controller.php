@@ -438,9 +438,15 @@ abstract class Controller
     final public function redirect(string $url, int $code = 302): bool
     {
         if (headers_sent($filename, $line)) {
-            !is_null($this->_debug) && $this->_debug->relay([
+            !is_null($this->_debug) && $this->_debug->relay(
+                [
                     "header Has Send:{$filename}({$line})",
-                    'headers' => headers_list()]
+                    'headers' => headers_list()],
+                -1,
+                [
+                    'file' => $filename,
+                    'line' => $line
+                ]
             )->error("页面已经输出过");
             return false;
         }
