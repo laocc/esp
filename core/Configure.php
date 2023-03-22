@@ -326,7 +326,7 @@ final class Configure
         return $this->_Redis->select($dbID);
     }
 
-    public function flush(int $lev, string $safe): array
+    public function flush(int $lev = 1, string $safe = ''): array
     {
         $value = [];
         if (!$lev) $lev = 1;
