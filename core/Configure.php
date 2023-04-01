@@ -239,7 +239,7 @@ final class Configure
 
         $this->mergeConfig($conf);
 
-        if (!_CLI) file_put_contents($cnfFile, json_encode($this->_CONFIG_, 448));
+        if (!_CLI) @file_put_contents($cnfFile, json_encode($this->_CONFIG_, 448));
 
         end:
         //负载从服务器唤醒，直接退出

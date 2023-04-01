@@ -238,11 +238,11 @@ class Handler
 
             if (is_readable($errLogFile)) {
                 if (isset($this->debug)) $this->debug->disable();
-                file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+                @file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
                 return;
             }
             mk_dir($errLogFile);
-            file_put_contents($errLogFile, json_encode(['trace' => ''] + $error, 256 | 64 | 128) . "\n");
+            @file_put_contents($errLogFile, json_encode(['trace' => ''] + $error, 256 | 64 | 128) . "\n");
         }
 
 
@@ -296,7 +296,7 @@ class Handler
         }
 
         mk_dir($filename);
-        if (is_readable($path)) file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
+        if (is_readable($path)) @file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
     }
 
 

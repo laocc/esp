@@ -53,7 +53,7 @@ final class Router
         if (empty($modRoute)) {
             $modRoute = $this->loadRouteFile($request);
             if (empty($modRoute)) $modRoute = ['null'];
-            if (!_CLI) file_put_contents($cacheFile, serialize($modRoute));
+            if (!_CLI) @file_put_contents($cacheFile, serialize($modRoute));
         }
 
         if ($modRoute === ['null']) $modRoute = [];

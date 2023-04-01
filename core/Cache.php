@@ -175,7 +175,7 @@ return array(
     'html' => &\$html
 );\n
 CODE;
-            file_put_contents("{$this->cache_path}/{$key}.php", $php);
+            @file_put_contents("{$this->cache_path}/{$key}.php", $php);
         } else {
             $this->_redis->set($key, $array, $this->_option['ttl']);
         }
@@ -241,7 +241,7 @@ CODE;
 
         $path = rtrim($this->_option['path']['static'] ?? dirname(getenv('SCRIPT_FILENAME')), '/');
         mk_dir($path . $filename, 0740);
-        $save = file_put_contents($path . $filename, $html, LOCK_EX);
+        $save = @file_put_contents($path . $filename, $html, LOCK_EX);
 
         if ($save !== strlen($html)) {
             @unlink($path . $filename);
