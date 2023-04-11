@@ -331,8 +331,9 @@ final class Request
         return [
             'agent' => $u_agent,
             'browser' => $browser,
-            'version' => $matches['ver'][$i] ?: '?',
-            'os' => $os];
+            'version' => $matches['ver'][$i] ?? '',
+            'os' => $os
+        ];
     }
 
     /**
