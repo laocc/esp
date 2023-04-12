@@ -4,6 +4,7 @@ namespace esp\help;
 
 use esp\core\Dispatcher;
 use esp\error\Error;
+use function esp\helper\_table;
 use function esp\helper\root;
 
 class Helps
@@ -13,6 +14,12 @@ class Helps
     public function __construct(Dispatcher $dispatcher)
     {
         $this->_dispatcher = &$dispatcher;
+    }
+
+    public function config()
+    {
+        $value = $this->_dispatcher->_config->allConfig();
+        print_r($value);
     }
 
     public function flush($lev, $safe)
@@ -37,6 +44,14 @@ class Helps
 //        $tab = $espModel->createModel(get_parent_class($espModel));
         $tab = $espModel->createModel($path, $base);
         print_r($tab);
+    }
+
+    public function tables()
+    {
+        $espCont = new EspController($this->_dispatcher);
+        $espModel = new EspModel($espCont);
+        $tab = $espModel->tables(false);
+        _table($tab);
     }
 
     public function table($table, $dataKey)

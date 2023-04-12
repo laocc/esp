@@ -506,7 +506,11 @@ final class Dispatcher
 
         if (_CLI && $this->_request->controller === '_esp') {
             $cont = new Helps($this);
-            return call_user_func_array([$cont, $this->_request->action], $this->_request->params);
+            if (method_exists($cont, $this->_request->action) and is_callable([$cont, $this->_request->action])) {
+                return call_user_func_array([$cont, $this->_request->action], $this->_request->params);
+            } else {
+                return "Helps{}类没有{$this->_request->action}方法。";
+            }
         }
 
         $controller = ucfirst($this->_request->controller) . $this->_request->contFix;
