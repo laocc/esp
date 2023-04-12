@@ -16,13 +16,21 @@ class Helps
         $this->_dispatcher = &$dispatcher;
     }
 
-    public function config(string $key = null)
+    public function config(string $key = null, $json = null)
     {
         $value = $this->_dispatcher->_config->allConfig();
         if ($key) {
-            print_r($value[$key] ?? null);
+            if ($json) {
+                echo json_encode($value[$key] ?? [], 320) . "\n";
+            } else {
+                print_r($value[$key] ?? null);
+            }
         } else {
-            print_r($value);
+            if ($json) {
+                echo json_encode($value, 320) . "\n";
+            } else {
+                print_r($value);
+            }
         }
     }
 
