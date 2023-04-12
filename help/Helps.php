@@ -16,10 +16,14 @@ class Helps
         $this->_dispatcher = &$dispatcher;
     }
 
-    public function config()
+    public function config(string $key = null)
     {
         $value = $this->_dispatcher->_config->allConfig();
-        print_r($value);
+        if ($key) {
+            print_r($value[$key] ?? null);
+        } else {
+            print_r($value);
+        }
     }
 
     public function flush($lev, $safe)
