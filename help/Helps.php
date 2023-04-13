@@ -34,10 +34,44 @@ class Helps
         }
     }
 
+    /**
+     * @param $lev
+     * @param $safe
+     * @return void
+     *
+     * 可以在url中加参数清除：
+     * ?_flush_key=XXX&_config_load=NNN   XXX为 _RUNTIME/flush_key.txt内容，NNN=以下值，不含1024
+     * ?_flush_key=XXX&_router_load=NNN   XXX为 _RUNTIME/flush_key.txt内容，NNN&32时，清空所有路由缓存
+     *
+     * $lev:
+     * 1：只清_CONFIG_，默认值
+     * 2：_MYSQL_CACHE_
+     * 4：_RESOURCE_RAND_
+     * 32：清空路由
+     * 256：清空整个redis表，保留_RESOURCE_RAND_
+     * 1024：清空整个redis，需要safe=flushAll
+     *
+     */
     public function flush($lev, $safe)
     {
-        $value = $this->_dispatcher->_config->flush(intval($lev), strval($safe));
+        $lev = intval($lev);
+        $value = $this->_dispatcher->_config->flush($lev, strval($safe));
+
+        if ($lev & 32) {
+            $value['route'] = [];
+            $dir = new \DirectoryIterator(_RUNTIME);
+            foreach ($dir as $f) {
+                if (!$f->isFile()) continue;
+                $name = $f->getFilename();
+                if (preg_match('/^_ROUTES_\w+\#(\w+)\.route$/', $name, $mr)) {
+                    unlink($name);
+                    $value['route'][$mr[1]] = $name;
+                }
+            }
+        }
+
         print_r($value);
+
     }
 
     /**

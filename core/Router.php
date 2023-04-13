@@ -19,12 +19,45 @@ final class Router
         $this->redis = &$redis;
     }
 
-    public function flush()
+    /**
+     * ?_flush_key=XXX&_router_load=NNN   XXX为 _RUNTIME/flush_key.txt内容，NNN&32时，清空所有路由缓存
+     *
+     * 是否从缓存读取
+     * @return bool
+     */
+    private function forceCache(): bool
     {
-        $rdi = new \RecursiveDirectoryIterator(_RUNTIME);
-        $dirs = new \RecursiveIteratorIterator($rdi, 1);
-        $regIts = new \RegexIterator($dirs, '/^.+\.route/i');
-        foreach ($regIts as $fileName => $exp) unlink($fileName);
+        if (_CLI) return true;
+        if (defined('_CONFIG_LOAD')) return boolval(_CONFIG_LOAD);
+        if (isset($_GET['_flush_key']) and isset($_GET['_router_load'])) {
+            $r = intval($_GET['_router_load']);
+            if (!$r) return true;
+            if (!is_readable(_RUNTIME . '/flush_key.txt')) return true;
+            if (file_get_contents(_RUNTIME . '/flush_key.txt') !== $_GET['_flush_key']) {
+                if ($r & 32) $this->flush();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array
+     */
+    public function flush(): array
+    {
+        $dir = new \DirectoryIterator(_RUNTIME);
+        $value = [];
+        foreach ($dir as $f) {
+            if (!$f->isFile()) continue;
+            $name = $f->getFilename();
+            if (preg_match('/^_ROUTES_\w+\#(\w+)\.route$/', $name, $mr)) {
+                unlink(_RUNTIME . '/' . $name);
+                $value[$mr[1]] = $name;
+            }
+        }
+        return $value;
     }
 
     /**
@@ -35,21 +68,15 @@ final class Router
      */
     public function run(Request $request, array $alias): ?string
     {
-        $rdsKey = '_ROUTES_' . md5(__FILE__) . '#' . _VIRTUAL;
-
-        $cache = !_CLI;
-        if ($cache) {
-            if (isset($_GET['_config_load'])) $cache = false;
-            elseif (defined('_CONFIG_LOAD')) $cache = !_CONFIG_LOAD;
-        }
-
         $modRoute = null;
+        $rdsKey = '_ROUTES_' . md5(__FILE__) . '#' . _VIRTUAL;
         $cacheFile = _RUNTIME . "/{$rdsKey}.route";
-        if ($cache and file_exists($cacheFile)) {
+        if ($this->forceCache() and file_exists($cacheFile)) {
             if (!empty($mc = file_get_contents($cacheFile))) {
                 $modRoute = unserialize($mc);
             }
         }
+
         if (empty($modRoute)) {
             $modRoute = $this->loadRouteFile($request);
             if (empty($modRoute)) $modRoute = ['null'];

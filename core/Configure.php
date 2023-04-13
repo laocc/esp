@@ -128,6 +128,27 @@ final class Configure
     }
 
     /**
+     * 是否从缓存读取
+     * @return bool
+     */
+    private function forceCache(): bool
+    {
+        if (_CLI) return true;
+        if (defined('_CONFIG_LOAD')) return boolval(_CONFIG_LOAD);
+        if (isset($_GET['_flush_key']) and isset($_GET['_config_load'])) {
+            $r = intval($_GET['_config_load']);
+            if (!$r) return true;
+            if (!is_readable(_RUNTIME . '/flush_key.txt')) return true;
+            if (file_get_contents(_RUNTIME . '/flush_key.txt') !== $_GET['_flush_key']) {
+                if ($r > 1) $this->flush($r);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @param array $conf
      */
     private function load_redis(array $conf)
@@ -160,7 +181,7 @@ final class Configure
         $this->_Redis = $this->connectRedis($rdsConf, $this->RedisDbIndex);
 
         //没有强制从文件加载
-        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])) {
+        if ($this->forceCache()) {
             $get = $this->_Redis->get(_UNIQUE_KEY . '_CONFIG_');
             if (!empty($get)) {
                 if (is_string($get)) $get = json_decode($get, true) ?: [];
@@ -218,8 +239,7 @@ final class Configure
         $isMaster = is_file(_RUNTIME . '/master.lock');
 
         //没有强制从文件加载
-        if (!_CLI and (!defined('_CONFIG_LOAD') or !_CONFIG_LOAD) and !isset($_GET['_config_load'])
-            and is_readable($cnfFile)) {
+        if ($this->forceCache() and is_readable($cnfFile)) {
             $json = file_get_contents($cnfFile);
             $this->_CONFIG_ = json_decode($json, true) ?: [];
             if (!empty($this->_CONFIG_)) goto end;
@@ -330,19 +350,19 @@ final class Configure
     {
         $value = [];
         if (!$lev) $lev = 1;
-        if ($lev & 1) $value[1] = $this->_Redis->del(_UNIQUE_KEY . '_CONFIG_');
-        if ($lev & 2) $value[2] = $this->_Redis->del(_UNIQUE_KEY . '_MYSQL_CACHE_');
-        if ($lev & 4) $value[4] = $this->_Redis->del(_UNIQUE_KEY . '_RESOURCE_RAND_');
+        if ($lev & 1) $value['config'] = $this->_Redis->del(_UNIQUE_KEY . '_CONFIG_');
+        if ($lev & 2) $value['cache'] = $this->_Redis->del(_UNIQUE_KEY . '_MYSQL_CACHE_');
+        if ($lev & 4) $value['resource'] = $this->_Redis->del(_UNIQUE_KEY . '_RESOURCE_RAND_');
 
         if ($lev & 256) {            //清空整个redis表，保留_RESOURCE_RAND_
             $rand = $this->_Redis->get(_UNIQUE_KEY . '_RESOURCE_RAND_');
-            $value[256] = $this->_Redis->flushDB();
+            $value['flush_db'] = $this->_Redis->flushDB();
             $this->_Redis->set(_UNIQUE_KEY . '_RESOURCE_RAND_', $rand);
         }
 
         if ($lev & 1024) {            //清空整个redis
             if ($safe === 'flushAll') {
-                $value[1024] = $this->_Redis->flushAll();
+                $value['flush_all'] = $this->_Redis->flushAll();
             } else {
                 echo "请在第2个参数输入flushAll以确认执行的是此命令\n";
             }
