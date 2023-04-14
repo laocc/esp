@@ -55,6 +55,7 @@ class Handler
          * 如果是在Debug生成之后产生的错误，保存在debug.ini中指定的位置
          */
         $option += ['display' => 'json', 'filename' => 'YmdHis', 'path' => _RUNTIME . "/error"];
+        $option['path'] = str_replace(['{RUNTIME}', '{ROOT}', '{DATE}'], [_RUNTIME, _ROOT, date('Y_m_d')], $option['path']);
 
         /**
          * 一般警告错误
@@ -75,7 +76,7 @@ class Handler
             $err['time'] = date('Y-m-d H:i:s');
             $err['error'] = $errNo ?: 500;
             $err['message'] = $errStr;
-            $err['file'] = $this->filter_root($errFile) . '(' . $errLine . ')';
+            $err['file'] = $this->filter_root($errFile) . "({$errLine})";
             $err['trace'] = $error->getTrace();
 //            $err['context'] = print_r($context, true);
 
@@ -234,17 +235,17 @@ class Handler
 
         if ($this->restrain) {
 
-            $errLogFile = dirname($path) . "/error/{$md5Key}.md";
+            $errLogFile = "{$path}/{$md5Key}.md";
 
             if (is_readable($errLogFile)) {
                 if (isset($this->debug)) $this->debug->disable();
                 @file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
                 return;
             }
+
             mk_dir($errLogFile);
             @file_put_contents($errLogFile, json_encode(['trace' => ''] + $error, 256 | 64 | 128) . "\n");
         }
-
 
         if ($error['trace'] ?? null) {
             foreach ($error['trace'] as $i => &$trace) {
@@ -276,8 +277,7 @@ class Handler
             'prev' => $prev
         ];
         if (strlen($info['Post']) > 10000) $info['Post'] = substr($info['Post'], 0, 10000);
-        $filename = date($filename) . mt_rand() . '.json';
-        $filename = $path . '/' . trim($filename, '/');
+        $filename = $path . '/' . date($filename) . mt_rand() . '.json';
 
         if (isset($this->debug)) {
             //这里不能再继续加shutdown，因为有可能运行到这里已经处于shutdown内
@@ -296,7 +296,7 @@ class Handler
         }
 
         mk_dir($filename);
-        if (is_readable($path)) @file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
+        @file_put_contents($filename, json_encode($info, 64 | 128 | 256), LOCK_EX);
     }
 
 
