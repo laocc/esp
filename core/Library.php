@@ -141,6 +141,11 @@ abstract class Library
         return $this->_controller->publish($action, $value);
     }
 
+    public function task(string $taskKey, array $args, int $after = 0): bool
+    {
+        return $this->_controller->task($taskKey, $args, $after);
+    }
+
     /**
      *
      * 发送到队列，不建议在web环境中用队列，根据生产环境测试，经常发生堵塞

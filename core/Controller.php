@@ -309,6 +309,32 @@ abstract class Controller
         return (boolean)$this->_redis->publish($channel, serialize($value));
     }
 
+    /**
+     * 发布一个后台任务，需另外在后台执行的swoole中实现 /readme/22.task.md中的示例代码
+     * _taskPlan_ 是专用词，程序中不可以直接publish时用此关键词
+     * 也可以在自己的程序中自行实现此方法
+     *
+     * @param string $taskKey
+     * @param array $args
+     * @param int $after
+     * @return bool
+     */
+    public function task(string $taskKey, array $args, int $after = 0): bool
+    {
+        $data = [
+            'action' => $taskKey,
+            'after' => $after,
+            'params' => $args
+        ];
+        $taskKey = str_replace(['->', '::'], '.', $taskKey);
+        if (strpos($taskKey, '.') > 0) {
+            $key = explode('.', $taskKey);
+            $data['class'] = $key[0];
+            $data['action'] = $key[1];
+        }
+        $pubKey = defined('_TASK_KEY_') ? _TASK_KEY_ : '_TASK_KEY_';
+        return $this->publish($pubKey, $data);
+    }
 
     /**
      * 侦听redis管道，此方法一般只用在CLI环境下
