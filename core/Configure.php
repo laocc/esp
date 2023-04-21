@@ -129,19 +129,18 @@ final class Configure
 
     /**
      * 是否从缓存读取
-     * @return bool
+     * @return bool =true优先读大缓存
      */
     private function forceCache(): bool
     {
-        if (_CLI) return true;
-        if (defined('_CONFIG_LOAD')) return boolval(_CONFIG_LOAD);
+        if (_CLI or _DEBUG) return false;//cli都不读缓存
+//        if (defined('_CONFIG_LOAD')) return !(_CONFIG_LOAD);//主要针对debug，即非debug
         if (isset($_GET['_flush_key']) and isset($_GET['_config_load'])) {
             $r = intval($_GET['_config_load']);
-            if (!$r) return true;
-            if (!is_readable(_RUNTIME . '/flush_key.txt')) return true;
-            if (file_get_contents(_RUNTIME . '/flush_key.txt') !== $_GET['_flush_key']) {
-                if ($r > 1) $this->flush($r);
-                return true;
+            if (!$r) return true;//未定义
+            if (!is_readable(_RUNTIME . '/flush_key.txt')) return true;//未在runtime里定义
+            if (file_get_contents(_RUNTIME . '/flush_key.txt') === $_GET['_flush_key']) {
+                if ($r > 1) $this->flush($r);//先清空，按_config_load的值操作
             }
         }
 
