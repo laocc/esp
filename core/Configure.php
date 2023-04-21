@@ -141,10 +141,11 @@ final class Configure
             if (!is_readable(_RUNTIME . '/flush_key.txt')) return true;//未在runtime里定义
             if (file_get_contents(_RUNTIME . '/flush_key.txt') === $_GET['_flush_key']) {
                 if ($r > 1) $this->flush($r);//先清空，按_config_load的值操作
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 
     /**
