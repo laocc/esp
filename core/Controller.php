@@ -310,7 +310,8 @@ abstract class Controller
     }
 
     /**
-     * 发布一个后台任务，需另外在后台执行的swoole中实现 /readme/22.task.md中的示例代码
+     * 发布一个后台任务，这是由redis发布的，如果数据很多且不能丢失，最好用async
+     * 需另外在后台执行的swoole中实现 /readme/22.task.md中的示例代码
      * _taskPlan_ 是专用词，程序中不可以直接publish时用此关键词
      * 也可以在自己的程序中自行实现此方法
      *
@@ -334,6 +335,47 @@ abstract class Controller
         }
         $pubKey = defined('_TASK_KEY_') ? _TASK_KEY_ : '_TASK_KEY_';
         return $this->publish($pubKey, $data);
+    }
+
+
+    /**
+     * 保存后台任务到/async，需要另外实现读取并执行的程序
+     * @param string $taskKey
+     * @param array $args
+     * @param int $runTime
+     * @return false|int
+     */
+    public function async(string $taskKey, array $args, int $runTime = 0)
+    {
+        $now = microtime(true);
+        if ($runTime < 1000000000) $runTime = $now + $runTime;
+        $data = [
+            'key' => $taskKey,
+            'args' => $args,
+            'time' => $runTime,
+        ];
+        $file = $now . '.' . getenv('REQUEST_ID') . '.log';
+        return file_put_contents(_RUNTIME . "/async/{$file}", serialize($data));
+    }
+
+    /**
+     * 迭代目录
+     * @param callable $fun
+     * @param string|null $path
+     * @param bool $unSer 执行unserialize并作为第二个参数
+     * @return void
+     */
+    public function asyncIterator(callable $fun, string $path = null, bool $unSer = true)
+    {
+        if (is_null($path)) $path = _RUNTIME . "/async";
+        $path = trim($path, '/');
+        $dir = new \DirectoryIterator($path);
+        foreach ($dir as $f) {
+            if (!$f->isDot()) continue;
+            if ($f->isDir()) continue;
+            $name = "{$path}/" . $f->getFilename();
+            $fun($name, $unSer ? unserialize(file_get_contents($name)) : null);
+        }
     }
 
     /**
