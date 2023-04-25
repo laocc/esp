@@ -60,7 +60,7 @@ abstract class Controller
      * @param string $funName
      * @return void
      */
-    public function setEnum(string $funName = 'enum')
+    final public function setEnum(string $funName = 'enum')
     {
         $this->assign($funName, function (string $key, $hide = null) {
             $val = $this->config("{$this->enumKey}.{$key}");
@@ -99,7 +99,7 @@ abstract class Controller
      * $value 若是不可拆分的数字，要用字串型传入
      * $value = null 时，返回$type完整值
      */
-    public function enum(string $type, $value, $hide = null)
+    final public function enum(string $type, $value, $hide = null)
     {
         $enum = $this->config("{$this->enumKey}.{$type}");
         if (!$enum) exit("{$this->enumKey}没有此项:{$type}");
@@ -204,7 +204,6 @@ abstract class Controller
         $this->_response->setView($value);
         return $this;
     }
-
 
     /**
      * 重新指定视图目录
@@ -320,7 +319,7 @@ abstract class Controller
      * @param int $after
      * @return bool
      */
-    public function task(string $taskKey, array $args, int $after = 0): bool
+    final public function task(string $taskKey, array $args, int $after = 0): bool
     {
         $data = [
             'action' => $taskKey,
@@ -337,15 +336,14 @@ abstract class Controller
         return $this->publish($pubKey, $data);
     }
 
-
     /**
      * 保存后台任务到/async，需要另外实现读取并执行的程序
      * @param string $taskKey
      * @param array $args
      * @param int $runTime
-     * @return false|int
+     * @return false
      */
-    public function async(string $taskKey, array $args, int $runTime = 0)
+    final public function async(string $taskKey, array $args, int $runTime = 0): bool
     {
         $now = microtime(true);
         if ($runTime < 1000000000) $runTime = $now + $runTime;
@@ -355,7 +353,7 @@ abstract class Controller
             'time' => $runTime,
         ];
         $file = $now . '.' . getenv('REQUEST_ID') . '.log';
-        return file_put_contents(_RUNTIME . "/async/{$file}", serialize($data));
+        return (bool)file_put_contents(_RUNTIME . "/async/{$file}", serialize($data));
     }
 
     /**
@@ -365,7 +363,7 @@ abstract class Controller
      * @param bool $unSer 执行unserialize并作为第二个参数
      * @return void
      */
-    public function asyncIterator(callable $fun, string $path = null, bool $unSer = true)
+    final public function asyncIterator(callable $fun, string $path = null, bool $unSer = true)
     {
         if (is_null($path)) $path = _RUNTIME . "/async";
         $path = trim($path, '/');
@@ -457,7 +455,6 @@ abstract class Controller
     {
         return $this->_cache;
     }
-
 
     /**
      * @param $data
@@ -823,7 +820,6 @@ abstract class Controller
         return $this->_dispatcher->shutdown($callable, ...$params);
     }
 
-
     /**
      * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
      * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
@@ -834,7 +830,7 @@ abstract class Controller
      * @param mixed ...$args
      * @return null
      */
-    public function locked(string $lockKey, callable $callable, ...$args)
+    final public function locked(string $lockKey, callable $callable, ...$args)
     {
         return $this->_dispatcher->locked($lockKey, $callable, ...$args);
     }
@@ -912,7 +908,6 @@ abstract class Controller
                 return uniqid($salt, true);
         }
     }
-
 
     /**
      * var_export

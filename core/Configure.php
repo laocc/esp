@@ -134,7 +134,7 @@ final class Configure
     private function forceCache(): bool
     {
         if (_CLI or _DEBUG) return false;//cli都不读缓存
-//        if (defined('_CONFIG_LOAD')) return !(_CONFIG_LOAD);//主要针对debug，即非debug
+        if (defined('_CONFIG_LOAD')) return !(_CONFIG_LOAD);//主要针对debug，即非debug
         if (isset($_GET['_flush_key']) and isset($_GET['_config_load'])) {
             $r = intval($_GET['_config_load']);
             if (!$r) return true;//未定义

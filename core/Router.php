@@ -27,19 +27,18 @@ final class Router
      */
     private function forceCache(): bool
     {
-        if (_CLI) return true;
-        if (defined('_CONFIG_LOAD')) return boolval(_CONFIG_LOAD);
+        if (_CLI or _DEBUG) return false;
+        if (defined('_CONFIG_LOAD')) return !(_CONFIG_LOAD);
         if (isset($_GET['_flush_key']) and isset($_GET['_router_load'])) {
             $r = intval($_GET['_router_load']);
             if (!$r) return true;
             if (!is_readable(_RUNTIME . '/flush_key.txt')) return true;
             if (file_get_contents(_RUNTIME . '/flush_key.txt') !== $_GET['_flush_key']) {
                 if ($r & 32) $this->flush();
-                return true;
+                return false;
             }
         }
-
-        return false;
+        return true;
     }
 
     /**
@@ -146,8 +145,10 @@ final class Router
 
             //分别获取各个指定参数
             $params = array();
+            $hasMapName = false;
             if (isset($route['map'])) {
                 foreach ($route['map'] as $mi => $mk) {
+                    $hasMapName = true;//采用了命名参数
                     if (is_numeric($mk)) {
                         $params[$mi] = $matcher[intval($mk)] ?? null;
                     } else if (preg_match('/^\$?(\d+)$/', strval($mk), $mp)) {
@@ -159,6 +160,8 @@ final class Router
             } else {
                 $params = $param;
             }
+//            print_r($route);
+//            print_r($params);
 
             if (isset($alias[$controller][$action])) {
                 $split = explode('/', trim($alias[$controller][$action], '/'));
@@ -189,7 +192,8 @@ final class Router
             $request->module = $module ?: '';
             $request->controller = $controller ?: 'index';
             $request->action = $action ?: 'index';
-            $request->params = $params + array_fill(0, 10, null);
+            $request->params = $params;
+            if (!$hasMapName) $request->params += array_fill(0, 10, null);
             if (!defined('_MODULE')) define('_MODULE', $request->module);
 
             $check = $request->checkController();
@@ -302,7 +306,7 @@ final class Router
      * @param string $directory
      * @param array $matcher 正则匹配结果
      * @param array $route
-     * @return array|string
+     * @return array
      */
     private function fill_route(string $virtual, string $directory, array $matcher, array $route): array
     {

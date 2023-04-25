@@ -9,6 +9,7 @@ use esp\help\Helps;
 use esp\session\Session;
 use esp\helper\library\Result;
 use function esp\helper\host;
+use function esp\helper\pre;
 
 function esp_error(string $title, string ...$msg)
 {
@@ -446,7 +447,8 @@ final class Dispatcher
         }
         foreach (get_class_methods($class) as $method) {
             if (substr($method, 0, 5) === '_init') {
-                $run = call_user_func_array([$class, $method], [$this]);
+                $run = $class->{$method}($this);
+//                $run = call_user_func_array([$class, $method], [$this]);
                 if ($run === false) {
                     $this->run = false;
                     break;
@@ -485,7 +487,8 @@ final class Dispatcher
 
         foreach ($this->_plugs as $plug) {
             if (method_exists($plug, $time) and is_callable([$plug, $time])) {
-                return call_user_func_array([$plug, $time], [$this->_request, $this->_response, &$runValue]);
+                return $plug->{$time}($this->_request, $this->_response, $runValue);
+//                return call_user_func_array([$plug, $time], [$this->_request, $this->_response, &$runValue]);
             }
         }
 
@@ -496,7 +499,7 @@ final class Dispatcher
      * 路由结果分发至控制器动作
      * @return mixed
      */
-    private function dispatch()
+    private function dispatch(): mixed
     {
         $actionExt = $this->_request->getActionExt();
 
@@ -507,7 +510,8 @@ final class Dispatcher
         if (_CLI && $this->_request->controller === '_esp') {
             $cont = new Helps($this);
             if (method_exists($cont, $this->_request->action) and is_callable([$cont, $this->_request->action])) {
-                return call_user_func_array([$cont, $this->_request->action], $this->_request->params);
+                return $cont->{$this->_request->action}(...$this->_request->params);
+//                return call_user_func_array([$cont, $this->_request->action], $this->_request->params);
             } else {
                 return "Helps{}类没有{$this->_request->action}方法。";
             }
@@ -539,7 +543,8 @@ final class Dispatcher
          */
         if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
             $this->relayDebug("[blue;{$class}->_init() ============================]");
-            $contReturn = call_user_func_array([$cont, '_init'], [$action]);
+            $contReturn = $cont->_init($action);
+//            $contReturn = call_user_func_array([$cont, '_init'], [$action]);
             if (is_bool($contReturn) or !is_null($contReturn)) {
                 $this->relayDebug(['_init' => 'return', 'return' => $contReturn]);
                 if ($contReturn === false) $contReturn = null;
@@ -568,7 +573,8 @@ final class Dispatcher
          */
         if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
             $this->relayDebug("[blue;{$class}->_main() =============================]");
-            $contReturn = call_user_func_array([$cont, '_main'], [$action]);
+            $contReturn = $cont->_main($action);
+//            $contReturn = call_user_func_array([$cont, '_main'], [$action]);
             if (is_bool($contReturn) or !is_null($contReturn)) {
                 $this->relayDebug(['_main' => 'return', 'return' => $contReturn]);
                 if ($contReturn === false) $contReturn = null;
@@ -579,8 +585,11 @@ final class Dispatcher
         /**
          * 正式请求到控制器
          */
+//        var_dump($action);
+//        pre($this->_request->params);
         $this->relayDebug("[green;{$class}->{$action} Star ==============================]");
-        $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
+//        $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
+        $contReturn = $cont->{$action}(...$this->_request->params);//PHP7.4以后用可变函数语法来调用
         $this->relayDebug("[red;{$class}->{$action} End ==============================]");
 
         //在控制器中，如果调用了reload方法，则所有请求数据已变化，loop将赋为true，开始重新加载
@@ -594,7 +603,8 @@ final class Dispatcher
 
         //运行结束方法
         if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
-            $clo = call_user_func_array([$cont, '_close'], [$action, &$contReturn]);
+            $clo = $cont->_close($action, $contReturn);
+//            $clo = call_user_func_array([$cont, '_close'], [$action, &$contReturn]);
             if (!is_null($clo) and is_null($contReturn)) $contReturn = $clo;
             $this->relayDebug("[red;{$class}->_close() ==================================]");
         }

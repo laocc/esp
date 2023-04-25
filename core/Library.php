@@ -68,11 +68,13 @@ abstract class Library
         }
 
         if (method_exists($this, '_init') and is_callable([$this, '_init'])) {
-            call_user_func_array([$this, '_init'], $fstController ? array_slice($param, 1) : $param);
+            $this->_init(...($fstController ? array_slice($param, 1) : $param));
+//            call_user_func_array([$this, '_init'], $fstController ? array_slice($param, 1) : $param);
         }
 
         if (method_exists($this, '_main') and is_callable([$this, '_main'])) {
-            call_user_func_array([$this, '_main'], $fstController ? array_slice($param, 1) : $param);
+            $this->_main(...($fstController ? array_slice($param, 1) : $param));
+//            call_user_func_array([$this, '_main'], $fstController ? array_slice($param, 1) : $param);
         }
 
         if (!isset($this->_controller->_pool) and isset($this->_dbs_label_)) {
@@ -84,7 +86,8 @@ abstract class Library
     public function __destruct()
     {
         if (method_exists($this, '_close') and is_callable([$this, '_close'])) {
-            call_user_func_array([$this, '_close'], []);
+            $this->_close([]);
+//            call_user_func_array([$this, '_close'], []);
         }
     }
 
@@ -141,9 +144,14 @@ abstract class Library
         return $this->_controller->publish($action, $value);
     }
 
-    public function task(string $taskKey, array $args, int $after = 0): bool
+    final public function task(string $taskKey, array $args, int $after = 0): bool
     {
         return $this->_controller->task($taskKey, $args, $after);
+    }
+
+    final public function async(string $taskKey, array $args, int $runTime = 0): bool
+    {
+        return $this->_controller->async($taskKey, $args, $runTime);
     }
 
     /**

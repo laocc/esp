@@ -94,6 +94,7 @@ final class Resources
          * interchange[/public/resource] = //resource.domain.com
          * interchange[/public/res] = //res.domain.com
          */
+//        print_r($this->conf);
         if (!empty($this->conf['interchange'])) {
             $html = str_replace(
                 array_keys($this->conf['interchange']),
