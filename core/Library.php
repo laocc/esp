@@ -106,7 +106,9 @@ abstract class Library
      */
     final public function debug($data = '_R_DEBUG_', int $lev = 1)
     {
-        return $this->_controller->_dispatcher->debug($data, $lev + 1);
+        if (_CLI) return false;
+        if ($data === '_R_DEBUG_') return $this->_controller->_debug;
+        return $this->_controller->debug($data, $lev + 1);
     }
 
     /**

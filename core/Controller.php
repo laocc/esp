@@ -463,7 +463,11 @@ abstract class Controller
      */
     final public function debug($data = '_R_DEBUG_', int $lev = 1)
     {
-        return $this->_dispatcher->debug($data, $lev + 1);
+        if (_CLI) return false;
+        if (!isset($this->_debug)) return null;
+        if ($data === '_R_DEBUG_') return $this->_debug;
+        return $this->_debug->relay($data, $lev + 1);
+//        return $this->_dispatcher->debug($data, $lev + 1);
     }
 
     /**
@@ -472,7 +476,10 @@ abstract class Controller
      */
     final public function error($data, int $lev = 1): void
     {
-        $this->_dispatcher->error($data, $lev + 1);
+        if (_CLI) return;
+        if (!isset($this->_debug)) return;
+//        $this->_dispatcher->error($data, $lev + 1);
+        $this->_debug->error($data, $lev + 1);
     }
 
     /**
@@ -481,7 +488,10 @@ abstract class Controller
      */
     final public function debug_mysql($data, int $lev = 1): void
     {
-        $this->_dispatcher->debug_mysql($data, $lev + 1);
+        if (_CLI) return;
+        if (!isset($this->_debug)) return;
+        $this->_debug->mysql_log($data, $lev + 1);
+//        $this->_dispatcher->debug_mysql($data, $lev + 1);
     }
 
     /**
@@ -503,16 +513,18 @@ abstract class Controller
     final public function redirect(string $url, int $code = 302): bool
     {
         if (headers_sent($filename, $line)) {
-            !is_null($this->_debug) && $this->_debug->relay(
-                [
-                    "header Has Send:{$filename}({$line})",
-                    'headers' => headers_list()],
-                -1,
-                [
-                    'file' => $filename,
-                    'line' => $line
-                ]
-            )->error("页面已经输出过");
+            if (isset($this->_debug)) {
+                $this->_debug->relay(
+                    [
+                        "header Has Send:{$filename}({$line})",
+                        'headers' => headers_list()],
+                    -1,
+                    [
+                        'file' => $filename,
+                        'line' => $line
+                    ]
+                )->error("页面已经输出过");
+            }
             return false;
         }
         $this->_response->redirect("Location: {$url} {$code}");
@@ -530,7 +542,7 @@ abstract class Controller
 
     final protected function exit($text = null)
     {
-        if (is_array($text)) $text = json_encode($text, 256);
+        if (is_array($text)) $text = json_encode($text, 320);
         echo strval($text);
         fastcgi_finish_request();
         if (isset($this->_debug)) {
