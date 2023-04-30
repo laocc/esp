@@ -9,6 +9,7 @@ use esp\debug\Counter;
 use esp\debug\Debug;
 use esp\face\Adapter;
 use esp\helper\library\ext\Markdown;
+use function esp\helper\_echo;
 use function esp\helper\host;
 use function esp\helper\numbers;
 use function esp\helper\root;
@@ -337,7 +338,11 @@ abstract class Controller
     }
 
     /**
-     * 保存后台任务到/async，需要另外实现读取并执行的程序
+     * 保存后台任务到/async，需要另外实现读取并执行的程序，也就是调用下面asyncIterator
+     * 不建议用这个方法，如果要实现队列，建议用redis->queue队列
+     * 而且，这个方法只限于前后端在同一服务器
+     * 不过此方法的优点：可以指定时间执行，基于文件缓存稳定性较高
+     *
      * @param string $taskKey
      * @param array $args
      * @param int $runTime
@@ -347,32 +352,32 @@ abstract class Controller
     {
         $now = microtime(true);
         if ($runTime < 1000000000) $runTime = $now + $runTime;
-        $data = [
-            'key' => $taskKey,
-            'args' => $args,
-            'time' => $runTime,
-        ];
+        $data = ['key' => $taskKey, 'args' => $args, 'time' => $runTime];
         $file = $now . '.' . getenv('REQUEST_ID') . '.log';
         return (bool)file_put_contents(_RUNTIME . "/async/{$file}", serialize($data));
     }
 
     /**
      * 迭代目录
+     *
      * @param callable $fun
-     * @param string|null $path
-     * @param bool $unSer 执行unserialize并作为第二个参数
+     * @param bool $unlink 是否自动删除文件，若=true自动删除，或在callable里返回===true也可以自动删除
      * @return void
+     *
+     * 建议在callable里返回true值进行删除，若未返回true表示事务未执行完
+     *
      */
-    final public function asyncIterator(callable $fun, string $path = null, bool $unSer = true)
+    final public function asyncIterator(callable $fun, bool $unlink = false)
     {
-        if (is_null($path)) $path = _RUNTIME . "/async";
-        $path = trim($path, '/');
-        $dir = new \DirectoryIterator($path);
+        $dir = new \DirectoryIterator($path = (_RUNTIME . '/async/'));
         foreach ($dir as $f) {
-            if (!$f->isDot()) continue;
-            if ($f->isDir()) continue;
-            $name = "{$path}/" . $f->getFilename();
-            $fun($name, $unSer ? unserialize(file_get_contents($name)) : null);
+            if ($f->isDot() or $f->isDir()) continue;
+            $name = $path . $f->getFilename();
+            $data = unserialize(file_get_contents($name));
+            if ($data['time'] <= microtime(true)) {
+                $run = $fun($data['key'], $data['args'], $name);
+                if ($run === true or $unlink) @unlink($name);
+            }
         }
     }
 
