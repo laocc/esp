@@ -610,7 +610,10 @@ final class Dispatcher
         }
 
         if ($contReturn instanceof Result) return $contReturn->display();
-        else if (is_object($contReturn)) return (string)$contReturn;
+        else if (is_object($contReturn)) {
+            if (method_exists($contReturn, 'display')) return $contReturn->display();
+            return (string)$contReturn;
+        }
 
         return $contReturn;
     }
