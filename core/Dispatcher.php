@@ -497,9 +497,8 @@ final class Dispatcher
 
     /**
      * 路由结果分发至控制器动作
-     * @return mixed
      */
-    private function dispatch(): mixed
+    private function dispatch()
     {
         $actionExt = $this->_request->getActionExt();
 
