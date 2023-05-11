@@ -64,10 +64,15 @@ abstract class Controller
     final public function setEnum(string $funName = 'enum')
     {
         $this->assign($funName, function (string $key, $hide = null) {
-            $val = $this->config("{$this->enumKey}.{$key}");
-            if (!$val) return json_encode([0 => "{$key}.未定义1"]);
+            if (strpos($key, '.') === false) {
+                $val = $this->config("{$this->enumKey}.{$key}");
+                if (!$val) return json_encode([0 => "{$this->enumKey}.{$key}.未定义"]);
+            } else {
+                $val = $this->config($key);
+                if (!$val) return json_encode([0 => "{$key}.未定义1"]);
+            }
             if (is_string($val)) $val = $this->config("{$this->enumKey}.{$val}");
-            if (!$val) return json_encode([0 => "{$key}.未定义2"]);
+            if (!$val) return json_encode([0 => "{$this->enumKey}{$key}映射目标{$val}不存在"]);
 
             if ($hide) {
                 $unset = false;
@@ -102,10 +107,13 @@ abstract class Controller
      */
     final public function enum(string $type, $value, $hide = null)
     {
-        $enum = $this->config("{$this->enumKey}.{$type}");
-        if (!$enum) exit("{$this->enumKey}没有此项:{$type}");
+        $confKey = $type;
+        if (strpos($type, '.') === false) $confKey = "{$this->enumKey}.{$type}";
+        $enum = $this->config($confKey);
+        if (!$enum) exit("{$confKey}没有此项置");
+
         if (is_string($enum)) {
-            if (strpos($enum, '+')) {
+            if (strpos($enum, '+') > 0) {
                 $eKey = explode('+', $enum);
                 $enum = [];
                 foreach ($eKey as $key) {
