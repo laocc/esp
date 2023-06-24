@@ -16,6 +16,7 @@ final class Configure
     public int $RedisDbIndex = 0;
     public string $driver;//驱动方式，供dispatcher中读取用于session的驱动方式
     private array $_CONFIG_ = [];
+    private array $_conf = [];
 
     public Redis $_Redis;
     public array $_redis_conf;
@@ -30,9 +31,9 @@ final class Configure
     {
         $conf += ['path' => '/common/config', 'type' => 'redis'];
         $conf['path'] = root($conf['path']);
+        $this->_conf = $conf;
         $this->driver = $conf['type'];
         if (!is_dir($conf['path'])) return;
-
         $fun = "load_{$conf['type']}";
         $this->{$fun}($conf);
     }
@@ -147,6 +148,26 @@ final class Configure
 
         return true;
     }
+
+    /**
+     * 强制从redis读取，但不保存，
+     * 这主要用在CLI环境下，进程启动到运行这中间其他进程如果更新了缓存，而这里的值仍是 内存值$this->_CONFIG_
+     * 所以需要自行单独从redis中读取到内存中
+     *
+     * @return array
+     */
+    public function forceRedis()
+    {
+        $get = $this->_Redis->get(_UNIQUE_KEY . '_CONFIG_');
+        if (empty($get)) {
+            $this->mergeConfig($this->_conf);
+            return $this->_CONFIG_;
+        }
+        if (is_string($get)) $get = json_decode($get, true) ?: [];
+        $this->_CONFIG_ = $get;
+        return $this->_CONFIG_;
+    }
+
 
     /**
      * @param array $conf
