@@ -34,14 +34,14 @@ class Error extends Exception
 //        parent::__construct($this->message, 0, $trace);
     }
 
-    public function display(): array
+    public function display(bool $trace = false): array
     {
         $err = array();
         $err['success'] = 0;
         $err['error'] = $this->code;
         $err['message'] = $this->message;
         $err['file'] = $this->file();
-        if ($err['error'] > 1) {
+        if ($trace and $err['error'] > 1) {
             $err['trace'] = array_map(function ($e) {
                 if (isset($e['file'])) {
                     return "{$e['file']}({$e['line']})";
@@ -86,7 +86,11 @@ class Error extends Exception
 
     public function file(): string
     {
-        return $this->file . '(' . $this->line . ')';
+        $file = $this->file;
+        if (defined('_ROOT') and substr($file, 0, strlen(_ROOT)) === _ROOT) {
+            $file = substr($file, strlen(_ROOT));
+        }
+        return $file . '(' . $this->line . ')';
     }
 
 
