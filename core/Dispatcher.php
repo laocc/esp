@@ -588,8 +588,10 @@ final class Dispatcher
 //        var_dump($action);
 //        pre($this->_request->params);
         $this->relayDebug("[green;{$class}->{$action} Star ==============================]");
+//        var_dump("[green;{$class}->{$action} Star ==============================]");
 //        $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
-        $contReturn = $cont->{$action}(...$this->_request->params);//PHP7.4以后用可变函数语法来调用
+//        $contReturn = $cont->{$action}(...$this->_request->params);//PHP7.4不能解包关联数组
+        $contReturn = $cont->{$action}(...array_values($this->_request->params));//PHP7.4以后用可变函数语法来调用
         $this->relayDebug("[red;{$class}->{$action} End ==============================]");
 
         //在控制器中，如果调用了reload方法，则所有请求数据已变化，loop将赋为true，开始重新加载
