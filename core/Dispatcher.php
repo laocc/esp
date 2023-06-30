@@ -591,6 +591,8 @@ final class Dispatcher
 //        var_dump("[green;{$class}->{$action} Star ==============================]");
 //        $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
 //        $contReturn = $cont->{$action}(...$this->_request->params);//PHP7.4不能解包关联数组
+//        var_dump($this->_request->params);
+//        var_dump(array_values($this->_request->params));
         $contReturn = $cont->{$action}(...array_values($this->_request->params));//PHP7.4以后用可变函数语法来调用
         $this->relayDebug("[red;{$class}->{$action} End ==============================]");
 
