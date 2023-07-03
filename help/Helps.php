@@ -10,10 +10,12 @@ use function esp\helper\root;
 class Helps
 {
     public Dispatcher $_dispatcher;
+    private string $controller;
 
-    public function __construct(Dispatcher $dispatcher)
+    public function __construct(Dispatcher $dispatcher, string $controller)
     {
         $this->_dispatcher = &$dispatcher;
+        $this->controller = $controller;
     }
 
     public function config(string $key = null, $json = null)

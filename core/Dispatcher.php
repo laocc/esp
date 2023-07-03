@@ -507,8 +507,8 @@ final class Dispatcher
         $virtual = $this->_request->virtual;
         if ($this->_request->module) $virtual .= '\\' . $this->_request->module;
 
-        if (_CLI && $this->_request->controller === '_esp') {
-            $cont = new Helps($this);
+        if (_CLI && $this->_request->controller[0] === '-') {
+            $cont = new Helps($this, substr($this->_request->controller, 1));
             if (method_exists($cont, $this->_request->action) and is_callable([$cont, $this->_request->action])) {
                 return $cont->{$this->_request->action}(...$this->_request->params);
 //                return call_user_func_array([$cont, $this->_request->action], $this->_request->params);
