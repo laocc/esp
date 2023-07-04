@@ -242,7 +242,7 @@ final class Router
          * 默认路由
          */
         //#^/[a-z][a-z0-9\-_]*/?.*#i
-        if (isset($route['__default__']) and preg_match(_CLI ? '#^/_?[a-z]\w*/?.*#i' : '#^/[a-z]\w*/?.*#i', _URI)) {
+        if (isset($route['__default__']) and preg_match(_CLI ? '#^/[_\-]?[a-z]\w*/?.*#i' : '#^/[a-z]\w*/?.*#i', _URI)) {
             $matcher = explode('/', _URI);
             $matcher[0] = _URI;
             return $matcher;

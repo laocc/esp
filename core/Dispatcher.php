@@ -213,7 +213,7 @@ final class Dispatcher
         $route = (new Router($this->_config->_Redis))->run($this->_request, $alias);
         if (is_string($route)) {
             echo $route;
-            fastcgi_finish_request();
+            if (!_CLI) fastcgi_finish_request();
             exit;
         }
 
@@ -221,7 +221,7 @@ final class Dispatcher
 
         if (!$simple and isset($this->_cache)) {
             if ($this->_response->cache && $this->_cache->Display()) {
-                fastcgi_finish_request();//运行结束，客户端断开
+                if (!_CLI) fastcgi_finish_request();//运行结束，客户端断开
                 $this->relayDebug("[blue;客户端已断开 =============================]");
                 goto end;
             }
@@ -258,7 +258,7 @@ final class Dispatcher
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
         $this->relayDebug("[blue;客户端已断开 =============================]");
-        if (isset($this->_cache) && $this->_response->cache and !_CLI) $this->_cache->Save();
+        if (isset($this->_cache) && $this->_response->cache) $this->_cache->Save();
 
         end:
         !$simple and $this->_plugs_count and $hook = $this->plugsHook('shutdown');
@@ -298,7 +298,7 @@ final class Dispatcher
         $route = (new Router($this->_config->_Redis))->run($this->_request, $alias);
         if (is_string($route)) {
             echo $route;
-            fastcgi_finish_request();
+            if (!_CLI) fastcgi_finish_request();
             exit;
         }
 
