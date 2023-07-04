@@ -507,6 +507,8 @@ final class Dispatcher
         $virtual = $this->_request->virtual;
         if ($this->_request->module) $virtual .= '\\' . $this->_request->module;
 
+//        if (_CLI) print_r($this->_request);
+
         if (_CLI && $this->_request->controller[0] === '-') {
             $cont = new Helps($this, substr($this->_request->controller, 1));
             if (method_exists($cont, $this->_request->action) and is_callable([$cont, $this->_request->action])) {

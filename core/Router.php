@@ -94,7 +94,7 @@ final class Router
             if (!isset($matcher[1])) $matcher[1] = '';
             if (!isset($matcher[2])) $matcher[2] = '';
 
-            if ($matcher[1] and !preg_match('/^\w+$/', "{$matcher[1]}{$matcher[2]}")) return 'Illegal Uri';
+//            if ($matcher[1] and !preg_match('/^[\-\_]?\w+$/', "{$matcher[1]}{$matcher[2]}")) return 'Illegal Uri';
 
             if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
                 return 'Illegal Method';
