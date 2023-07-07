@@ -73,7 +73,11 @@ class Helps
         }
 
         print_r($value);
+    }
 
+    public function reload($lev, $safe)
+    {
+        $this->flush($lev, $safe);
     }
 
     /**
