@@ -73,6 +73,7 @@ final class Configure
         $cOption[CURLOPT_CONNECTTIMEOUT] = 10;                      //在发起连接前等待的时间，如果设置为0，则无限等待
         $cOption[CURLOPT_TIMEOUT] = 5;                              //允许执行的最长秒数，若用毫秒级，用TIMEOUT_MS
         $cOption[CURLOPT_FRESH_CONNECT] = true;                     //强制新连接，不用缓存中的
+        $cOption[CURLOPT_RETURNTRANSFER] = true;                    //返回信息流，否则就会直接打印
 
         $cURL = curl_init();
         curl_setopt_array($cURL, $cOption);
