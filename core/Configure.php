@@ -135,8 +135,12 @@ final class Configure
      */
     private function forceCache(): bool
     {
-        if (_CLI or _DEBUG) return false;//cli都不读缓存
+//        if (_CLI) return false;//cli都不读缓存
+        if (_DEBUG) return false;//cli都不读缓存
+
         if (defined('_CONFIG_LOAD')) return !(_CONFIG_LOAD);//主要针对debug，即非debug
+        if (defined('_DISABLE_CONFIG_CACHE')) return !(_DISABLE_CONFIG_CACHE);//
+
         if (isset($_GET['_flush_key']) and isset($_GET['_config_load'])) {
             $r = intval($_GET['_config_load']);
             if (!$r) return true;//未定义
@@ -202,7 +206,7 @@ final class Configure
         $this->RedisDbIndex = intval($rdsConf['db']);
         $this->_Redis = $this->connectRedis($rdsConf, $this->RedisDbIndex);
 
-        //没有强制从文件加载
+        //是否强制从文件加载
         if ($this->forceCache()) {
             $get = $this->_Redis->get(_UNIQUE_KEY . '_CONFIG_');
             if (!empty($get)) {
@@ -212,6 +216,7 @@ final class Configure
             }
         }
 
+        //前面没读到缓存，先判断是不是在子节点中，若是，先读redis，若不存在，向主节点请求重读
         if (!_DEBUG and !_CLI and !$isMaster and defined('_RPC')) {
 
             $tryCount = 0;
@@ -238,7 +243,8 @@ final class Configure
             goto tryReadRedis;
         }
         $this->mergeConfig($conf);
-        if (!_CLI) $this->_Redis->set(_UNIQUE_KEY . '_CONFIG_', $this->_CONFIG_);
+        $this->_Redis->set(_UNIQUE_KEY . '_CONFIG_', $this->_CONFIG_);
+        $this->loadHash($conf);
 
         end:
         //负载从服务器唤醒，直接退出
@@ -250,8 +256,37 @@ final class Configure
             print_r($flush);
             exit();
         }
+    }
 
+    /**
+     * 配置了hash，则把这些值读入到hash里，不放在config中
+     * 读取时用 config->hash(KEY)
+     *
+     * @param array $conf
+     * @return void
+     */
+    private function loadHash(array $conf)
+    {
+        if (!isset($conf['hash']) or empty($conf['hash'])) return;
+        $this->_Redis->del(_UNIQUE_KEY . '_HASH_');
 
+        foreach ($conf['hash'] as $hp) {
+            if ($hp[0] !== '/') $hp = "{$conf['path']}/{$hp}";
+            $dir = new DirectoryIterator($hp);
+            foreach ($dir as $f) {
+                if ($f->isFile()) {
+                    $pathName = $f->getPathname();
+                    $info = pathinfo($pathName);
+                    $value = $this->loadFile($pathName);
+                    $this->_Redis->hSet(_UNIQUE_KEY . '_HASH_', $info['filename'], $value);
+                }
+            }
+        }
+    }
+
+    public function hash(string $fn)
+    {
+        return $this->_Redis->hGet(_UNIQUE_KEY . '_HASH_', $fn);
     }
 
 
@@ -371,10 +406,11 @@ final class Configure
     public function flush(int $lev = 1, string $safe = ''): array
     {
         $value = [];
-        if (!$lev) $lev = 1;
+        if (!$lev) $lev = 8;
         if ($lev & 1) $value['config'] = $this->_Redis->del(_UNIQUE_KEY . '_CONFIG_');
         if ($lev & 2) $value['cache'] = $this->_Redis->del(_UNIQUE_KEY . '_MYSQL_CACHE_');
         if ($lev & 4) $value['resource'] = $this->_Redis->del(_UNIQUE_KEY . '_RESOURCE_RAND_');
+        if ($lev & 8) $value['hash'] = $this->_Redis->del(_UNIQUE_KEY . '_HASH_');
 
         if ($lev & 256) {            //清空整个redis表，保留_RESOURCE_RAND_
             $rand = $this->_Redis->get(_UNIQUE_KEY . '_RESOURCE_RAND_');

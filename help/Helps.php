@@ -49,6 +49,7 @@ class Helps
      * 1：只清_CONFIG_，默认值
      * 2：_MYSQL_CACHE_
      * 4：_RESOURCE_RAND_
+     * 8：_HASH_，默认值
      * 32：清空路由
      * 256：清空整个redis表，保留_RESOURCE_RAND_
      * 1024：清空整个redis，需要safe=flushAll
