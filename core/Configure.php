@@ -406,7 +406,7 @@ final class Configure
     public function flush(int $lev = 1, string $safe = ''): array
     {
         $value = [];
-        if (!$lev) $lev = 8;
+        if (!$lev) $lev = 9;
         if ($lev & 1) $value['config'] = $this->_Redis->del(_UNIQUE_KEY . '_CONFIG_');
         if ($lev & 2) $value['cache'] = $this->_Redis->del(_UNIQUE_KEY . '_MYSQL_CACHE_');
         if ($lev & 4) $value['resource'] = $this->_Redis->del(_UNIQUE_KEY . '_RESOURCE_RAND_');
