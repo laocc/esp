@@ -8,6 +8,7 @@ use esp\dbs\Pool;
 use esp\debug\Counter;
 use esp\debug\Debug;
 use esp\face\Adapter;
+use esp\http\Rpc;
 use esp\helper\library\ext\Markdown;
 use function esp\helper\_echo;
 use function esp\helper\host;
@@ -187,6 +188,18 @@ abstract class Controller
             exit('禁止接入');
         }
     }
+
+    /**
+     * 创建一个RPC对像
+     *
+     * @param array $conf
+     * @return Rpc
+     */
+    public function rpc(array $conf = []): Rpc
+    {
+        return new Rpc($conf);
+    }
+
 
     /**
      * 读取Config值

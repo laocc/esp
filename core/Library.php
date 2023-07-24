@@ -6,6 +6,7 @@ namespace esp\core;
 use esp\dbs\DbModel;
 use esp\dbs\Pool;
 use esp\debug\Debug;
+use esp\http\Rpc;
 
 /**
  * Model是此类的子类，实际业务中所创建的类可以直接引用此类
@@ -20,7 +21,7 @@ abstract class Library
     public Controller $_controller;
     public DbModel $_dbModel;
 
-    final public function __construct(...$param)
+    public function __construct(...$param)
     {
         $fstController = false;
         /**
@@ -131,6 +132,18 @@ abstract class Library
     {
         return $this->_controller->enum($type, $value, $hide);
     }
+
+    /**
+     * 创建一个RPC对像
+     *
+     * @param array $conf
+     * @return Rpc
+     */
+    public function rpc(array $conf = []): Rpc
+    {
+        return $this->_controller->rpc($conf);
+    }
+
 
     /**
      * 发送通知信息到redis管道，一般要在swoole中接收
