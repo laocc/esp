@@ -35,10 +35,12 @@ class Handler
     public function simple_register_handler()
     {
         set_error_handler(function (...$err) {
+            http_response_code(500);
             header("Status: 500 Internal Server Error", true);
             echo("[{$err[0]}]{$err[1]}");
         });
         set_exception_handler(function (Throwable $error) {
+            http_response_code(500);
             header("Status: 500 Internal Server Error", true);
             echo("[{$error->getCode()}]{$error->getMessage()}");
         });
@@ -66,6 +68,7 @@ class Handler
          */
         $handler_error = function (int $errNo, string $errStr, string $errFile, int $errLine) use ($option) {
             if ($this->dispatcher->ignoreError($errFile, $errLine, true)) return;
+            http_response_code(500);
 
             $prev = ['message' => $errStr, 'code' => $errNo, 'file' => $errFile, 'line' => $errLine];
             $error = new Error($prev);
@@ -98,13 +101,8 @@ class Handler
                     }
                     break;
 
-                case ($ajax or $post):
-                    displayState(500, true);
-                    unset($err['trace'], $err['context']);
-                    echo json_encode($err, 256 | 128 | 64);
-                    break;
-
                 case ($option['display'] === 'json'):
+                case ($ajax or $post):
                     unset($err['trace'], $err['context']);
                     echo json_encode($err, 256 | 128 | 64);
                     break;
@@ -133,6 +131,7 @@ class Handler
          */
         $handler_exception = function (Throwable $error) use ($option) {
 //            Session::reset();
+            http_response_code(500);
 
             $errFile = $error->getFile();
             $errLine = $error->getLine();
@@ -168,13 +167,8 @@ class Handler
                     }
                     break;
 
-                case ($ajax or $post):
-                    displayState(500, true);
-                    unset($err['trace'], $err['context']);
-                    echo json_encode($err, 256 | 128 | 64);
-                    break;
-
                 case ($option['display'] === 'json'):
+                case ($ajax or $post):
                     unset($err['trace'], $err['context']);
                     echo json_encode($err, 256 | 128 | 64);
                     break;
