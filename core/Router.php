@@ -11,8 +11,8 @@ use function esp\helper\root;
 
 final class Router
 {
-
     private Redis $redis;
+    private string $cachePath = _RUNTIME;
 
     public function __construct(Redis $redis)
     {
@@ -46,13 +46,14 @@ final class Router
      */
     public function flush(): array
     {
-        $dir = new \DirectoryIterator(_RUNTIME);
+        $dir = new \DirectoryIterator($this->cachePath);
         $value = [];
         foreach ($dir as $f) {
+            if ($f->isDot()) continue;
             if (!$f->isFile()) continue;
             $name = $f->getFilename();
             if (preg_match('/^_ROUTES_\w+\#(\w+)\.route$/', $name, $mr)) {
-                unlink(_RUNTIME . '/' . $name);
+                unlink($this->cachePath . '/' . $name);
                 $value[$mr[1]] = $name;
             }
         }
@@ -69,7 +70,7 @@ final class Router
     {
         $modRoute = null;
         $rdsKey = '_ROUTES_' . md5(__FILE__) . '#' . _VIRTUAL;
-        $cacheFile = _RUNTIME . "/{$rdsKey}.route";
+        $cacheFile = "{$this->cachePath}/{$rdsKey}.route";
         if ($this->forceCache() and file_exists($cacheFile)) {
             if (!empty($mc = file_get_contents($cacheFile))) {
                 $modRoute = unserialize($mc);

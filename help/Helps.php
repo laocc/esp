@@ -64,6 +64,7 @@ class Helps
             $value['route'] = [];
             $dir = new \DirectoryIterator(_RUNTIME);
             foreach ($dir as $f) {
+                if ($f->isDot()) continue;
                 if (!$f->isFile()) continue;
                 $name = $f->getFilename();
                 if (preg_match('/^_ROUTES_\w+\#(\w+)\.route$/', $name, $mr)) {

@@ -274,12 +274,12 @@ final class Configure
             if ($hp[0] !== '/') $hp = "{$conf['path']}/{$hp}";
             $dir = new DirectoryIterator($hp);
             foreach ($dir as $f) {
-                if ($f->isFile()) {
-                    $pathName = $f->getPathname();
-                    $info = pathinfo($pathName);
-                    $value = $this->loadFile($pathName);
-                    $this->_Redis->hSet(_UNIQUE_KEY . '_HASH_', $info['filename'], $value);
-                }
+                if ($f->isDot()) continue;
+                if (!$f->isFile()) continue;
+                $pathName = $f->getPathname();
+                $info = pathinfo($pathName);
+                $value = $this->loadFile($pathName);
+                $this->_Redis->hSet(_UNIQUE_KEY . '_HASH_', $info['filename'], $value);
             }
         }
     }
@@ -331,6 +331,7 @@ final class Configure
         $config = [];
         $dir = new DirectoryIterator($conf['path']);
         foreach ($dir as $f) {
+            if ($f->isDot()) continue;
             if ($f->isFile()) {
                 $fn = $f->getFilename();
                 $config[] = ['file' => $f->getPathname(), 'name' => $fn];
@@ -342,10 +343,9 @@ final class Configure
                 if ($ext[0] !== '/') $ext = "{$conf['path']}/{$ext}";
                 $dir = new DirectoryIterator($ext);
                 foreach ($dir as $f) {
-                    if ($f->isFile()) {
-                        $fn = $f->getFilename();
-                        $config[] = ['file' => $f->getPathname(), 'name' => $fn];
-                    }
+                    if ($f->isDot()) continue;
+                    if (!$f->isFile()) continue;
+                    $config[] = ['file' => $f->getPathname(), 'name' => $f->getFilename()];
                 }
             }
         }
