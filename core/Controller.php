@@ -88,10 +88,10 @@ abstract class Controller
                     $hide = numbers($hide);
 
                 } else if (is_array($hide)) {
-                    foreach ($hide as $v) {
+                    foreach ($hide as &$v) {
                         if ($v < 0) {
                             $unset = true;
-                            break;
+                            $v = abs($v);
                         }
                     }
                 } else {
