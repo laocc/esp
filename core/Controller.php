@@ -58,7 +58,10 @@ abstract class Controller
 
     /**
      * 向视图发送读取enum方法
-     * $hide，只允许整型，或数组。整型时：>0表示只显示这些值，<0表示剔除这些值
+     * $hide，只允许整型，或数组。
+     * 整型时：>0表示只显示这些值，<0表示剔除这些值
+     * 数组时：任一元素小于0，表示删除所有指定的值
+     *
      * @param string $funName
      * @return void
      */
@@ -83,7 +86,18 @@ abstract class Controller
                         $hide = abs($hide);
                     }
                     $hide = numbers($hide);
-                } else if (!is_array($hide)) return [0 => 'hide只能是int或array'];
+
+                } else if (is_array($hide)) {
+                    foreach ($hide as $v) {
+                        if ($v < 0) {
+                            $unset = true;
+                            break;
+                        }
+                    }
+                } else {
+                    return [0 => 'hide只能是int或array'];
+                }
+
                 if ($unset) {
                     foreach ($hide as $k) unset($val[$k]);
                 } else {
