@@ -653,14 +653,7 @@ final class Dispatcher
 
                 $callable(...$params);
 
-            } catch (\Exception $exception) {
-                $err = [];
-                $err['file'] = $exception->getFile();
-                $err['line'] = $exception->getLine();
-                $err['message'] = $exception->getMessage();
-                $this->error($err);
-
-            } catch (\Error $error) {
+            } catch (\Error|\Exception $error) {
                 $err = [];
                 $err['file'] = $error->getFile();
                 $err['line'] = $error->getLine();
@@ -701,15 +694,7 @@ final class Dispatcher
 
                 $rest = $callable(...$args);    //执行
 
-            } catch (\Exception $exception) {
-                $rest = 'locked: ' . $exception->getMessage();
-                $err = [];
-                $err['file'] = $exception->getFile();
-                $err['line'] = $exception->getLine();
-                $err['message'] = $exception->getMessage();
-                $this->error($err);
-
-            } catch (\Error $error) {
+            } catch (\Error|\Exception $error) {
                 $rest = 'locked: ' . $error->getMessage();
                 $err = [];
                 $err['file'] = $error->getFile();
