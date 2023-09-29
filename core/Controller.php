@@ -70,13 +70,13 @@ abstract class Controller
         $this->assign($funName, function (string $key, $hide = null) {
             if (strpos($key, '.') === false) {
                 $val = $this->config("{$this->enumKey}.{$key}");
-                if (!$val) return json_encode([0 => "{$this->enumKey}.{$key}.未定义"]);
+                if (!$val) return json_encode([0 => "{$this->enumKey}.{$key}.未定义"], 320);
             } else {
                 $val = $this->config($key);
-                if (!$val) return json_encode([0 => "{$key}.未定义1"]);
+                if (!$val) return json_encode([0 => "{$key}.未定义"], 320);
             }
             if (is_string($val)) $val = $this->config("{$this->enumKey}.{$val}");
-            if (!$val) return json_encode([0 => "{$this->enumKey}{$key}映射目标{$val}不存在"]);
+            if (!$val) return json_encode([0 => "{$this->enumKey}{$key}映射目标{$val}不存在"], 320);
 
             if ($hide) {
                 $unset = false;
