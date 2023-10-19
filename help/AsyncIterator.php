@@ -27,8 +27,7 @@ class AsyncIterator implements Iterator
         $dir = new DirectoryIterator($path);
         $this->files = [];
         foreach ($dir as $f) {
-            if (!$f->isDot()) continue;
-            if ($f->isDir()) continue;
+            if ($f->isDot() || $f->isDir()) continue;
             $name = $f->getFilename();
             $nPath = "{$path}/{$name}";
             $this->files[] = $nPath;
