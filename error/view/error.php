@@ -85,7 +85,7 @@
     </tr>
     <tr>
         <td class="l">触发时间：</td>
-        <td><?= date('Y-m-d H:i:s') ?></td>
+        <td><?= date(DATE_YMD_HIS) ?></td>
     </tr>
 </table>
 <table class="trade" cellpadding="0" cellspacing="0">

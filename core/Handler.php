@@ -76,7 +76,7 @@ class Handler
             $err = array();
             $err['err_type'] = 'register_handler';
             $err['success'] = 0;
-            $err['time'] = date('Y-m-d H:i:s');
+            $err['time'] = date(DATE_YMD_HIS);
             $err['error'] = $errNo ?: 500;
             $err['message'] = $errStr;
             $err['file'] = $this->filter_root($errFile) . "({$errLine})";
@@ -141,7 +141,7 @@ class Handler
             $err['err_type'] = 'handler_exception';
             $err['err_file'] = __FILE__ . __LINE__;
             $err['success'] = 0;
-            $err['time'] = date('Y-m-d H:i:s');
+            $err['time'] = date(DATE_YMD_HIS);
             $err['error'] = $error->getCode() ?: 500;
             $err['message'] = $error->getMessage();
             $err['file'] = $this->filter_root($errFile) . "({$errLine})";
@@ -234,7 +234,7 @@ class Handler
 
             if (is_readable($errLogFile)) {
                 if (isset($this->debug)) $this->debug->disable();
-                @file_put_contents($errLogFile, date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+                @file_put_contents($errLogFile, date(DATE_YMD_HIS) . "\n", FILE_APPEND);
                 return;
             }
 
@@ -261,7 +261,7 @@ class Handler
         }
 
         $info = [
-            'time' => date('Y-m-d H:i:s'),
+            'time' => date(DATE_YMD_HIS),
             'HOST' => getenv('HTTP_HOST'),
             'Url' => _URL,
             'Debug' => isset($this->debug) ? $this->debug->filename() : '',

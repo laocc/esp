@@ -9,7 +9,6 @@ use esp\help\Helps;
 use esp\session\Session;
 use esp\helper\library\Result;
 use function esp\helper\host;
-use function esp\helper\pre;
 
 function esp_error(string $title, string ...$msg)
 {
@@ -23,6 +22,9 @@ function esp_error(string $title, string ...$msg)
     }
     exit;
 }
+
+//标准的时间格式，用于date(DATE_YMD_HIS)
+const DATE_YMD_HIS = 'Y-m-d H:i:s';
 
 final class Dispatcher
 {
