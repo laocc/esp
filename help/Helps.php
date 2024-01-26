@@ -57,6 +57,7 @@ class Helps
      */
     public function flush($lev, $safe)
     {
+        echo "flush:\n\t1=config(default);\n\t2=cache;\n\t4=resource;\n\t8=hash;\n\t32=route;\n\t256=redis 不含 _RESOURCE_RAND_;\n\t1024=redis，第2参数需=flushAll\n\n";
         $lev = intval($lev);
         $value = $this->_dispatcher->_config->flush($lev, strval($safe));
 
@@ -68,7 +69,7 @@ class Helps
                 if (!$f->isFile()) continue;
                 $name = $f->getFilename();
                 if (preg_match('/^_ROUTES_\w+\#(\w+)\.route$/', $name, $mr)) {
-                    unlink($name);
+                    unlink($f->getPathname());
                     $value['route'][$mr[1]] = $name;
                 }
             }
