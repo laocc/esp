@@ -533,7 +533,7 @@ final class Dispatcher
             if (_DEBUG) {
                 return $this->_request->returnEmpty('controller', "[{$class}] 控制器不存在，请确认文件是否存在，或是否在composer.json中引用了控制器目录");
             } else {
-                return $this->_request->returnEmpty('controller', "[{$this->_request->controller}] not exists.]");
+                return $this->_request->returnEmpty('controller', "[{$this->_request->controller}] not exists.");
             }
         }
 
