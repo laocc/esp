@@ -332,6 +332,21 @@ abstract class Controller
     }
 
     /**
+     * 侦听redis管道，此方法一般只用在CLI环境下
+     *
+     * @param callable $callable 回调有三个参数：$redis, $channel, $msg
+     * @return void
+     *
+     * 回调参数 $callable($redis, $channel, $msg)
+     */
+    final public function subscribe(callable $callable): void
+    {
+        if (!isset($this->_redis)) esp_error('Controller Subscribe', '站点未启用redis，无法接收订阅消息');
+        $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
+        $this->_redis->subscribe([$channel], $callable);
+    }
+
+    /**
      * 发送通知信息到redis管道，一般要在swoole中接收
      *
      * 建议不同项目定义不同_PUBLISH_KEY
@@ -345,6 +360,7 @@ abstract class Controller
      */
     final public function publish(string $action, $message): bool
     {
+        if (_CLI) esp_error('Controller Publish', 'cli环境下不可用publish，请直接用管道发送');
         if (!isset($this->_redis)) esp_error('Controller Publish', '站点未启用redis，无法发送订阅消息');
         $value = [];
         $value['action'] = $action;
@@ -423,21 +439,6 @@ abstract class Controller
                 if ($run === true or $unlink) @unlink($name);
             }
         }
-    }
-
-    /**
-     * 侦听redis管道，此方法一般只用在CLI环境下
-     *
-     * @param callable $callable 回调有三个参数：$redis, $channel, $msg
-     * @return void
-     *
-     * 回调参数 $callable($redis, $channel, $msg)
-     */
-    final public function subscribe(callable $callable): void
-    {
-        if (!isset($this->_redis)) esp_error('Controller Subscribe', '站点未启用redis，无法接收订阅消息');
-        $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
-        $this->_redis->subscribe([$channel], $callable);
     }
 
     /**
