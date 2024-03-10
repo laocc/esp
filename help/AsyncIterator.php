@@ -43,7 +43,7 @@ class AsyncIterator implements Iterator
         }
     }
 
-    public function rewind()
+    public function rewind(): void
     {
         $this->position = 0;
     }
@@ -53,18 +53,18 @@ class AsyncIterator implements Iterator
         return isset($this->files[$this->position]);
     }
 
-    public function current()
+    public function current(): mixed
     {
         $path = $this->files[$this->position];
         return file_get_contents($path);
     }
 
-    public function key()
+    public function key(): mixed
     {
         return $this->position;
     }
 
-    public function next()
+    public function next(): void
     {
         ++$this->position;
     }
