@@ -10,19 +10,6 @@ use esp\session\Session;
 use esp\helper\library\Result;
 use function esp\helper\host;
 
-function esp_error(string $title, string ...$msg)
-{
-    if (_CLI) {
-        echo "{$title}\n";
-        foreach ($msg as $s) echo "\t{$s}\n";
-    } else {
-        echo "<meta charset='utf-8' />\r\n<h2>{$title}</h2>\r\n<ul>\r\n";
-        foreach ($msg as $s) echo "\t<li>{$s}</li>\r\n";
-        echo "</ul>";
-    }
-    exit;
-}
-
 //标准的时间格式，用于date(DATE_YMD_HIS)
 const DATE_YMD_HIS = 'Y-m-d H:i:s';
 
@@ -449,9 +436,8 @@ final class Dispatcher
             $class = new $class();
         }
         foreach (get_class_methods($class) as $method) {
-            if (substr($method, 0, 5) === '_init') {
+            if (str_starts_with($method, '_init')) {
                 $run = $class->{$method}($this);
-//                $run = call_user_func_array([$class, $method], [$this]);
                 if ($run === false) {
                     $this->run = false;
                     break;
@@ -491,7 +477,6 @@ final class Dispatcher
         foreach ($this->_plugs as $plug) {
             if (method_exists($plug, $time) and is_callable([$plug, $time])) {
                 return $plug->{$time}($this->_request, $this->_response, $runValue);
-//                return call_user_func_array([$plug, $time], [$this->_request, $this->_response, &$runValue]);
             }
         }
 
@@ -509,13 +494,11 @@ final class Dispatcher
         $virtual = $this->_request->virtual;
         if ($this->_request->module) $virtual .= '\\' . $this->_request->module;
 
-//        if (_CLI) print_r($this->_request);
-
+        //以-开头为在CLI环境下执行Helps中的方法
         if (_CLI && $this->_request->controller[0] === '-') {
             $cont = new Helps($this, substr($this->_request->controller, 1));
             if (method_exists($cont, $this->_request->action) and is_callable([$cont, $this->_request->action])) {
                 return $cont->{$this->_request->action}(...$this->_request->params);
-//                return call_user_func_array([$cont, $this->_request->action], $this->_request->params);
             } else {
                 return "Helps{}类没有{$this->_request->action}方法。";
             }
@@ -529,12 +512,7 @@ final class Dispatcher
 
         if (!class_exists($class)) {
             if (isset($this->_debug)) $this->_debug->folder('controller_error');
-
-            if (_DEBUG) {
-                return $this->_request->returnEmpty('controller', "[{$class}] 控制器不存在，请确认文件是否存在，或是否在composer.json中引用了控制器目录");
-            } else {
-                return $this->_request->returnEmpty('controller', "[{$this->_request->controller}] not exists.");
-            }
+            return $this->_request->returnEmpty('controller', "[{$this->_request->controller}] nonexistent");
         }
 
         $cont = new $class($this);
@@ -545,16 +523,25 @@ final class Dispatcher
         /**
          * 运行初始化，一般这个放在Base中
          */
-        if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
+        if (method_exists($cont, "_init{$actionExt}") and is_callable([$cont, "_init{$actionExt}"])) {
             $this->relayDebug("[blue;{$class}->_init() ============================]");
-            $contReturn = $cont->_init($action);
-//            $contReturn = call_user_func_array([$cont, '_init'], [$action]);
+            $contReturn = $cont->{"_init{$actionExt}"}($action);
             if (is_bool($contReturn) or !is_null($contReturn)) {
-                $this->relayDebug(['_init' => 'return', 'return' => $contReturn]);
+                $this->relayDebug(["_init{$actionExt}" => $contReturn]);
                 if ($contReturn === false) $contReturn = null;
                 goto close;
             }
-        }
+        } else
+            //执行默认的
+            if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
+                $this->relayDebug("[blue;{$class}->_init() ============================]");
+                $contReturn = $cont->_init($action);
+                if (is_bool($contReturn) or !is_null($contReturn)) {
+                    $this->relayDebug(['_init' => $contReturn]);
+                    if ($contReturn === false) $contReturn = null;
+                    goto close;
+                }
+            }
 
         if (!method_exists($cont, $action) or !is_callable([$cont, $action])) {
             $auto = strtolower($this->_request->action) . 'Action';
@@ -567,7 +554,7 @@ final class Dispatcher
                     $action = 'defaultAction';
                 } else {
                     if (isset($this->_debug)) $this->_debug->folder('action_error');
-                    return $this->_request->returnEmpty('action', "[{$class}::{$action}()] not exists.");
+                    return $this->_request->returnEmpty('action', "[{$class}::{$action}()] nonexistent");
                 }
             }
         }
@@ -575,28 +562,29 @@ final class Dispatcher
         /**
          * 一般这个放在实际控制器中
          */
-        if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
+        if (method_exists($cont, "_main{$actionExt}") and is_callable([$cont, "_main{$actionExt}"])) {
             $this->relayDebug("[blue;{$class}->_main() =============================]");
-            $contReturn = $cont->_main($action);
-//            $contReturn = call_user_func_array([$cont, '_main'], [$action]);
+            $contReturn = $cont->{"_main{$actionExt}"}($action);
             if (is_bool($contReturn) or !is_null($contReturn)) {
-                $this->relayDebug(['_main' => 'return', 'return' => $contReturn]);
+                $this->relayDebug(["_main{$actionExt}" => $contReturn]);
                 if ($contReturn === false) $contReturn = null;
                 goto close;
             }
-        }
+        } else
+            if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
+                $this->relayDebug("[blue;{$class}->_main() =============================]");
+                $contReturn = $cont->_main($action);
+                if (is_bool($contReturn) or !is_null($contReturn)) {
+                    $this->relayDebug(['_main' => 'return', 'return' => $contReturn]);
+                    if ($contReturn === false) $contReturn = null;
+                    goto close;
+                }
+            }
 
         /**
          * 正式请求到控制器
          */
-//        var_dump($action);
-//        pre($this->_request->params);
         $this->relayDebug("[green;{$class}->{$action} Star ==============================]");
-//        var_dump("[green;{$class}->{$action} Star ==============================]");
-//        $contReturn = call_user_func_array([$cont, $action], $this->_request->params);
-//        $contReturn = $cont->{$action}(...$this->_request->params);//PHP7.4不能解包关联数组
-//        var_dump($this->_request->params);
-//        var_dump(array_values($this->_request->params));
         $contReturn = $cont->{$action}(...array_values($this->_request->params));//PHP7.4以后用可变函数语法来调用
         $this->relayDebug("[red;{$class}->{$action} End ==============================]");
 
@@ -610,12 +598,16 @@ final class Dispatcher
         if ($contReturn instanceof Result) $contReturn = $contReturn->display();
 
         //运行结束方法
-        if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
-            $clo = $cont->_close($action, $contReturn);
-//            $clo = call_user_func_array([$cont, '_close'], [$action, &$contReturn]);
+        if (method_exists($cont, "_close{$actionExt}") and is_callable([$cont, "_close{$actionExt}"])) {
+            $clo = $cont->{"_close{$actionExt}"}($action, $contReturn);
             if (!is_null($clo) and is_null($contReturn)) $contReturn = $clo;
             $this->relayDebug("[red;{$class}->_close() ==================================]");
-        }
+        } else
+            if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
+                $clo = $cont->_close($action, $contReturn);
+                if (!is_null($clo) and is_null($contReturn)) $contReturn = $clo;
+                $this->relayDebug("[red;{$class}->_close() ==================================]");
+            }
 
         if ($contReturn instanceof Result) return $contReturn->display();
         else if (is_object($contReturn)) {
@@ -747,3 +739,23 @@ final class Dispatcher
 
 
 }
+
+
+/**
+ * @param string $title
+ * @param string ...$msg
+ * @return void
+ */
+function esp_error(string $title, string ...$msg): void
+{
+    if (_CLI) {
+        echo "{$title}\n";
+        foreach ($msg as $s) echo "\t{$s}\n";
+    } else {
+        echo "<meta charset='utf-8' />\r\n<h2>{$title}</h2>\r\n<ul>\r\n";
+        foreach ($msg as $s) echo "\t<li>{$s}</li>\r\n";
+        echo "</ul>";
+    }
+    exit;
+}
+

@@ -25,7 +25,7 @@ final class Request
     public string $contFix;//控制器后缀，固定的，默认为 Controller
     public ?array $route_view = null;//在route中可以直接定义视图的相关设置，layout,path和file
     public bool $exists = true;//是否为正常的请求，请求了不存在的控制器
-    public $empty;
+    public array $empty = [];
 
     private array $alias = [];//控制器映射
     private array $allow = [];//仅允许的控制器
@@ -71,6 +71,7 @@ final class Request
         if (isset($config['allow']) and is_array($config['allow'])) $this->allow = $config['allow'];
         if (isset($config['disallow']) and is_array($config['disallow'])) $this->disallow = $config['disallow'];
         if (isset($config['empty'])) {
+            if (!is_array($config['empty'])) $config['empty'] = ['default' => $config['empty']];
             $this->empty = $config['empty'];
         }
     }
@@ -462,12 +463,8 @@ final class Request
     public function returnEmpty(string $path, string $msg)
     {
         $this->exists = false;
-        if (isset($this->empty)) {
-            if (is_array($this->empty)) {
-                return $this->empty[$this->_request->virtual] ?? $msg;
-            }
-            return $this->empty;
-        }
+        if (isset($this->empty[$this->virtual])) return $this->empty[$this->virtual];
+        if (isset($this->empty['default'])) return $this->empty['default'];
         return $msg;
     }
 
