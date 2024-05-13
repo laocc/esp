@@ -362,10 +362,17 @@ abstract class Controller
     {
         if (_CLI) esp_error('Controller Publish', 'cli环境下不可用publish，请直接用管道发送');
         if (!isset($this->_redis)) esp_error('Controller Publish', '站点未启用redis，无法发送订阅消息');
+        $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
         $value = [];
         $value['action'] = $action;
         $value['message'] = $message;
-        $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
+
+        if (strpos($action, '.') > 0) {
+            $action = explode('.', $action, 2);
+            $channel = $action[0];
+            $value['action'] = $action[1];
+        }
+
         return (boolean)$this->_redis->publish($channel, serialize($value));
     }
 
