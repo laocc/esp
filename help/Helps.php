@@ -101,11 +101,15 @@ class Helps
         print_r($tab);
     }
 
+    /**
+     * 显示所有表
+     * @return void
+     */
     public function tables()
     {
         $espCont = new EspController($this->_dispatcher);
         $espModel = new EspModel($espCont);
-        $tab = $espModel->tables(false);
+        $tab = $espModel->tables(false, true);
         _table($tab);
     }
 
