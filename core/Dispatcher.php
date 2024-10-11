@@ -6,6 +6,7 @@ namespace esp\core;
 use esp\debug\Counter;
 use esp\debug\Debug;
 use esp\help\Helps;
+use esp\error\Handler;
 use esp\session\Session;
 use esp\helper\library\Result;
 use function esp\helper\host;
@@ -87,7 +88,11 @@ final class Dispatcher
         if (isset($option['before'])) $option['before']($option);
 
         //以下2项必须在`chdir()`之前，且顺序不可变
-        if (!_CLI) $this->_error = new Handler($this, $option['error'] ?? []);
+        if (!_CLI) {
+            $this->_error = new Handler($option['error'] ?? [], function (string $file, int $line) {
+                return $this->ignoreError($file, $line, true);
+            });
+        }
 
         if (!isset($option['config'])) $option['config'] = [];
         $option['config'] += ['driver' => 'redis'];
