@@ -83,9 +83,6 @@ class Helps
         $this->flush($lev, $safe);
     }
 
-    /**
-     * @throws Error
-     */
     public function model($path, $base)
     {
         if (is_null($path)) $path = '/models';
