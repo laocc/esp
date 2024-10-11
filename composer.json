@@ -12,6 +12,7 @@
     "php": ">=8.0",
     "laocc/helper": "*",
     "laocc/dbs": "*",
+    "laocc/error": "*",
     "ext-redis": "*",
     "ext-json": "*",
     "ext-libxml": "*",
@@ -26,8 +27,7 @@
       "esp\\core\\": "core/",
       "esp\\face\\": "face/",
       "esp\\help\\": "help/",
-      "esp\\scripts\\": "scripts/",
-      "esp\\error\\": "error/"
+      "esp\\scripts\\": "scripts/"
     }
   },
   "scripts": {
