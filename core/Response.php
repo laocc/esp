@@ -155,7 +155,18 @@ final class Response
         if (is_array($value)) {//直接显示为json/jsonP
             $this->_Content_Type = 'application/json';
             header("Content-type: {$this->_Content_Type}; charset=UTF-8", true, 200);
-            $this->_display_Result = json_encode($value, 256 | 64);
+            $json = json_encode($value, 256 | 64);
+            if ($json === false) {
+                $this->_display_Result = json_encode([
+                    'success' => 0,
+                    'error' => 500,
+                    'message' => '控制器返回的array无法序列化为json',
+                    'result' => serialize($value)
+                ], 320);
+            } else {
+                $this->_display_Result = $json;
+            }
+
             if (isset($_GET['callback']) and preg_match('/^(\w+)$/', $_GET['callback'], $match)) {
                 $this->_display_Result = "{$match[1]}({$this->_display_Result});";
             }
