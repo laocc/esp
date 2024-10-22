@@ -157,12 +157,22 @@ final class Response
             header("Content-type: {$this->_Content_Type}; charset=UTF-8", true, 200);
             $json = json_encode($value, 256 | 64);
             if ($json === false) {
-                $this->_display_Result = json_encode([
-                    'success' => 0,
-                    'error' => 500,
-                    'message' => '控制器返回的array无法序列化为json',
-                    'result' => serialize($value)
-                ], 320);
+                try {
+                    $this->_display_Result = json_encode([
+                        'success' => 0,
+                        'error' => 500,
+                        'message' => '控制器返回的array无法序列化为json，请unserialize结果',
+                        'result' => serialize($value)
+                    ], 320);
+                } catch (\Error $error) {
+                    $this->_display_Result = json_encode([
+                        'success' => 0,
+                        'error' => 500,
+                        'message' => '控制器返回的array无法序列化为json，请unserialize(base64_decode())结果',
+                        'err_msg' => $error->getMessage(),
+                        'result' => base64_encode(serialize($value))
+                    ], 320);
+                }
             } else {
                 $this->_display_Result = $json;
             }
