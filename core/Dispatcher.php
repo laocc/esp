@@ -606,13 +606,13 @@ final class Dispatcher
         //运行结束方法
         if (method_exists($cont, "_close{$actionExt}") and is_callable([$cont, "_close{$actionExt}"])) {
             $this->relayDebug("[red;{$class}->_close{$actionExt}() ==================================]");
-            $clo = $cont->{"_close{$actionExt}"}($contReturn);
-            if (!is_null($clo) and is_null($contReturn)) $contReturn = $clo;
+            $closeReturn = $cont->{"_close{$actionExt}"}($contReturn);
+            if (!is_null($closeReturn)) $contReturn = $closeReturn;
         } else
             if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
                 $this->relayDebug("[red;{$class}->_close() ==================================]");
-                $clo = $cont->_close($contReturn);
-                if (!is_null($clo) and is_null($contReturn)) $contReturn = $clo;
+                $closeReturn = $cont->_close($contReturn);
+                if (!is_null($closeReturn)) $contReturn = $closeReturn;
             }
 
         if ($contReturn instanceof Result) return $contReturn->display();
