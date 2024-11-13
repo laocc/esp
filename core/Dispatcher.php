@@ -499,7 +499,7 @@ final class Dispatcher
         $virtual = $this->_request->virtual;
         if ($this->_request->module) $virtual .= '\\' . $this->_request->module;
 
-        //以-开头为在CLI环境下执行Helps中的方法
+        //以-开头为在CLI环境下执行Helps中的方法，如：exp -s flush
         if (_CLI && $this->_request->controller[0] === '-') {
             $cont = new Helps($this, substr($this->_request->controller, 1));
             if (method_exists($cont, $this->_request->action) and is_callable([$cont, $this->_request->action])) {
@@ -529,18 +529,19 @@ final class Dispatcher
          * 运行初始化，一般这个放在Base中
          */
         if (method_exists($cont, "_init{$actionExt}") and is_callable([$cont, "_init{$actionExt}"])) {
-            $this->relayDebug("[blue;{$class}->_init() ============================]");
-            $contReturn = $cont->{"_init{$actionExt}"}($action);
+            $this->relayDebug("[blue;{$class}->_init{$actionExt}() ============================]");
+            $contReturn = $cont->{"_init{$actionExt}"}($this->_request->controller, $this->_request->action);
             if (is_bool($contReturn) or !is_null($contReturn)) {
                 $this->relayDebug(["_init{$actionExt}" => $contReturn]);
                 if ($contReturn === false) $contReturn = null;
                 goto close;
             }
+
         } else
             //执行默认的
             if (method_exists($cont, '_init') and is_callable([$cont, '_init'])) {
                 $this->relayDebug("[blue;{$class}->_init() ============================]");
-                $contReturn = $cont->_init($action);
+                $contReturn = $cont->_init($this->_request->controller, $this->_request->action);
                 if (is_bool($contReturn) or !is_null($contReturn)) {
                     $this->relayDebug(['_init' => $contReturn]);
                     if ($contReturn === false) $contReturn = null;
@@ -568,8 +569,8 @@ final class Dispatcher
          * 一般这个放在实际控制器中
          */
         if (method_exists($cont, "_main{$actionExt}") and is_callable([$cont, "_main{$actionExt}"])) {
-            $this->relayDebug("[blue;{$class}->_main() =============================]");
-            $contReturn = $cont->{"_main{$actionExt}"}($action);
+            $this->relayDebug("[blue;{$class}->_main{$actionExt}() =============================]");
+            $contReturn = $cont->{"_main{$actionExt}"}($this->_request->controller, $this->_request->action);
             if (is_bool($contReturn) or !is_null($contReturn)) {
                 $this->relayDebug(["_main{$actionExt}" => $contReturn]);
                 if ($contReturn === false) $contReturn = null;
@@ -578,7 +579,7 @@ final class Dispatcher
         } else
             if (method_exists($cont, '_main') and is_callable([$cont, '_main'])) {
                 $this->relayDebug("[blue;{$class}->_main() =============================]");
-                $contReturn = $cont->_main($action);
+                $contReturn = $cont->_main($this->_request->controller, $this->_request->action);
                 if (is_bool($contReturn) or !is_null($contReturn)) {
                     $this->relayDebug(['_main' => 'return', 'return' => $contReturn]);
                     if ($contReturn === false) $contReturn = null;
@@ -604,14 +605,14 @@ final class Dispatcher
 
         //运行结束方法
         if (method_exists($cont, "_close{$actionExt}") and is_callable([$cont, "_close{$actionExt}"])) {
-            $clo = $cont->{"_close{$actionExt}"}($action, $contReturn);
+            $this->relayDebug("[red;{$class}->_close{$actionExt}() ==================================]");
+            $clo = $cont->{"_close{$actionExt}"}($contReturn);
             if (!is_null($clo) and is_null($contReturn)) $contReturn = $clo;
-            $this->relayDebug("[red;{$class}->_close() ==================================]");
         } else
             if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
-                $clo = $cont->_close($action, $contReturn);
-                if (!is_null($clo) and is_null($contReturn)) $contReturn = $clo;
                 $this->relayDebug("[red;{$class}->_close() ==================================]");
+                $clo = $cont->_close($contReturn);
+                if (!is_null($clo) and is_null($contReturn)) $contReturn = $clo;
             }
 
         if ($contReturn instanceof Result) return $contReturn->display();
