@@ -61,6 +61,7 @@ final class Dispatcher
         if (!defined('_RUNTIME')) define('_RUNTIME', _ROOT . '/runtime');//临时文件目录
         if (!defined('_DEBUG')) define('_DEBUG', is_readable($df = _RUNTIME . '/debug.lock') ? (file_get_contents($df) ?: true) : false);
         if (!defined('_VIRTUAL')) define('_VIRTUAL', strtolower($virtual));
+        if (!defined('_MASTER')) define('_MASTER', is_readable(_RUNTIME . '/master.lock'));
         if (!defined('_DOMAIN')) define('_DOMAIN', explode(':', getenv('HTTP_HOST') . ':')[0]);
         if (!defined('_HOST')) define('_HOST', host(_DOMAIN));//根域，可以在入口自行定义_HOST，或在option里指明这是个三级子域名
         if (!defined('_HTTPS')) define('_HTTPS', (getenv('HTTP_HTTPS') === 'on' or getenv('HTTPS') === 'on'));
@@ -501,6 +502,8 @@ final class Dispatcher
 
         //以-开头为在CLI环境下执行Helps中的方法，如：exp -s flush
         if (_CLI && $this->_request->controller[0] === '-') {
+            if (defined('_RPC') and !_MASTER) return "框架级系统方法只能在主服务器执行";
+
             $cont = new Helps($this, substr($this->_request->controller, 1));
             if (method_exists($cont, $this->_request->action) and is_callable([$cont, $this->_request->action])) {
                 return $cont->{$this->_request->action}(...$this->_request->params);
