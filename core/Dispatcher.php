@@ -668,16 +668,46 @@ final class Dispatcher
 
 
     /**
-     * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
-     * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
-     * 出口处判断如果是字符串即表示出错信息
-     *
-     * @param string $lockKey 任意可以用作文件名的字符串，同时也表示同一种任务
-     * @param callable $callable 该回调方法内返回的值即为当前函数返回值
-     * @param mixed ...$args
+     * @param string $lockKey
+     * @param callable $callable
+     * @param ...$args
      * @return mixed
      */
-    public function locked(string $lockKey, callable $callable, ...$args)
+    public function lockedRedis(string $lockKey, callable $callable, ...$args): mixed
+    {
+        $lockKey = str_replace(['/', '\\', '`', '*', '"', "'", '<', '>', ':', ';', '?', ' '], '', $lockKey);
+        if (_CLI) $lockKey = $lockKey . '_CLI';
+
+        /**
+         * 最多等50次，即5秒
+         */
+        $maxWait = 50;
+        if (defined('_LockedTime')) $maxWait = _LockedTime;
+
+        for ($i = 0; $i < $maxWait; $i++) {
+            //将 key 的值设为 value ，当且仅当 key 不存在。
+            $set = $this->_config->_Redis->setnx("locked.{$lockKey}", microtime(true));
+
+            if ($set) {  //key设置成功，执行
+                $run = $callable(...$args);
+                $this->_config->_Redis->del($lockKey);//删除Key
+                return $run;
+            }
+
+            usleep(100000);// 休眠100,000微秒（即0.1秒）
+        }
+
+        return 'locked';
+    }
+
+
+    /**
+     * @param string $lockKey
+     * @param callable $callable
+     * @param ...$args
+     * @return mixed
+     */
+    public function lockedFile(string $lockKey, callable $callable, ...$args): mixed
     {
         $option = intval($lockKey[0]);
         $operation = ($option & 1) ? (LOCK_EX | LOCK_NB) : LOCK_EX;
@@ -714,6 +744,22 @@ final class Dispatcher
         $this->ignoreError(__FILE__, __LINE__ + 1);
         if (!($option & 2) && is_readable($lockFile)) @unlink($lockFile);
         return $rest;
+    }
+
+    /**
+     * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
+     * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
+     * 出口处判断如果是字符串即表示出错信息
+     *
+     * @param string $lockKey 任意可以用作文件名的字符串，同时也表示同一种任务
+     * @param callable $callable 该回调方法内返回的值即为当前函数返回值
+     * @param mixed ...$args
+     * @return mixed
+     */
+    public function locked(string $lockKey, callable $callable, ...$args): mixed
+    {
+        if (str_starts_with($lockKey, 'redis')) return $this->lockedRedis($lockKey, $callable, ...$args);
+        return $this->lockedFile($lockKey, $callable, ...$args);
     }
 
 
