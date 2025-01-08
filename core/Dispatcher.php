@@ -599,13 +599,22 @@ final class Dispatcher
             $params = array_values($this->_request->params);
             $reflectionMethod = new \ReflectionMethod($cont, $action);
             foreach ($reflectionMethod->getParameters() as $i => $parameter) {
-                $params[$i] = match ($parameter->getType()) {
-                    'int' => intval($params[$i] ?? 0),
-                    'float' => floatval($params[$i] ?? 0),
-                    'string' => strval($params[$i] ?? ''),
-                    'bool' => boolval($params[$i] ?? 0),
-                    default => ($params[$i] ?? null),
-                };
+                switch ($parameter->getType()) {
+                    case 'int':
+                        $params[$i] = intval($params[$i] ?? 0);
+                        break;
+                    case 'float':
+                        $params[$i] = floatval($params[$i] ?? 0);
+                        break;
+                    case 'string':
+                        $params[$i] = strval($params[$i] ?? '');
+                        break;
+                    case 'bool':
+                        $params[$i] = boolval($params[$i] ?? 0);
+                        break;
+                    default:
+                        $params[$i] = ($params[$i] ?? null);
+                }
             }
             $contReturn = $cont->{$action}(...$params);//PHP7.4以后用可变函数语法来调用
         } else {
