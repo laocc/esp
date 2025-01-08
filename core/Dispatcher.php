@@ -594,7 +594,24 @@ final class Dispatcher
          * 正式请求到控制器
          */
         $this->relayDebug("[green;{$class}->{$action} Star ==============================]");
-        $contReturn = $cont->{$action}(...array_values($this->_request->params));//PHP7.4以后用可变函数语法来调用
+
+        if (defined('_Use_ReflectionMethod')) {
+            $params = array_values($this->_request->params);
+            $reflectionMethod = new \ReflectionMethod($cont, $action);
+            foreach ($reflectionMethod->getParameters() as $i => $parameter) {
+                $params[$i] = match ($parameter->getType()) {
+                    'int' => intval($params[$i] ?? 0),
+                    'float' => floatval($params[$i] ?? 0),
+                    'string' => strval($params[$i] ?? ''),
+                    'bool' => boolval($params[$i] ?? 0),
+                    default => ($params[$i] ?? null),
+                };
+            }
+            $contReturn = $cont->{$action}(...$params);//PHP7.4以后用可变函数语法来调用
+        } else {
+            $contReturn = $cont->{$action}(...array_values($this->_request->params));//PHP7.4以后用可变函数语法来调用
+        }
+
         $this->relayDebug("[red;{$class}->{$action} End ==============================]");
 
         //在控制器中，如果调用了reload方法，则所有请求数据已变化，loop将赋为true，开始重新加载
