@@ -106,7 +106,7 @@ final class Configure
             } else if (!$redis->connect($conf['host'], intval($conf['port']))) {
                 esp_error('Configure', "Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。");
             }
-        } catch (\Exception|\Error $error) {
+        } catch (\Throwable $error) {
 
             if ($tryCont++ > 2) {
                 $err = base64_encode(print_r($conf, true));
