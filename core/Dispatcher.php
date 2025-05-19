@@ -519,7 +519,10 @@ final class Dispatcher
         if (isset($this->_debug)) $this->_debug->setController($class);
 
         if (!class_exists($class)) {
-            if (isset($this->_debug)) $this->_debug->folder('controller_error');
+            if (isset($this->_debug)) {
+                $this->_debug->relay(['class' => $class]);
+                $this->_debug->folder('controller_error');
+            }
             return $this->_request->returnEmpty('controller', "[{$this->_request->controller}] nonexistent");
         }
 
@@ -562,7 +565,10 @@ final class Dispatcher
                 } else if (method_exists($cont, 'defaultAction') and is_callable([$cont, 'defaultAction'])) {
                     $action = 'defaultAction';
                 } else {
-                    if (isset($this->_debug)) $this->_debug->folder('action_error');
+                    if (isset($this->_debug)) {
+                        $this->_debug->relay(['action' => $action]);
+                        $this->_debug->folder('action_error');
+                    }
                     return $this->_request->returnEmpty('action', "[{$class}::{$action}()] nonexistent");
                 }
             }
