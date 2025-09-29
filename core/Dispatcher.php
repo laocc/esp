@@ -271,7 +271,7 @@ final class Dispatcher
             $save = $this->_debug->save_logs('run.Dispatcher.Cgi');
             if ($showDebug) var_dump($save);
 
-        } else {
+        } else if (!_CLI) {
             register_shutdown_function(function () {
                 $this->_debug->save_logs('run.Dispatcher.Shutdown');
             });
@@ -331,7 +331,7 @@ final class Dispatcher
         if ($this->_debug->mode === 'cgi' or $showDebug) {
             $save = $this->_debug->save_logs('simple.Dispatcher.Cgi');
             if ($showDebug) var_dump($save);
-        } else {
+        } else if (!_CLI) {
             register_shutdown_function(function () {
                 $this->_debug->save_logs('simple.Dispatcher.Shutdown');
             });
@@ -683,6 +683,11 @@ final class Dispatcher
      */
     public function shutdown(callable $callable, ...$params): bool
     {
+        if (_CLI) {
+            $callable(...$params);
+            return true;
+        }
+
         return (boolean)register_shutdown_function(function (callable $callable, ...$params) {
             try {
 
