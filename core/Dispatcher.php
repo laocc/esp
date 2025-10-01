@@ -5,6 +5,7 @@ namespace esp\core;
 
 use esp\debug\Counter;
 use esp\debug\Debug;
+use esp\debug\Timer;
 use esp\help\Helps;
 use esp\error\Handler;
 use esp\session\Session;
@@ -23,6 +24,7 @@ final class Dispatcher
     public Response $_response;
     public Configure $_config;
     public ?Debug $_debug;
+    public ?Timer $_timer;
     public ?Session $_session;
     public ?Cookies $_cookies;
     public ?Cache $_cache;
@@ -38,6 +40,9 @@ final class Dispatcher
      */
     public function __construct(array $option, string $virtual = 'www')
     {
+        if (isset($option['timer'])) $this->_timer = new Timer();
+        if (isset($this->_timer)) $this->_timer->node('Dispatcher init');
+
         /**
          * 最好在nginx server中加以下其中之一：
          * if ($request_method ~ ^(HEAD)$ ) { return 200 "OK"; }
@@ -85,11 +90,13 @@ final class Dispatcher
             }
         }
         if (!defined('_CIP')) define('_CIP', $ip);
+        if (isset($this->_timer)) $this->_timer->node('define Finish');
 
         if (isset($option['before'])) $option['before']($option);
 
         //以下2项必须在`chdir()`之前，且顺序不可变
         if (!_CLI) {
+            if (isset($this->_timer)) $this->_timer->node('create Handler');
             $this->_error = new Handler($option['error'] ?? [], function (string $file, int $line) {
                 return $this->ignoreError($file, $line, true);
             });
@@ -97,6 +104,7 @@ final class Dispatcher
 
         if (!isset($option['config'])) $option['config'] = [];
         $option['config'] += ['driver' => 'redis'];
+        if (isset($this->_timer)) $this->_timer->node('create Configure');
         $this->_config = $cfg = new Configure($option['config']);
 
         /**
@@ -107,6 +115,7 @@ final class Dispatcher
         $request = $cfg->get('request');
         if (empty($request)) $request = [];
         $request = $this->mergeConf($request);
+        if (isset($this->_timer)) $this->_timer->node('create Request');
         $this->_request = new Request($request);
         if (_CLI) return;
 
@@ -115,6 +124,7 @@ final class Dispatcher
             if ($counter['run'] ?? 0) {
                 $counter['_key'] = md5(_ROOT);
                 $counter['_redis_index'] = $cfg->RedisDbIndex;
+                if (isset($this->_timer)) $this->_timer->node('create Counter');
                 $this->_counter = new Counter($counter, $cfg->_Redis, $this->_request);
             }
         }
@@ -122,6 +132,7 @@ final class Dispatcher
         if ($debugConf = $cfg->get('debug')) {
             $debug = $this->mergeConf($debugConf);
             if ($debug['run'] ?? 0) {
+                if (isset($this->_timer)) $this->_timer->node('create Debug');
                 $this->_debug = new Debug($this, $debug);
                 $this->_error->setDebug($this->_debug);
             }
@@ -131,12 +142,14 @@ final class Dispatcher
         if (empty($response)) $response = [];
         $response = $this->mergeConf($response);
         if (isset($response['rand'])) $response['_rand'] = $cfg->_Redis->get(_UNIQUE_KEY . '_RESOURCE_RAND_') ?: date('YmdH');
+        if (isset($this->_timer)) $this->_timer->node('create Response');
         $this->_response = new Response($this->_request, $response);
 
         if ($cookies = $cfg->get('cookies')) {
             $cokConf = $this->mergeConf($cookies, ['run' => false, 'debug' => false, 'domain' => 'host']);
 
             if ($cokConf['run'] ?? false) {
+                if (isset($this->_timer)) $this->_timer->node('create Cookies');
                 $this->_cookies = new Cookies($cokConf);
                 if ($cokConf['debug']) $this->relayDebug(['cookies' => $_COOKIE]);
 
@@ -158,7 +171,7 @@ final class Dispatcher
 
                             $sseConf['redis'] = $rdsConf;
                         }
-
+                        if (isset($this->_timer)) $this->_timer->node('create Session');
                         $this->_session = new Session($sseConf);
                         if (($sseConf['redis']['db'] ?? -1) === $cfg->RedisDbIndex and $cfg->driver === 'redis') {
                             $this->_session->start($cfg->_Redis);
@@ -174,13 +187,14 @@ final class Dispatcher
         if ($cacheConf = $cfg->get('cache')) {
             $cache = $this->mergeConf($cacheConf);
             if ($cache['run'] ?? 0) {
+                if (isset($this->_timer)) $this->_timer->node('create Cache');
                 $this->_cache = new Cache($this, $cache);
                 $this->_response->cache(true);
             }
         }
 
         if (isset($option['after']) and is_callable($option['after'])) $option['after']($option);
-
+        if (isset($this->_timer)) $this->_timer->node('run after');
         unset($GLOBALS['option']);
         if (headers_sent($file, $line)) {
             esp_error('header输出错误', "在{$file}[{$line}]行已有数据输出，系统无法启动");
@@ -192,6 +206,7 @@ final class Dispatcher
      */
     public function run(bool $simple = false): void
     {
+        if (isset($this->_timer)) $this->_timer->node('run Start');
         $showDebug = boolval($_GET['_debug'] ?? 0);
         if ($this->run === false) goto end;
         if (_CLI and !$simple) esp_error("cli环境中请调用\$this->simple()或->run(true)方法");
@@ -226,9 +241,10 @@ final class Dispatcher
             $this->_response->display($hook);
             goto end;
         }
-
+        if (isset($this->_timer)) $this->_timer->node('dispatch Start');
         //TODO 运行控制器->方法
         $value = $this->dispatch();
+        if (isset($this->_timer)) $this->_timer->node('dispatch Finish');
         if (_CLI) {
             print_r($value);
             echo "\r\n";
@@ -257,6 +273,7 @@ final class Dispatcher
 
         end:
         !$simple and $this->_plugs_count and $hook = $this->plugsHook('shutdown');
+        if (isset($this->_timer)) $this->_timer->node('shutdown Finish');
 
         if (!isset($this->_debug)) return;
 
