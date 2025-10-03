@@ -655,19 +655,19 @@ final class Dispatcher
         }
 
         close:
-        if ($contReturn instanceof Result) $contReturn = $contReturn->display();
+//        if ($contReturn instanceof Result) $contReturn = $contReturn->display();
 
         //运行结束方法
         if (method_exists($cont, "_close{$actionExt}") and is_callable([$cont, "_close{$actionExt}"])) {
             $this->relayDebug("[red;{$class}->_close{$actionExt}() ==================================]");
             $closeReturn = $cont->{"_close{$actionExt}"}($contReturn);
             if (!is_null($closeReturn)) $contReturn = $closeReturn;
-        } else
-            if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
-                $this->relayDebug("[red;{$class}->_close() ==================================]");
-                $closeReturn = $cont->_close($contReturn);
-                if (!is_null($closeReturn)) $contReturn = $closeReturn;
-            }
+
+        } else if (method_exists($cont, '_close') and is_callable([$cont, '_close'])) {
+            $this->relayDebug("[red;{$class}->_close() ==================================]");
+            $closeReturn = $cont->_close($contReturn);
+            if (!is_null($closeReturn)) $contReturn = $closeReturn;
+        }
 
         if ($contReturn instanceof Result) return $contReturn->display();
         else if (is_object($contReturn)) {
