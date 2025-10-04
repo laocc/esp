@@ -535,6 +535,9 @@ final class Dispatcher
         $action = strtolower($this->_request->action) . $actionExt;
 
         $class = "\\application\\{$virtual}\\controllers\\{$controller}";
+        if ($this->_request->namespace) {
+            $class = "\\{$this->_request->namespace}\\application\\{$virtual}\\controllers\\{$controller}";
+        }
         if (isset($this->_debug)) $this->_debug->setController($class);
 
         if (!class_exists($class)) {

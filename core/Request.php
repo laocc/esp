@@ -12,6 +12,7 @@ final class Request
     private array $_var = array();
     public array $params = array();
 
+    public string $namespace = '';
     public string $virtual = '';
     public string $router = '';//实际生效的路由器名称
     public string $module = '';

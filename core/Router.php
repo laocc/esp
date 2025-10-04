@@ -137,6 +137,8 @@ final class Router
                 $request->virtual = $matcher[$request->virtual];
             }
 
+            if (isset($route['route']['namespace'])) $request->namespace = $route['route']['namespace'];
+
             if (isset($route['route']['directory'])) $request->directory = root($route['route']['directory']);
             else if (isset($route['directory'])) $request->directory = root($route['directory']);
 
