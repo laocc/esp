@@ -33,7 +33,7 @@ final class View implements Adapter
     /**
      * 设置或获取视图路径
      * @param string|null $dir
-     * @return mixed|string
+     * @return string
      */
     public function dir(string $dir = null): string
     {
@@ -163,7 +163,7 @@ final class View implements Adapter
         $dir = root($this->dir());
         //以之前设置的优先，这里的$file是response中根据控制器推算出来的默认视图文件名
         $fileV = $this->file() ?: $file;
-        if (strpos($fileV[0], '/') === 0) {
+        if (str_starts_with($fileV[0], '/')) {
             $fileV = root($fileV);
         } else {
             $fileV = "{$dir}/{$fileV}";
@@ -182,7 +182,7 @@ final class View implements Adapter
         }
 
         if (isset($this->_layout)) {//先解析子视图
-            if ($this->_display_type === 'md' && substr($fileV, -3) === '.md') {
+            if ($this->_display_type === 'md' && str_ends_with($fileV, '.md')) {
                 $md = new MarkdownObject($this->md_conf);
                 $html = $md->render(file_get_contents($fileV));
             } else {
@@ -204,7 +204,7 @@ final class View implements Adapter
     /**
      * 设置视图文件名
      * @param string|null $file
-     * @return mixed|string
+     * @return string
      */
     public function file(string $file = null): string
     {

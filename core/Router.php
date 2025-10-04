@@ -254,9 +254,9 @@ final class Router
         return null;
     }
 
-    private function readFile(Request $request, string $path)
+    private function readFile(Request $request, string $root, string $path)
     {
-        if (is_readable($file = ($request->router_path . '/' . $path . '.ini'))) {
+        if (is_readable($file = ($root . '/' . $path . '.ini'))) {
             $modRoute = parse_ini_file($file, true);
             if (!is_array($modRoute) or empty($modRoute)) return [];
             //只将一级键名中带.号的，转换为数组，如将：abc.xyz=123转换为abc[xyz]=123
@@ -268,10 +268,10 @@ final class Router
                     unset($modRoute[$k]);
                 }
             }
-        } else if (is_readable($file = ($request->router_path . '/' . $path . '.php'))) {
+        } else if (is_readable($file = ($root . '/' . $path . '.php'))) {
             $modRoute = load($file);
 
-        } else if (is_readable($file = ($request->router_path . '/' . $path . '.json'))) {
+        } else if (is_readable($file = ($root . '/' . $path . '.json'))) {
             $modRoute = file_get_contents($file);
             $modRoute = json_decode($modRoute, true);
         }
@@ -288,8 +288,15 @@ final class Router
      */
     private function loadRouteFile(Request $request)
     {
-        $modRoute = $this->readFile($request, 'default');
-        $modRoute = $modRoute + $this->readFile($request, _VIRTUAL);
+        $modRoute = $this->readFile($request, $request->router_path, 'default');
+        $modRoute = $modRoute + $this->readFile($request, $request->router_path, _VIRTUAL);
+
+        if (defined('_AppendComposer')) {
+            //这个路径后半部分是在附加项目中固定的
+            $root = root('/vendor/' . _AppendComposer . '/common/routes');
+            $modRoute = $modRoute + $this->readFile($request, $root, _VIRTUAL);
+        }
+
         if (empty($modRoute)) return [];
         if (!_DEBUG) return $modRoute;
 
