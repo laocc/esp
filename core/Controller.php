@@ -10,7 +10,6 @@ use esp\debug\Debug;
 use esp\face\Adapter;
 use esp\http\Rpc;
 use esp\helper\library\ext\Markdown;
-use function esp\helper\_echo;
 use function esp\helper\host;
 use function esp\helper\numbers;
 use function esp\helper\root;
@@ -68,7 +67,7 @@ abstract class Controller
     final public function setEnum(string $funName = 'enum')
     {
         $this->assign($funName, function (string $key, $hide = null) {
-            if (strpos($key, '.') === false) {
+            if (!str_contains($key, '.')) {
                 $val = $this->config("{$this->enumKey}.{$key}");
                 if (!$val) return json_encode([0 => "{$this->enumKey}.{$key}.未定义"], 320);
             } else {
@@ -123,7 +122,7 @@ abstract class Controller
     final public function enum(string $type, $value, $hide = null)
     {
         $confKey = $type;
-        if (strpos($type, '.') === false) $confKey = "{$this->enumKey}.{$type}";
+        if (!str_contains($type, '.')) $confKey = "{$this->enumKey}.{$type}";
         $enum = $this->config($confKey);
         if (!$enum) exit("{$confKey}没有此项置");
 
@@ -400,7 +399,7 @@ abstract class Controller
             $data['class'] = $key[0];
             $data['action'] = $key[1];
         }
-        $pubKey = defined('_TASK_KEY_') ? _TASK_KEY_ : '_TASK_KEY_';
+        $pubKey = defined('_TASK_KEY') ? _TASK_KEY : '_TASK_KEY';
         return $this->publish($pubKey, $data);
     }
 
@@ -801,11 +800,11 @@ abstract class Controller
 
     /**
      * 设置js引入
-     * @param $file
+     * @param array|string $file
      * @param string $pos
      * @return $this
      */
-    final protected function js($file, $pos = 'foot'): Controller
+    final protected function js(array|string $file, string $pos = 'foot'): Controller
     {
         $this->_response->js($file, $pos);
         return $this;
@@ -814,10 +813,10 @@ abstract class Controller
 
     /**
      * 设置css引入
-     * @param $file
+     * @param array|string $file
      * @return $this
      */
-    final protected function css($file): Controller
+    final protected function css(array|string $file): Controller
     {
         $this->_response->css($file);
         return $this;

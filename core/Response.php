@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\error\Error;
 use esp\face\Adapter;
 use esp\helper\library\ext\Xml;
 use function esp\helper\displayState;
@@ -275,7 +276,7 @@ final class Response
      *
      * 固定配置目录，可以在response.ini中定义：views = {_ROOT}/template/default
      *
-     * @param string|null $path
+     * @param string $path
      * @return $this
      */
     public function setViewPath(string $path): Response
@@ -289,6 +290,9 @@ final class Response
             $this->_view_set['view_path'] = substr($path, 1);
         } else {
             $this->_view_set['view_path'] = "{$this->_request->directory}/{$vmp}/{$path}";
+        }
+        if (!file_exists($this->_view_set['view_path'])) {
+            throw new Error("{$this->_view_set['view_path']} not exists");
         }
         return $this;
     }
@@ -311,10 +315,10 @@ final class Response
         if (is_bool($value)) {
             $this->_view_set['view_use'] = $value;
         } elseif (is_string($value)) {
-            if (strpos($value, '.') === false) {
+            if (!str_contains($value, '.')) {
                 $value = "{$value}{$this->_view_set['file_ext']}";
             }
-            if (strpos($value, '/') === false) {
+            if (!str_contains($value, '/')) {
                 $value = "{$this->_request->controller}/{$value}";
             }
             $this->_view_set['view_use'] = true;
@@ -446,7 +450,7 @@ final class Response
                 if (($w = strpos($mch, '?')) > 0) {
                     $css[1][$i] = substr($mch, 0, $w);
                 }
-                if (strpos($css[1][$i], $res_prev) === 0) $css[1][$i] = substr($css[1][$i], strlen($res_prev));
+                if (str_starts_with($css[1][$i], $res_prev)) $css[1][$i] = substr($css[1][$i], strlen($res_prev));
             }
             $import = $this->_resource->get('importCss');
             if ($import) array_push($css[1], ...$import);
@@ -454,7 +458,7 @@ final class Response
             preg_match_all("/<script.*?src=['\"](\/\w.+?)['\"]><\/script>/i", $html, $jss, PREG_PATTERN_ORDER);
             $html = str_replace($jss[0], '', $html);
             foreach ($jss[1] as $i => $mch) {
-                if (substr($mch, 0, 4) === 'http' or substr($mch, 0, 2) === '//') {
+                if (str_starts_with($mch, 'http') or str_starts_with($mch, '//')) {
                     unset($jss[1][$i]);
                     continue;
                 }
@@ -462,7 +466,7 @@ final class Response
                 if (($w = stripos($mch, '?')) > 0) {
                     $jss[1][$i] = substr($mch, 0, $w);
                 }
-                if (strpos($jss[1][$i], $res_prev) === 0) $jss[1][$i] = substr($jss[1][$i], strlen($res_prev));
+                if (str_starts_with($jss[1][$i], $res_prev)) $jss[1][$i] = substr($jss[1][$i], strlen($res_prev));
             }
 
 //            $html = str_replace(["    \n", "\t", "\t\n", "\t\r", "\n\n\n", "\r\r\r"], '', $html);
@@ -539,10 +543,10 @@ final class Response
         $dom = $this->_resource->host();
 
         $domain = function ($item) use ($dom) {
-            if (substr($item, 0, 4) === 'http') return $item;
-            if (substr($item, 0, 1) === '.') return $item;
-            if (substr($item, 0, 1) === '/') return $item;
-            if (substr($item, 0, 2) === '//') return substr($item, 1);
+            if (str_starts_with($item, 'http')) return $item;
+            if (str_starts_with($item, '.')) return $item;
+            if (str_starts_with($item, '/')) return $item;
+            if (str_starts_with($item, '//')) return substr($item, 1);
             if ($item === 'jquery') $item = $this->_resource->get('jquery');
             return $dom . '/' . ltrim($item, '/');
         };
@@ -555,7 +559,7 @@ final class Response
                     $http = array();
                     foreach ($this->_layout_val["_js_{$pos}"] as &$js) {
                         if ($js === 'jquery') $js = $this->_resource->get('jquery');
-                        if (substr($js, 0, 4) === 'http') {
+                        if (str_starts_with($js, 'http')) {
                             $http[] = "<script type=\"text/javascript\" src=\"{$js}\" charset=\"utf-8\" {$defer} ></script>";
                         } else {
                             $conJS[] = $js;
@@ -573,7 +577,7 @@ final class Response
                 $conCSS = array();
                 $http = array();
                 foreach ($this->_layout_val['_css'] as $css) {
-                    if (substr($css, 0, 4) === 'http') {
+                    if (str_starts_with($css, 'http')) {
                         $http[] = "<link rel=\"stylesheet\" href=\"{$css}\" />";
                     } else {
                         $conCSS[] = $css;
@@ -647,7 +651,7 @@ final class Response
     }
 
 
-    public function js($file, $pos = 'foot'): void
+    public function js(array|string $file, string $pos = 'foot'): void
     {
         $pos = in_array($pos, ['foot', 'head', 'body', 'defer']) ? $pos : 'foot';
         if (is_array($file)) {
@@ -658,7 +662,7 @@ final class Response
     }
 
 
-    public function css($file): void
+    public function css(array|string $file): void
     {
         if (is_array($file)) {
             array_push($this->_layout_val['_css'], ...$file);

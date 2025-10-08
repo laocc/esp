@@ -251,7 +251,7 @@ final class Configure
         //负载从服务器唤醒，直接退出
         if (_VIRTUAL === 'rpc' && _URI === self::awakenURI) exit(_UNIQUE_KEY);
 
-        if (_CLI and substr(_URI, 0, 13) === '/_redis/flush') {
+        if (_CLI and str_starts_with(_URI, '/_redis/flush')) {
             $flush = $this->flush(intval(substr(_URI, 14)), '');
             echo "redis 缓存清理成功\n";
             print_r($flush);
@@ -485,7 +485,7 @@ final class Configure
                 }
             }
 
-            if (!is_string($key) or strpos($key, '.') === false) continue;
+            if (!is_string($key) or !str_contains($key, '.')) continue;
             $tmp = explode('.', $key, 6);
             switch (count($tmp)) {
                 case 6:
@@ -611,7 +611,7 @@ final class Configure
             return defined($matches[1]) ? constant($matches[1]) : $matches[1];
         }, strval($value));
 
-        if (substr($value, 0, 1) === '[' and substr($value, -1, 1) === ']') {
+        if (str_starts_with($value, '[') and str_ends_with($value, ']')) {
             $arr = json_decode($value, true);
             if (is_array($arr)) $value = $arr;
 
