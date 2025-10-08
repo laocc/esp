@@ -1,12 +1,22 @@
 #!/bin/sh
 
-ROOT=$(pwd -P)
+current_dir=$(pwd -P)
+ROOT=""
 
-if [ ! -f "${ROOT}/vendor/laocc/esp/composer.json" ]; then
+while [ "$current_dir" != "/" ]; do
+    if [ -f "${current_dir}/vendor/laocc/esp/composer.json" ]; then
+        ROOT="$current_dir"
+        break
+    fi
+    current_dir=$(dirname "$current_dir")
+done
+
+if [ -z "$ROOT" ]; then
     echo 'not in ESP path'
     echo
     exit
 fi
 
-#echo "${ROOT}/public/cli/index.php" $*
+echo "${ROOT}/public/cli/index.php" $*
+echo
 /usr/local/php/bin/php "${ROOT}/public/cli/index.php" $*
