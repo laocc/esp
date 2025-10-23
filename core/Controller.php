@@ -8,7 +8,8 @@ use esp\dbs\Pool;
 use esp\debug\Counter;
 use esp\debug\Debug;
 use esp\face\Adapter;
-use esp\http\Rpc;
+use esp\http\Rpc as Http;
+use laocc\rpc\Rpc;
 use esp\helper\library\ext\Markdown;
 use function esp\helper\host;
 use function esp\helper\numbers;
@@ -215,13 +216,26 @@ abstract class Controller
      * 创建一个RPC对像
      *
      * @param array $conf
-     * @return Rpc
+     * @return Http
      */
-    public function rpc(array $conf = []): Rpc
+    public function newRpc(array $conf = []): Http
     {
-        return new Rpc($conf);
+        return new Http($conf);
     }
 
+    /**
+     * @param string $uri
+     * @param array $data
+     * @return mixed|string
+     */
+    final public function rpc(string $uri, array $data = [])
+    {
+        $url = explode(':', $uri);
+        $rpc = new Rpc($url[0]);
+        $check = $rpc->post($url[1], $data);
+        if (is_string($check)) return $check;
+        return $check['data'];
+    }
 
     /**
      * 读取Config值

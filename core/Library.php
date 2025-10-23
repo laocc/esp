@@ -6,7 +6,8 @@ namespace esp\core;
 use esp\dbs\DbModel;
 use esp\dbs\Pool;
 use esp\debug\Debug;
-use esp\http\Rpc;
+//use esp\http\Rpc;
+use laocc\rpc\Rpc;
 
 /**
  * Model是此类的子类，实际业务中所创建的类可以直接引用此类
@@ -134,14 +135,15 @@ abstract class Library
     }
 
     /**
-     * 创建一个RPC对像
+     * Rpc调用
      *
-     * @param array $conf
-     * @return Rpc
+     * @param string $uri
+     * @param array $data
+     * @return mixed|string
      */
-    public function rpc(array $conf = []): Rpc
+    final public function rpc(string $uri, array $data = [])
     {
-        return $this->_controller->rpc($conf);
+        return $this->_controller->rpc($uri, $data);
     }
 
 
