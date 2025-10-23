@@ -1,19 +1,21 @@
-
 # ESP (Efficient Simple PHP)
-- PHP >7
+
+- PHP>8.1
 - 这是一个高效简洁的PHP框架
 - 框架已应用于实际项目多年，但仍处于持续完善阶段，升级时请注意查看更新说明。
 
 # 框架安装
 
 1. `composer`直接安装：
+
 ```
 composer create-project laocc/esp-install website
 ```
+
 其中`website`为项目目录，可任意自定义
 
-
 2. 在`composer.json`中引入
+
 ```json
 {
   "name": "website/1.1",
@@ -24,14 +26,15 @@ composer create-project laocc/esp-install website
 ```
 
 在生产环境中，建议执行加载优化
+
 ```
 composer dump-autoload --optimize
 ```
 
-
 本库`readme`目录中含有核心部分的文档：
 
 # 文档目录
+
 - [文档目录](./readme/0.aboutme.md)
 - [控制器、控制器方法`Controller`](./readme/1.controllers.md)
 - [视图`View`和`layout`](./readme/2.views.md)
@@ -45,10 +48,3 @@ composer dump-autoload --optimize
 - [缓存及生成静态文件`Cache`](./readme/10.cache.md)
 - [插件`Plugs`和`bootstrap`](./readme/11.plugs.md)
 - [调试器`Debug`](./readme/20.debug.md)
-
-```
-"laocc/http": "*",
-"laocc/debug": "*",
-"laocc/dbs": "*",
-"laocc/session": "*",
-```
