@@ -226,13 +226,14 @@ abstract class Controller
     /**
      * @param string $uri
      * @param array $data
+     * @param array $option
      * @return mixed|string
      */
-    final public function rpc(string $uri, array $data = [])
+    final public function rpc(string $uri, array $data = [], array $option = []): mixed
     {
         $url = explode(':', $uri);
         $rpc = new Rpc($url[0]);
-        $check = $rpc->post($url[1], $data);
+        $check = $rpc->format($option)->post($url[1], $data);
         if (is_string($check)) return $check;
         return $check['data'];
     }
