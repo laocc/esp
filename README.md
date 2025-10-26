@@ -4,6 +4,10 @@
 - 这是一个高效简洁的PHP框架
 - 框架已应用于实际项目多年，但仍处于持续完善阶段，升级时请注意查看更新说明。
 
+## License
+
+This project is licensed under a custom open-source license — see the [LICENSE](LICENSE) file for details.
+
 # 框架安装
 
 1. `composer`直接安装：

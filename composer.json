@@ -2,6 +2,7 @@
   "name": "laocc/esp",
   "description": "(esp)Efficient Simple PHP",
   "homepage": "https://github.com/laocc/esp",
+  "license":"Apache-2.0",
   "authors": [
     {
       "name": "fazo",
