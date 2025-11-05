@@ -519,16 +519,39 @@ final class Dispatcher
         $virtual = $this->_request->virtual;
         if ($this->_request->module) $virtual .= '\\' . $this->_request->module;
 
-        //以-开头为在CLI环境下执行Helps中的方法，如：exp -s flush
-        if (_CLI && $this->_request->controller[0] === '-') {
-            if (defined('_RPC') and !_MASTER) return "框架级系统方法只能在主服务器执行";
+        if (_CLI) {
 
-            $cont = new Helps($this, substr($this->_request->controller, 1));
-            if (method_exists($cont, $this->_request->action) and is_callable([$cont, $this->_request->action])) {
-                return $cont->{$this->_request->action}(...$this->_request->params);
-            } else {
-                return "Helps{}类没有{$this->_request->action}方法。";
+            //以-开头为在CLI环境下执行Helps中的方法，如：exp -s flush
+            $showHelp = function () {
+                echo "esp -s flush [level]\t\t刷新缓存\n";
+                echo "esp -s resource\t\t\t刷新Resource Key\n";
+                echo "esp -s config [key] [toJson]\t查看config\n";
+                echo "esp -s model \t\t\t重建Model\n";
+                echo "esp -s tables \t\t\t显示所有表\n";
+                echo "esp -s table [table] [key]\t打印表新行结构\n";
+                return '';
+            };
+
+            if ($this->_request->controller === '-h') {
+                return $showHelp();
             }
+
+            if ($this->_request->controller[0] === '-') {
+                if (defined('_RPC') and !_MASTER) return "框架级系统方法只能在主服务器执行";
+
+                if (empty($this->_request->action) or ($this->_request->action === 'index')) {
+                    return $showHelp();
+                }
+
+                $cont = new Helps($this, substr($this->_request->controller, 1));
+                if (method_exists($cont, $this->_request->action) and is_callable([$cont, $this->_request->action])) {
+                    return $cont->{$this->_request->action}(...$this->_request->params);
+                } else {
+                    return "Helps{}类没有{$this->_request->action}方法。";
+                }
+            }
+
+
         }
 
         $controller = ucfirst($this->_request->controller) . $this->_request->contFix;

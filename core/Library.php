@@ -6,6 +6,7 @@ namespace esp\core;
 use esp\dbs\DbModel;
 use esp\dbs\Pool;
 use esp\debug\Debug;
+
 //use esp\http\Rpc;
 use laocc\rpc\Rpc;
 
@@ -139,11 +140,12 @@ abstract class Library
      *
      * @param string $uri
      * @param array $data
+     * @param array $option
      * @return mixed|string
      */
-    final public function rpc(string $uri, array $data = [])
+    final public function rpc(string $uri, array $data = [], array $option = [])
     {
-        return $this->_controller->rpc($uri, $data);
+        return $this->_controller->rpc($uri, $data, $option);
     }
 
 

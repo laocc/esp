@@ -18,17 +18,17 @@ class Helps
         $this->controller = $controller;
     }
 
-    public function config(string $key = null, $json = null)
+    public function config(string $key = null, $toJson = false)
     {
         $value = $this->_dispatcher->_config->allConfig();
         if ($key) {
-            if ($json) {
+            if ($toJson) {
                 echo json_encode($value[$key] ?? [], 320) . "\n";
             } else {
                 print_r($value[$key] ?? null);
             }
         } else {
-            if ($json) {
+            if ($toJson) {
                 echo json_encode($value, 320) . "\n";
             } else {
                 print_r($value);
