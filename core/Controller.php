@@ -184,8 +184,8 @@ abstract class Controller
         }
         if (is_null($value)) return $enum;
 
-        if (strpos($value, '.') > 0) {
-            $aVal = explode('.', $value);
+        if (strpos(strval($value), '.') > 0) {
+            $aVal = explode('.', strval($value));
             foreach ($aVal as $v) {
                 if (!is_array($enum)) return $enum;
                 $enum = $enum[$v] ?? null;
