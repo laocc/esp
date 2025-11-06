@@ -21,7 +21,7 @@ class Helps
     public function config(string $key = null, $toJson = false)
     {
         $value = $this->_dispatcher->_config->allConfig();
-        if ($key) {
+        if ($key and ($key !== 'all')) {
             if ($toJson) {
                 echo json_encode($value[$key] ?? [], 320) . "\n";
             } else {

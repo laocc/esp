@@ -139,11 +139,11 @@ abstract class Library
      * Rpc调用
      *
      * @param string $uri
-     * @param array $data
+     * @param array|string $data
      * @param array $option
      * @return mixed|string
      */
-    final public function rpc(string $uri, array $data = [], array $option = [])
+    final public function rpc(string $uri, array|string $data = [], array $option = [])
     {
         return $this->_controller->rpc($uri, $data, $option);
     }

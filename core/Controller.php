@@ -224,18 +224,20 @@ abstract class Controller
     }
 
     /**
+     * 简洁版RPC调用，
+     * 若需要更详细的设置，比如要添加额外的headers，请采用自行调用方式
+     * 也就是把下面代码复制，再加以修改
+     *
      * @param string $uri
-     * @param array $data
+     * @param array|string|null $data
      * @param array $option
      * @return mixed|string
      */
-    final public function rpc(string $uri, array $data = [], array $option = []): mixed
+    final public function rpc(string $uri, array|string $data = null, array $option = []): mixed
     {
         $url = explode(':', $uri);
-        $rpc = new Rpc($url[0]);
-        $check = $rpc->format($option)->post($url[1], $data);
-        if (is_string($check)) return $check;
-        return $check['data'];
+        $rpc = new Rpc($url[0], '127.0.0.1', $option);
+        return $rpc->post($url[1], $data);
     }
 
     /**
