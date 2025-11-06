@@ -125,7 +125,7 @@ abstract class Controller
         $confKey = $type;
         if (!str_contains($type, '.')) $confKey = "{$this->enumKey}.{$type}";
         $enum = $this->config($confKey);
-        if (!$enum) exit("{$confKey}没有此项置");
+        if (!$enum) exit("{$confKey} 没有此项置");
 
         if (is_string($enum)) {
             if (strpos($enum, '+') > 0) {
