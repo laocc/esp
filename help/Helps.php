@@ -5,6 +5,7 @@ namespace esp\help;
 use esp\core\Dispatcher;
 use esp\error\Error;
 use function esp\helper\_table;
+use function esp\helper\is_json;
 use function esp\helper\root;
 
 class Helps
@@ -18,7 +19,7 @@ class Helps
         $this->controller = $controller;
     }
 
-    public function config(string $key = null, $toJson = false)
+    public function config(string $key = null, $toJson = false): void
     {
         $value = $this->_dispatcher->_config->allConfig();
         if ($key and ($key !== 'all')) {
@@ -55,7 +56,7 @@ class Helps
      * 1024：清空整个redis，需要safe=flushAll
      *
      */
-    public function flush($lev, $safe)
+    public function flush($lev, $safe): void
     {
         echo "flush:\n\t1=config(default);\n\t2=cache;\n\t4=resource;\n\t8=hash;\n\t32=route;\n\t256=redis 不含 _RESOURCE_RAND_;\n\t1024=redis，第2参数需=flushAll\n\n";
         $lev = intval($lev);
@@ -78,12 +79,77 @@ class Helps
         print_r($value);
     }
 
-    public function reload($lev, $safe)
+
+    /**
+     * @param string|null $key
+     * @param string|null $json
+     * @return void
+     */
+    public function json(string $key = null, string $json = null): void
+    {
+        if (!_CLI) {
+            echo "此方法仅限在CLI中使用";
+            return;
+        }
+        if (is_null($json)) {
+            $json = _RUNTIME . '/array.json';
+        } else {
+            if ($json[0] !== '/') {
+                echo "指定的json文件路径名需以/开头，可以是绝对路径，或本项目中的路径，不填则为_RUNTIME/array.json。\n";
+                return;
+            }
+            $json = root($json);
+        }
+        if (!file_exists($json)) {
+            echo "指定的json文件({$json})不存在\n";
+            return;
+        }
+        $json = file_get_contents($json);
+        if (!is_json($json)) {
+            echo "json字符串不是标准JSON\n";
+            return;
+        }
+        if (is_null($key)) $key = 'data';
+
+        $array = json_decode($json, true);
+        $this->printArrayAsPhp($key, $array);
+    }
+
+    /**
+     * 递归打印数组为 PHP 赋值代码
+     *
+     * @param string $varName 变量名称
+     * @param mixed $value 数组或值
+     */
+    private function printArrayAsPhp(string $varName, mixed $value): void
+    {
+        if (is_array($value)) {
+            echo "\${$varName} = [];\n";
+            foreach ($value as $k => $v) {
+                $childName = "{$varName}['{$k}']";
+                $this->printArrayAsPhp($childName, $v);
+            }
+        } else {
+            // 字符串需要加引号
+            if (is_string($value)) {
+                $value = "'" . addslashes($value) . "'";
+            } else if (is_null($value)) {
+                $value = "''";
+            } else if (is_bool($value)) {
+                $value = $value ? 'true' : 'false';
+            }
+
+            echo "\${$varName} = {$value};\n";
+        }
+    }
+
+
+    public function reload($lev, $safe): void
     {
         $this->flush($lev, $safe);
     }
 
-    public function model($path, $base)
+    public function model($path, $base): void
     {
         if (is_null($path)) $path = '/models';
         if (is_null($base)) $base = '_BaseModel';
@@ -93,7 +159,6 @@ class Helps
 
         $espCont = new EspController($this->_dispatcher);
         $espModel = new EspModel($espCont);
-//        $tab = $espModel->createModel(get_parent_class($espModel));
         $tab = $espModel->createModel($path, $base);
         print_r($tab);
     }
@@ -102,7 +167,7 @@ class Helps
      * 显示所有表
      * @return void
      */
-    public function tables()
+    public function tables(): void
     {
         $espCont = new EspController($this->_dispatcher);
         $espModel = new EspModel($espCont);
@@ -110,7 +175,7 @@ class Helps
         _table($tab);
     }
 
-    public function table($table, $dataKey)
+    public function table($table, $dataKey): void
     {
         if (!$dataKey) $dataKey = 'data';
         $espCont = new EspController($this->_dispatcher);
@@ -118,7 +183,7 @@ class Helps
         $espModel->printTableFields(strval($table), strval($dataKey));
     }
 
-    public function resource($rand)
+    public function resource($rand): void
     {
         if (!$rand) $rand = strval(time() + mt_rand());
         $this->_dispatcher->_config->_Redis->set(_UNIQUE_KEY . '_RESOURCE_RAND_', $rand);
