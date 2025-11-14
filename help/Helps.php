@@ -130,15 +130,13 @@ class Helps
                 $this->printArrayAsPhp($childName, $v);
             }
         } else {
-            // 字符串需要加引号
             if (is_string($value)) {
                 $value = "'" . addslashes($value) . "'";
             } else if (is_null($value)) {
-                $value = "''";
+                $value = 'null';
             } else if (is_bool($value)) {
                 $value = $value ? 'true' : 'false';
             }
-
             echo "\${$varName} = {$value};\n";
         }
     }
