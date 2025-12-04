@@ -81,7 +81,7 @@ abstract class Library
         }
 
         if (!isset($this->_controller->_pool) and isset($this->_dbs_label_)) {
-            $conf = $this->database_config ?? $this->_controller->_config->get('database');
+            $conf = $this->_controller->_config->get('database');
             $this->_controller->_pool = new Pool($conf, $this->_controller);
         }
     }

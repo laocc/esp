@@ -307,7 +307,7 @@ abstract class Controller
 
     /**
      * 标签解析器
-     * @return Adapter|View
+     * @return Adapter
      */
     final protected function getAdapter()
     {
@@ -496,6 +496,16 @@ abstract class Controller
     final public function getConfig(): Configure
     {
         return $this->_config;
+    }
+
+    /**
+     * @return Pool
+     */
+    final public function getPool(): Pool
+    {
+        $conf = $this->_config->get('database');
+        $this->_pool = new Pool($conf, $this);
+        return $this->_pool;
     }
 
     /**
