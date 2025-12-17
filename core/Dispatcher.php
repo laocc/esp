@@ -803,7 +803,7 @@ final class Dispatcher
                         if redis.call('get', KEYS[1]) == ARGV[1] then
                             return redis.call('del', KEYS[1])
                         else
-                            return ARGV[1]
+                            return 0
                         end
                     LUA;
                     $lVal = 's:' . strlen($lockValue) . ':"' . $lockValue . '";';
