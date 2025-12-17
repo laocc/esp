@@ -765,40 +765,58 @@ final class Dispatcher
         return $this->lockedFile($lockKey, $callable, ...$args);
     }
 
+
     /**
-     * @param string $lockKey
-     * @param callable $callable
-     * @param ...$args
-     * @return mixed
+     * 基于Redis的分布式锁（优化版）
+     * @param string $lockKey 锁标识
+     * @param callable $callable 待执行的回调函数
+     * @param mixed ...$args 回调函数参数
+     * @return mixed 回调执行结果 | 'locked'（获取锁失败）
      */
     public function lockedRedis(string $lockKey, callable $callable, ...$args): mixed
     {
-        $lockKey = str_replace(['/', '\\', '`', '*', '"', "'", '<', '>', ':', ';', '?', ' '], '', $lockKey);
-        if (_CLI) $lockKey = $lockKey . '_CLI';
+        if (!preg_match('/^[\w\-\.]{1,64}$/', $lockKey)) return '锁名不可含特殊字符，不得超过64字符';
+        if (_CLI) $lockKey .= '_CLI';
+        $redisKey = "locked.{$lockKey}";
         $option = intval($lockKey[0]);
+        $maxWait = 50; // 默认5秒
+        if ($option & 2) {
+            $maxWait = 100; // 10秒
+        } elseif ($option & 4) {
+            $maxWait = 200; // 20秒
+        }
+        $maxWait = max(1, min($maxWait, 300)); // 限制最大等待30秒，最小1次
 
-        /**
-         * 最多等50次，即5秒
-         */
-        $maxWait = 50;
-        if ($option & 2) $maxWait = 100;
-        else if ($option & 4) $maxWait = 200;
-
-        if (defined('_LockedTime')) $maxWait = _LockedTime;
+        // 3. 生成唯一锁值（用于释放锁时校验，避免误删其他进程的锁）
+        $lockValue = uniqid('lock_', true) . getmypid(); // 唯一标识 + 进程ID
+        $lockExpire = intval($maxWait * 0.1 + 2); // 锁过期时间（比最大等待多1秒，避免死锁）
 
         for ($i = 0; $i < $maxWait; $i++) {
-            //将 key 的值设为 value ，当且仅当 key 不存在。
-            $set = $this->_config->_Redis->setnx("locked.{$lockKey}", microtime(true));
+            // 4. 原子加锁：SET NX EX（不存在则设置 + 过期时间）
+            $set = $this->_config->_Redis->set($redisKey, $lockValue, ['NX', 'EX' => $lockExpire]);
 
-            if ($set) {  //key设置成功，执行
-                $run = $callable(...$args);
-                $this->_config->_Redis->del("locked.{$lockKey}");//删除Key
-                return $run;
+            if ($set) {
+                try {
+                    return $callable(...$args);
+                } finally {
+                    $script = <<<LUA
+                        if redis.call('get', KEYS[1]) == ARGV[1] then
+                            return redis.call('del', KEYS[1])
+                        else
+                            return ARGV[1]
+                        end
+                    LUA;
+                    $lVal = 's:' . strlen($lockValue) . ':"' . $lockValue . '";';
+                    $this->_config->_Redis->eval($script, [$redisKey, $lVal], 1);
+                }
             }
 
-            if ($option & 1) return 'locked';//非等待锁，只要有锁，就立即返回
+            if ($option & 1) return 'locked'; // 非等待锁：直接返回失败
 
-            usleep(100000);// 休眠100,000微秒（即0.1秒）
+            // 6. 指数退避重试（避免请求风暴）：0.1秒 → 0.15秒 → 0.2秒... 最大1秒
+            $sleepUs = 100000 + min($i * 50000, 900000);
+//            if (_CLI) echo "usleep({$sleepUs})\n";
+            usleep($sleepUs);
         }
 
         return 'locked';
@@ -815,17 +833,11 @@ final class Dispatcher
     {
         $option = intval($lockKey[0]);
         $operation = ($option & 1) ? (LOCK_EX | LOCK_NB) : LOCK_EX;
-        $lockKey = str_replace(['/', '\\', '`', '*', '"', "'", '<', '>', ':', ';', '?', ' '], '', $lockKey);
+        if (!preg_match('/^[\w\-\.]{1,64}$/', $lockKey)) return '锁名不可含特殊字符，不得超过64字符';
         if (_CLI) $lockKey = $lockKey . '_CLI';
         $fn = fopen(($lockFile = "/tmp/flock_{$lockKey}.flock"), 'a');
-        if (!$fn) {
-            $msg = "/tmp/flock_{$lockKey}.flock fopen error";
-            if (_CLI) {
-                var_dump($msg);
-            } else if (isset($this->_debug)) {
-                $this->_debug->relay($msg, 2);
-            }
-        }
+        if (!$fn) return "{$lockFile} flock error";
+
         if (flock($fn, $operation)) {           //加锁
             try {
 
@@ -839,8 +851,9 @@ final class Dispatcher
                 $err['message'] = $error->getMessage();
                 $this->error($err);
 
+            } finally {
+                flock($fn, LOCK_UN);//解锁
             }
-            flock($fn, LOCK_UN);//解锁
         } else {
             $rest = "locked: Running";
         }
@@ -850,6 +863,19 @@ final class Dispatcher
         return $rest;
     }
 
+    /**
+     * 统一日志记录（封装CLI/非CLI的日志输出）
+     * @param string $msg 错误信息
+     * @param int $level 日志级别（默认2）
+     */
+    private function _logError(string $msg, int $level = 2): void
+    {
+        if (_CLI) {
+            error_log("[FileLock Error] " . $msg); // CLI用error_log输出
+        } elseif (isset($this->_debug)) {
+            $this->_debug->relay("[FileLock Error] " . $msg, $level);
+        }
+    }
 
     /**
      * var_export

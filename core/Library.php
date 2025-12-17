@@ -7,9 +7,6 @@ use esp\dbs\DbModel;
 use esp\dbs\Pool;
 use esp\debug\Debug;
 
-//use esp\http\Rpc;
-use laocc\rpc\Rpc;
-
 /**
  * Model是此类的子类，实际业务中所创建的类可以直接引用此类
  * Library主要提供工作类与主控制器之间的通信中继作用
@@ -118,9 +115,9 @@ abstract class Library
      * @param string $lockKey
      * @param callable $callable
      * @param mixed ...$args
-     * @return null
+     * @return mixed
      */
-    final public function locked(string $lockKey, callable $callable, ...$args)
+    final public function locked(string $lockKey, callable $callable, ...$args): mixed
     {
         return $this->_controller->_dispatcher->locked($lockKey, $callable, ...$args);
     }
@@ -143,7 +140,7 @@ abstract class Library
      * @param array $option
      * @return mixed|string
      */
-    final public function rpc(string $uri, array|string $data = [], array $option = [])
+    final public function rpc(string $uri, array|string $data = [], array $option = []): mixed
     {
         return $this->_controller->rpc($uri, $data, $option);
     }
