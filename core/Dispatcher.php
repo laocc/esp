@@ -792,22 +792,25 @@ final class Dispatcher
         $lockExpire = intval($maxWait * 0.1 + 2); // 锁过期时间（比最大等待多1秒，避免死锁）
 
         for ($i = 0; $i < $maxWait; $i++) {
-            // 4. 原子加锁：SET NX EX（不存在则设置 + 过期时间）
             $set = $this->_config->_Redis->set($redisKey, $lockValue, ['NX', 'EX' => $lockExpire]);
 
             if ($set) {
                 try {
                     return $callable(...$args);
                 } finally {
-                    $script = <<<LUA
+                    if ($option & 8) {
+                        $script = <<<LUA
                         if redis.call('get', KEYS[1]) == ARGV[1] then
                             return redis.call('del', KEYS[1])
                         else
                             return 0
                         end
                     LUA;
-                    $lVal = 's:' . strlen($lockValue) . ':"' . $lockValue . '";';
-                    $this->_config->_Redis->eval($script, [$redisKey, $lVal], 1);
+                        $lVal = 's:' . strlen($lockValue) . ':"' . $lockValue . '";';
+                        $this->_config->_Redis->eval($script, [$redisKey, $lVal], 1);
+                    } else {
+                        $this->_config->_Redis->del($redisKey);
+                    }
                 }
             }
 
