@@ -119,7 +119,7 @@ abstract class Library
      */
     final public function locked(string $lockKey, callable $callable, ...$args): mixed
     {
-        return $this->_controller->_dispatcher->locked($lockKey, $callable, ...$args);
+        return $this->_controller->locked($lockKey, $callable, ...$args);
     }
 
     final public function config(...$key)

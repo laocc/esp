@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\core;
 
+use esp\help\Locked;
 use Redis;
 use esp\dbs\Pool;
 use esp\debug\Counter;
@@ -550,7 +551,6 @@ abstract class Controller
         if (!isset($this->_debug)) return null;
         if ($data === '_R_DEBUG_') return $this->_debug;
         return $this->_debug->relay($data, $lev + 1);
-//        return $this->_dispatcher->debug($data, $lev + 1);
     }
 
     /**
@@ -561,7 +561,6 @@ abstract class Controller
     {
         if (_CLI) return;
         if (!isset($this->_debug)) return;
-//        $this->_dispatcher->error($data, $lev + 1);
         $this->_debug->error($data, $lev + 1);
     }
 
@@ -574,7 +573,6 @@ abstract class Controller
         if (_CLI) return;
         if (!isset($this->_debug)) return;
         $this->_debug->mysql_log($data, $lev + 1);
-//        $this->_dispatcher->debug_mysql($data, $lev + 1);
     }
 
     /**
@@ -923,11 +921,21 @@ abstract class Controller
      * @param string $lockKey 任意可以用作文件名的字符串，同时也表示同一种任务
      * @param callable $callable 该回调方法内返回的值即为当前函数返回值
      * @param mixed ...$args
-     * @return null
+     * @return mixed
      */
-    final public function locked(string $lockKey, callable $callable, ...$args)
+    final public function locked(string $lockKey, callable $callable, ...$args): mixed
     {
-        return $this->_dispatcher->locked($lockKey, $callable, ...$args);
+        if (!preg_match('/^[\w\-\.]{1,50}$/', $lockKey)) return '锁名不可含特殊字符，限1-50字符';
+        $redis = str_ends_with($lockKey, 'redis');
+        $option = intval($lockKey[0]);
+
+        $locked = new Locked($option, $lockKey);
+
+        if ($redis) {
+            return $locked->redis($callable, ...$args);
+        }
+
+        return $locked->file($callable, ...$args);
     }
 
     /**

@@ -12,8 +12,6 @@ use esp\session\Session;
 use esp\helper\library\Result;
 use function esp\helper\host;
 
-//标准的时间格式，用于date(DATE_YMD_HIS)
-const DATE_YMD_HIS = 'Y-m-d H:i:s';
 
 final class Dispatcher
 {
@@ -650,22 +648,13 @@ final class Dispatcher
             $params = array_values($this->_request->params);
             $reflectionMethod = new \ReflectionMethod($cont, $action);
             foreach ($reflectionMethod->getParameters() as $i => $parameter) {
-                switch ($parameter->getType()) {
-                    case 'int':
-                        $params[$i] = intval($params[$i] ?? 0);
-                        break;
-                    case 'float':
-                        $params[$i] = floatval($params[$i] ?? 0);
-                        break;
-                    case 'string':
-                        $params[$i] = strval($params[$i] ?? '');
-                        break;
-                    case 'bool':
-                        $params[$i] = boolval($params[$i] ?? 0);
-                        break;
-                    default:
-                        $params[$i] = ($params[$i] ?? null);
-                }
+                $params[$i] = match ($parameter->getType()) {
+                    'int' => intval($params[$i] ?? 0),
+                    'float' => floatval($params[$i] ?? 0),
+                    'string' => strval($params[$i] ?? ''),
+                    'bool' => boolval($params[$i] ?? 0),
+                    default => ($params[$i] ?? null),
+                };
             }
             $contReturn = $cont->{$action}(...$params);//PHP7.4以后用可变函数语法来调用
         } else {
@@ -748,137 +737,6 @@ final class Dispatcher
         }, $callable, ...$params);
     }
 
-
-    /**
-     * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
-     * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
-     * 出口处判断如果是字符串即表示出错信息
-     *
-     * @param string $lockKey 任意可以用作文件名的字符串，同时也表示同一种任务
-     * @param callable $callable 该回调方法内返回的值即为当前函数返回值
-     * @param mixed ...$args
-     * @return mixed
-     */
-    public function locked(string $lockKey, callable $callable, ...$args): mixed
-    {
-        if (str_ends_with($lockKey, 'redis')) return $this->lockedRedis($lockKey, $callable, ...$args);
-        return $this->lockedFile($lockKey, $callable, ...$args);
-    }
-
-
-    /**
-     * 基于Redis的分布式锁（优化版）
-     * @param string $lockKey 锁标识
-     * @param callable $callable 待执行的回调函数
-     * @param mixed ...$args 回调函数参数
-     * @return mixed 回调执行结果 | 'locked'（获取锁失败）
-     */
-    public function lockedRedis(string $lockKey, callable $callable, ...$args): mixed
-    {
-        if (!preg_match('/^[\w\-\.]{1,64}$/', $lockKey)) return '锁名不可含特殊字符，不得超过64字符';
-        if (_CLI) $lockKey .= '_CLI';
-        $redisKey = "locked.{$lockKey}";
-        $option = intval($lockKey[0]);
-        $maxWait = 50; // 默认5秒
-        if ($option & 2) {
-            $maxWait = 100; // 10秒
-        } elseif ($option & 4) {
-            $maxWait = 200; // 20秒
-        }
-        $maxWait = max(1, min($maxWait, 300)); // 限制最大等待30秒，最小1次
-
-        // 3. 生成唯一锁值（用于释放锁时校验，避免误删其他进程的锁）
-        $lockValue = uniqid('lock_', true) . getmypid(); // 唯一标识 + 进程ID
-        $lockExpire = intval($maxWait * 0.1 + 2); // 锁过期时间（比最大等待多1秒，避免死锁）
-
-        for ($i = 0; $i < $maxWait; $i++) {
-            $set = $this->_config->_Redis->set($redisKey, $lockValue, ['NX', 'EX' => $lockExpire]);
-
-            if ($set) {
-                try {
-                    return $callable(...$args);
-                } finally {
-                    if ($option & 8) {
-                        $script = <<<LUA
-                        if redis.call('get', KEYS[1]) == ARGV[1] then
-                            return redis.call('del', KEYS[1])
-                        else
-                            return 0
-                        end
-                    LUA;
-                        $lVal = 's:' . strlen($lockValue) . ':"' . $lockValue . '";';
-                        $this->_config->_Redis->eval($script, [$redisKey, $lVal], 1);
-                    } else {
-                        $this->_config->_Redis->del($redisKey);
-                    }
-                }
-            }
-
-            if ($option & 1) return 'locked'; // 非等待锁：直接返回失败
-
-            // 6. 指数退避重试（避免请求风暴）：0.1秒 → 0.15秒 → 0.2秒... 最大1秒
-            $sleepUs = 100000 + min($i * 50000, 900000);
-//            if (_CLI) echo "usleep({$sleepUs})\n";
-            usleep($sleepUs);
-        }
-
-        return 'locked';
-    }
-
-
-    /**
-     * @param string $lockKey
-     * @param callable $callable
-     * @param ...$args
-     * @return mixed
-     */
-    public function lockedFile(string $lockKey, callable $callable, ...$args): mixed
-    {
-        $option = intval($lockKey[0]);
-        $operation = ($option & 1) ? (LOCK_EX | LOCK_NB) : LOCK_EX;
-        if (!preg_match('/^[\w\-\.]{1,64}$/', $lockKey)) return '锁名不可含特殊字符，不得超过64字符';
-        if (_CLI) $lockKey = $lockKey . '_CLI';
-        $fn = fopen(($lockFile = "/tmp/flock_{$lockKey}.flock"), 'a');
-        if (!$fn) return "{$lockFile} flock error";
-
-        if (flock($fn, $operation)) {           //加锁
-            try {
-
-                $rest = $callable(...$args);    //执行
-
-            } catch (\Error|\Exception $error) {
-                $rest = 'locked: ' . $error->getMessage();
-                $err = [];
-                $err['file'] = $error->getFile();
-                $err['line'] = $error->getLine();
-                $err['message'] = $error->getMessage();
-                $this->error($err);
-
-            } finally {
-                flock($fn, LOCK_UN);//解锁
-            }
-        } else {
-            $rest = "locked: Running";
-        }
-        fclose($fn);
-        $this->ignoreError(__FILE__, __LINE__ + 1);
-        if (!($option & 2) && is_readable($lockFile)) @unlink($lockFile);
-        return $rest;
-    }
-
-    /**
-     * 统一日志记录（封装CLI/非CLI的日志输出）
-     * @param string $msg 错误信息
-     * @param int $level 日志级别（默认2）
-     */
-    private function _logError(string $msg, int $level = 2): void
-    {
-        if (_CLI) {
-            error_log("[FileLock Error] " . $msg); // CLI用error_log输出
-        } elseif (isset($this->_debug)) {
-            $this->_debug->relay("[FileLock Error] " . $msg, $level);
-        }
-    }
 
     /**
      * var_export
