@@ -38,15 +38,15 @@ class Locked extends Library
         $this->isRedis = str_ends_with($lockKey, 'redis');
         return $this;
     }
-
-    public function run(callable $callable, ...$args): mixed
-    {
-        if ($this->isRedis) {
-            return $this->redis($callable, ...$args);
-        }
-
-        return $this->file($callable, ...$args);
-    }
+//
+//    public function run(callable $callable, ...$args): mixed
+//    {
+//        if ($this->isRedis) {
+//            return $this->redis($callable, ...$args);
+//        }
+//
+//        return $this->file($callable, ...$args);
+//    }
 
     /**
      * @param callable $callable 待执行的回调函数
