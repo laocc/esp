@@ -352,7 +352,7 @@ final class Configure
         }
 
         $this->_CONFIG_ = array();
-        $this->_CONFIG_['_lastLoad'] = date(DATE_YMD_HIS);
+        $this->_CONFIG_['_lastLoad'] = date('Y-m-d H:i:s');
         foreach ($config as $fn => $cf) {
             $_config = $this->loadFile($cf['file'], $fn);
             //查找子目录下同名文件，如果存在，则覆盖相关值

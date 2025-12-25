@@ -152,8 +152,8 @@ final class Cache
         $array = [];
         $array['type'] = $this->_response->_Content_Type;
         $array['expire'] = (time() + $this->_option['ttl']);
-        $tag = date(DATE_YMD_HIS);
-        $exp = date(DATE_YMD_HIS, $array['expire']);
+        $tag = date('Y-m-d H:i:s');
+        $exp = date('Y-m-d H:i:s', $array['expire']);
         $label = "<!--\ncache saved `{$tag}`; will expire `{$exp}`; by laocc/esp Cache\n-->";
         $array['html'] = str_replace('</html>', "{$label}\n</html>", $value);
         $key = md5($this->cache_key);
@@ -235,7 +235,7 @@ CODE;
         }
         if (!$filename) return false;
 
-        $tag = date(DATE_YMD_HIS);
+        $tag = date('Y-m-d H:i:s');
         $label = "<!--\nstatic[{$pntKey}] saved `{$tag}`; by laocc/esp Cache\n-->";
         $html = str_replace('</html>', "{$label}\n</html>", $html);
 

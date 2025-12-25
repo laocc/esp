@@ -39,14 +39,14 @@ class Locked extends Library
         return $this;
     }
 
-//    public function locked(string $lockKey, callable $callable, ...$args): mixed
-//    {
-//        if ($this->isRedis) {
-//            return $this->redis($callable, ...$args);
-//        }
-//
-//        return $this->file($callable, ...$args);
-//    }
+    public function run(callable $callable, ...$args): mixed
+    {
+        if ($this->isRedis) {
+            return $this->redis($callable, ...$args);
+        }
+
+        return $this->file($callable, ...$args);
+    }
 
     /**
      * @param callable $callable 待执行的回调函数
