@@ -15,10 +15,8 @@ use function esp\helper\host;
 
 final class Dispatcher
 {
-    private int $_plugs_count = 0;//引入的plugs数量
-    private bool $run = true;//任一个bootstrap若返回false，则不再执行run()方法中的后续内容
-    public array $_plugs = array();
-    public Request $_request;
+    public array $_plugs = array();//引入的plugs数量
+    public Request $_request;//任一个bootstrap若返回false，则不再执行run()方法中的后续内容
     public Response $_response;
     public Configure $_config;
     public ?Debug $_debug;
@@ -28,7 +26,8 @@ final class Dispatcher
     public ?Cache $_cache;
     public ?Handler $_error;
     public ?Counter $_counter;
-
+    private int $_plugs_count = 0;
+    private bool $run = true;
     private array $_skipError = [];
 
     /**
@@ -200,6 +199,129 @@ final class Dispatcher
     }
 
     /**
+     * 注册调用位置的下一行屏蔽错误
+     *
+     * @param string $file
+     * @param int $line
+     * @param bool $isCheck
+     * @return bool
+     */
+    public function ignoreError(string $file, int $line, bool $isCheck = false): bool
+    {
+        if (in_array("{$file}.{$line}", $this->_skipError)) return true;
+        if ($isCheck) return false;
+
+        $this->_skipError[] = "{$file}.{$line}";
+        return true;
+    }
+
+    /**
+     * 合并设置
+     *
+     * @param array $allConf
+     * @param array $conf
+     * @return array
+     */
+    private function mergeConf(array $allConf, array $conf = []): array
+    {
+        if (!isset($allConf['default'])) return $allConf + $conf;
+        $conf = $allConf['default'] + $conf;
+
+        if (isset($allConf[_VIRTUAL])) {
+            $conf = array_replace_recursive($conf, $allConf[_VIRTUAL]);
+        }
+        if (isset($allConf[_HOST])) {
+            $conf = array_replace_recursive($conf, $allConf[_HOST]);
+        }
+        if (isset($allConf[_DOMAIN])) {
+            $conf = array_replace_recursive($conf, $allConf[_DOMAIN]);
+        }
+
+        return $conf;
+    }
+
+    private function relayDebug($info): void
+    {
+        if (!isset($this->_debug)) return;
+        $this->_debug->relay($info, 2);
+    }
+
+    /**
+     * var_export
+     *
+     * @return string
+     */
+    public static function __set_state(array $data)
+    {
+        return __CLASS__;
+    }
+
+    public function min(): void
+    {
+        $this->simple();
+    }
+
+    /**
+     * 不运行plugs，不执行缓存
+     */
+    public function simple(): void
+    {
+        $showDebug = boolval($_GET['_debug'] ?? 0);
+        if ($this->run === false) goto end;
+
+        $alias = $this->_config->get('alias');
+        if (empty($alias)) $alias = [];
+        else $alias = $this->mergeConf($alias);
+
+        $route = (new Router($this->_config->_Redis))->run($this->_request, $alias);
+        if (is_string($route)) {
+            echo $route;
+            if (!_CLI) fastcgi_finish_request();
+            exit;
+        }
+
+        if (!_CLI && isset($this->_debug)) {
+            $this->_debug->setRouter($this->_request->RouterValue());
+        }
+
+        $value = $this->dispatch();
+
+        if (_CLI) {
+            print_r($value);
+            echo "\r\n";
+            return;
+        }
+
+        //控制器、并发计数
+        if (isset($this->_counter)) $this->_counter->recodeCounter();
+
+        //若启用了session，立即保存并结束session
+        if (isset($this->_session)) session_write_close();
+
+        $this->_response->display($value);
+
+        end:
+        if (!_DEBUG and !$showDebug) fastcgi_finish_request();
+
+        if (!isset($this->_debug)) return;
+        if ($this->_debug->mode === 'none') return;
+
+        $this->_debug->setResponse([
+            'type' => $this->_response->_Content_Type,
+            'display' => $this->_response->_display_Result
+        ]);
+
+        if ($this->_debug->mode === 'cgi' or $showDebug) {
+            $save = $this->_debug->save_logs('simple.Dispatcher.Cgi');
+            if ($showDebug) var_dump($save);
+        } else if (!_CLI) {
+            register_shutdown_function(function () {
+                $this->_debug->save_logs('simple.Dispatcher.Shutdown');
+            });
+        }
+    }
+
+    /**
      * 系统运行调度中心
      */
     public function run(bool $simple = false): void
@@ -293,198 +415,6 @@ final class Dispatcher
                 $this->_debug->save_logs('run.Dispatcher.Shutdown');
             });
         }
-    }
-
-    /**
-     * 不运行plugs，不执行缓存
-     */
-    public function simple(): void
-    {
-        $showDebug = boolval($_GET['_debug'] ?? 0);
-        if ($this->run === false) goto end;
-
-        $alias = $this->_config->get('alias');
-        if (empty($alias)) $alias = [];
-        else $alias = $this->mergeConf($alias);
-
-        $route = (new Router($this->_config->_Redis))->run($this->_request, $alias);
-        if (is_string($route)) {
-            echo $route;
-            if (!_CLI) fastcgi_finish_request();
-            exit;
-        }
-
-        if (!_CLI && isset($this->_debug)) {
-            $this->_debug->setRouter($this->_request->RouterValue());
-        }
-
-        $value = $this->dispatch();
-
-        if (_CLI) {
-            print_r($value);
-            echo "\r\n";
-            return;
-        }
-
-        //控制器、并发计数
-        if (isset($this->_counter)) $this->_counter->recodeCounter();
-
-        //若启用了session，立即保存并结束session
-        if (isset($this->_session)) session_write_close();
-
-        $this->_response->display($value);
-
-        end:
-        if (!_DEBUG and !$showDebug) fastcgi_finish_request();
-
-        if (!isset($this->_debug)) return;
-        if ($this->_debug->mode === 'none') return;
-
-        $this->_debug->setResponse([
-            'type' => $this->_response->_Content_Type,
-            'display' => $this->_response->_display_Result
-        ]);
-
-        if ($this->_debug->mode === 'cgi' or $showDebug) {
-            $save = $this->_debug->save_logs('simple.Dispatcher.Cgi');
-            if ($showDebug) var_dump($save);
-        } else if (!_CLI) {
-            register_shutdown_function(function () {
-                $this->_debug->save_logs('simple.Dispatcher.Shutdown');
-            });
-        }
-    }
-
-    public function min(): void
-    {
-        $this->simple();
-    }
-
-    /**
-     * 合并设置
-     *
-     * @param array $allConf
-     * @param array $conf
-     * @return array
-     */
-    private function mergeConf(array $allConf, array $conf = []): array
-    {
-        if (!isset($allConf['default'])) return $allConf + $conf;
-        $conf = $allConf['default'] + $conf;
-
-        if (isset($allConf[_VIRTUAL])) {
-            $conf = array_replace_recursive($conf, $allConf[_VIRTUAL]);
-        }
-        if (isset($allConf[_HOST])) {
-            $conf = array_replace_recursive($conf, $allConf[_HOST]);
-        }
-        if (isset($allConf[_DOMAIN])) {
-            $conf = array_replace_recursive($conf, $allConf[_DOMAIN]);
-        }
-
-        return $conf;
-    }
-
-    private function relayDebug($info): void
-    {
-        if (!isset($this->_debug)) return;
-        $this->_debug->relay($info, 2);
-    }
-
-    /**
-     * @param string $data
-     * @param int $pre
-     * @return Debug|false|null
-     */
-    public function debug($data = '_R_DEBUG_', int $pre = 1)
-    {
-        if (_CLI) return false;
-        if (!isset($this->_debug)) return null;
-        if ($data === '_R_DEBUG_') return $this->_debug;
-        $this->_debug->relay($data, $pre + 1);
-        return $this->_debug;
-    }
-
-    public function error($data, int $pre = 1): void
-    {
-        if (_CLI) return;
-        if (!isset($this->_debug)) return;
-        $this->_debug->error($data, $pre + 1);
-    }
-
-    public function debug_mysql($data, int $pre = 1): void
-    {
-        if (_CLI) return;
-        if (!isset($this->_debug)) return;
-        $this->_debug->mysql_log($data, $pre);
-    }
-
-    /**
-     * 设置并返回debug文件名
-     * @param string|null $filename
-     * @return string
-     */
-    public function debug_file(string $filename = null): string
-    {
-        if (!isset($this->_debug)) return 'null';
-        return $this->_debug->filename($filename);
-    }
-
-    /**
-     * @return Request
-     */
-    public function getRequest(): Request
-    {
-        return $this->_request;
-    }
-
-    /**
-     * @return Response
-     */
-    public function getResponse(): Response
-    {
-        return $this->_response;
-    }
-
-    /**
-     * @param $class
-     * @return Dispatcher
-     */
-    public function bootstrap($class): Dispatcher
-    {
-        if (is_string($class)) {
-            if (!class_exists($class)) {
-                esp_error('Bootstrap Error', "Bootstrap类不存在，请检查{$class}.php文件");
-            }
-            $class = new $class();
-        }
-        foreach (get_class_methods($class) as $method) {
-            if (str_starts_with($method, '_init')) {
-                $run = $class->{$method}($this);
-                if ($run === false) {
-                    $this->run = false;
-                    break;
-                }
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * 接受注册插件
-     * @param Plugin $class
-     * @return $this
-     */
-    public function setPlugin(Plugin $class): Dispatcher
-    {
-        $name = get_class($class);
-        $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
-        if (isset($this->_plugs[$name])) {
-            esp_error('Plugin Error', "插件名{$name}已被注册过");
-        }
-        $this->_plugs[$name] = $class;
-        $this->_plugs_count++;
-        return $this;
     }
 
     /**
@@ -648,14 +578,30 @@ final class Dispatcher
             $params = array_values($this->_request->params);
             $reflectionMethod = new \ReflectionMethod($cont, $action);
             foreach ($reflectionMethod->getParameters() as $i => $parameter) {
-                $params[$i] = match ($parameter->getType()->getName()) {
-                    'int' => intval($params[$i] ?? 0),
-                    'float' => floatval($params[$i] ?? 0),
-                    'string' => strval($params[$i] ?? ''),
-                    'bool' => boolval($params[$i] ?? 0),
-                    default => ($params[$i] ?? null),
-                };
+                /**
+                 * 这里不可以用match
+                 * $parameter->getType()的结果是个对象，在match时必须要用->getName()
+                 * 但是如果控制器的参数没指定类型，则$parameter->getType()是null，无法->getName()
+                 * 当然也可以用 $parameter->getType()?->getName()
+                 */
+                switch ($parameter->getType()?->getName()) {
+                    case 'int':
+                        $params[$i] = intval($params[$i] ?? 0);
+                        break;
+                    case 'float':
+                        $params[$i] = floatval($params[$i] ?? 0);
+                        break;
+                    case 'string':
+                        $params[$i] = strval($params[$i] ?? '');
+                        break;
+                    case 'bool':
+                        $params[$i] = boolval($params[$i] ?? 0);
+                        break;
+                    default:
+                        $params[$i] = ($params[$i] ?? null);
+                }
             }
+
             $contReturn = $cont->{$action}(...$params);//PHP7.4以后用可变函数语法来调用
         } else {
             $contReturn = $cont->{$action}(...array_values($this->_request->params));//PHP7.4以后用可变函数语法来调用
@@ -694,20 +640,92 @@ final class Dispatcher
     }
 
     /**
-     * 注册调用位置的下一行屏蔽错误
-     *
-     * @param string $file
-     * @param int $line
-     * @param bool $isCheck
-     * @return bool
+     * @param string $data
+     * @param int $pre
+     * @return Debug|false|null
      */
-    public function ignoreError(string $file, int $line, bool $isCheck = false): bool
+    public function debug($data = '_R_DEBUG_', int $pre = 1)
     {
-        if (in_array("{$file}.{$line}", $this->_skipError)) return true;
-        if ($isCheck) return false;
+        if (_CLI) return false;
+        if (!isset($this->_debug)) return null;
+        if ($data === '_R_DEBUG_') return $this->_debug;
+        $this->_debug->relay($data, $pre + 1);
+        return $this->_debug;
+    }
 
-        $this->_skipError[] = "{$file}.{$line}";
-        return true;
+    public function debug_mysql($data, int $pre = 1): void
+    {
+        if (_CLI) return;
+        if (!isset($this->_debug)) return;
+        $this->_debug->mysql_log($data, $pre);
+    }
+
+    /**
+     * 设置并返回debug文件名
+     * @param string|null $filename
+     * @return string
+     */
+    public function debug_file(string $filename = null): string
+    {
+        if (!isset($this->_debug)) return 'null';
+        return $this->_debug->filename($filename);
+    }
+
+    /**
+     * @return Request
+     */
+    public function getRequest(): Request
+    {
+        return $this->_request;
+    }
+
+    /**
+     * @return Response
+     */
+    public function getResponse(): Response
+    {
+        return $this->_response;
+    }
+
+    /**
+     * @param $class
+     * @return Dispatcher
+     */
+    public function bootstrap($class): Dispatcher
+    {
+        if (is_string($class)) {
+            if (!class_exists($class)) {
+                esp_error('Bootstrap Error', "Bootstrap类不存在，请检查{$class}.php文件");
+            }
+            $class = new $class();
+        }
+        foreach (get_class_methods($class) as $method) {
+            if (str_starts_with($method, '_init')) {
+                $run = $class->{$method}($this);
+                if ($run === false) {
+                    $this->run = false;
+                    break;
+                }
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * 接受注册插件
+     * @param Plugin $class
+     * @return $this
+     */
+    public function setPlugin(Plugin $class): Dispatcher
+    {
+        $name = get_class($class);
+        $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
+        if (isset($this->_plugs[$name])) {
+            esp_error('Plugin Error', "插件名{$name}已被注册过");
+        }
+        $this->_plugs[$name] = $class;
+        $this->_plugs_count++;
+        return $this;
     }
 
     /**
@@ -737,15 +755,11 @@ final class Dispatcher
         }, $callable, ...$params);
     }
 
-
-    /**
-     * var_export
-     *
-     * @return string
-     */
-    public static function __set_state(array $data)
+    public function error($data, int $pre = 1): void
     {
-        return __CLASS__;
+        if (_CLI) return;
+        if (!isset($this->_debug)) return;
+        $this->_debug->error($data, $pre + 1);
     }
 
     /**
