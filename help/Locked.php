@@ -10,6 +10,7 @@ class Locked extends Library
     private int $option;
     private string $lockKey;//锁标识
     private bool $isRedis;
+    private bool $isGo;
 
     public function _init(int $option, string $lockKey)
     {
@@ -19,7 +20,9 @@ class Locked extends Library
 
         $this->option = $option;
         $this->lockKey = $lockKey;
+
         $this->isRedis = str_ends_with($lockKey, 'redis');
+        $this->isGo = str_ends_with($lockKey, 'go');
     }
 
     public function setOption(int $option): Locked
@@ -36,17 +39,22 @@ class Locked extends Library
 
         $this->lockKey = $lockKey;
         $this->isRedis = str_ends_with($lockKey, 'redis');
+        $this->isGo = str_ends_with($lockKey, 'go');
         return $this;
     }
-//
-//    public function run(callable $callable, ...$args): mixed
-//    {
-//        if ($this->isRedis) {
-//            return $this->redis($callable, ...$args);
-//        }
-//
-//        return $this->file($callable, ...$args);
-//    }
+
+    public function run(callable $callable, ...$args): mixed
+    {
+        if ($this->isRedis) {
+            return $this->redis($callable, ...$args);
+        }
+
+        if ($this->isGo) {
+            return $this->go($callable, ...$args);
+        }
+
+        return $this->file($callable, ...$args);
+    }
 
     /**
      * @param callable $callable 待执行的回调函数
@@ -107,6 +115,35 @@ class Locked extends Library
         return 'locked';
     }
 
+    /**
+     * 用go锁
+     *
+     * @param callable $callable
+     * @param ...$args
+     * @return mixed
+     */
+    public function go(callable $callable, ...$args): mixed
+    {
+        $socket = stream_socket_client("unix:///tmp/locked_pipe");
+        $request = json_encode(['action' => 'acquire', 'key' => $this->lockKey]) . "\n";
+        fwrite($socket, $request);
+        $response = json_decode(fread($socket, 1024));
+
+        if ($response->success == 1) {
+
+            $this->debug("[red;in lockedGo({$this->lockKey})>>>>>>>>]");
+            $val = $callable(...$args);
+            $this->debug("[red;out lockedGo({$this->lockKey})<<<<<<<]");
+
+            $request = json_encode(['action' => 'release', 'key' => $this->lockKey]) . "\n";
+            fwrite($socket, $request);
+
+            return $val;
+
+        }
+
+        return 'locked error';
+    }
 
     /**
      * @param callable $callable

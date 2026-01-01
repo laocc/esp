@@ -648,7 +648,7 @@ final class Dispatcher
             $params = array_values($this->_request->params);
             $reflectionMethod = new \ReflectionMethod($cont, $action);
             foreach ($reflectionMethod->getParameters() as $i => $parameter) {
-                $params[$i] = match ($parameter->getType()) {
+                $params[$i] = match ($parameter->getType()->getName()) {
                     'int' => intval($params[$i] ?? 0),
                     'float' => floatval($params[$i] ?? 0),
                     'string' => strval($params[$i] ?? ''),

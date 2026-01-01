@@ -58,6 +58,16 @@ abstract class Controller
     }
 
     /**
+     * var_export
+     *
+     * @return string
+     */
+    public static function __set_state(array $data)
+    {
+        return __CLASS__;
+    }
+
+    /**
      * 向视图发送读取enum方法
      * $hide，只允许整型，或数组。
      * 整型时：>0表示只显示这些值，<0表示剔除这些值
@@ -108,6 +118,30 @@ abstract class Controller
             }
             return json_encode($val, 320);
         });
+    }
+
+    /**
+     * 向视图送变量
+     * @param $name
+     * @param null $value
+     * @return $this
+     */
+    final protected function assign($name, $value = null): Controller
+    {
+        if (_CLI) return $this;
+        $this->_response->assign($name, $value);
+        return $this;
+    }
+
+    /**
+     * 读取Config值
+     *
+     * @param mixed ...$key
+     * @return array|null|string
+     */
+    final protected function config(...$key)
+    {
+        return $this->_config->get(...$key);
     }
 
     /**
@@ -197,22 +231,6 @@ abstract class Controller
         return $enum[$value] ?? null;
     }
 
-
-    /**
-     * 检查来路是否本站相同域名
-     * 本站_HOST，总是被列入查询，另外自定义更多的host，
-     * 若允许本站或空来路，则用：$this->check_host('');
-     *
-     * @param mixed ...$host
-     */
-    final protected function check_host(...$host)
-    {
-        if (isset($host[0]) and is_array($host[0])) $host = $host[0];
-        if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
-            exit('禁止接入');
-        }
-    }
-
     /**
      * 创建一个RPC对像
      *
@@ -242,113 +260,6 @@ abstract class Controller
     }
 
     /**
-     * 读取Config值
-     *
-     * @param mixed ...$key
-     * @return array|null|string
-     */
-    final protected function config(...$key)
-    {
-        return $this->_config->get(...$key);
-    }
-
-    /**
-     * 设置视图文件，或获取对象
-     * @return View
-     */
-    final protected function getView(): View
-    {
-        return $this->_response->getView();
-    }
-
-    final protected function setView($value): Controller
-    {
-        $this->_response->setView($value);
-        return $this;
-    }
-
-    /**
-     * 重新指定视图目录
-     *
-     * 若以@开头，为系统的绝对目录，注意是否有权限读取
-     * 若以/开头，为相对于_ROOT的目录
-     *
-     * 被指定的目录内，仍要按控制器名称规放置视图文件
-     *
-     * @param string $value
-     * @return $this
-     */
-    final protected function setViewPath(string $value): Controller
-    {
-        $this->_response->setViewPath($value);
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    final protected function getViewPath(): string
-    {
-        return $this->_response->getViewPath();
-    }
-
-    /**
-     * 强制以某账号运行
-     * @param string $user
-     */
-    final protected function run_user(string $user = 'www')
-    {
-        if (!_CLI) esp_error('Controller', "run_user 只能运行于cli环境");
-
-        if (getenv('USER') !== $user) {
-            $cmd = implode(' ', $GLOBALS["argv"]);
-            exit("请以{$user}账号运行：\n\nsudo -u {$user} -g {$user} -s php {$cmd}\n\n\n");
-        }
-    }
-
-    /**
-     * 标签解析器
-     * @return Adapter
-     */
-    final protected function getAdapter()
-    {
-        return $this->_response->getView()->getAdapter();
-    }
-
-    final protected function setAdapter(bool $bool): View
-    {
-        return $this->_response->setAdapter($bool)->getView()->setAdapter($bool);
-    }
-
-    /**
-     * 关闭，或获取layout对象，可同时指定框架文件
-     * @return View
-     */
-    final protected function getLayout(): View
-    {
-        return $this->_response->getLayout();
-    }
-
-    /**
-     * 指定layout文件
-     * 1，以/开头的绝对路径，查询顺序：
-     *      _ROOT/path/file.php
-     *      _ROOT/application/_VIRTUAL/views/path/file.php
-     *      _ROOT/application/_VIRTUAL/_MODULE/views/path/file.php
-     *
-     * 2，不是以/开头的，指控制器所在模块下的views目录下，查询顺序：
-     *      _ROOT/application/_VIRTUAL/_MODULE/views/path/file.php
-     *
-     * @param $value
-     * @return $this
-     */
-    final protected function setLayout($value): Controller
-    {
-        $this->_response->setLayout($value);
-        return $this;
-    }
-
-    /**
      * 侦听redis管道，此方法一般只用在CLI环境下
      *
      * @param callable $callable 回调有三个参数：$redis, $channel, $msg
@@ -361,6 +272,34 @@ abstract class Controller
         if (!isset($this->_redis)) esp_error('Controller Subscribe', '站点未启用redis，无法接收订阅消息');
         $channel = defined('_PUBLISH_KEY') ? _PUBLISH_KEY : 'REDIS_ORDER';
         $this->_redis->subscribe([$channel], $callable);
+    }
+
+    /**
+     * 发布一个后台任务，这是由redis发布的，如果数据很多且不能丢失，最好用async
+     * 需另外在后台执行的swoole中实现 /readme/22.task.md中的示例代码
+     * _taskPlan_ 是专用词，程序中不可以直接publish时用此关键词
+     * 也可以在自己的程序中自行实现此方法
+     *
+     * @param string $taskKey
+     * @param array $args
+     * @param int $after
+     * @return bool
+     */
+    final public function task(string $taskKey, array $args, int $after = 0): bool
+    {
+        $data = [
+            'action' => $taskKey,
+            'after' => $after,
+            'params' => $args
+        ];
+        $taskKey = str_replace(['->', '::'], '.', $taskKey);
+        if (strpos($taskKey, '.') > 0) {
+            $key = explode('.', $taskKey);
+            $data['class'] = $key[0];
+            $data['action'] = $key[1];
+        }
+        $pubKey = defined('_TASK_KEY') ? _TASK_KEY : '_TASK_KEY';
+        return $this->publish($pubKey, $data);
     }
 
     /**
@@ -391,34 +330,6 @@ abstract class Controller
         }
 
         return (boolean)$this->_redis->publish($channel, serialize($value));
-    }
-
-    /**
-     * 发布一个后台任务，这是由redis发布的，如果数据很多且不能丢失，最好用async
-     * 需另外在后台执行的swoole中实现 /readme/22.task.md中的示例代码
-     * _taskPlan_ 是专用词，程序中不可以直接publish时用此关键词
-     * 也可以在自己的程序中自行实现此方法
-     *
-     * @param string $taskKey
-     * @param array $args
-     * @param int $after
-     * @return bool
-     */
-    final public function task(string $taskKey, array $args, int $after = 0): bool
-    {
-        $data = [
-            'action' => $taskKey,
-            'after' => $after,
-            'params' => $args
-        ];
-        $taskKey = str_replace(['->', '::'], '.', $taskKey);
-        if (strpos($taskKey, '.') > 0) {
-            $key = explode('.', $taskKey);
-            $data['class'] = $key[0];
-            $data['action'] = $key[1];
-        }
-        $pubKey = defined('_TASK_KEY') ? _TASK_KEY : '_TASK_KEY';
-        return $this->publish($pubKey, $data);
     }
 
     /**
@@ -484,14 +395,6 @@ abstract class Controller
     }
 
     /**
-     * @return Request
-     */
-    final public function getRequest(): Request
-    {
-        return $this->_request;
-    }
-
-    /**
      * @return Configure
      */
     final public function getConfig(): Configure
@@ -535,11 +438,6 @@ abstract class Controller
         return $this->_plugs[$name] ?? null;
     }
 
-    final protected function getCache(): Cache
-    {
-        return $this->_cache;
-    }
-
     /**
      * @param $data
      * @param int $lev
@@ -557,32 +455,11 @@ abstract class Controller
      * @param $data
      * @param int $lev
      */
-    final public function error($data, int $lev = 1): void
-    {
-        if (_CLI) return;
-        if (!isset($this->_debug)) return;
-        $this->_debug->error($data, $lev + 1);
-    }
-
-    /**
-     * @param $data
-     * @param int $lev
-     */
     final public function debug_mysql($data, int $lev = 1): void
     {
         if (_CLI) return;
         if (!isset($this->_debug)) return;
         $this->_debug->mysql_log($data, $lev + 1);
-    }
-
-    /**
-     * @param ...$kv
-     * @return $this
-     */
-    final protected function header(...$kv): Controller
-    {
-        $this->_response->header(...$kv);
-        return $this;
     }
 
     /**
@@ -619,6 +496,202 @@ abstract class Controller
             $this->_debug->save_logs('Controller Redirect');
         }
         exit;
+    }
+
+    /**
+     * @param $data
+     * @param int $lev
+     */
+    final public function error($data, int $lev = 1): void
+    {
+        if (_CLI) return;
+        if (!isset($this->_debug)) return;
+        $this->_debug->error($data, $lev + 1);
+    }
+
+    /**
+     * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
+     * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
+     * 出口处判断如果是字符串即表示出错信息
+     *
+     * @param string $lockKey 任意可以用作文件名的字符串，同时也表示同一种任务
+     * @param callable $callable 该回调方法内返回的值即为当前函数返回值
+     * @param mixed ...$args
+     * @return mixed
+     */
+    final public function locked(string $lockKey, callable $callable, ...$args): mixed
+    {
+        if (!preg_match('/^[\w\-\.]{1,50}$/', $lockKey)) return '锁名不可含特殊字符，限1-50字符';
+        $option = intval($lockKey[0]);
+
+        $locked = new Locked($option, $lockKey);
+        return $locked->run($callable, ...$args);
+    }
+
+    /**
+     * 注册屏蔽的错误
+     *
+     * 例：$this->ignoreError(__FILE__, __LINE__ + 1);
+     * 是指屏蔽下一行的错误
+     *
+     * @param string $file
+     * @param int $line
+     * @return $this
+     */
+    final function ignoreError(string $file, int $line): Controller
+    {
+        $this->_dispatcher->ignoreError($file, $line);
+        return $this;
+    }
+
+    /**
+     * 客户端唯一标识
+     * @param string $key
+     * @param bool $number
+     * @return string
+     */
+    public function cid(string $key = '_SSI', bool $number = false): string
+    {
+        if (!isset($this->_cookies)) {
+            esp_error('Controller CID', "当前站点未启用Cookies，无法获取CID");
+        }
+        return $this->_cookies->cid($key, $number);
+    }
+
+    /**
+     * 生成一个唯一键（无法保证绝对唯一）
+     * 建议直接用 uniqid()
+     *
+     * @param string $type
+     * @param string $salt
+     * @return string
+     */
+    public function uniqid(string $type = 'md5', string $salt = ''): string
+    {
+        return match ($type) {
+            'sha256', 'sha1', 'md5' => hash($type, getenv('REQUEST_ID') . uniqid($salt, true) . $salt),
+            default => uniqid($salt, true),
+        };
+    }
+
+    /**
+     * echo
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return print_r($this, true);
+    }
+
+    /**
+     * var_dump
+     * @return array
+     */
+    public function __debugInfo()
+    {
+        return [__CLASS__];
+    }
+
+    /**
+     * 检查来路是否本站相同域名
+     * 本站_HOST，总是被列入查询，另外自定义更多的host，
+     * 若允许本站或空来路，则用：$this->check_host('');
+     *
+     * @param mixed ...$host
+     */
+    final protected function check_host(...$host)
+    {
+        if (isset($host[0]) and is_array($host[0])) $host = $host[0];
+        if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
+            exit('禁止接入');
+        }
+    }
+
+    /**
+     * 重新指定视图目录
+     *
+     * 若以@开头，为系统的绝对目录，注意是否有权限读取
+     * 若以/开头，为相对于_ROOT的目录
+     *
+     * 被指定的目录内，仍要按控制器名称规放置视图文件
+     *
+     * @param string $value
+     * @return $this
+     */
+    final protected function setViewPath(string $value): Controller
+    {
+        $this->_response->setViewPath($value);
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    final protected function getViewPath(): string
+    {
+        return $this->_response->getViewPath();
+    }
+
+    /**
+     * 强制以某账号运行
+     * @param string $user
+     */
+    final protected function run_user(string $user = 'www')
+    {
+        if (!_CLI) esp_error('Controller', "run_user 只能运行于cli环境");
+
+        if (getenv('USER') !== $user) {
+            $cmd = implode(' ', $GLOBALS["argv"]);
+            exit("请以{$user}账号运行：\n\nsudo -u {$user} -g {$user} -s php {$cmd}\n\n\n");
+        }
+    }
+
+    /**
+     * 标签解析器
+     * @return Adapter
+     */
+    final protected function getAdapter()
+    {
+        return $this->_response->getView()->getAdapter();
+    }
+
+    /**
+     * 设置视图文件，或获取对象
+     * @return View
+     */
+    final protected function getView(): View
+    {
+        return $this->_response->getView();
+    }
+
+    final protected function setAdapter(bool $bool): View
+    {
+        return $this->_response->setAdapter($bool)->getView()->setAdapter($bool);
+    }
+
+    /**
+     * 关闭，或获取layout对象，可同时指定框架文件
+     * @return View
+     */
+    final protected function getLayout(): View
+    {
+        return $this->_response->getLayout();
+    }
+
+    final protected function getCache(): Cache
+    {
+        return $this->_cache;
+    }
+
+    /**
+     * @param ...$kv
+     * @return $this
+     */
+    final protected function header(...$kv): Controller
+    {
+        $this->_response->header(...$kv);
+        return $this;
     }
 
     final protected function exit($text = null)
@@ -707,19 +780,6 @@ abstract class Controller
     }
 
     /**
-     * 向视图送变量
-     * @param $name
-     * @param null $value
-     * @return $this
-     */
-    final protected function assign($name, $value = null): Controller
-    {
-        if (_CLI) return $this;
-        $this->_response->assign($name, $value);
-        return $this;
-    }
-
-    /**
      * @param string $mdValue
      * @param bool $addNav
      * @param bool $addBoth
@@ -731,6 +791,15 @@ abstract class Controller
             $mdValue = file_get_contents($mdValue);
         }
         return Markdown::html($mdValue, $addNav, $addBoth);
+    }
+
+    /**
+     * @param string|null $value
+     * @return bool
+     */
+    final protected function html(string $value = null): bool
+    {
+        return $this->_response->set_value('html', $value);
     }
 
     /**
@@ -751,12 +820,20 @@ abstract class Controller
     }
 
     /**
-     * @param string|null $value
-     * @return bool
+     * 设置css引入
+     * @param array|string $file
+     * @return $this
      */
-    final protected function html(string $value = null): bool
+    final protected function css(array|string $file): Controller
     {
-        return $this->_response->set_value('html', $value);
+        $this->_response->css($file);
+        return $this;
+    }
+
+    final protected function setView($value): Controller
+    {
+        $this->_response->setView($value);
+        return $this;
     }
 
     /**
@@ -824,6 +901,33 @@ abstract class Controller
     }
 
     /**
+     * @return Request
+     */
+    final public function getRequest(): Request
+    {
+        return $this->_request;
+    }
+
+    /**
+     * 指定layout文件
+     * 1，以/开头的绝对路径，查询顺序：
+     *      _ROOT/path/file.php
+     *      _ROOT/application/_VIRTUAL/views/path/file.php
+     *      _ROOT/application/_VIRTUAL/_MODULE/views/path/file.php
+     *
+     * 2，不是以/开头的，指控制器所在模块下的views目录下，查询顺序：
+     *      _ROOT/application/_VIRTUAL/_MODULE/views/path/file.php
+     *
+     * @param $value
+     * @return $this
+     */
+    final protected function setLayout($value): Controller
+    {
+        $this->_response->setLayout($value);
+        return $this;
+    }
+
+    /**
      * 设置js引入
      * @param array|string $file
      * @param string $pos
@@ -832,18 +936,6 @@ abstract class Controller
     final protected function js(array|string $file, string $pos = 'foot'): Controller
     {
         $this->_response->js($file, $pos);
-        return $this;
-    }
-
-
-    /**
-     * 设置css引入
-     * @param array|string $file
-     * @return $this
-     */
-    final protected function css(array|string $file): Controller
-    {
-        $this->_response->css($file);
         return $this;
     }
 
@@ -859,7 +951,6 @@ abstract class Controller
         return $this;
     }
 
-
     /**
      * 设置网页meta项
      * @param string $name
@@ -871,7 +962,6 @@ abstract class Controller
         $this->_response->meta($name, $value);
         return $this;
     }
-
 
     /**
      * 设置网页keywords
@@ -914,47 +1004,6 @@ abstract class Controller
     }
 
     /**
-     * 带锁执行，有些有可能在锁之外会变的值，最好在锁内读取，比如要从数据库读取某个值
-     * 如果任务出错，返回字符串表示出错信息，所以正常业务的返回要避免返回字符串
-     * 出口处判断如果是字符串即表示出错信息
-     *
-     * @param string $lockKey 任意可以用作文件名的字符串，同时也表示同一种任务
-     * @param callable $callable 该回调方法内返回的值即为当前函数返回值
-     * @param mixed ...$args
-     * @return mixed
-     */
-    final public function locked(string $lockKey, callable $callable, ...$args): mixed
-    {
-        if (!preg_match('/^[\w\-\.]{1,50}$/', $lockKey)) return '锁名不可含特殊字符，限1-50字符';
-        $redis = str_ends_with($lockKey, 'redis');
-        $option = intval($lockKey[0]);
-
-        $locked = new Locked($option, $lockKey);
-
-        if ($redis) {
-            return $locked->redis($callable, ...$args);
-        }
-
-        return $locked->file($callable, ...$args);
-    }
-
-    /**
-     * 注册屏蔽的错误
-     *
-     * 例：$this->ignoreError(__FILE__, __LINE__ + 1);
-     * 是指屏蔽下一行的错误
-     *
-     * @param string $file
-     * @param int $line
-     * @return $this
-     */
-    final function ignoreError(string $file, int $line): Controller
-    {
-        $this->_dispatcher->ignoreError($file, $line);
-        return $this;
-    }
-
-    /**
      * 主要依赖版本号
      *
      * @return array
@@ -975,70 +1024,6 @@ abstract class Controller
         }
 
         return $value;
-    }
-
-    /**
-     * 客户端唯一标识
-     * @param string $key
-     * @param bool $number
-     * @return string
-     */
-    public function cid(string $key = '_SSI', bool $number = false): string
-    {
-        if (!isset($this->_cookies)) {
-            esp_error('Controller CID', "当前站点未启用Cookies，无法获取CID");
-        }
-        return $this->_cookies->cid($key, $number);
-    }
-
-    /**
-     * 生成一个唯一键（无法保证绝对唯一）
-     * 建议直接用uniqid()
-     *
-     * @param string $type
-     * @param string $salt
-     * @return string
-     */
-    public function uniqid(string $type = 'md5', string $salt = ''): string
-    {
-        switch ($type) {
-            case 'sha256':
-            case 'sha1':
-            case 'md5':
-                return hash($type, getenv('REQUEST_ID') . uniqid($salt, true) . $salt);
-
-            default:
-                return uniqid($salt, true);
-        }
-    }
-
-    /**
-     * var_export
-     *
-     * @return string
-     */
-    public static function __set_state(array $data)
-    {
-        return __CLASS__;
-    }
-
-    /**
-     * echo
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        return print_r($this, true);
-    }
-
-    /**
-     * var_dump
-     * @return array
-     */
-    public function __debugInfo()
-    {
-        return [__CLASS__];
     }
 
 
