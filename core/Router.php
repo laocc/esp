@@ -102,6 +102,12 @@ final class Router
             }
 
             if (isset($route['return']) and !empty($ret = trim($route['return']))) {
+
+                foreach ($matcher as $i => $mtv) {
+                    if ($i === 0) continue;
+                    $ret = str_replace("\${$i}", $mtv, $ret);
+                }
+
                 $rHd = substr(strtolower($ret), 0, 6);
                 if ($rHd === 'http:/' or $rHd === 'https:') {
                     header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1) . ' GMT');
