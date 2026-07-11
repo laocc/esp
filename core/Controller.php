@@ -1003,9 +1003,9 @@ abstract class Controller
         return $this->_dispatcher->shutdown($callable, ...$params);
     }
 
-    final protected function onError(callable $callable)
+    final protected function onError(callable $callable, ...$param)
     {
-        $this->_dispatcher->_error->onError($callable);
+        $this->_dispatcher->_error->onError($callable, ...$param);
     }
 
     /**
