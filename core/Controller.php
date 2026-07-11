@@ -121,30 +121,6 @@ abstract class Controller
     }
 
     /**
-     * 向视图送变量
-     * @param $name
-     * @param null $value
-     * @return $this
-     */
-    final protected function assign($name, $value = null): Controller
-    {
-        if (_CLI) return $this;
-        $this->_response->assign($name, $value);
-        return $this;
-    }
-
-    /**
-     * 读取Config值
-     *
-     * @param mixed ...$key
-     * @return array|null|string
-     */
-    final protected function config(...$key)
-    {
-        return $this->_config->get(...$key);
-    }
-
-    /**
      * 查询enum值
      *
      * @param string $type
@@ -594,6 +570,38 @@ abstract class Controller
     }
 
     /**
+     * @return Request
+     */
+    final public function getRequest(): Request
+    {
+        return $this->_request;
+    }
+
+    /**
+     * 向视图送变量
+     * @param $name
+     * @param null $value
+     * @return $this
+     */
+    final protected function assign($name, $value = null): Controller
+    {
+        if (_CLI) return $this;
+        $this->_response->assign($name, $value);
+        return $this;
+    }
+
+    /**
+     * 读取Config值
+     *
+     * @param mixed ...$key
+     * @return array|null|string
+     */
+    final protected function config(...$key)
+    {
+        return $this->_config->get(...$key);
+    }
+
+    /**
      * 检查来路是否本站相同域名
      * 本站_HOST，总是被列入查询，另外自定义更多的host，
      * 若允许本站或空来路，则用：$this->check_host('');
@@ -901,14 +909,6 @@ abstract class Controller
     }
 
     /**
-     * @return Request
-     */
-    final public function getRequest(): Request
-    {
-        return $this->_request;
-    }
-
-    /**
      * 指定layout文件
      * 1，以/开头的绝对路径，查询顺序：
      *      _ROOT/path/file.php
@@ -1001,6 +1001,11 @@ abstract class Controller
     final protected function shutdown(callable $callable, ...$params): bool
     {
         return $this->_dispatcher->shutdown($callable, ...$params);
+    }
+
+    final protected function onError(callable $callable)
+    {
+        $this->_dispatcher->_error->onError($callable);
     }
 
     /**
