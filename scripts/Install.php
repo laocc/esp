@@ -6,30 +6,30 @@ namespace esp\scripts;
 class Install
 {
 
-    public static function install_pre()
+    public static function install_pre(): void
     {
         echo date('Y-m-d H:i:s') . " Esp Install:\n ";
     }
 
-    public static function update_pre()
+    public static function update_pre(): void
     {
         echo date('Y-m-d H:i:s') . " Esp Update:\n ";
     }
 
-    public static function install_post()
+    public static function install_post(): void
     {
         echo date('Y-m-d H:i:s') . " Install End\n ";
         self::checkRuntime();
     }
 
 
-    public static function update_post()
+    public static function update_post(): void
     {
         echo date('Y-m-d H:i:s') . " Update End\n ";
         self::checkRuntime();
     }
 
-    private static function checkRuntime()
+    private static function checkRuntime(): void
     {
         $root = self::getRoot();
         echo "check {$root}/runtime: ";
@@ -46,7 +46,7 @@ class Install
         }
     }
 
-    private static function getRoot()
+    private static function getRoot(): string
     {
         if ($dirI = strpos(__DIR__, '/vendor/laocc/esp/scripts')) {
             $rootPath = substr(__DIR__, 0, $dirI);

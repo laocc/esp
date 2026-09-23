@@ -9,7 +9,7 @@ interface Adapter
      * @param array|string $name 如果是数据，须实现转换KV
      * @param null $value
      */
-    public function assign($name, $value = null);
+    public function assign(array|string $name, $value = null);
 
     /**
      * 解析视图，返回解析内容
@@ -17,7 +17,7 @@ interface Adapter
      * @param array $value
      * @return string
      */
-    public function fetch(string $file, array $value);
+    public function fetch(string $file, array $value): string;
 
     /**
      * 解析视图，直接打印解析内容
@@ -25,5 +25,5 @@ interface Adapter
      * @param array $value
      * @return mixed
      */
-    public function display(string $file, array $value);
+    public function display(string $file, array $value): mixed;
 }

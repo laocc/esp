@@ -116,33 +116,98 @@ class Locked extends Library
     }
 
     /**
-     * 用go锁
+     * 用go锁(由常驻的go服务统一持有锁)
      *
-     * @param callable $callable
-     * @param ...$args
-     * @return mixed
+     * 与file()、redis()的区别：锁不落在本进程，而是交给 /tmp/locked_pipe 上的
+     * 常驻服务管理，因此只走"申请-使用-释放"三步，不再做本地重试等待。
+     *
+     * @param callable $callable 待执行的回调函数
+     * @param mixed ...$args 回调函数参数
+     * @return mixed 回调执行结果 | 'locked error'（申请锁失败或go服务不可用）
      */
     public function go(callable $callable, ...$args): mixed
     {
-        $socket = stream_socket_client("unix:///tmp/locked_pipe");
-        $request = json_encode(['action' => 'acquire', 'key' => $this->lockKey]) . "\n";
-        fwrite($socket, $request);
-        $response = json_decode(fread($socket, 1024));
+        $pipe = "/tmp/locked_pipe";
 
-        if ($response->success == 1) {
-
-            $this->debug("[red;in lockedGo({$this->lockKey})>>>>>>>>]");
-            $val = $callable(...$args);
-            $this->debug("[red;out lockedGo({$this->lockKey})<<<<<<<]");
-
-            $request = json_encode(['action' => 'release', 'key' => $this->lockKey]) . "\n";
-            fwrite($socket, $request);
-
-            return $val;
-
+        /**
+         * 连接失败时 stream_socket_client() 返回 false，
+         * 原实现未判断即直接 fwrite()，会抛出 TypeError；
+         * 这里与file()保持一致，以 'locked error' 返回，不做抛异常处理。
+         */
+        $socket = @stream_socket_client("unix://{$pipe}", $errno, $errstr, 1);
+        if (!$socket) {
+            $this->debug("[red;lockedGo({$this->lockKey}) connect pipe failed: {$errstr}]");
+            return 'locked error';
         }
 
-        return 'locked error';
+        $result = 'locked error';
+        try {
+            $acquire = json_encode(['action' => 'acquire', 'key' => $this->lockKey]) . "\n";
+            if (fwrite($socket, $acquire) === false) return $result;
+
+            /**
+             * 读应答(读到换行为止)
+             *
+             * 原实现是 fread($socket, 1024) 定长读，应答一旦超过1024字节就被截断，
+             * json_decode 得到 null，接着读 null 的属性又会报错。
+             * 注意 fgets($socket, 1024) 同样会在1023字节处截断（此时结尾没有换行符），
+             * 所以这里用循环按"行结束符"判断读完，而不是靠单次读取的长度。
+             * 单行上限 1MB，防止服务端异常时无限占用内存。
+             */
+            $buffer = '';
+            $readErr = false;
+            while (!str_contains($buffer, "\n")) {
+                $chunk = fgets($socket, 1024);
+                if ($chunk === false or $chunk === '') {
+                    $readErr = true;
+                    break;
+                }
+                $buffer .= $chunk;
+                if (strlen($buffer) > 1048576) {
+                    $readErr = true;
+                    break;
+                }
+            }
+
+            $response = $readErr ? null : json_decode($buffer, true);
+            if (!is_array($response) or empty($response['success'])) {
+                $this->debug("[red;lockedGo({$this->lockKey}) acquire refused]");
+                return $result;
+            }
+
+            try {
+                $this->debug("[red;in lockedGo({$this->lockKey})>>>>>>>>]");
+                $val = $callable(...$args);
+                $this->debug("[red;out lockedGo({$this->lockKey})<<<<<<<]");
+                //业务返回值原样保留，由外层 finally 负责释放锁
+                $result = $val;
+
+            } catch (\Throwable $error) {
+                $err = [];
+                $err['file'] = $error->getFile();
+                $err['line'] = $error->getLine();
+                $err['message'] = $error->getMessage();
+                $this->debug()->error($err);
+                //锁已申请到，业务异常说明这次执行失败，返回固定标识，
+                //避免像file()那样把异常信息拼成字符串（锁内返回值不得是字符串）
+                $result = 'locked error';
+            }
+
+            //释放锁：独立于业务，保证业务正常或异常都会走到
+            $release = json_encode(['action' => 'release', 'key' => $this->lockKey]) . "\n";
+            @fwrite($socket, $release);
+
+            return $result;
+
+        } finally {
+            /**
+             * 这里只做收尾，绝对不能 return：
+             * 原实现在 finally 里写了 return ""，会把 try 里的返回值整个吃掉，
+             * 结果是go锁下业务回调的返回值永远丢失、永远返回空串。
+             * 断开socket即等同于放弃锁（服务端可据此回收），故fclose不可省略。
+             */
+            @fclose($socket);
+        }
     }
 
     /**

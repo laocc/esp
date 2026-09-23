@@ -10,16 +10,14 @@ use function esp\helper\displayState;
 
 final class Response
 {
+public string $_display_Result = '';
+    public string $_Content_Type = 'text/html';
+    public bool $cache = false;
     private $_display_value;
     private Request $_request;
-    private Resources $_resource;
+    private Resources $_resource;//最终的打印结果
     private string $_display_type = '';
     private array $_header = [];
-
-    public string $_display_Result = '';//最终的打印结果
-    public string $_Content_Type = 'text/html';
-    public bool $cache;
-
     private array $_view_val = array();
     private array $_layout_val = [
         '_js_foot' => [],
@@ -497,6 +495,115 @@ final class Response
     }
 
     /**
+     * 向视图送变量
+     * @param $name
+     * @param null $value
+     */
+    public function assign($name, $value = null): void
+    {
+        if (is_array($name)) {
+            foreach ($name as $k => $v) {
+                $this->_view_val[$k] = $v;
+            }
+        } else {
+            $this->_view_val[$name] = $value;
+        }
+    }
+
+    public function get(string $name)
+    {
+        return $this->_view_val[$name] ?? null;
+    }
+
+    public function set(string $name, $value): void
+    {
+        $this->assign($name, $value);
+    }
+
+    public function js(array|string $file, string $pos = 'foot'): void
+    {
+        $pos = in_array($pos, ['foot', 'head', 'body', 'defer']) ? $pos : 'foot';
+        if (is_array($file)) {
+            array_push($this->_layout_val["_js_{$pos}"], ...$file);
+        } else {
+            $this->_layout_val["_js_{$pos}"][] = $file;
+        }
+    }
+
+    public function css(array|string $file): void
+    {
+        if (is_array($file)) {
+            array_push($this->_layout_val['_css'], ...$file);
+        } else {
+            $this->_layout_val['_css'][] = $file;
+        }
+    }
+
+    public function meta(string $name, $value): void
+    {
+        $this->_layout_val['_meta'][$name] = $value;
+    }
+
+    /**
+     * @param string $title
+     * @param bool|null $overwrite
+     *
+     *      * $overwrite:
+     * 默认null：最终的<title>为 $title + response.title
+     * =true：覆盖response.title中的值
+     * =false：仅显示 $title
+     */
+    public function title(string $title, bool $overwrite = null): void
+    {
+        if ($overwrite === true) {
+            $this->_resource->title($title);
+            return;
+        } else if ($overwrite === false) {
+            $this->_layout_val['_title_default'] = false;
+        }
+        $this->_layout_val['_title'] = $title;
+    }
+
+    public function keywords(string $value): void
+    {
+        $this->_layout_val['_meta']['keywords'] = $value;
+    }
+
+    public function description(string $value): void
+    {
+        $this->_layout_val['_meta']['description'] = $value;
+    }
+
+    /**
+     * 设置缓存
+     *
+     * @param bool $run
+     */
+    public function cache(bool $run = true): void
+    {
+        $this->cache = $run;
+    }
+
+    /**
+     * echo
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return print_r($this, true);
+    }
+
+    /**
+     * var_dump
+     * @return array
+     */
+    public function __debugInfo()
+    {
+        return [__CLASS__];
+    }
+
+    /**
      * 最后显示内容
      * @return null|string
      */
@@ -622,120 +729,6 @@ final class Response
             $this->_layout_val['_title'] .= ' - ' . $this->_resource->title();
         }
         unset($this->_layout_val['_title_default']);
-    }
-
-    /**
-     * 向视图送变量
-     * @param $name
-     * @param null $value
-     */
-    public function assign($name, $value = null): void
-    {
-        if (is_array($name)) {
-            foreach ($name as $k => $v) {
-                $this->_view_val[$k] = $v;
-            }
-        } else {
-            $this->_view_val[$name] = $value;
-        }
-    }
-
-    public function get(string $name)
-    {
-        return $this->_view_val[$name] ?? null;
-    }
-
-    public function set(string $name, $value): void
-    {
-        $this->assign($name, $value);
-    }
-
-
-    public function js(array|string $file, string $pos = 'foot'): void
-    {
-        $pos = in_array($pos, ['foot', 'head', 'body', 'defer']) ? $pos : 'foot';
-        if (is_array($file)) {
-            array_push($this->_layout_val["_js_{$pos}"], ...$file);
-        } else {
-            $this->_layout_val["_js_{$pos}"][] = $file;
-        }
-    }
-
-
-    public function css(array|string $file): void
-    {
-        if (is_array($file)) {
-            array_push($this->_layout_val['_css'], ...$file);
-        } else {
-            $this->_layout_val['_css'][] = $file;
-        }
-    }
-
-
-    public function meta(string $name, $value): void
-    {
-        $this->_layout_val['_meta'][$name] = $value;
-    }
-
-    /**
-     * @param string $title
-     * @param bool|null $overwrite
-     *
-     *      * $overwrite:
-     * 默认null：最终的<title>为 $title + response.title
-     * =true：覆盖response.title中的值
-     * =false：仅显示 $title
-     */
-    public function title(string $title, bool $overwrite = null): void
-    {
-        if ($overwrite === true) {
-            $this->_resource->title($title);
-            return;
-        } else if ($overwrite === false) {
-            $this->_layout_val['_title_default'] = false;
-        }
-        $this->_layout_val['_title'] = $title;
-    }
-
-
-    public function keywords(string $value): void
-    {
-        $this->_layout_val['_meta']['keywords'] = $value;
-    }
-
-
-    public function description(string $value): void
-    {
-        $this->_layout_val['_meta']['description'] = $value;
-    }
-
-    /**
-     * 设置缓存
-     *
-     * @param bool $run
-     */
-    public function cache(bool $run = true): void
-    {
-        $this->cache = $run;
-    }
-
-    /**
-     * echo
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        return print_r($this, true);
-    }
-
-    /**
-     * var_dump
-     * @return array
-     */
-    public function __debugInfo()
-    {
-        return [__CLASS__];
     }
 
 }

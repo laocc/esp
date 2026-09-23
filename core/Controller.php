@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace esp\core;
 
-use esp\help\Locked;
 use Redis;
+use esp\help\Locked;
 use esp\dbs\Pool;
 use esp\debug\Counter;
 use esp\debug\Debug;
@@ -74,7 +74,6 @@ abstract class Controller
      * 数组时：任一元素小于0，表示删除所有指定的值
      *
      * @param string $funName
-     * @return void
      */
     final public function setEnum(string $funName = 'enum')
     {
@@ -324,7 +323,8 @@ abstract class Controller
         $now = microtime(true);
         if ($runTime < 1000000000) $runTime = $now + $runTime;
         $data = ['key' => $taskKey, 'args' => $args, 'time' => $runTime];
-        $file = $now . '.' . getenv('REQUEST_ID') . '.log';
+//        $file = $now . '.' . getenv('REQUEST_ID') . '.log';
+        $file = $now . '.' . uniqid('', true) . '.log';
         return (bool)file_put_contents(_RUNTIME . "/async/{$file}", serialize($data));
     }
 
@@ -338,13 +338,17 @@ abstract class Controller
      * 建议在callable里返回true值进行删除，若未返回true表示事务未执行完
      *
      */
-    final public function asyncIterator(callable $fun, bool $unlink = false)
+    final public function asyncIterator(callable $fun, bool $unlink = false): void
     {
         $dir = new \DirectoryIterator($path = (_RUNTIME . '/async/'));
         foreach ($dir as $f) {
             if ($f->isDot() or $f->isDir()) continue;
             $name = $path . $f->getFilename();
-            $data = unserialize(file_get_contents($name));
+            $data = @unserialize(file_get_contents($name));
+            if (empty($data)) {
+                if ($unlink) @unlink($name);
+                continue;
+            }
             if ($data['time'] <= microtime(true)) {
                 $run = $fun($data['key'], $data['args'], $name);
                 if ($run === true or $unlink) @unlink($name);
@@ -446,6 +450,8 @@ abstract class Controller
      */
     final public function redirect(string $url, int $code = 302): bool
     {
+        if (_CLI) exit('CLI中不可用redirect');
+
         if (headers_sent($filename, $line)) {
             if (isset($this->_debug)) {
                 $this->_debug->relay(
@@ -611,7 +617,7 @@ abstract class Controller
     final protected function check_host(...$host)
     {
         if (isset($host[0]) and is_array($host[0])) $host = $host[0];
-        if (!in_array(host($this->_request->referer), array_merge([_HOST], $host))) {
+        if (!in_array(host($this->_request->referer), array_merge([_HOST], $host), true)) {
             exit('禁止接入');
         }
     }
@@ -706,7 +712,7 @@ abstract class Controller
     {
         if (is_array($text)) $text = json_encode($text, 320);
         echo strval($text);
-        fastcgi_finish_request();
+        if (!_CLI) fastcgi_finish_request();
         if (isset($this->_debug)) {
             $this->_debug->relay(['控制器主动调用exit()结束客户端', $text], 1);
             $this->_debug->save_logs('Controller Exit');
@@ -730,6 +736,7 @@ abstract class Controller
         if (isset($this->_debug)) {
             $this->_debug->relay(['控制器主动调用finish()结束客户端', $notes], 1);
         }
+        if (_CLI) return true;
         return fastcgi_finish_request();
     }
 

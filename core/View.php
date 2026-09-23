@@ -16,7 +16,7 @@ final class View implements Adapter
         'ext' => '.php',
     ];
     private View $_layout;//框架对象
-    private $_adapter;//标签解析器对象
+    private Adapter $_adapter;//标签解析器对象
 
     private array $_view_val = array();
     private bool $_adapter_use = false;
@@ -102,7 +102,7 @@ final class View implements Adapter
     /**
      * @return Adapter
      */
-    public function getAdapter()
+    public function getAdapter(): Adapter
     {
         if (!isset($this->_adapter)) {
             esp_error('View', '标签解析器没有注册');
@@ -132,7 +132,7 @@ final class View implements Adapter
      * @param Adapter $object
      * @return $this
      */
-    public function registerAdapter($object): View
+    public function registerAdapter(Adapter $object): View
     {
         $this->_adapter = $object;
         $this->_adapter_use = true;
@@ -171,7 +171,7 @@ final class View implements Adapter
 
         if (!is_readable($fileV)) {
             if ($this->_path['ext'] === '.php') {
-                if (!is_readable($fileT = str_replace($this->_path['ext'], '.php', $fileV))) {
+                if (!is_readable($fileT = str_replace($this->_path['ext'], '.phtml', $fileV))) {
                     esp_error('View', "视图文件({$fileV})或({$fileT})不存在");
                 } else {
                     $fileV = $fileT;
@@ -262,7 +262,7 @@ final class View implements Adapter
             return;
         }
         ob_start();
-        extract($__value__);
+        extract($__value__, EXTR_SKIP);
         include $__file__;
         echo ob_get_clean();
     }
@@ -280,7 +280,7 @@ final class View implements Adapter
             return $this->_adapter->fetch($__file__, $__value__);
         }
         ob_start();
-        extract($__value__);
+        extract($__value__, EXTR_SKIP);
         include $__file__;
         return ob_get_clean();
     }

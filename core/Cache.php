@@ -17,8 +17,9 @@ final class Cache
     private Response $_response;
     private Redis $_redis;
     private array $_option;
-    private string $cache_path;
-    private string $cache_key;
+    private string $cache_path;//缓存目录基址，由path[cache]指定，不含URI
+    private string $cache_file;//当前URI对应的缓存文件全路径
+    private string $cache_key;//缓存标识，参与文件名与{CACHE_KEY}替换，不直接作文件名
 
     public function __construct(Dispatcher $dispatcher, array &$option)
     {
@@ -33,7 +34,7 @@ final class Cache
     /**
      * 禁止保存
      */
-    public function disable()
+    public function disable(): void
     {
         $this->_option['run'] = false;
     }
@@ -73,10 +74,7 @@ final class Cache
         ];
         $this->cache_key = urlencode(base64_encode(json_encode($keyValue, 320)));
 
-        //只生成，不创建，若最后需要保存文件时才检查创建
-        $uri = _URI;
-        if ($uri === '/') $uri = '/index.html';
-        $this->cache_path = rtrim(root($this->_option['path']['cache']) . $uri);
+        $this->cache_path = $this->cacheDir();
 
         $array = $this->cache_read();
         if (!$array) goto no_cache;
@@ -92,7 +90,7 @@ final class Cache
         return false;
     }
 
-    public function Save()
+    public function Save(): void
     {
         if (!($this->_option['run'] ?? 0) or ($this->_option['ttl'] < 1) or !$this->_response->cache) return;
         if (isset($_GET['_CACHE_DISABLE']) or isset($_GET['_cache_disable'])) return;
@@ -147,7 +145,9 @@ final class Cache
 
         if ($this->_option['ttl'] < 5) return;
 
-        if (!file_exists($this->cache_path)) mk_dir($this->cache_path . '/');
+        $file = $this->cacheFile();
+        mk_dir($this->cache_path . '/');
+        if (!is_writable(dirname($file))) return;
 
         $array = [];
         $array['type'] = $this->_response->_Content_Type;
@@ -156,42 +156,82 @@ final class Cache
         $exp = date('Y-m-d H:i:s', $array['expire']);
         $label = "<!--\ncache saved `{$tag}`; will expire `{$exp}`; by laocc/esp Cache\n-->";
         $array['html'] = str_replace('</html>', "{$label}\n</html>", $value);
-        $key = md5($this->cache_key);
         $array['create'] = time();
         if ($this->_option['medium'] === 'file') {
-            $url = _URL;
-            $htmlKey = md5($tag);
+            $expire = intval($array['expire']);
+            $create = intval($array['create']);
+            $ttl = intval($this->_option['ttl']);
+            //正文与PHP源码彻底解耦：HTML整体base64后以单引号字面量写入，
+            //正文中任何字符（含换行、引号、<?php）都不可能截断文件结构，
+            //结束标记也不再依赖可预测的md5(时间)，
+            //标签仅作可读性用，url用var_export兜底转义
+            $label = base64_encode($array['html']);
+            $type = base64_encode((string)$array['type']);
+            $url = var_export(base64_encode((string)_URL), true);
             $php = <<<CODE
 <?php
-if ({$array['expire']} < time()) return null;
-\$html = <<<HTML{$htmlKey}\n{$array['html']}\nHTML{$htmlKey};
+if ({$expire} < time()) return null;
 
 return array(
-    'create' => {$array['create']},
-    'expire' => {$array['expire']},
-    'ttl' => {$this->_option['ttl']},
-    'type' => '{$array['type']}',
-    'url' => '{$url}',
-    'html' => &\$html
+    'create' => {$create},
+    'expire' => {$expire},
+    'ttl' => {$ttl},
+    'type' => base64_decode('{$type}'),
+    'url' => base64_decode({$url}),
+    'html' => base64_decode('{$label}')
 );\n
 CODE;
-            @file_put_contents("{$this->cache_path}/{$key}.php", $php);
+            @file_put_contents($file, $php, LOCK_EX);
         } else {
-            $this->_redis->set($key, $array, $this->_option['ttl']);
+            $this->_redis->set(md5($this->cache_key), $array, $this->_option['ttl']);
         }
     }
 
     private function cache_read()
     {
-        $key = md5($this->cache_key);
         if ($this->_option['medium'] === 'file') {
-            if (!is_readable($pFile = "{$this->cache_path}/{$key}.php")) return null;
+            if (!is_readable($pFile = $this->cacheFile())) return null;
             $json = include $pFile;
             if (!$json) return null;
             return $json;
         } else {
-            return $this->_redis->get($key);
+            return $this->_redis->get(md5($this->cache_key));
         }
+    }
+
+    /**
+     * 缓存目录基址
+     *
+     * 只作目录用，不含URI，因此可直接交给mk_dir()按目录创建，
+     * 不再出现"把URI当目录建"的情况
+     *
+     * @return string
+     */
+    private function cacheDir(): string
+    {
+        $path = $this->_option['path']['cache'] ?? _RUNTIME;
+        $path = root(strtr($path, [
+            '{_HOST}' => _HOST,
+            '{_DOMAIN}' => _DOMAIN,
+            '{_VIRTUAL}' => _VIRTUAL,
+        ]));
+        return rtrim($path, '/');
+    }
+
+    /**
+     * 当前URI对应的缓存文件
+     *
+     * URI整体折进文件名，一个URI一个.php文件，
+     * 避免在缓存目录下展开成深目录，也避免URI参与目录拼接
+     *
+     * @return string
+     */
+    private function cacheFile(): string
+    {
+        if (!isset($this->cache_file)) {
+            $this->cache_file = $this->cache_path . '/' . md5($this->cache_key) . '.php';
+        }
+        return $this->cache_file;
     }
 
     /**
@@ -200,10 +240,10 @@ CODE;
      * @param string $key
      * @return bool|int
      */
-    public function Delete(string $path, string $key)
+    public function Delete(string $path, string $key): bool|int
     {
         if ($this->_option['medium'] === 'file') {
-            return unlink("{$path}/{$key}.php");
+            return @unlink("{$path}/{$key}.php");
         } else {
             return $this->_redis->del($key);
         }
@@ -256,7 +296,7 @@ CODE;
      * 设置缓存的HTTP头
      * @param string|null $label
      */
-    private function setHeader(string $label = null)
+    private function setHeader(string $label = null): void
     {
         if (headers_sent()) return;
         $ttl = $this->_option['ttl'];
@@ -278,7 +318,7 @@ CODE;
      * 禁止向浏览器缓存
      * @param null $label
      */
-    private function disable_header($label = null)
+    private function disable_header($label = null): void
     {
         if (headers_sent()) return;
         header('Cache-Control: no-cache, must-revalidate, no-store', true);
@@ -290,4 +330,3 @@ CODE;
 
 
 }
-

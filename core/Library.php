@@ -87,7 +87,6 @@ abstract class Library
     {
         if (method_exists($this, '_close') and is_callable([$this, '_close'])) {
             $this->_close([]);
-//            call_user_func_array([$this, '_close'], []);
         }
     }
 

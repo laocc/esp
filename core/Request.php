@@ -9,26 +9,24 @@ final class Request
 {
     public bool $loop = false;//控制器间跳转循环标识
     public string $router_path;//路由配置目录
-    private array $_var = array();
     public array $params = array();
-
     public string $namespace = '';
     public string $virtual = '';
-    public string $router = '';//实际生效的路由器名称
-    public string $module = '';
-    public string $controller = '';//控制器名，不含后缀
-    public string $action = '';
-    public string $method = '';//实际请求方式，get/post等
-    public string $directory;
-    public string $referer;//等于HTTP_REFERER
-    public string $uri;//等于_URI
-    public array $suffix;//定义了各种请求方式对应的控制方法名后缀，如：get=Get,post=Post等
-    public string $contFix;//控制器后缀，固定的，默认为 Controller
-    public ?array $route_view = null;//在route中可以直接定义视图的相关设置，layout,path和file
-    public bool $exists = true;//是否为正常的请求，请求了不存在的控制器
-    public array $empty = [];
-
-    private array $alias = [];//控制器映射
+public string $router = '';
+        public string $module = '';//实际生效的路由器名称
+public string $controller = '';
+        public string $action = '';//控制器名，不含后缀
+public string $method = '';
+        public string $directory;//实际请求方式，get/post等
+public string $referer;
+    public string $uri;//等于HTTP_REFERER
+    public array $suffix;//等于_URI
+    public string $contFix;//定义了各种请求方式对应的控制方法名后缀，如：get=Get,post=Post等
+    public ?array $route_view = null;//控制器后缀，固定的，默认为 Controller
+    public bool $exists = true;//在route中可以直接定义视图的相关设置，layout,path和file
+        public array $empty = [];//是否为正常的请求，请求了不存在的控制器
+    private array $_var = array();
+private array $alias = [];//控制器映射
     private array $allow = [];//仅允许的控制器
     private array $disallow = [];//禁止的控制器
     private bool $_ajax;
@@ -98,7 +96,7 @@ final class Request
 
     public function __debugInfo()
     {
-        return $this->RouterValue() +
+        return $this->debugRouterValue() +
             [
                 'directory' => $this->directory,
                 'router_path' => $this->router_path,
@@ -147,13 +145,12 @@ final class Request
         if (!empty($this->allow) and !in_array($this->controller, $this->allow)) return $this->controller . ' not exist in allowed';
         if (!empty($this->disallow) and in_array($this->controller, $this->disallow)) return 'disallow';
         //控制器别名转换
-        if (!empty($this->alias) and isset($request->alias[$this->controller])) {
-            $this->controller = $request->alias[$this->controller];
+        if (!empty($this->alias) and isset($this->alias[$this->controller])) {
+            $this->controller = $this->alias[$this->controller];
         }
 
         return null;
     }
-
 
     /**
      * 控制器方法后缀
@@ -210,7 +207,6 @@ final class Request
         $this->params[$name] = $value;
     }
 
-
     public function getMethod(): string
     {
         return $this->method;
@@ -257,7 +253,6 @@ final class Request
     {
         return $this->_ua;
     }
-
 
     /**
      * 分析客户端信息
@@ -427,7 +422,6 @@ final class Request
         return stripos($this->_ua, 'MicroMessenger') > 0;
     }
 
-
     /**
      * 当前客户端是否真实浏览器，注意：这是本人瞎写的，判断起来不保证百分百准确
      * @return bool
@@ -467,6 +461,43 @@ final class Request
         if (isset($this->empty[$this->virtual])) return $this->empty[$this->virtual];
         if (isset($this->empty['default'])) return $this->empty['default'];
         return $msg;
+    }
+
+    /**
+     * 打印时用的路由结果，
+     * params中可被setParam()塞入任意值(含对象)，
+     * 直接展开会在对象互引用时递归到内存爆掉，故此处的params做降级处理：
+     * 对象转成类名，资源转成类型标识，其余原样保留
+     *
+     * @return array
+     */
+    private function debugRouterValue(): array
+    {
+        $value = $this->RouterValue();
+        $value['params'] = array();
+        foreach ($this->params as $key => $item) $value['params'][$key] = $this->debugValue($item);
+        return $value;
+    }
+
+    /**
+     * 递归降级打印值，
+     * 遇到对象一律只留类名，不再向下展开，从而彻底断开自引用/互引用造成的死递归
+     *
+     * @param mixed $value
+     * @param int $depth 最大展开层数，超出后只留类型说明
+     * @return mixed
+     */
+    private function debugValue(mixed $value, int $depth = 8): mixed
+    {
+        if (is_object($value)) return 'object(' . get_class($value) . ')';
+        if (is_resource($value)) return 'resource(' . get_resource_type($value) . ')';
+        if ($depth <= 0) return 'array(超出层级)';
+        if (is_array($value)) {
+            $result = array();
+            foreach ($value as $key => $item) $result[$key] = $this->debugValue($item, $depth - 1);
+            return $result;
+        }
+        return $value;
     }
 
 }

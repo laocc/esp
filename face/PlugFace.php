@@ -42,6 +42,7 @@ interface PlugFace
      * 4.分发之前触发
      * @param Request $request
      * @param Response $response
+     * @param $value
      */
     public function dispatchAfter(Request $request, Response $response, &$value);
 
@@ -50,6 +51,7 @@ interface PlugFace
      * 5.显示开始之前被触发
      * @param Request $request
      * @param Response $response
+     * @param $value
      */
     public function displayBefore(Request $request, Response $response, &$value);
 
@@ -58,6 +60,7 @@ interface PlugFace
      * 6.显示之后触发，在此之后保存缓存
      * @param Request $request
      * @param Response $response
+     * @param $value
      */
     public function displayAfter(Request $request, Response $response, &$value);
 
@@ -66,6 +69,7 @@ interface PlugFace
      * 7.结束之后触发，到了这里，服务器与客户端已经断开了，也就是在这之后不能操作任何与客户端交互的内容
      * @param Request $request
      * @param Response $response
+     * @param $value
      */
     public function mainEnd(Request $request, Response $response, &$value);
 }

@@ -38,7 +38,6 @@ final class Dispatcher
     public function __construct(array $option, string $virtual = 'www')
     {
         if (isset($option['timer'])) $this->_timer = new Timer();
-        if (isset($this->_timer)) $this->_timer->node('Dispatcher Init');
 
         /**
          * 最好在nginx server中加以下其中之一：
@@ -89,7 +88,7 @@ final class Dispatcher
         if (!defined('_CIP')) define('_CIP', $ip);
         if (isset($this->_timer)) $this->_timer->node('define Finish');
 
-        if (isset($option['before'])) $option['before']($option);
+        if (isset($option['before']) and is_callable($option['before'])) $option['before']($option);
 
         //以下2项必须在`chdir()`之前，且顺序不可变
         if (!_CLI) {
@@ -199,54 +198,6 @@ final class Dispatcher
     }
 
     /**
-     * 注册调用位置的下一行屏蔽错误
-     *
-     * @param string $file
-     * @param int $line
-     * @param bool $isCheck
-     * @return bool
-     */
-    public function ignoreError(string $file, int $line, bool $isCheck = false): bool
-    {
-        if (in_array("{$file}.{$line}", $this->_skipError)) return true;
-        if ($isCheck) return false;
-
-        $this->_skipError[] = "{$file}.{$line}";
-        return true;
-    }
-
-    /**
-     * 合并设置
-     *
-     * @param array $allConf
-     * @param array $conf
-     * @return array
-     */
-    private function mergeConf(array $allConf, array $conf = []): array
-    {
-        if (!isset($allConf['default'])) return $allConf + $conf;
-        $conf = $allConf['default'] + $conf;
-
-        if (isset($allConf[_VIRTUAL])) {
-            $conf = array_replace_recursive($conf, $allConf[_VIRTUAL]);
-        }
-        if (isset($allConf[_HOST])) {
-            $conf = array_replace_recursive($conf, $allConf[_HOST]);
-        }
-        if (isset($allConf[_DOMAIN])) {
-            $conf = array_replace_recursive($conf, $allConf[_DOMAIN]);
-        }
-
-        return $conf;
-    }
-
-    private function relayDebug($info): void
-    {
-        if (!isset($this->_debug)) return;
-        $this->_debug->relay($info, 2);
-    }
-
-    /**
      * var_export
      *
      * @return string
@@ -254,6 +205,23 @@ final class Dispatcher
     public static function __set_state(array $data)
     {
         return __CLASS__;
+    }
+
+    /**
+     * 注册调用位置的下一行屏蔽错误
+     *
+     * @param string $file
+     * @param int $line
+     * @param bool $onlyCheck
+     * @return bool
+     */
+    public function ignoreError(string $file, int $line, bool $onlyCheck = false): bool
+    {
+        if (in_array("{$file}.{$line}", $this->_skipError)) return true;
+        if ($onlyCheck) return false;
+
+        $this->_skipError[] = "{$file}.{$line}";
+        return true;
     }
 
     public function min(): void
@@ -386,7 +354,7 @@ final class Dispatcher
         $this->_response->display($value);
         if (isset($this->_timer)) $this->_timer->node('Display Finish');
 
-        !$simple and $this->_plugs_count and $hook = $this->plugsHook('finish', $value);
+        if (!$simple and $this->_plugs_count) $hook = $this->plugsHook('finish', $value);
 
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
@@ -394,7 +362,7 @@ final class Dispatcher
         if (isset($this->_cache) && $this->_response->cache) $this->_cache->Save();
 
         end:
-        !$simple and $this->_plugs_count and $hook = $this->plugsHook('shutdown');
+        if (!$simple and $this->_plugs_count) $hook = $this->plugsHook('finish', $value);
         if (isset($this->_timer)) $this->_timer->node('shutdown Finish');
 
         if (!isset($this->_debug)) return;
@@ -415,6 +383,179 @@ final class Dispatcher
                 $this->_debug->save_logs('run.Dispatcher.Shutdown');
             });
         }
+    }
+
+    /**
+     * @param string $data
+     * @param int $pre
+     * @return Debug|false|null
+     */
+    public function debug($data = '_R_DEBUG_', int $pre = 1)
+    {
+        if (_CLI) return false;
+        if (!isset($this->_debug)) return null;
+        if ($data === '_R_DEBUG_') return $this->_debug;
+        $this->_debug->relay($data, $pre + 1);
+        return $this->_debug;
+    }
+
+    public function debug_mysql($data, int $pre = 1): void
+    {
+        if (_CLI) return;
+        if (!isset($this->_debug)) return;
+        $this->_debug->mysql_log($data, $pre);
+    }
+
+    /**
+     * 设置并返回debug文件名
+     * @param string|null $filename
+     * @return string
+     */
+    public function debug_file(string $filename = null): string
+    {
+        if (!isset($this->_debug)) return 'null';
+        return $this->_debug->filename($filename);
+    }
+
+    /**
+     * @return Request
+     */
+    public function getRequest(): Request
+    {
+        return $this->_request;
+    }
+
+    /**
+     * @return Response
+     */
+    public function getResponse(): Response
+    {
+        return $this->_response;
+    }
+
+    /**
+     * @param $class
+     * @return Dispatcher
+     */
+    public function bootstrap($class): Dispatcher
+    {
+        if (is_string($class)) {
+            if (!class_exists($class)) {
+                esp_error('Bootstrap Error', "Bootstrap类不存在，请检查{$class}.php文件");
+            }
+            $class = new $class();
+        }
+        foreach (get_class_methods($class) as $method) {
+            if (str_starts_with($method, '_init')) {
+                $run = $class->{$method}($this);
+                if ($run === false) {
+                    $this->run = false;
+                    break;
+                }
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * 接受注册插件
+     * @param Plugin $class
+     * @return $this
+     */
+    public function setPlugin(Plugin $class): Dispatcher
+    {
+        $name = get_class($class);
+        $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
+        if (isset($this->_plugs[$name])) {
+            esp_error('Plugin Error', "插件名{$name}已被注册过");
+        }
+        $this->_plugs[$name] = $class;
+        $this->_plugs_count++;
+        return $this;
+    }
+
+    /**
+     * @param callable $callable
+     * @param ...$params
+     * @return bool
+     */
+    public function shutdown(callable $callable, ...$params): bool
+    {
+        if (_CLI) {
+            $callable(...$params);
+            return true;
+        }
+
+        return (boolean)register_shutdown_function(function (callable $callable, ...$params) {
+            try {
+
+                $callable(...$params);
+
+            } catch (\Error|\Exception $error) {
+                $err = [];
+                $err['file'] = $error->getFile();
+                $err['line'] = $error->getLine();
+                $err['message'] = $error->getMessage();
+                $this->error($err);
+            }
+        }, $callable, ...$params);
+    }
+
+    public function error($data, int $pre = 1): void
+    {
+        if (_CLI) return;
+        if (!isset($this->_debug)) return;
+        $this->_debug->error($data, $pre + 1);
+    }
+
+    /**
+     * echo
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return print_r($this, true);
+    }
+
+    /**
+     * var_dump
+     * @return array
+     */
+    public function __debugInfo()
+    {
+        return [__CLASS__];
+    }
+
+    /**
+     * 合并设置
+     *
+     * @param array $allConf
+     * @param array $conf
+     * @return array
+     */
+    private function mergeConf(array $allConf, array $conf = []): array
+    {
+        if (!isset($allConf['default'])) return $allConf + $conf;
+        $conf = $allConf['default'] + $conf;
+
+        if (isset($allConf[_VIRTUAL])) {
+            $conf = array_replace_recursive($conf, $allConf[_VIRTUAL]);
+        }
+        if (isset($allConf[_HOST])) {
+            $conf = array_replace_recursive($conf, $allConf[_HOST]);
+        }
+        if (isset($allConf[_DOMAIN])) {
+            $conf = array_replace_recursive($conf, $allConf[_DOMAIN]);
+        }
+
+        return $conf;
+    }
+
+    private function relayDebug($info): void
+    {
+        if (!isset($this->_debug)) return;
+        $this->_debug->relay($info, 2);
     }
 
     /**
@@ -637,148 +778,6 @@ final class Dispatcher
         }
 
         return $contReturn;
-    }
-
-    /**
-     * @param string $data
-     * @param int $pre
-     * @return Debug|false|null
-     */
-    public function debug($data = '_R_DEBUG_', int $pre = 1)
-    {
-        if (_CLI) return false;
-        if (!isset($this->_debug)) return null;
-        if ($data === '_R_DEBUG_') return $this->_debug;
-        $this->_debug->relay($data, $pre + 1);
-        return $this->_debug;
-    }
-
-    public function debug_mysql($data, int $pre = 1): void
-    {
-        if (_CLI) return;
-        if (!isset($this->_debug)) return;
-        $this->_debug->mysql_log($data, $pre);
-    }
-
-    /**
-     * 设置并返回debug文件名
-     * @param string|null $filename
-     * @return string
-     */
-    public function debug_file(string $filename = null): string
-    {
-        if (!isset($this->_debug)) return 'null';
-        return $this->_debug->filename($filename);
-    }
-
-    /**
-     * @return Request
-     */
-    public function getRequest(): Request
-    {
-        return $this->_request;
-    }
-
-    /**
-     * @return Response
-     */
-    public function getResponse(): Response
-    {
-        return $this->_response;
-    }
-
-    /**
-     * @param $class
-     * @return Dispatcher
-     */
-    public function bootstrap($class): Dispatcher
-    {
-        if (is_string($class)) {
-            if (!class_exists($class)) {
-                esp_error('Bootstrap Error', "Bootstrap类不存在，请检查{$class}.php文件");
-            }
-            $class = new $class();
-        }
-        foreach (get_class_methods($class) as $method) {
-            if (str_starts_with($method, '_init')) {
-                $run = $class->{$method}($this);
-                if ($run === false) {
-                    $this->run = false;
-                    break;
-                }
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * 接受注册插件
-     * @param Plugin $class
-     * @return $this
-     */
-    public function setPlugin(Plugin $class): Dispatcher
-    {
-        $name = get_class($class);
-        $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
-        if (isset($this->_plugs[$name])) {
-            esp_error('Plugin Error', "插件名{$name}已被注册过");
-        }
-        $this->_plugs[$name] = $class;
-        $this->_plugs_count++;
-        return $this;
-    }
-
-    /**
-     * @param callable $callable
-     * @param ...$params
-     * @return bool
-     */
-    public function shutdown(callable $callable, ...$params): bool
-    {
-        if (_CLI) {
-            $callable(...$params);
-            return true;
-        }
-
-        return (boolean)register_shutdown_function(function (callable $callable, ...$params) {
-            try {
-
-                $callable(...$params);
-
-            } catch (\Error|\Exception $error) {
-                $err = [];
-                $err['file'] = $error->getFile();
-                $err['line'] = $error->getLine();
-                $err['message'] = $error->getMessage();
-                $this->error($err);
-            }
-        }, $callable, ...$params);
-    }
-
-    public function error($data, int $pre = 1): void
-    {
-        if (_CLI) return;
-        if (!isset($this->_debug)) return;
-        $this->_debug->error($data, $pre + 1);
-    }
-
-    /**
-     * echo
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        return print_r($this, true);
-    }
-
-    /**
-     * var_dump
-     * @return array
-     */
-    public function __debugInfo()
-    {
-        return [__CLASS__];
     }
 
 

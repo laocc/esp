@@ -92,10 +92,25 @@ final class Router
             if ($key[0] === '#') continue;
             $matcher = $this->getMatcher($key, $route);
             if (!$matcher) continue;
-            if (!isset($matcher[1])) $matcher[1] = '';
-            if (!isset($matcher[2])) $matcher[2] = '';
 
-//            if ($matcher[1] and !preg_match('/^\-?\w+$/', "{$matcher[1]}{$matcher[2]}")) return 'Illegal Uri';
+            /**
+             * matcher各段的统一校验
+             *
+             * 原实现只在校验了第2、3段，且只允许 \w，导致中文URI被误拒，已于早前注释停用；
+             * 而getMatcher()的四个分支中，只有__default__分支带了默认路由那道正则，
+             * path/uri/like/match 四个分支对URI没有任何字符限制，等于把用户可控的URI段
+             * 直接送进后面的 fill_route()、map、以及 $route['return'] 的 ${n} 替换和 include。
+             *
+             * 这里放在run()里对**所有分支**统一校验：
+             *  1) 只放行 字母数字下划线、中文(CJK)、点、横线，其余一律拒绝，
+             *     从而挡掉引号、斜杠、反斜杠、冒号、%编码、空白等可用于拼接路径或闭串的字符；
+             *  2) 明确拒绝含连续点(..)的段，即拒绝任何形式的目录回退；
+             *  3) 拒绝以点开头或结尾的段（.env、config. 这类隐藏/畸形文件名）。
+             *
+             * 校验放在 method_check 之前：非法URI不必再进入后面的任何分支。
+             * 参数段（可能是中文、邮箱、URL编码等）不参与路径拼接，故不做限制。
+             */
+            if ($check = $this->checkMatcher($matcher, $route)) return $check;
 
             if (isset($route['method']) and !$this->method_check($route['method'], $request->method, $request->isAjax())) {
                 return 'Illegal Method';
@@ -122,9 +137,28 @@ final class Router
                     return strval($value);
 
                 } else if ($ret[0] === '/' or $rHd === 'files:') {
+                    /**
+                     * include文件的位置校验
+                     *
+                     * 这里是本方法唯一会加载PHP文件的出口。原实现只做 is_readable(_ROOT . $ret)，
+                     * 而 is_readable 完全不阻止 `..`，$ret 又已经过 ${n} 的matcher插值，
+                     * 于是 `return = /files/${1}` 配一条宽松的 like/uri/match 规则，
+                     * 就能 include 到 _ROOT 之外的任意 PHP 文件。
+                     *
+                     * 上面的 checkMatcher() 已从入参侧挡住 `..`，这里再从落点侧兜一次：
+                     * 先 realpath 解析（从而把符号链接也算进去），再要求结果仍在 _ROOT 之内；
+                     * _ROOT 自身也走 realpath，避免 _ROOT 本身是软链时前缀比对失败。
+                     * 落点仍是 _ROOT 内的普通文件，故行为与原来一致，仅非法路径改为拒绝。
+                     */
                     if ($rHd === 'files:') $ret = substr($ret, 6);
-                    if (!is_readable(_ROOT . $ret)) return "route return `{$ret}` not exists.";
-                    include_once _ROOT . $ret;
+                    $realRoot = realpath(_ROOT);
+                    $realFile = realpath(_ROOT . $ret);
+                    if ($realRoot === false or $realFile === false
+                        or !is_file($realFile)
+                        or !str_starts_with($realFile, $realRoot . DIRECTORY_SEPARATOR)) {
+                        return "route return `{$ret}` not exists.";
+                    }
+                    include_once $realFile;
                     return '';
 
                 } else if ($ret[0] === '{') {
@@ -255,6 +289,50 @@ final class Router
             $matcher = explode('/', _URI);
             $matcher[0] = _URI;
             return $matcher;
+        }
+
+        return null;
+    }
+
+    /**
+     * 校验matcher中会参与路径/类名拼接的段
+     *
+     * matcher[]的第1、2、3段分别会被用作 virtual / module / controller / action
+     * （具体取哪几段由route配置决定），最终拼进 application/{virtual}/controllers/{Controller}
+     * 的类名与文件路径，以及 $route['return'] 里的 ${n}，因此必须限制字符范围。
+     *
+     * 仅校验这几段，其余段是控制方法的实参（可能是中文、邮箱、URL编码等），
+     * 不参与路径拼接，不做限制。
+     *
+     * @param array $matcher
+     * @param array $route
+     * @return string|null 不合法时返回提示文字，合法返回null
+     */
+    private function checkMatcher(array $matcher, array $route): ?string
+    {
+        /**
+         * 默认校验到第3段；若route中把更大的下标显式写给了module/controller/action，
+         * 则按最大下标相应放宽，避免误拒路由表自己声明的用法
+         */
+        $maxIndex = 3;
+        foreach (['module', 'controller', 'action'] as $type) {
+            $index = $route[$type] ?? ($route['route'][$type] ?? null);
+            if (is_numeric($index)) $maxIndex = max(intval($index), $maxIndex);
+        }
+
+        for ($i = 1; $i <= $maxIndex; $i++) {
+            $segment = $matcher[$i] ?? '';
+            if ($segment === '' or $segment === null) continue;
+            $segment = strval($segment);
+
+            //只放行 字母数字下划线、中文、点、横线；\w不含中文，故显式补上CJK区段
+            if (!preg_match('/^[\w\x{4e00}-\x{9fa5}\-\.]+$/u', $segment)) return 'Illegal Uri';
+
+            //拒绝目录回退：连续点一律不允许（含 ..、...、a..b 等）
+            if (str_contains($segment, '..')) return 'Illegal Uri';
+
+            //拒绝以点开头或结尾：.env、.htaccess、config. 这类隐藏或畸形文件名
+            if ($segment[0] === '.' or str_ends_with($segment, '.')) return 'Illegal Uri';
         }
 
         return null;
