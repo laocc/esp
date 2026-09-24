@@ -99,7 +99,7 @@ final class Dispatcher
         }
 
         if (!isset($option['config'])) $option['config'] = [];
-        $option['config'] += ['driver' => 'redis'];
+        $option['config'] += ['type' => 'redis'];
         if (isset($this->_timer)) $this->_timer->node('Create Configure');
         $this->_config = $cfg = new Configure($option['config']);
 
@@ -345,8 +345,8 @@ final class Dispatcher
         //若启用了session，立即保存并结束session
         if (isset($this->_session)) session_write_close();
 
-        if (!$simple and $this->_plugs_count and !is_null($hook = $this->plugsHook('display', $value))) {
-            $this->_response->display($hook);
+        if (!$simple and $this->_plugs_count and !is_null($display = $this->plugsHook('display', $value))) {
+            $this->_response->display($display);
             goto end;
         }
 
@@ -354,7 +354,7 @@ final class Dispatcher
         $this->_response->display($value);
         if (isset($this->_timer)) $this->_timer->node('Display Finish');
 
-        if (!$simple and $this->_plugs_count) $hook = $this->plugsHook('finish', $value);
+        if (!$simple and $this->_plugs_count) $this->plugsHook('finish', $value);
 
         if (!_DEBUG and !$showDebug) fastcgi_finish_request();//运行结束，客户端断开
 
@@ -362,11 +362,27 @@ final class Dispatcher
         if (isset($this->_cache) && $this->_response->cache) $this->_cache->Save();
 
         end:
-        if (!$simple and $this->_plugs_count) $hook = $this->plugsHook('finish', $value);
+        if (!$simple and $this->_plugs_count) $this->plugsHook('shutdown', $value);
         if (isset($this->_timer)) $this->_timer->node('shutdown Finish');
 
-        if (!isset($this->_debug)) return;
+        $this->saveDebug('run.Dispatcher', $showDebug);
 
+        if (!$simple and $this->_plugs_count) $this->plugsHook('end', $value);
+    }
+
+    /**
+     * 保存debug日志
+     *
+     * 之所以抽成方法而不是就地 return：run() 末尾还有 'end' 钩子要执行，
+     * 若未启用debug或 mode=none 时直接 return，'end' 就永远不会被执行。
+     *
+     * @param string $tag 日志标签前缀，实际记录为 {$tag}.Cgi 或 {$tag}.Shutdown
+     * @param bool $showDebug 是否URL中带了 ?_debug=1
+     * @return void
+     */
+    private function saveDebug(string $tag, bool $showDebug): void
+    {
+        if (!isset($this->_debug)) return;
         if ($this->_debug->mode === 'none') return;
 
         $this->_debug->setResponse([
@@ -375,12 +391,12 @@ final class Dispatcher
         ]);
 
         if ($this->_debug->mode === 'cgi' or $showDebug) {
-            $save = $this->_debug->save_logs('run.Dispatcher.Cgi');
+            $save = $this->_debug->save_logs($tag . '.Cgi');
             if ($showDebug) var_dump($save);
 
         } else if (!_CLI) {
-            register_shutdown_function(function () {
-                $this->_debug->save_logs('run.Dispatcher.Shutdown');
+            register_shutdown_function(function () use ($tag) {
+                $this->_debug->save_logs($tag . '.Shutdown');
             });
         }
     }
@@ -465,7 +481,9 @@ final class Dispatcher
     public function setPlugin(Plugin $class): Dispatcher
     {
         $name = get_class($class);
-        $name = ucfirst(substr($name, strrpos($name, '\\') + 1));
+        //无命名空间时 strrpos() 返回 false，而 false+1===1 会砍掉首字母，故必须单独判断
+        $separator = strrpos($name, '\\');
+        $name = ucfirst($separator === false ? $name : substr($name, $separator + 1));
         if (isset($this->_plugs[$name])) {
             esp_error('Plugin Error', "插件名{$name}已被注册过");
         }
@@ -560,8 +578,12 @@ final class Dispatcher
 
     /**
      * 执行HOOK
-     * @param string $time 'router', 'dispatch', 'display', 'finish', 'shutdown'
-     * @param null $runValue dispatchAfter之后才有该值，此值在hook中可以被修改
+     *
+     * 所有插件都会被依次调用，任一个返回非null时，该值作为本方法返回值（即中断后续插件）。
+     * $runValue 是引用，前一个插件对它的修改，后一个插件可以看到。
+     *
+     * @param string $time 'router', 'dispatch', 'display', 'finish', 'shutdown', 'end'
+     * @param null $runValue 控制器返回值，'display'及之后的钩子才有，此值在hook中可以被修改
      * @return mixed|null
      */
     private function plugsHook(string $time, &$runValue = null)
@@ -569,9 +591,10 @@ final class Dispatcher
         if (empty($this->_plugs)) return null;
 
         foreach ($this->_plugs as $plug) {
-            if (method_exists($plug, $time) and is_callable([$plug, $time])) {
-                return $plug->{$time}($this->_request, $this->_response, $runValue);
-            }
+            if (!method_exists($plug, $time) or !is_callable([$plug, $time])) continue;
+
+            $hookValue = $plug->{$time}($this->_request, $this->_response, $runValue);
+            if (!is_null($hookValue)) return $hookValue;
         }
 
         return null;

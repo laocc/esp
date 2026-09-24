@@ -39,16 +39,34 @@ composer dump-autoload --optimize
 
 # 文档目录
 
-- [文档目录](./readme/0.aboutme.md)
+- [AI 速查手册（推荐先看这个）](./readme/forAI.md)
+- [基本配置、目录结构、常量](./readme/0.aboutme.md)
 - [控制器、控制器方法`Controller`](./readme/1.controllers.md)
 - [视图`View`和`layout`](./readme/2.views.md)
 - [数据模型`Model`](./readme/3.models.md)
 - [数据库`Mysql`及`Redis`](./readme/4.databases.md)
 - [路由`Router`](./readme/5.routes.md)
 - [请求方法控制`Request`](./readme/6.request.md)
-- [结果显示`Response`和`Response`](./readme/7.response.md)
+- [结果显示`Response`](./readme/7.response.md)
 - [`Cookies`和`Session`](./readme/8.cookies.md)
 - [标签解析器`Adapter`](./readme/9.adapter.md)
 - [缓存及生成静态文件`Cache`](./readme/10.cache.md)
 - [插件`Plugs`和`bootstrap`](./readme/11.plugs.md)
+- [群集服务`Cluster`](./readme/12.cluster.md)
 - [调试器`Debug`](./readme/20.debug.md)
+- [异步任务`publish/queue/task`](./readme/22.task.md)
+- [文件方式异步任务`async`](./readme/23.async.md)
+
+# CLI
+
+项目中建立 `public/cli/index.php` 入口后，可用框架自带的 `esp.sh` 在项目任意目录下执行：
+
+```
+esp -h                          ;显示帮助
+esp -s config [key] [toJson]    ;查看 config
+esp -s flush [level] [safe]     ;清理缓存，见 readme/4.databases.md
+esp -s resource                 ;刷新 Resource Key
+esp -s model [path] [base]      ;重建 Model
+esp -s tables                   ;显示所有表
+esp -s table [table] [key]      ;打印表结构
+```

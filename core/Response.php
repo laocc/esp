@@ -244,7 +244,7 @@ public string $_display_Result = '';
         if (!$this->_view_set['view_use']) return null;
 
         if (!$this->_request->virtual) {
-            esp_error('Response', "registerAdapter要在routeAfter之后执行");
+            esp_error('Response', "registerAdapter要在路由完成之后执行，一般放在插件的 dispatch 钩子中");
         }
         return $this->getView()->registerAdapter($adapter);
     }
