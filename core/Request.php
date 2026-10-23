@@ -261,7 +261,7 @@ private array $alias = [];//控制器映射
      * @return array|string[]
      * ['agent' => '', 'browser' => '', 'version' => '', 'os' => '']
      */
-    public function agent(string $agent = null): array
+    public function agent(?string $agent = null): array
     {
         $u_agent = $agent ?: $this->_ua;
         if (!$u_agent) return ['agent' => '', 'browser' => '', 'version' => '', 'os' => ''];
@@ -355,7 +355,7 @@ private array $alias = [];//控制器映射
      * @param string|null $browser
      * @return bool
      */
-    public function is_wap(string $browser = null): bool
+    public function is_wap(?string $browser = null): bool
     {
         $browser = $browser ?: $this->_ua;
         if (empty($browser)) return true;
@@ -374,7 +374,7 @@ private array $alias = [];//控制器映射
         return false;
     }
 
-    public function is_ios(string $browser = null): bool
+    public function is_ios(?string $browser = null): bool
     {
         $browser = $browser ?: $this->_ua;
         if (empty($browser)) return true;

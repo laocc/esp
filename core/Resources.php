@@ -12,7 +12,7 @@ final class Resources
 {
     private array $conf;
 
-    public function __construct(array $_config = null)
+    public function __construct(?array $_config = null)
     {
         $this->conf = $_config ?: [];
 
@@ -45,7 +45,7 @@ final class Resources
         return $this->conf['path'];
     }
 
-    public function concat(bool $run = null): bool
+    public function concat(?bool $run = null): bool
     {
         if (is_null($run)) return boolval($this->conf['concat']);
         $this->conf['concat'] = $run;
@@ -62,21 +62,21 @@ final class Resources
         return strval($this->conf['_rand'] ?? '');
     }
 
-    public function title(string $title = null): string
+    public function title(?string $title = null): string
     {
         if (is_null($title)) return $this->conf['title'];
         $this->conf['title'] = $title;
         return $title;
     }
 
-    public function keywords(string $keywords = null): string
+    public function keywords(?string $keywords = null): string
     {
         if (is_null($keywords)) return $this->conf['keywords'];
         $this->conf['keywords'] = $keywords;
         return $keywords;
     }
 
-    public function description(string $description = null): string
+    public function description(?string $description = null): string
     {
         if (is_null($description)) return $this->conf['description'];
         $this->conf['description'] = $description;

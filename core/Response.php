@@ -553,7 +553,7 @@ public string $_display_Result = '';
      * =true：覆盖response.title中的值
      * =false：仅显示 $title
      */
-    public function title(string $title, bool $overwrite = null): void
+    public function title(string $title, ?bool $overwrite = null): void
     {
         if ($overwrite === true) {
             $this->_resource->title($title);

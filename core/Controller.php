@@ -227,7 +227,7 @@ abstract class Controller
      * @param array $option
      * @return mixed|string
      */
-    final public function rpc(string $uri, array|string $data = null, array $option = []): mixed
+    final public function rpc(string $uri, array|string|null $data = null, array $option = []): mixed
     {
         $url = explode(':', $uri);
         $rpc = new Rpc($url[0], '127.0.0.1', $option);
@@ -304,7 +304,7 @@ abstract class Controller
             $value['action'] = $action[1];
         }
 
-        return (boolean)$this->_redis->publish($channel, serialize($value));
+        return (bool)$this->_redis->publish($channel, serialize($value));
     }
 
     /**
@@ -371,7 +371,7 @@ abstract class Controller
     {
         if (!isset($this->_redis)) esp_error('Controller Queue', '站点未启用redis，无法发送队列消息');
         $key = defined('_QUEUE_TABLE') ? _QUEUE_TABLE : 'REDIS_QUEUE';
-        return (boolean)$this->_redis->rPush($key, $data + ['_action' => $action]);
+        return (bool)$this->_redis->rPush($key, $data + ['_action' => $action]);
     }
 
     /**
@@ -731,7 +731,7 @@ abstract class Controller
      * @param string|null $notes
      * @return bool
      */
-    final protected function finish(string $notes = null): bool
+    final protected function finish(?string $notes = null): bool
     {
         if (isset($this->_debug)) {
             $this->_debug->relay(['控制器主动调用finish()结束客户端', $notes], 1);
@@ -812,7 +812,7 @@ abstract class Controller
      * @param string|null $value
      * @return bool
      */
-    final protected function html(string $value = null): bool
+    final protected function html(?string $value = null): bool
     {
         return $this->_response->set_value('html', $value);
     }
@@ -877,7 +877,7 @@ abstract class Controller
      * 第一次调用：->title('新的名称',true)，即将response.title改为新的名称
      * 之后调用：->title('这是文章标题')，最终title为  这是文章标题 - 新的名称
      */
-    final protected function title(string $title, bool $overwrite = null): Controller
+    final protected function title(string $title, ?bool $overwrite = null): Controller
     {
         $this->_response->title($title, $overwrite);
         return $this;

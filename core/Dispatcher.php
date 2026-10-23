@@ -427,7 +427,7 @@ final class Dispatcher
      * @param string|null $filename
      * @return string
      */
-    public function debug_file(string $filename = null): string
+    public function debug_file(?string $filename = null): string
     {
         if (!isset($this->_debug)) return 'null';
         return $this->_debug->filename($filename);

@@ -19,7 +19,7 @@ class Helps
         $this->controller = $controller;
     }
 
-    public function config(string $key = null, $toJson = false): void
+    public function config(?string $key = null, $toJson = false): void
     {
         $value = $this->_dispatcher->_config->allConfig();
         if ($key and ($key !== 'all')) {
@@ -85,7 +85,7 @@ class Helps
      * @param string|null $json
      * @return void
      */
-    public function json(string $key = null, string $json = null): void
+    public function json(?string $key = null, ?string $json = null): void
     {
         if (!_CLI) {
             echo "此方法仅限在CLI中使用";

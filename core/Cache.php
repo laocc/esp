@@ -296,7 +296,7 @@ CODE;
      * 设置缓存的HTTP头
      * @param string|null $label
      */
-    private function setHeader(string $label = null): void
+    private function setHeader(?string $label = null): void
     {
         if (headers_sent()) return;
         $ttl = $this->_option['ttl'];

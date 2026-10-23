@@ -21,7 +21,7 @@ class AsyncIterator implements Iterator
      * 在 key() 方法中，返回指针位置；在 next() 方法中，将指针位置加1。
      * 使用这个迭代器，我们可以像使用其他迭代器一样遍历文件内容，例如：
      */
-    public function __construct(string $path = null)
+    public function __construct(?string $path = null)
     {
         if (is_null($path)) $path = _RUNTIME . "/async";
         $dir = new DirectoryIterator($path);

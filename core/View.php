@@ -35,7 +35,7 @@ final class View implements Adapter
      * @param string|null $dir
      * @return string
      */
-    public function dir(string $dir = null): string
+    public function dir(?string $dir = null): string
     {
         if (is_null($dir)) {
             return $this->_path['dir'];
@@ -206,7 +206,7 @@ final class View implements Adapter
      * @param string|null $file
      * @return string
      */
-    public function file(string $file = null): string
+    public function file(?string $file = null): string
     {
         if (is_null($file)) {
             return $this->_path['file'] ?: '';

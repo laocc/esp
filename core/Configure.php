@@ -13,8 +13,8 @@ use function esp\helper\root;
  */
 final class Configure
 {
-    const awakenURI = '/_esp_config_awaken_';
-    const userAgent = 'espConfigAwaken';//驱动方式，供dispatcher中读取用于session的驱动方式
+    const string awakenURI = '/_esp_config_awaken_';
+    const string userAgent = 'espConfigAwaken';//驱动方式，供dispatcher中读取用于session的驱动方式
     public int $RedisDbIndex = 0;
     public string $driver;
     public Redis $_Redis;
@@ -223,7 +223,7 @@ final class Configure
      * @param null $auto
      * @return array|mixed|null
      */
-    public function load(string $file, string $key = null, $auto = null)
+    public function load(string $file, ?string $key = null, $auto = null)
     {
         $conf = parse_ini_file(root($file), true);
         $conf = $this->re_arr($conf);
