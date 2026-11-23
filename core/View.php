@@ -254,12 +254,12 @@ final class View implements Adapter
      * @param string $__file__
      * @param array $__value__
      */
-    public function display(string $__file__, array $__value__): void
+    public function display(string $__file__, array $__value__): mixed
     {
         if ($this->_adapter_use and isset($this->_adapter)) {
             $this->_adapter->assign($this->_view_val);
             $this->_adapter->display($__file__, $__value__);
-            return;
+            return null;
         }
         ob_start();
         extract($__value__, EXTR_SKIP);
