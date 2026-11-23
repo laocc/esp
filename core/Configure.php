@@ -335,7 +335,6 @@ final class Configure
         $cURL = curl_init();
         curl_setopt_array($cURL, $cOption);
         $html = curl_exec($cURL);
-        curl_close($cURL);
 
         if (!$json) return $html;
         return json_decode($html, true);
