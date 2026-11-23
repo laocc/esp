@@ -504,7 +504,7 @@ final class Dispatcher
             return true;
         }
 
-        return (boolean)register_shutdown_function(function (callable $callable, ...$params) {
+        return (bool)register_shutdown_function(function (callable $callable, ...$params) {
             try {
 
                 $callable(...$params);
